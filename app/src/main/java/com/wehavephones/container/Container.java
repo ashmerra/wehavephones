@@ -5,7 +5,6 @@ import android.os.Environment;
 import com.wehavephones.BuildConfig;
 
 import com.wehavephones.core.DefaultVersion;
-import com.wehavephones.core.EnvVars;
 import com.wehavephones.core.FileUtils;
 import com.wehavephones.core.KeyValueSet;
 import com.wehavephones.core.WineInfo;
@@ -451,17 +450,6 @@ public class Container {
                 }
                 else if (graphicsDriver.equals("llvmpipe")) {
                     data.put("graphicsDriver", "virgl");
-                }
-            }
-
-            if (data.has("envVars") && data.has("extraData")) {
-                JSONObject extraData = data.getJSONObject("extraData");
-                int appVersion = Integer.parseInt(extraData.optString("appVersion", "0"));
-                if (appVersion < 16) {
-                    EnvVars defaultEnvVars = new EnvVars(DEFAULT_ENV_VARS);
-                    EnvVars envVars = new EnvVars(data.getString("envVars"));
-                    for (String name : defaultEnvVars) if (!envVars.has(name)) envVars.put(name, defaultEnvVars.get(name));
-                    data.put("envVars", envVars.toString());
                 }
             }
 
