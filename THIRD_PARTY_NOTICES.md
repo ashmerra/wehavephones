@@ -1,0 +1,105 @@
+# Third-Party Notices
+
+WeHavePhones ships its own code together with prebuilt software
+from many other projects. This file inventories identified APK components, their licenses, and sources.
+Open provenance questions are tracked in the project's issue tracker. Full license texts are in
+[`docs/licenses/`](docs/licenses/).
+
+## Fork lineage
+
+| Project | Author | License | Source |
+|---|---|---|---|
+| Winlator | BrunoSX (brunodev85) | MIT (versions before 2026-04-14; later versions are LGPL-2.1) | https://github.com/brunodev85/winlator |
+| Winlator LLM | FrontMage | MIT | https://github.com/FrontMage/winlator-llm |
+| WeHavePhones changes (this repo) | ashmerra | MIT | this repository |
+
+This repository forked from Winlator LLM (baseline commit `b1c7b23`,
+2026-02-17), which derived from MIT-licensed Winlator. See [`LICENSE`](LICENSE).
+Upstream Winlator switched to LGPL-2.1 on 2026-04-14. Code taken from Winlator
+after that date would be LGPL-2.1, not MIT.
+
+## GPL and LGPL components
+
+These licenses require that anyone who receives the binaries can also get the
+matching source code. Where the source is in this repository, it is the source
+the APK was built from.
+
+| Component | Shipped as | License | Source |
+|---|---|---|---|
+| Wine / Proton 9.0 arm64ec (`runtime` development flavor only; not in the WeHavePhones APK) | `assets/proton-9.0-arm64ec.txz` | LGPL-2.1+ | **Exact source not yet identified** (inherited from upstream Winlator) |
+| Wine / Proton 10 arm64ec (`runtime` development flavor only; not in the WeHavePhones APK) | `assets/preinstall/proton-10-arm64ec.wcp.xz` | LGPL-2.1+ | **Exact source not yet identified** (inherited from Winlator Cmod) |
+| GE-Proton 10.0-34 arm64ec (bundled in WeHavePhones) | `assets/wehavephones/wine/GE-proton-10.0-34-arm64ec.wcp`, installed to `imagefs/opt/proton-10.0-34-arm64ec` | LGPL-2.1+ | https://github.com/The412Banner/proton-wine, release `build-bionic-layers-20260911-xp`, commit `91af073dbead93fe51a2e2abc8b6add6372c67e8` |
+| Patched Wine `ntdll` (WeHavePhones runtime profiles) | `assets/wehavephones/ntdll/ntdll-*.dll`, `ntdll-*.so` | LGPL-2.1+ | https://github.com/The412Banner/proton-wine commit `c74acb09d51b447f5d5ac56c87608d3ec565a767` (branch `aio-eanet/proton_10.34-GE`), after `build-scripts/apply-ge-patches.sh`, plus [`patches/wine/arm64-copyable-syscalls-grace-wine10.patch`](patches/wine/arm64-copyable-syscalls-grace-wine10.patch); build steps in [`docs/WEHAVEPHONES_RUNTIME.md`](docs/WEHAVEPHONES_RUNTIME.md) |
+| GnuTLS 3.8.9 (unmodified copy of the imagefs library, which the WoW profiles copy to `usr/lib/libgnutls.so`) | `assets/wehavephones/gnutls/libgnutls.so` | LGPL-2.1+ | https://www.gnutls.org (tag `3.8.9`); byte-identical to `usr/lib/libgnutls.so` in `assets/imagefs.txz` |
+| VKD3D-Proton 2.12, 2.14.1 | `assets/dxwrapper/vkd3d-*.tzst` | LGPL-2.1 | https://github.com/HansKristian-Work/vkd3d-proton (tags `v2.12`, `v2.14.1`); local patch in [`patches/vkd3d/`](patches/vkd3d/) |
+| PRoot | `libproot.so`, `libproot-loader*.so` | GPL-2.0 | [`app/src/main/cpp/proot/`](app/src/main/cpp/proot/) (upstream https://github.com/proot-me/proot) |
+| talloc (statically linked into PRoot) | `libproot.so` | LGPL-3.0+ | [`app/src/main/cpp/proot/talloc/`](app/src/main/cpp/proot/talloc/) (upstream https://talloc.samba.org) |
+| patchelf | `libpatchelf.so` | GPL-3.0 | [`app/src/main/cpp/patchelf/`](app/src/main/cpp/patchelf/) (upstream https://github.com/NixOS/patchelf) |
+| PulseAudio 13.0 | `jniLibs/*/libpulse*.so` | LGPL-2.1+ | https://gitlab.freedesktop.org/pulseaudio/pulseaudio (tag `v13.0`) |
+| libsndfile | `jniLibs/*/libsndfile.so` | LGPL-2.1+ | https://github.com/libsndfile/libsndfile |
+| libltdl (GNU Libtool) | `jniLibs/*/libltdl.so` | LGPL-2.1+ | https://www.gnu.org/software/libtool/ |
+| Linux userland (glibc, coreutils, GStreamer, etc.) | `assets/imagefs.txz` | Mixed: GPL-2.0, GPL-3.0, LGPL-2.1+, MIT and others, per package | Taken unchanged from FrontMage/winlator-llm's APK release `llm-apk-20260216-144633` (see [`docs/BUILD_ASSETS.md`](docs/BUILD_ASSETS.md)); this repository does not build it. Source: Arch Linux ARM packages (https://archlinuxarm.org/packages) plus the `rootfs-custom-winlator` base, which is no longer online. The exact package list is not yet recorded. |
+
+License texts: [GPL-2.0](docs/licenses/GPL-2.0.txt),
+[GPL-3.0](docs/licenses/GPL-3.0.txt), [LGPL-2.1](docs/licenses/LGPL-2.1.txt),
+[LGPL-3.0](docs/licenses/LGPL-3.0.txt), [Wine notice](docs/licenses/Wine-LICENSE.txt).
+
+## Permissive components
+
+| Component | Shipped as | License | Source |
+|---|---|---|---|
+| Box64 / WowBox64 0.3.7 | `assets/wowbox64/` | MIT, [text](docs/licenses/Box64-MIT.txt) | https://github.com/ptitSeb/box64 |
+| FEX (FEXCore 2508) | `assets/fexcore/` | MIT, [text](docs/licenses/FEX-MIT.txt) | https://github.com/FEX-Emu/FEX (tag `FEX-2508`) |
+| DXVK 2.4.1, 2.3.1 (gplasync, arm64ec) | `assets/dxwrapper/dxvk-*.tzst` | zlib, [text](docs/licenses/DXVK-Zlib.txt) | https://github.com/doitsujin/dxvk, https://gitlab.com/Ph42oN/dxvk-gplasync |
+| D8VK 1.0 | `assets/dxwrapper/d8vk-1.0.tzst` | zlib, [text](docs/licenses/D8VK-Zlib.txt) | https://github.com/AlpyneDreams/d8vk |
+| Mesa (Turnip, Zink, VirGL drivers) | `assets/graphics_driver/` | MIT, mostly (per-file SPDX tags), [text](docs/licenses/Mesa-MIT.txt) | https://gitlab.freedesktop.org/mesa/mesa |
+| Default Adrenotools Turnip: Mesa 26.3.0-devel, revision `1b51639c20` | `assets/graphics_driver/adrenotools-turnip26.3.0-devel-1b51639c20.tzst` | Mesa licenses, [text](docs/licenses/Mesa-MIT.txt) | Exact tested binary and SHA-256 recorded in [`turnip.json`](app/src/wehavephones/assets/wehavephones/graphics/turnip.json); taken from an earlier private test container. Original binary publisher and build flags are not recorded. |
+| virglrenderer | `libwinlator.so` / native code | MIT, [text](docs/licenses/virglrenderer-MIT.txt) | [`app/src/main/cpp/virglrenderer/`](app/src/main/cpp/virglrenderer/) |
+| libadrenotools | native code | BSD-2-Clause, [text](docs/licenses/libadrenotools-BSD-2-Clause.txt) | [`app/src/main/cpp/adrenotools/`](app/src/main/cpp/adrenotools/) |
+| OpenXR SDK | `libopenxr_loader.so` | Apache-2.0, [text](docs/licenses/Apache-2.0.txt) | [`app/src/main/cpp/OpenXR-SDK/`](app/src/main/cpp/OpenXR-SDK/) |
+| Vulkan wrapper, vkBasalt, BCn layer | `assets/graphics_driver/wrapper.tzst`, `extra_libs.tzst` | **To confirm** | **To confirm** |
+| Tiny5 font | WeHavePhones LCD headings | SIL OFL 1.1, [text](docs/licenses/Tiny5-OFL.txt) | https://github.com/Gissio/font_tiny5 |
+| ConsolePort addon (the release pinned in `consoleport.json`, fetched at build time; the app can also download newer releases) | `assets/wehavephones/addons/ConsolePort.zip`, installed into each game's AddOns folder | Artistic-2.0, [text](docs/licenses/ConsolePort-Artistic-2.0.txt) | https://github.com/seblindfors/ConsolePort |
+
+## Android libraries and design assets
+
+Direct Java dependencies are pinned in `app/build.gradle`. This table expands
+credit beyond the inherited runtime list; a complete transitive dependency
+and bundled guest-utility inventory is still open and tracked in the
+project's issue tracker.
+
+| Component | Version / use | License | Source |
+|---|---|---|---|
+| AndroidX AppCompat / Preference | 1.2.0 / 1.1.1 | Apache-2.0, [text](docs/licenses/Apache-2.0.txt) | https://android.googlesource.com/platform/frameworks/support/ |
+| Material Components for Android | 1.4.0 | Apache-2.0, [upstream text](https://github.com/material-components/material-components-android/blob/1.4.0/LICENSE) | https://github.com/material-components/material-components-android |
+| zstd-jni | 1.5.2-3 | BSD-2-Clause for JNI, BSD-3-Clause for bundled Zstandard; [upstream notices](docs/licenses/zstd-jni-LICENSE.txt) | https://github.com/luben/zstd-jni/tree/v1.5.2-3 |
+| XZ for Java | 1.7 | Public domain (this version; newer versions differ) | https://tukaani.org/xz/java.html |
+| Apache Commons Compress | 1.20 | Apache-2.0, [text](docs/licenses/Apache-2.0.txt) | https://commons.apache.org/proper/commons-compress/ |
+| Phosphor icons | WeHavePhones navigation / UI, Light icons | MIT, [text](docs/licenses/Phosphor-MIT.txt) | https://github.com/phosphor-icons/core |
+
+## Proprietary files (not open source)
+
+These files are not open source, and nothing in this file grants any rights to
+them. WeHavePhones redistributes them the same way upstream Winlator does. They
+remain the property of their owners.
+
+| Files | Shipped as | Owner |
+|---|---|---|
+| DirectX, DirectMusic, DirectPlay, DirectShow, DirectSound, Windows Media and VC++ 2010 runtime DLLs (`d3dx9_*`, `d3dcompiler_*`, `dmusic`, `msvcr100`, ...), `cryptbase`, `rsaenh` | `assets/wincomponents/*.tzst` | Microsoft |
+| Adreno Vulkan driver v819 ("Extracted from the Quest 2") | `assets/graphics_driver/adrenotools-v819.tzst` | Qualcomm |
+
+## Getting the source
+
+Source for the components built from this repository is in the repository at
+the commit the APK was built from. For the other GPL/LGPL components, use the
+upstream links above. The rows marked **not yet identified** or **to confirm**
+are open items, tracked in the project's issue tracker.
+
+## Trademarks
+
+World of Warcraft, Warcraft, Battle.net and Blizzard Entertainment are
+trademarks or registered trademarks of Blizzard Entertainment, Inc. in the U.S.
+and/or other countries. Other product names are trademarks of their respective
+owners. WeHavePhones is not affiliated with, endorsed, sponsored, or approved
+by Blizzard Entertainment, Inc. or Microsoft, and it ships no Blizzard game
+files or assets.

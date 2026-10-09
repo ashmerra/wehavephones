@@ -1,0 +1,2 @@
+I 2026-09-26 01:55:19.990865 [Main] {Main} Command line arguments: {[0]=--exec=launch WoW}
+I 2026-09-26 01:55:20.145048 [Main] {Main} Opening IPC shared memory. queueName=User:xuser:Battle.net IPC ShMem mode=client

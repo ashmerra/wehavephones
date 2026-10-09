@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="window_background_color">#fafafa</color>
+    <color name="colorPrimary">#607d8b</color>
+    <color name="colorPrimaryDark">#455a64</color>
+    <color name="colorAccent">#0288d1</color>
+
+    <!-- Surfaces a flavor may restyle (the wehavephones flavor overrides these). -->
+    <color name="toolbar_background">@color/colorPrimary</color>
+    <color name="toolbar_title_color">#ffffff</color>
+    <color name="drawer_background">#ffffff</color>
+    <color name="dialog_background">#ffffff</color>
+    <color name="secondary_text_color">#757575</color>
+    <color name="fab_icon_color">#ffffff</color>
+    <!-- Wine desktop behind the default wallpaper image: upper and lower halves. -->
+    <color name="wine_wallpaper_top">#01579b</color>
+    <color name="wine_wallpaper_bottom">#0277bd</color>
+</resources>

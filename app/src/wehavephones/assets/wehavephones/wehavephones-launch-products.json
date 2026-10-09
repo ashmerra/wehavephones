@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "comment": "One-button launch table (every WoW game Battle.net installs; see WowFlavor for the catalog). uid is the --game= / -uid / InstallState id; Play opens the game with Battle.net.exe --game=<uid> and clicks its Play button. execCodes (Battle.net.exe --exec=\"launch <code>\") only select the game on Battle.net 2.53 and are kept for forcePath testing. Confidence: verified = proven on device; community = public sources only. See docs/WEHAVEPHONES_APP.md, section Play.",
+  "products": [
+    { "dir": "_retail_", "uid": "wow", "execCodes": ["WoW"], "exe": "Wow-ARM64.exe", "confidence": "verified" },
+    { "dir": "_classic_", "uid": "wow_classic", "execCodes": ["WoW_wow_classic", "WoWC"], "exe": "WowClassic-arm64.exe", "confidence": "community" },
+    { "dir": "_classic_era_", "uid": "wow_classic_era", "execCodes": ["WoW_wow_classic_era"], "exe": "WowClassic-arm64.exe", "confidence": "community" },
+    { "dir": "_classic_titan_", "uid": "wow_classic_titan", "execCodes": ["WoW_wow_classic_titan"], "exe": "WowClassic-arm64.exe", "confidence": "community" },
+    { "dir": "_anniversary_", "uid": "wow_anniversary", "launchUid": "wow_classic_anniversary", "execCodes": ["WoW_wow_anniversary"], "exe": "WowClassic-arm64.exe", "confidence": "community" },
+    { "dir": "_ptr_", "uid": "wow_ptr", "execCodes": ["WoW_wowt"], "exe": "WowT-ARM64.exe", "confidence": "community" },
+    { "dir": "_xptr_", "uid": "wow_ptr_x", "execCodes": ["WoW_wowxptr"], "exe": "WowT-ARM64.exe", "confidence": "community" },
+    { "dir": "_beta_", "uid": "wow_beta", "execCodes": ["WoW_wow_beta"], "exe": "WowB.exe", "confidence": "community" },
+    { "dir": "_classic_ptr_", "uid": "wow_classic_ptr", "execCodes": ["WoW_wow_classic_ptr"], "exe": "WowClassicT.exe", "confidence": "community" },
+    { "dir": "_classic_beta_", "uid": "wow_classic_beta", "execCodes": ["WoW_wow_classic_beta"], "exe": "WowB.exe", "confidence": "community", "note": "Hosts the World of Warcraft: Forever beta (1.60.x, Sept-Oct 2026); product code from Blizzard forum installs" },
+    { "dir": "_classic_era_ptr_", "uid": "wow_classic_era_ptr", "execCodes": ["WoW_wow_classic_era_ptr"], "exe": "WowClassicT.exe", "confidence": "community" },
+    { "dir": "_classic_era_beta_", "uid": "wow_classic_era_beta", "execCodes": ["WoW_wow_classic_era_beta"], "exe": "WowClassicB.exe", "confidence": "community" },
+    { "dir": "_forever_", "uid": "wow_forever", "execCodes": ["WoW_wow_forever"], "exe": "", "confidence": "expected", "note": "World of Warcraft: Forever live (2026-11-04). Directory, uid and exec code are unpublished guesses; the scanner picks the real exe and the direct rung uses the -uid from the launcher log. Hot-fix with launch-overrides.json." }
+  ],
+  "playButton": {
+    "comment": "Battle.net's Play button in X pixels from the main window's left and bottom edges, measured on the S23 (1280x720 X screen, Battle.net 2.53; the button spans 39-272 across and 81-136 up). Battle.net starts with --game=<uid> on the game's page; Play is clicked every waitSeconds until the game starts (the page can take minutes to render); after attempts clicks Battle.net is restarted, up to restarts times (it sometimes hangs before its page renders).",
+    "fromLeft": 155,
+    "fromBottom": 108,
+    "attempts": 6,
+    "waitSeconds": 10,
+    "restarts": 2,
+    "settleMs": 4000
+  },
+  "timeouts": {
+    "sessionStartSeconds": 90,
+    "readySeconds": 420,
+    "updateSeconds": 3600,
+    "settleSeconds": 5,
+    "spawnSeconds": 30,
+    "launcherExitSeconds": 90
+  }
+}

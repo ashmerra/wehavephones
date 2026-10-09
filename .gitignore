@@ -1,0 +1,76 @@
+# local build/cache
+.gradle/
+build/
+app/.cxx/
+app/build/
+out/
+_logs/
+__pycache__/
+
+# local configs
+local.properties
+# machine-local device and package settings (see scripts/local-env.sh)
+local.env
+# Machine-local agent instructions
+AGENTS.md
+
+# local test-account secrets (never commit)
+.env.bnet-test
+*.test-account.env
+
+# large archives kept out of git
+10.0/
+dxvk-*.tzst
+app/src/main/assets/imagefs.txz
+app/src/main/assets/imagefs_patches.tzst
+app/src/main/assets/container_pattern.tzst
+app/src/main/assets/container_pattern_common.tzst
+app/src/main/assets/wine-*-container_pattern.tzst
+app/src/main/assets/wine-*_container_pattern.tzst
+app/src/main/assets/wincomponents/direct3d.tzst
+app/src/main/assets/graphics_driver/zink-22.2.5.tzst
+app/src/main/assets/graphics_driver/virgl-23.1.9.tzst
+app/src/main/assets/graphics_driver/turnip-24.1.0.tzst
+app/src/main/assets/graphics_driver/turnip-25.1.0.tzst
+app/src/main/assets/graphics_driver/turnip-26.0.0.tzst
+app/src/main/assets/graphics_driver/vortek-2.0.tzst
+app/src/main/assets/box86_64/box64-0.3.6.tzst
+app/src/main/assets/box86_64/box64-0.4.0.tzst
+app/src/main/assets/dxwrapper/dxvk-2.4.1.tzst
+app/src/main/assets/dxwrapper/vkd3d-2.12.tzst
+app/src/main/assets/dxwrapper/vkd3d-2.13.tzst
+app/src/main/assets/preinstall/proton-10-arm64ec.wcp.xz
+
+# temp
+/tmp
+/tmp/
+tmp/
+
+# tools
+.tools/
+.codex/
+codex/
+.beads/
+third_party/
+
+# macOS
+.DS_Store
+
+# bundled ConsolePort archive (pinned by app/src/wehavephones/assets/wehavephones/addons/consoleport.json,
+# fetched by scripts/fetch-consoleport.sh)
+app/src/wehavephones/assets/wehavephones/addons/ConsolePort.zip
+app/src/wehavephones/assets/wehavephones/wine/*.wcp
+app/src/wehavephones/assets/wehavephones/wine/*.part
+
+
+# Eclipse/Buildship IDE state
+.project
+.classpath
+.settings/
+
+# Locally installed agent skills (kept on disk, not part of the project)
+.claude/skills/
+skills-lock.json
+
+# Machine-specific phone connection notes (kept locally)
+docs/ADB_S23_CONNECTION.md

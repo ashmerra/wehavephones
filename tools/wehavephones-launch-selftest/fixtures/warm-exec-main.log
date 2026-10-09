@@ -1,0 +1,13 @@
+I 2026-09-26 01:53:05.563876 [Main] {Main} Command line arguments: {[0]=--disable-gpu}
+I 2026-09-26 01:53:05.595627 [Main] {Main} Opening IPC shared memory. queueName=User:xuser:Battle.net IPC ShMem mode=server
+D 2026-09-26 01:53:23.722614 [ProductState] {Main} InstallState (wow): currentOperation=UpToDate currentOperationStatus=Paused installed=1 hasInstallModificationOptions=1 installPath=C:/Program Files (x86)/World of Warcraft sharedContainerSubpath=_retail_ playable=1 canCreateShortcut=1 selectedRegion=us activeConfigKey=dcfc90fffd79ba00406ae46f5f657592 regionalVersions=(cn: {playable:true config_key:dcfc90fffd79ba00406ae46f5f657592}, eu: {playable:true config_key:dcfc90fffd79ba00406ae46f5f657592}, kr: {playable:true config_key:dcfc90fffd79ba00406ae46f5f657592}, sg: {playable:true config_key:dcfc90fffd79ba00406ae46f5f657592}, tw: {playable:true config_key:dcfc90fffd79ba00406ae46f5f657592}, us: {playable:true config_key:dcfc90fffd79ba00406ae46f5f657592}, xx: {playable:true config_key:dcfc90fffd79ba00406ae46f5f657592}) supports_multibox=true repairSupported=true localVersion=12.1.0.69933 latestVersion=69933 currentStage=Complete
+D 2026-09-26 01:54:08.574522 [ProductState] {Main} InstallState (wow_classic_era): currentOperation=Install currentOperationStatus=New
+I 2026-09-26 01:54:17.305333 [Frontend] {Main} Attempting to show main window. isMinimizedOnStartup=true shouldMainWindowShowMinimizedAtAutoStartup=false varAutoStarted=false hasBattlePlatformProductCode=false needToMinimize=false hasActiveXboxConnection=false varLaunchedByXbox=false isExpectingLogin=false wasMainWindowInTray=false
+I 2026-09-26 01:54:20.131887 [BNLogin] {Main} Logged into Battle.net successfully.
+D 2026-09-26 01:55:20.206018 [CommandQueue] {Main} Received IPC Message: IPC_COMMAND
+I 2026-09-26 01:55:20.454594 [GameLaunchController] {Main} LaunchBinary: uid=wow selectedRegion=US binaryType=game
+D 2026-09-26 01:55:20.717956 [ProductState] {Main} InstallState (wow): GameLaunching=1
+I 2026-09-26 01:55:21.762669 [InstallManager] {Main} Launched C:/Program Files (x86)/World of Warcraft/_retail_/Wow-ARM64.exe with args: -launcherlogin -uid wow, pid: 1720
+D 2026-09-26 01:55:23.770742 [InstallManager] {Main} Game is running: wow
+D 2026-09-26 01:55:23.794411 [ProductState] {Main} InstallState (wow): gameRunning=1 isGameProcessRunning=1 GameLaunching=0
+I 2026-09-26 01:55:42.683483 [Frontend] {Main} Attempting to show main window. isMinimizedOnStartup=true shouldMainWindowShowMinimizedAtAutoStartup=false varAutoStarted=false hasBattlePlatformProductCode=false needToMinimize=false hasActiveXboxConnection=false varLaunchedByXbox=false isExpectingLogin=false wasMainWindowInTray=false

@@ -1,0 +1,175 @@
+# WeHavePhones runtime (Battle.net + retail WoW)
+
+The app runs the official Battle.net client and the installed ARM64 retail World
+of Warcraft client in one Wine container on one runtime, with no switch between
+them. It bundles a single runtime profile, `p10-ge34`. This document describes
+that profile, the patched Wine `ntdll` it depends on and how that `ntdll` is
+built. How the app applies a profile is described in
+[WEHAVEPHONES_APP.md](WEHAVEPHONES_APP.md).
+
+## The runtime
+
+The container runs `proton-10.0-34-arm64ec` (GE-Proton 10.0-34) for both
+applications. The layer's `ntdll` pair is replaced with a build whose ARM64
+syscall stubs are self-contained (the dispatcher pointer is read from
+TEB+0x308) and that waits a 100 ms grace in `RtlExitUserThread`. With it
+Battle.net renders its signed-in home page, and Play launches `Wow-ARM64.exe`,
+which reaches the rendered login screen under the same runtime.
+
+Stock Proton 10 renders Battle.net's Chromium (CEF) UI, but the retail client
+stalls after `Dx11/D3d12 Device Create Successful`. The Proton 11 builds that
+were tried (GE 11.0-5, 11.0-7.1 and 11.0-7.2, and Proton-CachyOS 11.0) did not
+render Battle.net's CEF browser at all, whatever Chromium flags were used: the
+renderer's Mojo connection to the browser timed out. The app therefore ships
+Proton 10.
+
+## Profile `p10-ge34`
+
+The profile is
+`app/src/wehavephones/assets/wehavephones/wehavephones-runtime-profiles.json`:
+
+| Setting | Value |
+| --- | --- |
+| `wineVersion` | `proton-10.0-34-arm64ec` |
+| Battle.net flags (`bnet.bat`) | `--disable-gpu --enable-features=NetworkServiceInProcess2` |
+| Environment | `FEX_MULTIBLOCK=0`, `MESA_SHADER_CACHE_DISABLE=true`, `WINE_FDSAN_LEVEL=off` |
+| Graphics driver | `turnip26.3.0-devel-1b51639c20` |
+
+Artifacts it installs:
+
+| Artifact | Target | sha256 |
+| --- | --- | --- |
+| layer `GE-proton-10.0-34-arm64ec.wcp` | `files/imagefs/opt/proton-10.0-34-arm64ec` | `50344ec9…` |
+| `ntdll-grace-copysafe-10.0-34.dll` | `opt/proton-10.0-34-arm64ec/lib/wine/aarch64-windows/ntdll.dll` and prefix `drive_c/windows/system32/ntdll.dll` | `09adc21f…` |
+| `ntdll-grace-copysafe-10.0-34.so` | `opt/proton-10.0-34-arm64ec/lib/wine/aarch64-unix/ntdll.so` | `9f3e55a0…` |
+| `arm64-vkd3d.dll`, `arm64-libc++.dll`, `arm64-libunwind.dll` | `C:\arm64-*.dll` in the prefix | `f1c11399…`, `ed9edb58…`, `535c6c86…` |
+| stock GnuTLS `libgnutls.so` | `usr/lib/libgnutls.so` | `56377c88…` |
+
+The APK bundles the SHA-256-pinned GE-Proton 10.0-34 layer. First-run setup
+installs it offline, then `WeHavePhonesRuntimeApplier` copies the patched
+`ntdll` pair over the stock one in the layer and in the prefix (sha256-checked,
+with a snapshot and read-back) and places the ARM64 DLLs. The three ARM64 DLLs
+are copied into `system32` again when `bnet.bat` and `wow.bat` start.
+`scripts/install-wine-layer-adb.py` installs a verified `.wcp` layer onto a
+phone from a computer, for manual tests.
+
+### Graphics default
+
+WeHavePhones bundles **Mesa Turnip 26.3.0-devel (git-1b51639c20)** for Adreno,
+under the immutable driver ID `turnip26.3.0-devel-1b51639c20`. This is the exact
+binary tested with Classic Era on a Galaxy S23+, rather than a stable Mesa 26.3
+release or a moving nightly. The
+[driver manifest](../app/src/wehavephones/assets/wehavephones/graphics/turnip.json)
+pins both the archive and library SHA-256; the build helper and runtime checks
+verify the archive before packaging.
+
+New containers derive their driver selection from `DefaultVersion`. The
+`p10-ge34` profile also sets the graphics `version`, so Play upgrades existing
+managed containers through the usual snapshot and read-back verification. Other
+graphics settings and the shader cache / Wine descriptor workarounds are
+retained. The old 26.0 archive remains available for an explicit rollback
+trial. Non-Adreno devices retain the wrapper's system Vulkan path.
+
+## Behavior notes
+
+- **Battle.net flags.** CEF 108's separate network utility process crashed
+  during a fresh-container check; running it in the client process
+  (`--enable-features=NetworkServiceInProcess2`) allowed sign-in and the game
+  install confirmation to render. The feature name comes from
+  [Chromium 108's feature definition](https://chromium.googlesource.com/chromium/src/+/refs/tags/108.0.5359.125/content/public/common/content_features.cc).
+- **FEX.** The profile sets `FEX_MULTIBLOCK=0` itself: a fresh container's FEX
+  preset would otherwise enable multiblock.
+- **Hidden batch runner.** The 32-bit hidden batch runner (`tools/wcrun`) must
+  start native `cmd.exe` through `C:\windows\Sysnative` under WOW64. Otherwise
+  the batch's `System32` copies land in `SysWOW64`, leaving ARM64 WoW without
+  its VKD3D DLLs. Copying those DLLs into the prefix once is insufficient:
+  graphics-wrapper preparation can restore Wine's original D3D12 DLL before the
+  next batch runs, so the native batch reapplies the bundled DLLs after that
+  preparation.
+- **Guest output.** Guest stdout and stderr are drained even when no log file
+  can be opened. Secure Folder cannot write the primary user's Downloads path,
+  so session logs fall back to the app instance's private
+  `files/wehavephones/logs` directory. Without pipe readers, graphics
+  diagnostics can fill stderr and block WoW's rendering thread.
+  `scripts/test-wehavephones-process.sh` checks both full pipes without a
+  logger, observer failure, and selection of the private log directory.
+- **GnuTLS.** The profile also copies the stock GnuTLS (`gnutls/libgnutls.so`,
+  byte-identical to `usr/lib/libgnutls.so` in `imagefs.txz`) over
+  `usr/lib/libgnutls.so`. Fresh installs already have that file, so the entry
+  only matters for containers whose library was replaced earlier; it can be
+  dropped once no install needs it.
+- **Shader cache.** The profile sets `MESA_SHADER_CACHE_DISABLE=true` as a
+  workaround for a Mesa `compile failed!` abort that Classic Era hit right after
+  creating its D3D12 device with the on-disk shader cache enabled. The applier
+  replaces the inherited value before Play starts Wine, including for existing
+  prepared containers, and leaves cache files intact. Disabling the
+  [on-disk shader cache](https://docs.mesa3d.org/envvars.html#mesa-shader-cache-disable)
+  can increase shader compilation work on later launches.
+- **fdsan.** The profile requests `WINE_FDSAN_LEVEL=off`. On Android API 29+ the
+  guest launcher preloads `libwehavephones_fdsan.so` before Wine starts when a
+  container requests `off` or diagnostic `warn`. This extends the Android 17
+  workaround to Android 16, where Classic Era also aborted with
+  `fdsan: attempted to close file descriptor ... owned by FILE*`, and loading the
+  shim before Wine also covers failures before sign-in. The Android 17 default
+  remains available without an explicit profile setting. The setting changes
+  only the guest process's sanitizer level, not the Android app or device
+  setting. It avoids the fatal check; it does not repair Wine's underlying
+  descriptor ownership bug.
+- **Battle.net cold starts.** A cold start sometimes stalls in an empty dark
+  window and never paints its page. The one-button launcher restarts Battle.net
+  in the same session when that happens (see the Play flow in
+  [WEHAVEPHONES_APP.md](WEHAVEPHONES_APP.md)).
+- **Sign-in.** WeHavePhones reads, types and stores no Battle.net credentials;
+  Battle.net signs in with the login it saved itself.
+- **Wine identifier pattern.** The app only accepts Wine directory names that
+  match `WineInfo.pattern` (for example `proton-10.0-34-arm64ec`). Any other name
+  makes `XServerDisplayActivity` rewrite `container.wineVersion` to the first
+  arm64ec runtime at session start.
+- **Shared prefix `ntdll.dll`.** The prefix's `system32/ntdll.dll` is shared by
+  every Wine version in the container. The applier writes the patched DLL there
+  on every apply, next to the copy in the layer.
+
+### Observed timings
+
+Measured on a Galaxy S23+ with an earlier host harness:
+
+- Battle.net cold start to rendered signed-in home: 85 to 155 s. The first
+  ~60 s can be black or show an empty window even when the start will succeed.
+- WoW login screen after Play: ~15 to 30 s; under memory pressure it can take
+  ~75 s or more.
+- Battle.net takes `MemAvailable` from ~2.6 GB to ~1.0 to 1.5 GB, with
+  `SwapFree` at ~7 to 10 GB.
+
+## The patched ntdll
+
+`patches/wine/arm64-copyable-syscalls-grace-wine10.patch` changes only Wine:
+
+- It makes Wine's ARM64 syscall stubs self-contained, as they are on Windows.
+  Each stub loads the syscall dispatcher from TEB+0x308 instead of from an
+  `ntdll` data literal, so code that copies the stubs keeps working
+  (`include/wine/asm.h`; the dispatcher is initialised in
+  `dlls/ntdll/unix/signal_arm64.c`).
+- It adds a 100 ms grace in `RtlExitUserThread` (`dlls/ntdll/thread.c`).
+
+The grace alone was not enough: WoW still stalled with `gx.log` frozen after
+device creation while Battle.net rendered. With the self-contained stubs added,
+WoW starts and Battle.net still renders.
+
+### How the ntdll was built
+
+- Source: [The412Banner/proton-wine](https://github.com/The412Banner/proton-wine),
+  branch `aio-eanet/proton_10.34-GE`, commit
+  `c74acb09d51b447f5d5ac56c87608d3ec565a767`, after
+  `build-scripts/apply-ge-patches.sh`, plus the patch above.
+- Build: `bash build-scripts/build-step-arm64ec.sh --enable-16kb-pages --ntdll`
+  (autogen, wine-tools, configure, then only `aarch64-windows/ntdll.dll` and
+  `ntdll.so`).
+- Configure was run minimally (`--without-x`, `--without-freetype`,
+  `--without-fontconfig`, `--without-pulse`, `--without-gstreamer`,
+  `--without-vulkan`, `--without-sdl`, `--without-gnutls`, `--without-alsa`,
+  `--without-opengl`) because the aarch64 sysroot used for the build also
+  contained x86-64 libraries; the GUI drivers come from the GE layer. The host
+  `wine-tools` build needed `--without-freetype`, and a stray x86-64
+  `libunwind.a` had to be moved out of the way.
+- The resulting `ntdll.dll` and `ntdll.so` are the two files pinned by SHA-256 in
+  the runtime profile.

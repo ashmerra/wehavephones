@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge
+    xmlns:android="http://schemas.android.com/apk/res/android">
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/wehavephones_screen_background"
+        android:padding="10dp">
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/wehavephones_lcd_frame"
+            android:padding="10dp">
+            <com.wehavephones.mobile.WeHavePhonesAtmosphereView
+                android:id="@+id/VOverlayAtmosphere"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:paddingLeft="30dp"
+                android:paddingRight="30dp"
+                android:paddingTop="22dp"
+                android:paddingBottom="18dp">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+                    <FrameLayout
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:background="@drawable/wehavephones_badge_frame">
+                        <View
+                            android:id="@+id/VOverlayCrestGem"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:layout_margin="4dp"
+                            android:background="@drawable/wehavephones_badge_face" />
+                        <TextView
+                            android:id="@+id/TVOverlayCrestLetter"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:fontFamily="sans-serif-medium"
+                            android:gravity="center"
+                            android:textColor="@color/wehavephones_silver_light"
+                            android:textSize="16sp"
+                            android:letterSpacing="0" />
+                    </FrameLayout>
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="12dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+                        <TextView
+                            android:id="@+id/TVOverlayGame"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/wehavephones_lcd"
+                            android:letterSpacing="0.02"
+                            android:maxLines="1"
+                            android:textColor="@color/wehavephones_text_title"
+                            android:textSize="25sp" />
+                        <TextView
+                            android:id="@+id/TVOverlayVersion"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFeatureSettings="tnum"
+                            android:maxLines="1"
+                            android:textColor="@color/wehavephones_text_dim"
+                            android:textSize="12.5sp" />
+                    </LinearLayout>
+                    <TextView
+                        android:id="@+id/BTOverlayShowGame"
+                        style="@style/WeHavePhonesOverlayButton"
+                        android:drawableStart="@drawable/wehavephones_ic_eye"
+                        android:text="@string/wehavephones_overlay_show_game" />
+                    <TextView
+                        android:id="@+id/BTOverlayCancel"
+                        style="@style/WeHavePhonesOverlayButton"
+                        android:layout_marginLeft="10dp"
+                        android:drawableStart="@drawable/wehavephones_ic_close"
+                        android:text="@string/wehavephones_overlay_cancel" />
+                </LinearLayout>
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1" />
+                <LinearLayout
+                    android:id="@+id/LLOverlayTip"
+                    android:layout_width="360dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    android:background="@drawable/wehavephones_overlay_panel"
+                    android:orientation="vertical"
+                    android:paddingLeft="14dp"
+                    android:paddingRight="14dp"
+                    android:paddingTop="11dp"
+                    android:paddingBottom="12dp">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:drawableStart="@drawable/wehavephones_ic_lightbulb"
+                        android:drawablePadding="6dp"
+                        android:drawableTint="@color/wehavephones_accent"
+                        android:fontFamily="sans-serif-medium"
+                        android:gravity="center_vertical"
+                        android:letterSpacing="0"
+                        android:text="@string/wehavephones_overlay_tip"
+                        android:textColor="@color/wehavephones_accent"
+                        android:textSize="10.5sp" />
+                    <TextView
+                        android:id="@+id/TVOverlayTip"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:lineSpacingExtra="1dp"
+                        android:textColor="@color/wehavephones_text"
+                        android:textSize="14sp" />
+                </LinearLayout>
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="10dp"
+                    android:gravity="bottom"
+                    android:orientation="horizontal">
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+                        <TextView
+                            android:id="@+id/TVOverlayHeadline"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="@font/wehavephones_lcd"
+                            android:letterSpacing="0.02"
+                            android:maxLines="2"
+                            android:textColor="@color/wehavephones_text_title"
+                            android:textSize="25sp" />
+                        <TextView
+                            android:id="@+id/TVOverlayDetail"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:maxLines="2"
+                            android:textColor="@color/wehavephones_text_dim"
+                            android:textSize="13sp" />
+                    </LinearLayout>
+                    <TextView
+                        android:id="@+id/TVOverlayElapsed"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="16dp"
+                        android:drawableStart="@drawable/wehavephones_ic_clock"
+                        android:drawablePadding="6dp"
+                        android:drawableTint="@color/wehavephones_text_dim"
+                        android:fontFeatureSettings="tnum"
+                        android:gravity="center_vertical"
+                        android:textColor="@color/wehavephones_text_dim"
+                        android:textSize="13sp" />
+                </LinearLayout>
+                <com.wehavephones.mobile.LaunchBarView
+                    android:id="@+id/VOverlayBar"
+                    android:layout_width="match_parent"
+                    android:layout_height="16dp" />
+                <LinearLayout
+                    android:id="@+id/LLOverlaySteps"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="8dp"
+                    android:layout_marginRight="8dp"
+                    android:layout_marginTop="8dp"
+                    android:orientation="horizontal" />
+            </LinearLayout>
+        </FrameLayout>
+    </FrameLayout>
+</merge>

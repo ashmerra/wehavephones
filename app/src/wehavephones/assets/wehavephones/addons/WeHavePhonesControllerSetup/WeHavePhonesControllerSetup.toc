@@ -1,0 +1,9 @@
+## Interface: 120100, 50504, 38010, 20506, 11509
+## Title: WeHavePhones Controller Setup
+## Notes: Gives a fresh ConsolePort install its recommended controller layout on first login.
+## Author: WeHavePhones
+## Version: 1.0.0
+## Dependencies: ConsolePort
+## SavedVariables: WeHavePhonesControllerSetupDB
+
+Setup.lua

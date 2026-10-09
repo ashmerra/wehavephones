@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+# Pair this machine with Android Wireless Debugging and pin adbd to a fixed
+# port so ANDROID_DEVICE keeps working.
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+if [[ -f "$ROOT_DIR/.tools/env.sh" ]]; then
+  # shellcheck disable=SC1091
+  source "$ROOT_DIR/.tools/env.sh"
+fi
+# Machine-local settings from local.env (ANDROID_TAILSCALE_IP, ...).
+# shellcheck disable=SC1091
+source "$ROOT_DIR/scripts/local-env.sh"
+
+android_sdk="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-$HOME/Android/Sdk}}"
+adb_bin="${ADB_BIN:-$android_sdk/platform-tools/adb}"
+if [[ ! -x "$adb_bin" ]]; then
+  adb_bin="${ADB_BIN:-adb}"
+fi
+fixed_port="${ANDROID_ADB_FIXED_PORT:-5555}"
+
+usage() {
+  cat <<EOF
+Usage: scripts/pair-android PHONE_IP:PAIR_PORT PHONE_IP:DEBUG_PORT
+
+Pair this machine with Android Wireless Debugging and pin adbd to the fixed
+port $fixed_port.
+
+  PHONE_IP:PAIR_PORT   pairing endpoint, shown under "Pair device with pairing code"
+  PHONE_IP:DEBUG_PORT  connect endpoint, shown under "IP address & Port"
+
+Both ports rotate whenever Wireless debugging is toggled. After pairing the
+script runs \`adb tcpip $fixed_port\` and reconnects to <phone address>:$fixed_port.
+That address is ANDROID_TAILSCALE_IP when it is set (environment or local.env),
+otherwise the host of PHONE_IP:DEBUG_PORT. Put the resulting endpoint in
+ANDROID_DEVICE (local.env) so the other scripts find the phone.
+EOF
+}
+
+pair_endpoint="${1:-}"
+connect_endpoint="${2:-}"
+if [[ -z "$pair_endpoint" || -z "$connect_endpoint" ]]; then
+  usage >&2
+  exit 2
+fi
+fixed_endpoint="${ANDROID_TAILSCALE_IP:-${connect_endpoint%:*}}:$fixed_port"
+
+command -v "$adb_bin" >/dev/null 2>&1 || {
+  echo "[pair-android] adb is unavailable; run scripts/setup-dev.sh first." >&2
+  exit 1
+}
+
+echo "[pair-android] adb: $adb_bin"
+"$adb_bin" start-server
+
+echo "[pair-android] Pairing with $pair_endpoint ..."
+"$adb_bin" pair "$pair_endpoint"
+
+echo "[pair-android] Connecting to $connect_endpoint ..."
+"$adb_bin" connect "$connect_endpoint"
+
+echo "[pair-android] Switching adbd to tcpip $fixed_port ..."
+"$adb_bin" -s "$connect_endpoint" tcpip "$fixed_port"
+
+# adbd restarts and briefly drops the transport before it listens on the fixed
+# port, so retry the reconnect a few times.
+for _ in 1 2 3 4 5; do
+  sleep 1
+  if "$adb_bin" connect "$fixed_endpoint" >/dev/null 2>&1; then
+    break
+  fi
+done
+"$adb_bin" connect "$fixed_endpoint"
+
+echo "[pair-android] devices:"
+"$adb_bin" devices -l

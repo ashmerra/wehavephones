@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Status gem; tinted in code (ok / pending / error). -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="@color/wehavephones_frame_edge" />
+            <size android:width="12dp" android:height="12dp" />
+        </shape>
+    </item>
+    <item android:left="2dp" android:top="2dp" android:right="2dp" android:bottom="2dp">
+        <shape android:shape="oval">
+            <gradient android:type="radial" android:gradientRadius="7dp" android:centerX="0.35" android:centerY="0.3"
+                android:startColor="#FFFFFFFF" android:endColor="#FFB0B0B0" />
+        </shape>
+    </item>
+</layer-list>

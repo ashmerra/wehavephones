@@ -1,0 +1,44 @@
+diff --git a/libs/vkd3d/resource.c b/libs/vkd3d/resource.c
+--- a/libs/vkd3d/resource.c
++++ b/libs/vkd3d/resource.c
+@@ -7090,7 +7090,6 @@
+         struct d3d12_device *device)
+ {
+     const struct vkd3d_vk_device_procs *vk_procs = &device->vk_procs;
+-    VkDeviceBufferMemoryRequirementsKHR buffer_requirement_info;
+     VkDeviceImageMemoryRequirementsKHR image_requirement_info;
+     VkMemoryRequirements2 memory_requirements;
+     struct vkd3d_memory_topology topology;
+@@ -7111,10 +7110,6 @@
+ 
+     if (pthread_mutex_init(&info->budget_lock, NULL) != 0)
+         return E_OUTOFMEMORY;
+-
+-    buffer_requirement_info.sType = VK_STRUCTURE_TYPE_DEVICE_BUFFER_MEMORY_REQUIREMENTS_KHR;
+-    buffer_requirement_info.pNext = NULL;
+-    buffer_requirement_info.pCreateInfo = &buffer_info;
+ 
+     image_requirement_info.sType = VK_STRUCTURE_TYPE_DEVICE_IMAGE_MEMORY_REQUIREMENTS_KHR;
+     image_requirement_info.pNext = NULL;
+@@ -7146,8 +7141,19 @@
+                 VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+     }
+ 
+-    VK_CALL(vkGetDeviceBufferMemoryRequirementsKHR(device->vk_device, &buffer_requirement_info, &memory_requirements));
+-    buffer_type_mask = memory_requirements.memoryRequirements.memoryTypeBits;
++    /* Wine's ARM64 Vulkan Unix thunk for this KHR call uses the global driver
++     * table with the wrapped device handle and faults before reaching Turnip.
++     * The legacy buffer query returns the same memory type mask. */
++    {
++        VkBuffer probe_buffer;
++        VkMemoryRequirements buffer_requirements;
++        VkResult vr = VK_CALL(vkCreateBuffer(device->vk_device, &buffer_info, NULL, &probe_buffer));
++        if (vr < 0)
++            return hresult_from_vk_result(vr);
++        VK_CALL(vkGetBufferMemoryRequirements(device->vk_device, probe_buffer, &buffer_requirements));
++        VK_CALL(vkDestroyBuffer(device->vk_device, probe_buffer, NULL));
++        buffer_type_mask = buffer_requirements.memoryTypeBits;
++    }
+ 
+     memset(&image_info, 0, sizeof(image_info));
+     image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Early mobile hardware: navy shell, blue keys, silver bezel and a green LCD. -->
+    <color name="wehavephones_background">#0B2344</color>
+    <color name="wehavephones_background_glow">#183E69</color>
+    <color name="wehavephones_surface">#BCD0A6</color>
+    <color name="wehavephones_surface_alt">#CEDDB9</color>
+    <color name="wehavephones_surface_deep">#A8BE91</color>
+    <color name="wehavephones_frame_edge">#122D4B</color>
+    <color name="wehavephones_hairline">#486B56</color>
+    <color name="wehavephones_accent">#164C87</color>
+    <color name="wehavephones_silver_light">#EFF4F8</color>
+    <color name="wehavephones_silver">#BAC7D6</color>
+    <color name="wehavephones_lcd_edge">#617C5C</color>
+    <color name="wehavephones_blue_light">#2C91E5</color>
+    <color name="wehavephones_blue">#1265BB</color>
+    <color name="wehavephones_blue_dark">#0A4389</color>
+    <color name="wehavephones_text">#102B32</color>
+    <color name="wehavephones_text_title">#0B2842</color>
+    <color name="wehavephones_text_dim">#385447</color>
+    <color name="wehavephones_text_faint">#49624E</color>
+    <color name="wehavephones_key_text">#FFFFFF</color>
+    <color name="wehavephones_ok">#24513C</color>
+    <color name="wehavephones_info">#124F82</color>
+    <color name="wehavephones_error">#9A2838</color>
+    <color name="wehavephones_on_shell">#E5EFF9</color>
+    <color name="wine_wallpaper_top">@color/wehavephones_background</color>
+    <color name="wine_wallpaper_bottom">@color/wehavephones_background</color>
+</resources>

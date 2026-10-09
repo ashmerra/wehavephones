@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.wehavephones">
+    <application>
+        <activity android:name="com.wehavephones.mobile.WeHavePhonesActivity"
+            android:theme="@style/WeHavePhonesTheme"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:screenOrientation="sensorLandscape"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize|density|navigation|uiMode">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+
+        <activity android:name="com.wehavephones.mobile.addons.AddonsActivity"
+            android:theme="@style/WeHavePhonesTheme"
+            android:exported="false"
+            android:screenOrientation="sensorLandscape"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize|density|navigation|uiMode" />
+
+        <!-- The classic Winlator screens follow the WeHavePhones landscape-only rule in this flavor. -->
+        <activity android:name="com.wehavephones.MainActivity"
+            android:screenOrientation="sensorLandscape"
+            tools:replace="android:screenOrientation" />
+
+        <activity android:name="com.wehavephones.ExternalControllerBindingsActivity"
+            android:screenOrientation="sensorLandscape"
+            tools:replace="android:screenOrientation" />
+    </application>
+</manifest>

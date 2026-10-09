@@ -1,0 +1,134 @@
+{
+  "schemaVersion": 1,
+  "release": {
+    "repo": "",
+    "tag": "assets-v1",
+    "groups": ["apk"]
+  },
+  "sources": {
+    "frontmage-llm-apk": {
+      "origin": "FrontMage/winlator-llm release llm-apk-20260216-144633 (winlator-llm debug APK)",
+      "format": "zip",
+      "url": "https://github.com/FrontMage/winlator-llm/releases/download/llm-apk-20260216-144633/winlator-llm-debug-20260301-173214-31e5c71.apk",
+      "size": 728861561,
+      "sha256": "e65aa16e11738270e05b7df8cac6ad752b8bb4372ae41ca96c98fb8561e2da9b"
+    },
+    "frontmage-imagefs-v1": {
+      "origin": "FrontMage/winlator-llm release imagefs-v1",
+      "format": "tar",
+      "url": "https://github.com/FrontMage/winlator-llm/releases/download/imagefs-v1/imagefs-v1.tar.xz",
+      "size": 58932620,
+      "sha256": "46db7b9b0c412c3c20eea453f5446c341a9bf0d14ea98b581ae2a291112f5ca2"
+    },
+    "frontmage-dx-wrapper-v1": {
+      "origin": "FrontMage/winlator-llm release dx-wrapper-v1",
+      "format": "tar",
+      "url": "https://github.com/FrontMage/winlator-llm/releases/download/dx-wrapper-v1/dx-wrapper-v1.tar.xz",
+      "size": 7638868,
+      "sha256": "a5cb328d39c75a8b739306490c3dd17f924732ed1e817df336050f616e1f90ed"
+    },
+    "frontmage-drivers-v1": {
+      "origin": "FrontMage/winlator-llm release drivers-v1",
+      "format": "tar",
+      "url": "https://github.com/FrontMage/winlator-llm/releases/download/drivers-v1/drivers-v1.tar.xz",
+      "size": 16724272,
+      "sha256": "1c060a2dd3748979e15f9ff505ed78917bf2e5e166ccb7b140623428000b1c6b"
+    },
+    "frontmage-wincomponents-v1": {
+      "origin": "FrontMage/winlator-llm release wincomponents-v1",
+      "format": "tar",
+      "url": "https://github.com/FrontMage/winlator-llm/releases/download/wincomponents-v1/wincomponents-v1.tar.xz",
+      "size": 31188772,
+      "sha256": "7c36c13257324ed5404198439bf8982eae5d6cf2ba71333914c561e8ffc9f89a"
+    },
+    "ludashi-container-pattern": {
+      "origin": "StevenMXZ/Winlator-Ludashi commit 212447d",
+      "format": "file",
+      "url": "https://raw.githubusercontent.com/StevenMXZ/Winlator-Ludashi/212447d9d7fd8dcd3cb832b054c3fd73afebccf6/app/src/main/assets/container_pattern_common.tzst"
+    },
+    "winlator-contents-proton10": {
+      "origin": "StevenMXZ/Winlator-Contents release 1.0",
+      "format": "file",
+      "url": "https://github.com/StevenMXZ/Winlator-Contents/releases/download/1.0/proton-10-arm64ec.wcp.xz"
+    }
+  },
+  "assets": [
+    {
+      "path": "app/src/main/assets/imagefs.txz",
+      "group": "apk",
+      "size": 183231056,
+      "sha256": "f96d362b7e148e86ab0d2c290978bf39b38e5c7ffc8ae4adf1d2a65c62bbb780",
+      "upstream": {"source": "frontmage-llm-apk", "member": "assets/imagefs.txz"}
+    },
+    {
+      "path": "app/src/main/assets/imagefs_patches.tzst",
+      "group": "apk",
+      "size": 3747004,
+      "sha256": "9bbe8e3b2143e69b2f24dead50b34ad05961d4af54f108cbdc18ae3814f04f57",
+      "upstream": {"source": "frontmage-imagefs-v1", "member": "app/src/main/assets/imagefs_patches.tzst"}
+    },
+    {
+      "path": "app/src/main/assets/container_pattern_common.tzst",
+      "group": "apk",
+      "size": 40450609,
+      "sha256": "d725ac5a22ef60c73a848bef5cd67f73eaab1de71bbf2f6163ff12d5db91a6c4",
+      "upstream": {"source": "ludashi-container-pattern"}
+    },
+    {
+      "path": "app/src/main/assets/dxwrapper/dxvk-2.3.1-arm64ec-gplasync.tzst",
+      "group": "apk",
+      "size": 3934516,
+      "sha256": "3510e1377e1125cd858f5fa02f70511814b9b15c587ecf43f8e79bb3ba1c8b1c",
+      "upstream": {"source": "frontmage-llm-apk", "member": "assets/dxwrapper/dxvk-2.3.1-arm64ec-gplasync.tzst"}
+    },
+    {
+      "path": "app/src/main/assets/dxwrapper/dxvk-2.4.1.tzst",
+      "group": "apk",
+      "size": 3987107,
+      "sha256": "721505048985d64db8400744359399ae72543b59f1efca4d1c4c7e75e7334820",
+      "upstream": {"source": "frontmage-dx-wrapper-v1", "member": "app/src/main/assets/dxwrapper/dxvk-2.4.1.tzst"}
+    },
+    {
+      "path": "app/src/main/assets/dxwrapper/vkd3d-2.12.tzst",
+      "group": "apk",
+      "size": 3649467,
+      "sha256": "9929ee5a3347c927b6becf635761bf3c47227ad96c3e4048b0ad1573d054bf09",
+      "upstream": {"source": "frontmage-dx-wrapper-v1", "member": "app/src/main/assets/dxwrapper/vkd3d-2.12.tzst"}
+    },
+    {
+      "path": "app/src/main/assets/graphics_driver/turnip-24.1.0.tzst",
+      "group": "apk",
+      "size": 3220427,
+      "sha256": "f198c0e02c0608a9d05da02d97af66c6e3c207ffa119c5175c00cf2c6ebb646f",
+      "upstream": {"source": "frontmage-drivers-v1", "member": "app/src/main/assets/graphics_driver/turnip-24.1.0.tzst"}
+    },
+    {
+      "path": "app/src/main/assets/graphics_driver/virgl-23.1.9.tzst",
+      "group": "apk",
+      "size": 6395804,
+      "sha256": "c42f22641079f678d501ca920a5b2e549add2b34d8d18e1e10f19ddb838eeed0",
+      "upstream": {"source": "frontmage-drivers-v1", "member": "app/src/main/assets/graphics_driver/virgl-23.1.9.tzst"}
+    },
+    {
+      "path": "app/src/main/assets/graphics_driver/zink-22.2.5.tzst",
+      "group": "apk",
+      "size": 7129431,
+      "sha256": "8a1de929cda4699d36a27448cd4d8065103475d1238aac03a71e76b72dcb433c",
+      "upstream": {"source": "frontmage-drivers-v1", "member": "app/src/main/assets/graphics_driver/zink-22.2.5.tzst"}
+    },
+    {
+      "path": "app/src/main/assets/wincomponents/direct3d.tzst",
+      "group": "apk",
+      "size": 31207067,
+      "sha256": "149d55436e050bfa3fe8caf650cb97ddb2bc9fa99cd96869bd2bc4977b708fb5",
+      "upstream": {"source": "frontmage-wincomponents-v1", "member": "app/src/main/assets/wincomponents/direct3d.tzst"}
+    },
+    {
+      "path": "app/src/main/assets/preinstall/proton-10-arm64ec.wcp.xz",
+      "group": "runtime",
+      "size": 260543968,
+      "sha256": "2501af75ffe4cffad0671e4e6613f0c8e6113fcf16f5a474a4dd3569135010d5",
+      "upstream": {"source": "winlator-contents-proton10"}
+    }
+  ]
+}

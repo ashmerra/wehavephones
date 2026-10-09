@@ -1,0 +1,1 @@
+<inset xmlns:android="http://schemas.android.com/apk/res/android" android:insetLeft="8dp" android:insetRight="8dp" android:insetTop="3dp" android:insetBottom="3dp"><selector><item android:state_checked="true" android:drawable="@drawable/wehavephones_button_primary_normal" /><item android:drawable="@drawable/wehavephones_button_outline_normal" /></selector></inset>

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:fitsSystemWindows="true">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/wehavephones_rail_background"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:paddingLeft="16dp"
+        android:paddingRight="16dp"
+        android:paddingTop="18dp"
+        android:paddingBottom="10dp">
+        <ImageView
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:src="@drawable/wehavephones_flip_phone"
+            android:importantForAccessibility="no" />
+        <TextView
+            style="@style/WeHavePhonesHeader"
+            android:layout_width="wrap_content"
+            android:letterSpacing="0"
+            android:text="@string/wehavephones_logo"
+            android:textSize="21sp"
+            android:textColor="@color/wehavephones_on_shell"
+            android:fontFamily="sans-serif-black" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="-3dp"
+            android:fontFamily="sans-serif-medium"
+            android:letterSpacing="0"
+            android:text="@string/wehavephones_logo_subtitle"
+            android:textColor="@color/wehavephones_on_shell"
+            android:textSize="10sp" />
+        <ImageView
+            style="@style/WeHavePhonesDivider"
+            android:layout_width="200dp"
+            android:layout_marginTop="6dp"
+            android:layout_marginBottom="0dp"
+            android:layout_height="1dp" />
+    </LinearLayout>
+</FrameLayout>

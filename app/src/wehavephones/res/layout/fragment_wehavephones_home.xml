@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:scrollbars="vertical"
+    android:scrollbarStyle="insideInset">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingLeft="26dp"
+        android:paddingRight="26dp"
+        android:paddingTop="22dp"
+        android:paddingBottom="24dp">
+        <TextView
+            style="@style/WeHavePhonesScreenTitle"
+            android:text="@string/wehavephones_play"
+            android:textColor="@color/wehavephones_text_title"
+            android:textSize="26sp" />
+        <LinearLayout
+            android:id="@+id/LLGameSwitch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:minHeight="56dp"
+            android:background="@drawable/wehavephones_card_background"
+            android:padding="8dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center_vertical"
+            android:contentDescription="@string/wehavephones_game_version"
+            android:orientation="horizontal">
+            <FrameLayout
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:background="@drawable/wehavephones_badge_frame">
+                <View
+                    android:id="@+id/VCrestGem"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_margin="3dp"
+                    android:background="@drawable/wehavephones_badge_face" />
+                <TextView
+                    android:id="@+id/TVCrestLetter"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:fontFamily="@font/wehavephones_lcd"
+                    android:gravity="center"
+                    android:textSize="25sp"
+                    android:textColor="@color/wehavephones_key_text" />
+            </FrameLayout>
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginLeft="14dp"
+                android:orientation="vertical">
+                <TextView
+                    android:id="@+id/TVGameTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-medium"
+                    android:textColor="@color/wehavephones_text_title"
+                    android:textSize="20sp"
+                    android:maxLines="2"
+                    android:ellipsize="end"
+                    android:text="@string/wehavephones_game_default_title"
+                    android:includeFontPadding="false" />
+                <TextView
+                    android:id="@+id/TVGameEdition"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/wehavephones_text_dim"
+                    android:textSize="13sp"
+                    android:includeFontPadding="false" />
+            </LinearLayout>
+            <ImageView
+                android:id="@+id/IVGameSwitch"
+                android:layout_width="26dp"
+                android:layout_height="26dp"
+                android:layout_marginLeft="10dp"
+                android:src="@drawable/wehavephones_ic_caret_down"
+                android:tint="@color/wehavephones_text_title"
+                android:importantForAccessibility="no" />
+        </LinearLayout>
+        <TextView
+            android:id="@+id/TVGameVersionsHint"
+            style="@style/WeHavePhonesHint"
+            android:layout_marginTop="6dp"
+            android:text="@string/wehavephones_products_empty"
+            android:visibility="gone" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="12dp"
+            android:baselineAligned="false">
+            <LinearLayout
+                android:id="@+id/BTPlay"
+                android:layout_width="0dp"
+                android:layout_height="72dp"
+                android:layout_weight="1.6"
+                android:layout_marginRight="10dp"
+                android:background="@drawable/wehavephones_button_primary"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:orientation="horizontal">
+                <ImageView
+                    android:id="@+id/IVPlayIcon"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:src="@drawable/wehavephones_ic_play_fill"
+                    android:tint="@color/wehavephones_key_text"
+                    android:importantForAccessibility="no" />
+                <TextView
+                    android:id="@+id/TVPlayLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="12dp"
+                    android:fontFamily="sans-serif-medium"
+                    android:textColor="@color/wehavephones_key_text"
+                    android:textSize="22sp"
+                    android:text="@string/wehavephones_play" />
+            </LinearLayout>
+            <Button
+                android:id="@+id/BTOpenBattleNet"
+                style="@style/WeHavePhonesButtonOutline"
+                android:layout_width="0dp"
+                android:layout_height="72dp"
+                android:layout_weight="1"
+                android:layout_marginTop="0dp"
+                android:textSize="18sp"
+                android:text="@string/wehavephones_open_bnet" />
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+            <TextView
+                android:id="@+id/TVStageStatus"
+                style="@style/WeHavePhonesHint"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:text="@string/wehavephones_stage_idle"
+                android:textSize="13sp" />
+            <TextView
+                android:id="@+id/TVSetupDetails"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="12dp"
+                android:minHeight="32dp"
+                android:gravity="center_vertical"
+                android:clickable="true"
+                android:focusable="true"
+                android:fontFamily="sans-serif-medium"
+                android:textColor="@color/wehavephones_accent"
+                android:textSize="13sp"
+                android:text="@string/wehavephones_setup_details"
+                android:visibility="gone" />
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

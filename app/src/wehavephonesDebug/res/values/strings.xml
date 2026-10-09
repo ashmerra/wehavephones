@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The debug build installs as its own app, so it needs its own launcher label. -->
+    <string name="app_name">WeHavePhones Dev</string>
+</resources>

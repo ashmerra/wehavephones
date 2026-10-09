@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:scrollbars="vertical"
+    android:scrollbarStyle="insideInset">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingLeft="22dp"
+        android:paddingRight="22dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="18dp">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+            <ImageView
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_marginRight="12dp"
+                android:src="@drawable/wehavephones_flip_phone"
+                android:importantForAccessibility="no" />
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+                <TextView
+                    style="@style/WeHavePhonesHeader"
+                    android:text="@string/wehavephones_logo"
+                    android:letterSpacing="0"
+                    android:textSize="22sp"
+                    android:fontFamily="sans-serif-black" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-medium"
+                    android:letterSpacing="0.05"
+                    android:text="@string/wehavephones_logo_subtitle"
+                    android:textColor="@color/wehavephones_accent"
+                    android:textSize="8sp" />
+            </LinearLayout>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium"
+                android:letterSpacing="0.05"
+                android:text="@string/wehavephones_first_run_label"
+                android:textColor="@color/wehavephones_accent"
+                android:textSize="10sp" />
+        </LinearLayout>
+        <TextView
+            style="@style/WeHavePhonesScreenTitle"
+            android:layout_marginTop="8dp"
+            android:text="@string/wehavephones_first_run_title"
+            android:textColor="@color/wehavephones_text_title"
+            android:textSize="26sp" />
+        <TextView
+            style="@style/WeHavePhonesHint"
+            android:layout_marginTop="5dp"
+            android:text="@string/wehavephones_first_run_intro"
+            android:textSize="15sp" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:baselineAligned="false"
+            android:layout_marginTop="12dp">
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:layout_marginRight="16dp"
+                android:background="@drawable/wehavephones_card_background"
+                android:padding="10dp">
+                <TextView
+                    style="@style/WeHavePhonesScreenTitle"
+                    android:text="@string/wehavephones_first_run_container_title"
+                    android:textColor="@color/wehavephones_text"
+                    android:textSize="16sp"
+                    android:fontFamily="sans-serif-medium"
+                    android:layout_marginBottom="0dp" />
+                <TextView
+                    style="@style/WeHavePhonesHint"
+                    android:layout_marginTop="6dp"
+                    android:text="@string/wehavephones_first_run_container_hint"
+                    android:textSize="13sp" />
+                <TextView
+                    style="@style/WeHavePhonesSectionLabel"
+                    android:layout_marginTop="6dp"
+                    android:text="@string/wehavephones_setup_region"
+                    android:textSize="10sp"
+                    android:layout_marginBottom="4dp" />
+                <Spinner
+                    android:id="@+id/SPSetupRegion"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:background="@drawable/wehavephones_dropdown"
+                    android:contentDescription="@string/wehavephones_setup_region" />
+                <Button
+                    android:id="@+id/BTRunAll"
+                    style="@style/WeHavePhonesButtonPrimary"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/wehavephones_first_run_container_install" />
+            </LinearLayout>
+            <View
+                android:layout_width="1dp"
+                android:layout_height="match_parent"
+                android:background="@color/wehavephones_lcd_edge"
+                android:alpha="0.3" />
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:layout_marginLeft="16dp"
+                android:background="@drawable/wehavephones_card_background"
+                android:padding="10dp">
+                <TextView
+                    style="@style/WeHavePhonesScreenTitle"
+                    android:text="@string/wehavephones_first_run_bnet_title"
+                    android:textColor="@color/wehavephones_text"
+                    android:textSize="16sp"
+                    android:fontFamily="sans-serif-medium"
+                    android:layout_marginBottom="0dp" />
+                <TextView
+                    style="@style/WeHavePhonesHint"
+                    android:layout_marginTop="6dp"
+                    android:text="@string/wehavephones_first_run_bnet_intro"
+                    android:textSize="13sp" />
+                <TextView
+                    android:id="@+id/TVBnetGuidance"
+                    style="@style/WeHavePhonesHint"
+                    android:layout_height="68dp"
+                    android:gravity="center_vertical"
+                    android:textSize="14sp"
+                    android:text="@string/wehavephones_first_run_bnet_locked" />
+                <Button
+                    android:id="@+id/BTBnet"
+                    style="@style/WeHavePhonesButtonPrimary"
+                    android:layout_marginTop="8dp"
+                    android:enabled="false"
+                    android:text="@string/wehavephones_first_run_bnet_install" />
+            </LinearLayout>
+        </LinearLayout>
+        <ProgressBar
+            android:id="@+id/PBSetup"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="6dp"
+            android:layout_marginTop="8dp"
+            android:indeterminate="true"
+            android:visibility="gone" />
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:minHeight="14dp" />
+        <TextView
+            android:id="@+id/TVSetupLog"
+            style="@style/WeHavePhonesHint"
+            android:text="@string/wehavephones_first_run_status" />
+        <TextView
+            style="@style/WeHavePhonesHint"
+            android:layout_marginTop="4dp"
+            android:text="@string/wehavephones_first_run_region_later" />
+    </LinearLayout>
+</ScrollView>

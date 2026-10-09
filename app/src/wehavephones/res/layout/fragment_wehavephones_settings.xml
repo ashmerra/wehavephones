@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:scrollbars="vertical"
+    android:scrollbarStyle="insideInset">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingLeft="26dp"
+        android:paddingRight="26dp"
+        android:paddingTop="22dp"
+        android:paddingBottom="12dp">
+        <TextView
+            style="@style/WeHavePhonesScreenTitle"
+            android:text="@string/wehavephones_settings_title"
+            android:textColor="@color/wehavephones_text_title"
+            android:textSize="26sp" />
+        <TextView
+            style="@style/WeHavePhonesHint"
+            android:layout_marginTop="6dp"
+            android:text="@string/wehavephones_settings_intro"
+            android:textSize="14sp" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:baselineAligned="false"
+            android:layout_marginTop="4dp">
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginRight="12dp"
+                android:orientation="vertical"
+                android:background="@drawable/wehavephones_card_background"
+                android:paddingLeft="12dp"
+                android:paddingRight="12dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="12dp">
+                <TextView
+                    style="@style/WeHavePhonesSectionLabel"
+                    android:layout_marginTop="0dp"
+                    android:text="@string/wehavephones_settings_game_preferences" />
+                <TextView
+                    style="@style/WeHavePhonesHint"
+                    android:text="@string/wehavephones_setup_region"
+                    android:layout_marginBottom="5dp" />
+                <Spinner
+                    android:id="@+id/SPSettingsRegion"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:background="@drawable/wehavephones_dropdown"
+                    android:contentDescription="@string/wehavephones_setup_region" />
+                <TextView
+                    style="@style/WeHavePhonesSectionLabel"
+                    android:text="@string/wehavephones_settings_resolution_title" />
+                <Spinner
+                    android:id="@+id/SPGameResolution"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:background="@drawable/wehavephones_dropdown"
+                    android:contentDescription="@string/wehavephones_settings_resolution_title" />
+                <TextView
+                    style="@style/WeHavePhonesHint"
+                    android:layout_marginTop="9dp"
+                    android:text="@string/wehavephones_settings_region_hint" />
+            </LinearLayout>
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginLeft="12dp"
+                android:orientation="vertical"
+                android:background="@drawable/wehavephones_card_background"
+                android:paddingLeft="12dp"
+                android:paddingRight="12dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="12dp">
+                <TextView
+                    style="@style/WeHavePhonesSectionLabel"
+                    android:layout_marginTop="0dp"
+                    android:text="@string/wehavephones_settings_behavior_title" />
+                <CheckBox
+                    android:id="@+id/CBKeepRunningInBackground"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/wehavephones_settings_keep_running" />
+                <CheckBox
+                    android:id="@+id/CBPerformanceOverlay"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/wehavephones_settings_performance_overlay" />
+                <CheckBox
+                    android:id="@+id/CBDisableVirtualGamepad"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/wehavephones_settings_disable_virtual_gamepad" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

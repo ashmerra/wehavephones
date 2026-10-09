@@ -1,0 +1,99 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdk 36
+
+    defaultConfig {
+        applicationId 'com.wehavephones'
+        minSdkVersion 26
+        targetSdkVersion 28
+        versionCode 1
+        versionName "0.0.1"
+
+        ndk {
+            // Ludashi/vanilla-aligned native stack (adrenotools, etc.) is arm64-only.
+            abiFilters 'arm64-v8a'
+        }
+    }
+
+    buildTypes {
+        debug {
+            // A separate app (com.wehavephones.dev, "WeHavePhones Dev") that installs next to a release build.
+            applicationIdSuffix '.dev'
+            versionNameSuffix '-dev'
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    flavorDimensions 'vendor'
+    productFlavors {
+        runtime {
+            dimension 'vendor'
+            applicationIdSuffix '.runtime'
+        }
+        wehavephones {
+            dimension 'vendor'
+            // Its own application ID, so it installs alongside upstream Winlator builds.
+            applicationId 'com.wehavephones'
+        }
+    }
+
+    lintOptions {
+        checkReleaseBuilds false
+    }
+
+    ndkVersion '22.1.7171670'
+
+    externalNativeBuild {
+        cmake {
+            version '3.22.1'
+            path 'src/main/cpp/CMakeLists.txt'
+        }
+    }
+}
+
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.2.0'
+    implementation 'androidx.preference:preference:1.1.1'
+    implementation 'com.google.android.material:material:1.4.0'
+    implementation 'com.github.luben:zstd-jni:1.5.2-3@aar'
+    implementation 'org.tukaani:xz:1.7'
+    implementation 'org.apache.commons:commons-compress:1.20'
+}
+
+// Package the canonical notices without maintaining a second copy in assets.
+def wehavephonesNoticesDir = layout.buildDirectory.dir('generated/wehavephones-notices')
+def licenseTexts = fileTree('../docs/licenses') { include '*.txt' }
+def generateWeHavePhonesNotices = tasks.register('generateWeHavePhonesNotices') {
+    inputs.files(rootProject.file('LICENSE'), rootProject.file('THIRD_PARTY_NOTICES.md'), licenseTexts)
+    outputs.dir(wehavephonesNoticesDir)
+    doLast {
+        def target = new File(wehavephonesNoticesDir.get().asFile, 'legal/NOTICES.txt')
+        target.parentFile.mkdirs()
+        def sources = [rootProject.file('THIRD_PARTY_NOTICES.md'), rootProject.file('LICENSE')]
+        sources.addAll(licenseTexts.files.sort { it.name })
+        target.setText(sources.collect { "===== ${it.name} =====\n\n${it.getText('UTF-8')}" }.join('\n\n'), 'UTF-8')
+    }
+}
+android.sourceSets.wehavephones.assets.srcDir(wehavephonesNoticesDir)
+
+// Keep inherited runtime assets in the tools flavor; WeHavePhones ships its pinned GE layer.
+def wehavephonesSharedAssetsDir = layout.buildDirectory.dir('generated/wehavephones-shared-assets')
+def prepareWeHavePhonesSharedAssets = tasks.register('prepareWeHavePhonesSharedAssets', Sync) {
+    from('src/main/assets') {
+        exclude 'proton-*.txz', 'proton-*_container_pattern.tzst', 'preinstall/proton-*.wcp.xz'
+    }
+    into(wehavephonesSharedAssetsDir)
+}
+android.sourceSets.main.assets.setSrcDirs([])
+android.sourceSets.runtime.assets.srcDir('src/main/assets')
+android.sourceSets.wehavephones.assets.srcDir(wehavephonesSharedAssetsDir)
+tasks.matching { it.name == 'preWehavephonesDebugBuild' || it.name == 'preWehavephonesReleaseBuild' }.configureEach {
+    dependsOn(generateWeHavePhonesNotices)
+    dependsOn(prepareWeHavePhonesSharedAssets)
+}

@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# Fake adb shim for the phone-selection checks in scripts/test-wehavephones-memory.sh.
+# Logs every invocation and answers only `adb devices`, which lists the
+# space-separated serials in $FAKE_ADB_DEVICES (documentation addresses in
+# tests). Every other command gets an empty answer. It never talks to a real
+# device.
+set -u
+
+LOG="${FAKE_ADB_LOG:-/tmp/wehavephones-fake-adb.log}"
+mkdir -p "$(dirname "$LOG")"
+printf '%s\n' "$*" >> "$LOG"
+
+case "$*" in
+  devices)
+    echo "List of devices attached"
+    for serial in ${FAKE_ADB_DEVICES:-}; do
+      printf '%s\tdevice\n' "$serial"
+    done
+    ;;
+  *)
+    echo ""
+    ;;
+esac
+exit 0

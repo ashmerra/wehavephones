@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:scrollbars="vertical"
+    android:scrollbarStyle="insideInset">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingLeft="26dp"
+        android:paddingRight="26dp"
+        android:paddingTop="22dp"
+        android:paddingBottom="24dp">
+        <TextView
+            style="@style/WeHavePhonesScreenTitle"
+            android:text="@string/wehavephones_setup_short"
+            android:textColor="@color/wehavephones_text_title"
+            android:textSize="26sp" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:baselineAligned="false"
+            android:layout_marginTop="14dp">
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:background="@drawable/wehavephones_card_background"
+                android:paddingLeft="12dp"
+                android:paddingRight="12dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="12dp">
+                <TextView
+                    style="@style/WeHavePhonesSectionLabel"
+                    android:layout_marginTop="0dp"
+                    android:text="@string/wehavephones_settings_container_title" />
+                <Spinner
+                    android:id="@+id/SPActiveContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:background="@drawable/wehavephones_dropdown"
+                    android:contentDescription="@string/wehavephones_settings_container_title" />
+                <TextView
+                    style="@style/WeHavePhonesHint"
+                    android:layout_marginTop="9dp"
+                    android:text="@string/wehavephones_settings_container_hint"
+                    android:textSize="13sp" />
+                <Button
+                    android:id="@+id/BTManageContainers"
+                    style="@style/WeHavePhonesButtonOutline"
+                    android:layout_width="wrap_content"
+                    android:paddingLeft="16dp"
+                    android:paddingRight="16dp"
+                    android:layout_marginTop="16dp"
+                    android:text="@string/wehavephones_settings_container_manage" />
+            </LinearLayout>
+            <!-- Hidden while Play uses one runtime; kept for future profile choices. -->
+            <LinearLayout
+                android:id="@+id/LLRuntimeProfile"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginLeft="24dp"
+                android:visibility="gone"
+                android:orientation="vertical"
+                android:background="@drawable/wehavephones_card_background"
+                android:paddingLeft="12dp"
+                android:paddingRight="12dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="12dp">
+                <TextView
+                    style="@style/WeHavePhonesSectionLabel"
+                    android:layout_marginTop="0dp"
+                    android:text="@string/wehavephones_settings_profile_label" />
+                <Spinner
+                    android:id="@+id/SPRuntimeProfile"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:background="@drawable/wehavephones_dropdown"
+                    android:contentDescription="@string/wehavephones_settings_profile_label" />
+                <TextView
+                    android:id="@+id/TVProfileDescription"
+                    style="@style/WeHavePhonesHint"
+                    android:layout_marginTop="13dp"
+                    android:textColor="@color/wehavephones_text"
+                    android:textSize="14sp" />
+                <TextView
+                    style="@style/WeHavePhonesHint"
+                    android:layout_marginTop="9dp"
+                    android:text="@string/wehavephones_settings_profile_hint"
+                    android:textSize="13sp" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

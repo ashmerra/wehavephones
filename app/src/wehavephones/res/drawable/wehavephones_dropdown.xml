@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list
+    xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:drawable="@drawable/wehavephones_field" />
+    <item
+        android:drawable="@drawable/wehavephones_ic_chevron_down"
+        android:gravity="end|center_vertical"
+        android:right="14dp" />
+</layer-list>

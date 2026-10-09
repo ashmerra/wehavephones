@@ -1,0 +1,576 @@
+package com.wehavephones.winhandler;
+
+import android.util.Log;
+import android.view.InputEvent;
+import android.view.KeyEvent;
+import android.view.MotionEvent;
+
+import com.wehavephones.SessionInputExtras;
+import com.wehavephones.XServerDisplayActivity;
+import com.wehavephones.core.StringUtils;
+import com.wehavephones.inputcontrols.ControlsProfile;
+import com.wehavephones.inputcontrols.ExternalController;
+import com.wehavephones.inputcontrols.FakeGamepadWriter;
+import com.wehavephones.inputcontrols.GamepadState;
+import com.wehavephones.xserver.XServer;
+
+import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayDeque;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
+
+public class WinHandler {
+    private static final String TAG = "WinHandler";
+    private static final short SERVER_PORT = 7947;
+    private static final short CLIENT_PORT = 7946;
+    private static final short LITE_PORT = 7952;
+    private static final byte LITE_READY = 0x70;
+    private static final byte LITE_FOCUS = 0x73;
+    private static final byte LITE_REQUEST_TEXT = 0x01;
+    private static final int LITE_FLAG_SUBMIT = 0x00000001;
+    private static final int LITE_MAX_UTF16_BYTES = 4096;
+    private static final int RX_PACKET_MAX = 2048;
+    public static final byte DINPUT_MAPPER_TYPE_STANDARD = 0;
+    public static final byte DINPUT_MAPPER_TYPE_XINPUT = 1;
+    private DatagramSocket socket;
+    private final ByteBuffer sendData = ByteBuffer.allocate(64).order(ByteOrder.LITTLE_ENDIAN);
+    private final ByteBuffer receiveData = ByteBuffer.allocate(RX_PACKET_MAX).order(ByteOrder.LITTLE_ENDIAN);
+    private final DatagramPacket sendPacket = new DatagramPacket(sendData.array(), 64);
+    private final DatagramPacket receivePacket = new DatagramPacket(receiveData.array(), RX_PACKET_MAX);
+    private final ArrayDeque<Runnable> actions = new ArrayDeque<>();
+    private boolean initReceived = false;
+    private boolean liteReady = false;
+    private boolean running = false;
+    private final AtomicInteger liteReqSeq = new AtomicInteger(1);
+    private OnGetProcessInfoListener onGetProcessInfoListener;
+    private OnImeFocusListener onImeFocusListener;
+    private volatile ExternalController currentController;
+    /** Keep the guest's device id across physical/virtual controller handoffs. */
+    private volatile int gamepadGuestId = -1;
+    private FakeGamepadWriter fakeGamepad;
+    private InetAddress localhost;
+    private byte dinputMapperType = DINPUT_MAPPER_TYPE_XINPUT;
+    private final XServerDisplayActivity activity;
+    private final List<Integer> gamepadClients = new CopyOnWriteArrayList<>();
+
+    public WinHandler(XServerDisplayActivity activity) {
+        this.activity = activity;
+    }
+
+    private boolean sendPacket(int port) {
+        try {
+            int size = sendData.position();
+            if (size == 0) return false;
+            sendPacket.setAddress(localhost);
+            sendPacket.setPort(port);
+            socket.send(sendPacket);
+            return true;
+        }
+        catch (IOException e) {
+            return false;
+        }
+    }
+
+    public void exec(String command) {
+        command = command.trim();
+        if (command.isEmpty()) return;
+        String[] cmdList = command.split(" ", 2);
+        final String filename = cmdList[0];
+        final String parameters = cmdList.length > 1 ? cmdList[1] : "";
+
+        addAction(() -> {
+            byte[] filenameBytes = filename.getBytes();
+            byte[] parametersBytes = parameters.getBytes();
+
+            sendData.rewind();
+            sendData.put(RequestCodes.EXEC);
+            sendData.putInt(filenameBytes.length + parametersBytes.length + 8);
+            sendData.putInt(filenameBytes.length);
+            sendData.putInt(parametersBytes.length);
+            sendData.put(filenameBytes);
+            sendData.put(parametersBytes);
+            sendPacket(CLIENT_PORT);
+        });
+    }
+
+    public void killProcess(final String processName) {
+        addAction(() -> {
+            sendData.rewind();
+            sendData.put(RequestCodes.KILL_PROCESS);
+            byte[] bytes = processName.getBytes();
+            sendData.putInt(bytes.length);
+            sendData.put(bytes);
+            sendPacket(CLIENT_PORT);
+        });
+    }
+
+    public void listProcesses() {
+        addAction(() -> {
+            sendData.rewind();
+            sendData.put(RequestCodes.LIST_PROCESSES);
+            sendData.putInt(0);
+
+            if (!sendPacket(CLIENT_PORT) && onGetProcessInfoListener != null) {
+                onGetProcessInfoListener.onGetProcessInfo(0, 0, null);
+            }
+        });
+    }
+
+    public void setProcessAffinity(final String processName, final int affinityMask) {
+        addAction(() -> {
+            byte[] bytes = processName.getBytes();
+            sendData.rewind();
+            sendData.put(RequestCodes.SET_PROCESS_AFFINITY);
+            sendData.putInt(9 + bytes.length);
+            sendData.putInt(0);
+            sendData.putInt(affinityMask);
+            sendData.put((byte)bytes.length);
+            sendData.put(bytes);
+            sendPacket(CLIENT_PORT);
+        });
+    }
+
+    public void setProcessAffinity(final int pid, final int affinityMask) {
+        addAction(() -> {
+            sendData.rewind();
+            sendData.put(RequestCodes.SET_PROCESS_AFFINITY);
+            sendData.putInt(9);
+            sendData.putInt(pid);
+            sendData.putInt(affinityMask);
+            sendData.put((byte)0);
+            sendPacket(CLIENT_PORT);
+        });
+    }
+
+    public void mouseEvent(int flags, int dx, int dy, int wheelDelta) {
+        if (!initReceived) return;
+        addAction(() -> {
+            sendData.rewind();
+            sendData.put(RequestCodes.MOUSE_EVENT);
+            sendData.putInt(10);
+            sendData.putInt(flags);
+            sendData.putShort((short)dx);
+            sendData.putShort((short)dy);
+            sendData.putShort((short)wheelDelta);
+            sendData.put((byte)((flags & MouseEventFlags.MOVE) != 0 ? 1 : 0)); // cursor pos feedback
+            sendPacket(CLIENT_PORT);
+        });
+    }
+
+    public boolean keyboardEvent(byte vkey, int flags) {
+        if (!initReceived) return false;
+        addAction(() -> {
+            sendData.rewind();
+            sendData.put(RequestCodes.KEYBOARD_EVENT);
+            sendData.put(vkey);
+            sendData.putInt(flags);
+            sendPacket(CLIENT_PORT);
+        });
+        return true;
+    }
+
+    public boolean imeCommitText(String text) {
+        return imeCommitText(text, false);
+    }
+
+    public boolean imeCommitText(String text, boolean submit) {
+        if (!initReceived || !liteReady) return false;
+        if (text == null) text = "";
+        if (text.isEmpty() && !submit) return false;
+
+        byte[] utf16Bytes = text.getBytes(StandardCharsets.UTF_16LE);
+        final int textBytes = Math.min(utf16Bytes.length, LITE_MAX_UTF16_BYTES);
+        if (textBytes == 0 && !submit) return false;
+        final int reqId = liteReqSeq.getAndIncrement();
+        final byte[] payload = new byte[1 + 4 + 4 + 4 + textBytes];
+        final int flags = submit ? LITE_FLAG_SUBMIT : 0;
+        ByteBuffer.wrap(payload).order(ByteOrder.LITTLE_ENDIAN)
+                .put(LITE_REQUEST_TEXT)
+                .putInt(reqId)
+                .putInt(textBytes)
+                .putInt(flags)
+                .put(utf16Bytes, 0, textBytes);
+
+        addAction(() -> {
+            if (socket == null || localhost == null) return;
+            try {
+                DatagramPacket packet = new DatagramPacket(payload, payload.length, localhost, LITE_PORT);
+                socket.send(packet);
+            }
+            catch (IOException e) {
+                Log.w(TAG, "Failed to send IME payload to winhandler-lite", e);
+            }
+        });
+        return true;
+    }
+
+    public boolean isReady() {
+        return initReceived;
+    }
+
+    public void bringToFront(final String processName) {
+        bringToFront(processName, 0);
+    }
+
+    public void bringToFront(final String processName, final long handle) {
+        addAction(() -> {
+            sendData.rewind();
+            sendData.put(RequestCodes.BRING_TO_FRONT);
+            byte[] bytes = processName.getBytes();
+            sendData.putInt(bytes.length);
+            sendData.put(bytes);
+            sendData.putLong(handle);
+            sendPacket(CLIENT_PORT);
+        });
+    }
+
+    private void addAction(Runnable action) {
+        synchronized (actions) {
+            actions.add(action);
+            actions.notify();
+        }
+    }
+
+    public OnGetProcessInfoListener getOnGetProcessInfoListener() {
+        return onGetProcessInfoListener;
+    }
+
+    public void setOnGetProcessInfoListener(OnGetProcessInfoListener onGetProcessInfoListener) {
+        synchronized (actions) {
+            this.onGetProcessInfoListener = onGetProcessInfoListener;
+        }
+    }
+
+    public void setOnImeFocusListener(OnImeFocusListener listener) {
+        synchronized (actions) {
+            this.onImeFocusListener = listener;
+        }
+    }
+
+    private void startSendThread() {
+        Executors.newSingleThreadExecutor().execute(() -> {
+            while (running) {
+                synchronized (actions) {
+                    while (initReceived && !actions.isEmpty()) actions.poll().run();
+                    try {
+                        actions.wait();
+                    }
+                    catch (InterruptedException e) {}
+                }
+            }
+        });
+    }
+
+    public void stop() {
+        running = false;
+
+        if (socket != null) {
+            socket.close();
+            socket = null;
+        }
+
+        synchronized (actions) {
+            actions.notify();
+        }
+    }
+
+    private void handleRequest(byte requestCode, final int port, final int packetLen) {
+        switch (requestCode) {
+            case RequestCodes.INIT: {
+                initReceived = true;
+                synchronized (actions) {
+                    actions.notify();
+                }
+                break;
+            }
+            case RequestCodes.GET_PROCESS: {
+                if (onGetProcessInfoListener == null) return;
+                receiveData.position(receiveData.position() + 4);
+                int numProcesses = receiveData.getShort();
+                int index = receiveData.getShort();
+                int pid = receiveData.getInt();
+                long memoryUsage = receiveData.getLong();
+                int affinityMask = receiveData.getInt();
+                boolean wow64Process = receiveData.get() == 1;
+
+                byte[] bytes = new byte[32];
+                receiveData.get(bytes);
+                String name = StringUtils.fromANSIString(bytes);
+
+                onGetProcessInfoListener.onGetProcessInfo(index, numProcesses, new ProcessInfo(pid, name, memoryUsage, affinityMask, wow64Process));
+                break;
+            }
+            case RequestCodes.GET_GAMEPAD: {
+                boolean isXInput = receiveData.get() == 1;
+                boolean notify = receiveData.get() == 1;
+                final ControlsProfile profile = activity.getInputControlsView().getProfile();
+                boolean useVirtualGamepad = profile != null && profile.isVirtualGamepad();
+
+                if (!useVirtualGamepad && (currentController == null || !currentController.isConnected())) {
+                    currentController = ExternalController.getController(0);
+                }
+                final ExternalController controller = currentController;
+                final boolean enabled = controller != null || useVirtualGamepad;
+                final int id = enabled ? guestId(useVirtualGamepad ? profile.id : controller.getDeviceId()) : 0;
+                if (enabled) gamepadGuestId = id;
+
+                if (enabled && notify) {
+                    if (!gamepadClients.contains(port)) gamepadClients.add(port);
+                }
+                else gamepadClients.remove(Integer.valueOf(port));
+
+                addAction(() -> {
+                    sendData.rewind();
+                    sendData.put(RequestCodes.GET_GAMEPAD);
+
+                    if (enabled) {
+                        sendData.putInt(id);
+                        sendData.put(dinputMapperType);
+                        byte[] bytes = (useVirtualGamepad ? profile.getName() : controller.getName()).getBytes();
+                        sendData.putInt(bytes.length);
+                        sendData.put(bytes);
+                    }
+                    else sendData.putInt(0);
+
+                    sendPacket(port);
+                });
+                break;
+            }
+            case RequestCodes.GET_GAMEPAD_STATE: {
+                int gamepadId = receiveData.getInt();
+                ControlsProfile profile = activity.getInputControlsView().getProfile();
+                GamepadState state = profile != null && profile.isVirtualGamepad()
+                        ? profile.getGamepadState() : getGamepadState();
+                queueGamepadState(port, gamepadId,
+                        gamepadId == gamepadGuestId ? state : null);
+                break;
+            }
+            case RequestCodes.RELEASE_GAMEPAD: {
+                currentController = null;
+                gamepadGuestId = -1;
+                gamepadClients.clear();
+                break;
+            }
+            case RequestCodes.CURSOR_POS_FEEDBACK: {
+                short x = receiveData.getShort();
+                short y = receiveData.getShort();
+                XServer xServer = activity.getXServer();
+                xServer.pointer.setX(x);
+                xServer.pointer.setY(y);
+                activity.getXServerView().requestRender();
+                break;
+            }
+            case LITE_READY: {
+                liteReady = true;
+                break;
+            }
+            case LITE_FOCUS: {
+                if (packetLen < 4) {
+                    Log.w(TAG, "winhandler-lite focus packet too short len=" + packetLen);
+                    break;
+                }
+                boolean focused = receiveData.get() != 0;
+                int textLen = receiveData.getShort() & 0xffff;
+                int remain = Math.max(0, packetLen - 4);
+                int n = Math.min(textLen, remain);
+                byte[] bytes = new byte[n];
+                receiveData.get(bytes);
+                String boxName = new String(bytes, StandardCharsets.UTF_8);
+                if (onImeFocusListener != null) {
+                    onImeFocusListener.onImeFocusChanged(focused, boxName);
+                }
+                break;
+            }
+            default: {
+                break;
+            }
+        }
+    }
+
+    public void start() {
+        initReceived = false;
+        liteReady = false;
+        try {
+            localhost = InetAddress.getLocalHost();
+        }
+        catch (UnknownHostException e) {
+            try {
+                localhost = InetAddress.getByName("127.0.0.1");
+            }
+            catch (UnknownHostException ex) {}
+        }
+
+        running = true;
+        startSendThread();
+        Executors.newSingleThreadExecutor().execute(() -> {
+            try {
+                socket = new DatagramSocket(null);
+                socket.setReuseAddress(true);
+                socket.bind(new InetSocketAddress((InetAddress)null, SERVER_PORT));
+
+                while (running) {
+                    receivePacket.setLength(receiveData.array().length);
+                    socket.receive(receivePacket);
+                    int packetLen = receivePacket.getLength();
+
+                    synchronized (actions) {
+                        receiveData.rewind();
+                        receiveData.limit(packetLen);
+                        byte requestCode = receiveData.get();
+                        handleRequest(requestCode, receivePacket.getPort(), packetLen);
+                    }
+                }
+            }
+            catch (IOException e) {}
+        });
+    }
+
+    public void sendGamepadState() {
+        if (!initReceived || gamepadClients.isEmpty()) return;
+        final ControlsProfile profile = activity.getInputControlsView().getProfile();
+        final boolean useVirtualGamepad = profile != null && profile.isVirtualGamepad();
+        final ExternalController controller = currentController;
+        GamepadState state = useVirtualGamepad ? profile.getGamepadState()
+                : controller != null ? controller.state : null;
+        int id = guestId(useVirtualGamepad ? profile.id : controller != null ? controller.getDeviceId() : 0);
+        for (final int port : gamepadClients) queueGamepadState(port, id, state);
+    }
+
+    private void queueGamepadState(int port, int id, GamepadState state) {
+        // Queued replies must not dereference a controller that a hotplug event has removed.
+        final GamepadState snapshot = state != null ? new GamepadState() : null;
+        if (snapshot != null) snapshot.copy(state);
+        addAction(() -> {
+            sendData.rewind();
+            sendData.put(RequestCodes.GET_GAMEPAD_STATE);
+            sendData.put((byte)(snapshot != null ? 1 : 0));
+            if (snapshot != null) {
+                sendData.putInt(id);
+                snapshot.writeTo(sendData);
+            }
+            sendPacket(port);
+        });
+    }
+
+    public boolean onGenericMotionEvent(MotionEvent event) {
+        boolean handled = false;
+        acquireController(event);
+        if (currentController != null && currentController.getDeviceId() == event.getDeviceId()) {
+            handled = currentController.updateStateFromMotionEvent(event);
+            if (handled) onGamepadStateChanged();
+        }
+        return handled;
+    }
+
+    public boolean onKeyEvent(KeyEvent event) {
+        boolean handled = false;
+        acquireController(event);
+        if (currentController != null && currentController.getDeviceId() == event.getDeviceId() && event.getRepeatCount() == 0) {
+            int action = event.getAction();
+
+            if (action == KeyEvent.ACTION_DOWN) {
+                handled = currentController.updateStateFromKeyEvent(event);
+            }
+            else if (action == KeyEvent.ACTION_UP) {
+                handled = currentController.updateStateFromKeyEvent(event);
+            }
+
+            if (handled) onGamepadStateChanged();
+        }
+        return handled;
+    }
+
+    /** Guest-visible evdev gamepad (libfakeinput); null when the runtime does not preload it. */
+    public void setFakeGamepad(FakeGamepadWriter fakeGamepad) {
+        this.fakeGamepad = fakeGamepad;
+    }
+
+    /**
+     * On-screen gamepad input; {@code state} is the profile's. It replaces a
+     * physical controller's state, and the evdev device carries it too, since
+     * runtimes without Winlator's input DLLs never ask for it over UDP.
+     */
+    public void onVirtualGamepadInput(GamepadState state) {
+        if (currentController != null) currentController.state.copy(state);
+        onGamepadStateChanged();
+        SessionInputExtras.onControllerInput(activity);
+    }
+
+    private void onGamepadStateChanged() {
+        sendGamepadState();
+        GamepadState state = getGamepadState();
+        if (fakeGamepad != null && state != null) fakeGamepad.write(state);
+    }
+
+    /** What the guest sees: the physical controller's state, else the on-screen gamepad's; null when neither. */
+    public GamepadState getGamepadState() {
+        ExternalController controller = currentController;
+        if (controller != null) return controller.state;
+        ControlsProfile profile = activity.getInputControlsView().getProfile();
+        return profile != null && profile.isVirtualGamepad() ? profile.getGamepadState() : null;
+    }
+
+    /** Rescan on hotplug/resume, even before the new controller sends its first input event. */
+    public void refreshGamepadController() {
+        synchronized (actions) {
+            ExternalController previous = currentController;
+            if (previous != null && previous.isConnected()) return;
+            ExternalController next = ExternalController.getController(0);
+            if (previous == null && next == null) return;
+            if (previous != null) {
+                previous.state.copy(new GamepadState());
+                // Release keys injected by the pre-game bridge before dropping the old device.
+                SessionInputExtras.onControllerInput(activity);
+            }
+            if (fakeGamepad != null) fakeGamepad.release();
+            currentController = next;
+            onGamepadStateChanged();
+        }
+    }
+
+    /**
+     * Takes the controller that sends input when none is current or the
+     * current one is gone. Controllers connected after the session started
+     * are otherwise never picked up (runtimes without Winlator's input DLLs
+     * never send GET_GAMEPAD), and a controller that sleeps and wakes comes
+     * back with a new device id and descriptor; it keeps the id the guest
+     * already knows.
+     */
+    private void acquireController(InputEvent event) {
+        if (currentController != null && currentController.getDeviceId() == event.getDeviceId()) return;
+        if (!ExternalController.isGameController(event.getDevice())) return;
+        if (currentController != null && currentController.isConnected()) return;
+        ExternalController controller = ExternalController.getController(event.getDeviceId());
+        if (controller == null) return;
+        if (currentController != null && fakeGamepad != null) fakeGamepad.release();
+        currentController = controller;
+        Log.i("WinHandler", "gamepad: " + controller.getName() + " (device " + controller.getDeviceId()
+                + (gamepadGuestId != -1 ? ", guest id " + gamepadGuestId : "") + ")");
+    }
+
+    private int guestId(int fallback) {
+        return gamepadGuestId != -1 ? gamepadGuestId : fallback;
+    }
+
+    public byte getDInputMapperType() {
+        return dinputMapperType;
+    }
+
+    public void setDInputMapperType(byte dinputMapperType) {
+        this.dinputMapperType = dinputMapperType;
+    }
+
+    public ExternalController getCurrentController() {
+        return currentController;
+    }
+}

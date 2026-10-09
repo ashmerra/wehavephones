@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="6dp"
+    android:background="@drawable/wehavephones_card_background"
+    android:orientation="vertical"
+    android:paddingLeft="12dp"
+    android:paddingRight="12dp"
+    android:paddingTop="10dp"
+    android:paddingBottom="8dp">
+    <TextView
+        android:id="@+id/TVSearchName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="@color/wehavephones_text"
+        android:textSize="15sp"
+        android:textStyle="bold" />
+    <TextView
+        android:id="@+id/TVSearchAuthor"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:textColor="@color/wehavephones_text_dim"
+        android:textSize="12sp" />
+    <TextView
+        android:id="@+id/TVSearchSummary"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:maxLines="4"
+        android:textColor="@color/wehavephones_text_dim"
+        android:textSize="12sp" />
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:orientation="horizontal">
+        <Button
+            android:id="@+id/BTSearchInstall"
+            style="@style/WeHavePhonesButtonSmall"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:text="@string/wehavephones_addons_install" />
+        <Button
+            android:id="@+id/BTSearchWebsite"
+            style="@style/WeHavePhonesButtonSmall"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_marginStart="4dp"
+            android:text="@string/wehavephones_addons_website" />
+    </LinearLayout>
+</LinearLayout>

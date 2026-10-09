@@ -1,0 +1,80 @@
+package com.wehavephones.mobile;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.LinkedHashMap;
+
+/** First-load settings verified against Blizzard's 12.1.0.69933 Glue UI. */
+public final class WowFirstBoot {
+    public static final String[] REGIONS = {"us", "eu", "kr", "tw"};
+
+    private WowFirstBoot() {}
+
+    public static boolean validRegion(String region) {
+        for (String value : REGIONS) if (value.equals(region)) return true;
+        return false;
+    }
+
+    public static String configure(String existing, String region, boolean retail, String screenSize) {
+        return configure(existing, region, retail, screenSize, false);
+    }
+
+    public static String configure(String existing, String region, boolean retail,
+            String screenSize, boolean overrideRegion) {
+        if (!validRegion(region)) throw new IllegalArgumentException("Invalid WoW region");
+        LinkedHashMap<String, String> settings = new LinkedHashMap<>();
+        // The native language/region dialogs run before D3D initializes. Seed
+        // all three, preserving choices a player already made in the game.
+        if (overrideRegion) settings.put("portal", region);
+        else addMissing(settings, existing, "portal", region);
+        addMissing(settings, existing, "textLocale", "enUS");
+        addMissing(settings, existing, "audioLocale", "enUS");
+        // Skip the first-boot photosensitivity warning and intro cinematic.
+        addMissing(settings, existing, "showPhotosensitivityWarning", retail ? "11" : "4");
+        addMissing(settings, existing, "playIntroMovie", retail ? "15" : "14");
+        for (java.util.Map.Entry<String, String> entry : MemoryTransforms.resolutionCvars(screenSize).entrySet()) {
+            addMissing(settings, existing, entry.getKey(), entry.getValue());
+        }
+        return MemoryTransforms.editConfigWtf(existing, settings);
+    }
+
+    private static void addMissing(LinkedHashMap<String, String> settings, String existing, String name, String value) {
+        String current = WowClientFiles.cvarValue(existing, name);
+        if (current == null || current.isEmpty()) settings.put(name, value);
+    }
+
+    public static boolean prepare(File productDir, String region, boolean retail, String screenSize) throws IOException {
+        return prepare(productDir, region, retail, screenSize, false);
+    }
+
+    public static boolean prepare(File productDir, String region, boolean retail,
+            String screenSize, boolean overrideRegion) throws IOException {
+        File config = new File(productDir, "WTF/Config.wtf");
+        String existing = config.isFile() ? new String(Files.readAllBytes(config.toPath()), StandardCharsets.UTF_8) : "";
+        String updated = configure(existing, region, retail, screenSize, overrideRegion);
+        if (updated.equals(existing)) return false;
+        if (config.isFile()) {
+            File backup = new File(config.getPath() + ".wehavephones-firstboot-backup");
+            if (!backup.exists()) Files.copy(config.toPath(), backup.toPath());
+        }
+        Files.createDirectories(config.getParentFile().toPath());
+        java.nio.file.Path temporary = Files.createTempFile(config.getParentFile().toPath(), "wehavephones-firstboot-", ".tmp");
+        try {
+            Files.write(temporary, updated.getBytes(StandardCharsets.UTF_8));
+            if (!updated.equals(new String(Files.readAllBytes(temporary), StandardCharsets.UTF_8))) {
+                throw new IOException("WoW first-boot settings failed read-back verification");
+            }
+            try {
+                Files.move(temporary, config.toPath(), java.nio.file.StandardCopyOption.ATOMIC_MOVE,
+                        java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            }
+            catch (java.nio.file.AtomicMoveNotSupportedException e) {
+                Files.move(temporary, config.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            }
+        }
+        finally { Files.deleteIfExists(temporary); }
+        return true;
+    }
+}

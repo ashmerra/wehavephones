@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    style="@style/WeHavePhonesScreenPadding"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:baselineAligned="false"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+        <TextView
+            style="@style/WeHavePhonesScreenTitle"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:text="@string/wehavephones_diagnostics" />
+        <Button
+            android:id="@+id/BTRefresh"
+            style="@style/WeHavePhonesButtonSmall"
+            android:layout_marginTop="0dp"
+            android:minWidth="96dp"
+            android:text="@string/wehavephones_diag_refresh" />
+        <Button
+            android:id="@+id/BTCopy"
+            style="@style/WeHavePhonesButtonSmall"
+            android:layout_marginLeft="8dp"
+            android:layout_marginTop="0dp"
+            android:minWidth="96dp"
+            android:text="@string/wehavephones_diag_copy" />
+        <Button
+            android:id="@+id/BTSaveMemory"
+            style="@style/WeHavePhonesButtonSmall"
+            android:layout_marginLeft="8dp"
+            android:layout_marginTop="0dp"
+            android:minWidth="96dp"
+            android:text="@string/wehavephones_diag_memory_save" />
+    </LinearLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="10dp"
+        android:layout_weight="1"
+        android:baselineAligned="false"
+        android:orientation="horizontal">
+        <ScrollView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_marginRight="9dp"
+            android:layout_weight="1"
+            android:scrollbars="vertical"
+            android:scrollbarStyle="insideInset">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+                <TextView
+                    style="@style/WeHavePhonesSectionLabel"
+                    android:layout_marginTop="0dp"
+                    android:text="@string/wehavephones_diag_memory_title" />
+                <TextView
+                    android:id="@+id/TVMemoryPanel"
+                    style="@style/WeHavePhonesPanel"
+                    android:text="@string/wehavephones_diag_memory_sampling"
+                    android:textColor="@color/wehavephones_text"
+                    android:textSize="12sp"
+                    android:typeface="monospace" />
+                <TextView
+                    style="@style/WeHavePhonesHint"
+                    android:layout_marginTop="6dp"
+                    android:text="@string/wehavephones_diag_memory_hint"
+                    android:textSize="11sp" />
+            </LinearLayout>
+        </ScrollView>
+        <ScrollView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_marginLeft="9dp"
+            android:layout_weight="1.4"
+            android:scrollbars="vertical"
+            android:scrollbarStyle="insideInset">
+            <TextView
+                android:id="@+id/TVDiagnostics"
+                style="@style/WeHavePhonesPanel"
+                android:text="@string/wehavephones_diag_empty"
+                android:textColor="@color/wehavephones_text"
+                android:textIsSelectable="true"
+                android:textSize="12sp"
+                android:typeface="monospace" />
+        </ScrollView>
+    </LinearLayout>
+</LinearLayout>

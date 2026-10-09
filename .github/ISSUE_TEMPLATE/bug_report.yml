@@ -1,0 +1,71 @@
+name: Bug report
+description: Report something that does not work as expected
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a problem. WeHavePhones is alpha software, so please
+        search the existing issues first and open one issue per problem.
+
+        Do not post passwords, authenticator codes or other account details, and hide your
+        Battle.net account name in screenshots.
+  - type: input
+    id: version
+    attributes:
+      label: WeHavePhones version
+      description: Shown on the About screen. Open Containers, then the menu, then About.
+      placeholder: "0.0.1"
+    validations:
+      required: true
+  - type: input
+    id: phone
+    attributes:
+      label: Phone model
+      placeholder: Samsung Galaxy S23+
+    validations:
+      required: true
+  - type: input
+    id: chipset
+    attributes:
+      label: Chipset and GPU
+      description: If you know them.
+      placeholder: Snapdragon 8 Gen 2 / Adreno 740
+  - type: input
+    id: android
+    attributes:
+      label: Android version
+      placeholder: "16"
+    validations:
+      required: true
+  - type: input
+    id: game
+    attributes:
+      label: Game and version
+      description: The World of Warcraft version you were playing, for example Classic Era or Retail, and its build number if you know it.
+      placeholder: Retail
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: What you did, step by step, and whether it happens every time.
+      placeholder: |
+        1. Open WeHavePhones
+        2. Press Play
+        3. ...
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or screenshots
+      description: |
+        Attach screenshots or files here. The Diagnostics page in the app has a Copy button that copies a report you can paste here.

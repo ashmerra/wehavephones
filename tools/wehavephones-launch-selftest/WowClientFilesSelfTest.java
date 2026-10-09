@@ -1,0 +1,78 @@
+package com.wehavephones.mobile;
+
+import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+
+/**
+ * Host test for WowClientFiles and WowFirstBoot: Config.wtf CVar reading,
+ * first-boot seeding and backups, and the Logs/ marker scan.
+ */
+public final class WowClientFilesSelfTest {
+    private static int failures;
+
+    public static void main(String[] args) throws Exception {
+        String crlf = "SET plunderstormRealm \"0\"\r\nSET farclip \"1000\"\r\n";
+        check("unset CVar is null", WowClientFiles.cvarValue(crlf, "accountName") == null);
+
+        String fresh = WowFirstBoot.configure("", "us", true, "1024x576");
+        check("fresh region seeded", "us".equals(WowClientFiles.cvarValue(fresh, "portal")));
+        check("fresh language seeded", "enUS".equals(WowClientFiles.cvarValue(fresh, "textLocale")));
+        check("fresh audio language seeded", "enUS".equals(WowClientFiles.cvarValue(fresh, "audioLocale")));
+        check("fresh photosensitivity skipped", "11".equals(WowClientFiles.cvarValue(fresh, "showPhotosensitivityWarning")));
+        check("fresh retail cinematic skipped", "15".equals(WowClientFiles.cvarValue(fresh, "playIntroMovie")));
+        check("fresh game uses low resolution", "1024x576".equals(WowClientFiles.cvarValue(fresh, "GxWindowedResolution")));
+        check("first boot idempotent", fresh.equals(WowFirstBoot.configure(fresh, "eu", true, "1024x576")));
+        String custom = "SET portal \"EU\"\nSET textLocale \"deDE\"\nSET playIntroMovie \"0\"\nSET showPhotosensitivityWarning \"0\"\n";
+        String preserved = WowFirstBoot.configure(custom, "us", true, "1024x576");
+        check("existing region preserved", "EU".equals(WowClientFiles.cvarValue(preserved, "portal")));
+        check("existing language preserved", "deDE".equals(WowClientFiles.cvarValue(preserved, "textLocale")));
+        check("existing movie preference preserved", "0".equals(WowClientFiles.cvarValue(preserved, "playIntroMovie")));
+        String regionChanged = WowFirstBoot.configure(custom, "tw", true, "1024x576", true);
+        check("explicit region change replaces existing portal", "tw".equals(WowClientFiles.cvarValue(regionChanged, "portal")));
+        check("region change preserves custom language", "deDE".equals(WowClientFiles.cvarValue(regionChanged, "textLocale")));
+        check("region change preserves custom intro", "0".equals(WowClientFiles.cvarValue(regionChanged, "playIntroMovie")));
+        String classic = WowFirstBoot.configure("", "eu", false, "1024x576");
+        check("classic intro skipped", "14".equals(WowClientFiles.cvarValue(classic, "playIntroMovie")));
+        check("classic photosensitivity skipped", "4".equals(WowClientFiles.cvarValue(classic, "showPhotosensitivityWarning")));
+        check("unknown region rejected", !WowFirstBoot.validRegion("../invalid"));
+
+        File dir = Files.createTempDirectory("wow-client-files").toFile();
+        try {
+            File config = new File(new File(dir, "WTF"), "Config.wtf");
+            config.getParentFile().mkdirs();
+            Files.write(config.toPath(), "SET accountName \"a@b.c\"\r\n".getBytes(StandardCharsets.UTF_8));
+
+            check("first boot writes a fresh config", WowFirstBoot.prepare(dir, "us", true, "1024x576"));
+            File backup = new File(config.getPath() + ".wehavephones-firstboot-backup");
+            String original = new String(Files.readAllBytes(backup.toPath()), StandardCharsets.UTF_8);
+            check("first boot backup preserves account config", original.equals("SET accountName \"a@b.c\"\r\n"));
+            check("first boot file write is idempotent", !WowFirstBoot.prepare(dir, "eu", true, "1024x576"));
+            check("original backup remains unchanged", original.equals(new String(Files.readAllBytes(backup.toPath()), StandardCharsets.UTF_8)));
+            check("explicit region change writes existing game config", WowFirstBoot.prepare(dir, "eu", true, "1024x576", true));
+            check("explicit region change persists", "eu".equals(WowClientFiles.cvarValue(new String(Files.readAllBytes(config.toPath()), StandardCharsets.UTF_8), "portal")));
+            check("explicit region change is idempotent", !WowFirstBoot.prepare(dir, "eu", true, "1024x576", true));
+            check("region change preserves initial backup", original.equals(new String(Files.readAllBytes(backup.toPath()), StandardCharsets.UTF_8)));
+
+            File gx = new File(dir, "gx.log");
+            Files.write(gx.toPath(), "10/4 08:15:09.453  ---- Startup ----\n".getBytes(StandardCharsets.UTF_8));
+            check("no marker before the device", !WowClientFiles.fileContains(gx, WowClientFiles.DEVICE_READY_MARKER, 1024));
+            Files.write(gx.toPath(), "10/4 08:15:12.790  Device Create Successful\n".getBytes(StandardCharsets.UTF_8),
+                    java.nio.file.StandardOpenOption.APPEND);
+            check("marker after the device", WowClientFiles.fileContains(gx, WowClientFiles.DEVICE_READY_MARKER, 1024));
+            check("scan limit respected", !WowClientFiles.fileContains(gx, WowClientFiles.DEVICE_READY_MARKER, 40));
+            check("missing file", !WowClientFiles.fileContains(new File(dir, "missing.log"), WowClientFiles.DEVICE_READY_MARKER, 1024));
+        }
+        finally {
+            for (File file : new File[]{new File(dir, "WTF/Config.wtf"), new File(dir, "WTF/Config.wtf.wehavephones-firstboot-backup"), new File(dir, "WTF"), new File(dir, "gx.log"), dir}) file.delete();
+        }
+
+        System.out.println("[wow-client-files-selftest] " + failures + " failure(s)");
+        System.exit(failures == 0 ? 0 : 1);
+    }
+
+    private static void check(String name, boolean ok) {
+        if (!ok) failures++;
+        System.out.println((ok ? "  ok   " : "  FAIL ") + name);
+    }
+}

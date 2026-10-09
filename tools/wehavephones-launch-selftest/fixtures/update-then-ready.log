@@ -1,0 +1,16 @@
+I 2026-09-25 21:56:11.348065 [Main] {Main} Command line arguments: {[0]=--disable-gpu}
+I 2026-09-25 21:56:11.384261 [Main] {Main} Opening IPC shared memory. queueName=User:xuser:Battle.net IPC ShMem mode=server
+D 2026-09-25 21:56:28.737673 [ProductState] {Main} InstallState (wow): currentOperation=Update currentOperationStatus=Paused installed=1 hasInstallModificationOptions=1 installPath=C:/Program Files (x86)/World of Warcraft sharedContainerSubpath=_retail_ canCreateShortcut=1 selectedRegion=us activeConfigKey=dcfc90fffd79ba00406ae46f5f657592 regionalVersions=(cn: {playable:false config_key:dcfc90fffd79ba00406ae46f5f657592}, eu: {playable:false config_key:dcfc90fffd79ba00406ae46f5f657592}, kr: {playable:false config_key:dcfc90fffd79ba00406ae46f5f657592}, sg: {playable:false config_key:dcfc90fffd79ba00406ae46f5f657592}, tw: {playable:false config_key:dcfc90fffd79ba00406ae46f5f657592}, us: {playable:false config_key:dcfc90fffd79ba00406ae46f5f657592}, xx: {playable:false config_key:dcfc90fffd79ba00406ae46f5f657592}) supports_multibox=true repairSupported=true localVersion=12.1.0.69933 latestVersion=69933
+D 2026-09-25 21:56:28.747178 [ProductState] {Main} InstallState (wow): downloadRemainingExists=1
+D 2026-09-25 21:56:28.748559 [ProductState] {Main} InstallState (wow): currentOperationStatus=Waiting
+D 2026-09-25 21:56:28.751692 [ProductState] {Main} InstallState (wow): currentOperationStatus=Initializing
+D 2026-09-25 21:56:42.142620 [ProductState] {Main} InstallState (wow_classic_era): currentOperation=Install currentOperationStatus=New
+I 2026-09-25 21:56:46.464735 [Frontend] {Main} Attempting to show main window. isMinimizedOnStartup=true shouldMainWindowShowMinimizedAtAutoStartup=false varAutoStarted=false hasBattlePlatformProductCode=false needToMinimize=false hasActiveXboxConnection=false varLaunchedByXbox=false isExpectingLogin=false wasMainWindowInTray=false
+I 2026-09-25 21:56:48.527894 [BNLogin] {Main} Logged into Battle.net successfully.
+D 2026-09-25 21:57:29.857185 [ProductState] {Main} InstallState (wow):
+D 2026-09-25 21:57:38.696556 [ProductState] {Main} InstallState (wow):
+D 2026-09-25 21:57:38.853489 [ProductState] {Main} InstallState (wow): playable=1 regionalVersions=(cn: {playable:true config_key:dcfc90fffd79ba00406ae46f5f657592}, eu: {playable:true config_key:dcfc90fffd79ba00406ae46f5f657592}, kr: {playable:true config_key:dcfc90fffd79ba00406ae46f5f657592}, sg: {playable:true config_key:dcfc90fffd79ba00406ae46f5f657592}, tw: {playable:true config_key:dcfc90fffd79ba00406ae46f5f657592}, us: {playable:true config_key:dcfc90fffd79ba00406ae46f5f657592}, xx: {playable:true config_key:dcfc90fffd79ba00406ae46f5f657592})
+D 2026-09-25 21:58:06.107110 [ProductState] {Main} InstallState (wow): currentOperationStatus=Waiting
+D 2026-09-25 21:58:06.138171 [ProductState] {Main} InstallState (wow): currentStage=Complete
+D 2026-09-25 21:58:06.172391 [ProductState] {Main} InstallState (wow): currentOperation=UpToDate currentOperationStatus=Paused
+I 2026-09-25 21:59:27.288140 [Frontend] {Main} Attempting to show main window. isMinimizedOnStartup=true shouldMainWindowShowMinimizedAtAutoStartup=false varAutoStarted=false hasBattlePlatformProductCode=false needToMinimize=false hasActiveXboxConnection=false varLaunchedByXbox=false isExpectingLogin=false wasMainWindowInTray=false

@@ -1,0 +1,252 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="WeHavePhonesTheme" parent="@style/Theme.AppCompat.NoActionBar">
+        <item name="colorAccent">@color/wehavephones_accent</item>
+        <item name="colorPrimary">@color/wehavephones_accent</item>
+        <item name="colorPrimaryDark">@color/wehavephones_background</item>
+        <item name="colorControlNormal">@color/wehavephones_accent</item>
+        <item name="colorControlActivated">@color/wehavephones_accent</item>
+        <item name="android:windowBackground">@drawable/wehavephones_screen_background</item>
+        <item name="android:colorBackground">@color/wehavephones_surface</item>
+        <item name="android:statusBarColor">@color/wehavephones_background</item>
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:navigationBarColor">#071C39</item>
+        <item name="android:textColorPrimary">@color/wehavephones_text</item>
+        <item name="android:textColorSecondary">@color/wehavephones_text_dim</item>
+        <item name="android:textColorHint">@color/wehavephones_text_dim</item>
+        <item name="android:textViewStyle">@style/WeHavePhonesTextView</item>
+        <item name="android:checkboxStyle">@style/WeHavePhonesCheckBox</item>
+        <item name="editTextStyle">@style/WeHavePhonesEditText</item>
+        <item name="android:editTextStyle">@style/WeHavePhonesEditText</item>
+        <item name="alertDialogTheme">@style/WeHavePhonesDialog</item>
+        <item name="android:alertDialogTheme">@style/WeHavePhonesDialog</item>
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:windowLightNavigationBar">false</item>
+    </style>
+    <style name="WeHavePhonesDialog" parent="@style/Theme.AppCompat.Dialog.Alert">
+        <item name="colorAccent">@color/wehavephones_accent</item>
+        <item name="android:background">@color/wehavephones_surface</item>
+        <item name="android:textColorPrimary">@color/wehavephones_text</item>
+        <item name="android:textColor">@color/wehavephones_text</item>
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:colorBackground">@color/wehavephones_surface</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        <item name="buttonBarPositiveButtonStyle">@style/WeHavePhonesDialogPositive</item>
+        <item name="buttonBarNegativeButtonStyle">@style/WeHavePhonesDialogNegative</item>
+        <item name="buttonBarNeutralButtonStyle">@style/WeHavePhonesDialogNeutral</item>
+    </style>
+    <style name="WeHavePhonesTextView" parent="@android:style/Widget.TextView">
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:textColor">@color/wehavephones_text</item>
+        <item name="android:textSize">15sp</item>
+    </style>
+    <style name="WeHavePhonesCheckBox" parent="@style/Widget.AppCompat.CompoundButton.CheckBox">
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:textColor">@color/wehavephones_text</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:paddingTop">6dp</item>
+        <item name="android:paddingBottom">6dp</item>
+    </style>
+    <style name="WeHavePhonesEditText" parent="@style/Widget.AppCompat.EditText">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">48dp</item>
+        <item name="android:background">@drawable/wehavephones_field</item>
+        <item name="android:paddingLeft">12dp</item>
+        <item name="android:paddingRight">12dp</item>
+        <item name="android:paddingTop">10dp</item>
+        <item name="android:paddingBottom">10dp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textColor">@color/wehavephones_text</item>
+        <item name="android:textColorHint">@color/wehavephones_text_dim</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:letterSpacing">0</item>
+        <item name="android:backgroundTint">@null</item>
+    </style>
+    <style name="WeHavePhonesHeader">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:fontFamily">@font/wehavephones_lcd</item>
+        <item name="android:textColor">@color/wehavephones_text_title</item>
+        <item name="android:textSize">28sp</item>
+        <item name="android:includeFontPadding">false</item>
+    </style>
+    <style name="WeHavePhonesScreenTitle" parent="WeHavePhonesHeader">
+        <item name="android:gravity">start</item>
+        <item name="android:textSize">26sp</item>
+        <item name="android:layout_marginBottom">6dp</item>
+        <item name="android:letterSpacing">0.01</item>
+    </style>
+    <style name="WeHavePhonesDivider">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">12dp</item>
+        <item name="android:layout_marginTop">6dp</item>
+        <item name="android:layout_marginBottom">6dp</item>
+        <item name="android:src">@drawable/wehavephones_divider</item>
+        <item name="android:scaleType">fitCenter</item>
+        <item name="android:importantForAccessibility">no</item>
+    </style>
+    <style name="WeHavePhonesSectionLabel">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textColor">@color/wehavephones_text</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:letterSpacing">0</item>
+        <item name="android:layout_marginTop">16dp</item>
+        <item name="android:layout_marginBottom">6dp</item>
+    </style>
+    <style name="WeHavePhonesHint">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">@color/wehavephones_text_dim</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:lineSpacingExtra">2dp</item>
+    </style>
+    <style name="WeHavePhonesPanel">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:background">@drawable/wehavephones_card_background</item>
+        <item name="android:paddingLeft">14dp</item>
+        <item name="android:paddingRight">14dp</item>
+        <item name="android:paddingTop">12dp</item>
+        <item name="android:paddingBottom">12dp</item>
+    </style>
+    <style name="WeHavePhonesButtonPrimary">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">54dp</item>
+        <item name="android:background">@drawable/wehavephones_button_primary</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textColor">@color/wehavephones_key_text</item>
+        <item name="android:textSize">17sp</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:letterSpacing">0</item>
+        <item name="android:stateListAnimator">@null</item>
+        <item name="android:layout_marginTop">10dp</item>
+        <item name="android:paddingLeft">14dp</item>
+        <item name="android:paddingRight">14dp</item>
+        <item name="android:backgroundTint">@null</item>
+    </style>
+    <style name="WeHavePhonesButtonPlay" parent="WeHavePhonesButtonPrimary">
+        <item name="android:layout_height">66dp</item>
+        <item name="android:textSize">26sp</item>
+        <item name="android:letterSpacing">0</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+    <style name="WeHavePhonesButtonOutline">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">48dp</item>
+        <item name="android:background">@drawable/wehavephones_button_outline</item>
+        <item name="android:textColor">@color/wehavephones_text</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:stateListAnimator">@null</item>
+        <item name="android:layout_marginTop">8dp</item>
+        <item name="android:letterSpacing">0</item>
+        <item name="android:backgroundTint">@null</item>
+    </style>
+    <style name="WeHavePhonesButtonSmall">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">48dp</item>
+        <item name="android:background">@drawable/wehavephones_button_outline</item>
+        <item name="android:textColor">@color/wehavephones_text</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:minWidth">0dp</item>
+        <item name="android:paddingLeft">8dp</item>
+        <item name="android:paddingRight">8dp</item>
+        <item name="android:stateListAnimator">@null</item>
+        <item name="android:layout_marginTop">4dp</item>
+        <item name="android:letterSpacing">0</item>
+        <item name="android:backgroundTint">@null</item>
+    </style>
+    <style name="WeHavePhonesRailItem">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">40dp</item>
+        <item name="android:layout_marginTop">3dp</item>
+        <item name="android:background">@drawable/wehavephones_rail_item</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:paddingLeft">12dp</item>
+        <item name="android:paddingRight">8dp</item>
+        <item name="android:drawablePadding">10dp</item>
+        <item name="android:drawableTint">@color/wehavephones_rail_icon</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:letterSpacing">0</item>
+        <item name="android:textColor">@color/wehavephones_rail_text</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+        <item name="android:layout_marginLeft">10dp</item>
+        <item name="android:layout_marginRight">10dp</item>
+    </style>
+    <style name="WeHavePhonesRailTool" parent="WeHavePhonesRailItem">
+        <item name="android:layout_height">34dp</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:textColor">@color/wehavephones_rail_tool_text</item>
+    </style>
+    <style name="WeHavePhonesScreenPadding">
+        <item name="android:paddingLeft">18dp</item>
+        <item name="android:paddingRight">18dp</item>
+        <item name="android:paddingTop">12dp</item>
+        <item name="android:paddingBottom">14dp</item>
+    </style>
+    <style name="WeHavePhonesOverlayButton">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">48dp</item>
+        <item name="android:background">@drawable/wehavephones_button_ghost</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:paddingLeft">14dp</item>
+        <item name="android:paddingRight">14dp</item>
+        <item name="android:drawablePadding">7dp</item>
+        <item name="android:drawableTint">@color/wehavephones_accent</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:letterSpacing">0</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:textColor">@color/wehavephones_text</item>
+        <item name="android:textSize">11.5sp</item>
+        <item name="android:backgroundTint">@null</item>
+    </style>
+    <style name="WeHavePhonesDialogPositive" parent="@style/Widget.AppCompat.Button.ButtonBar.AlertDialog">
+        <item name="android:background">@drawable/wehavephones_button_primary</item>
+        <item name="android:backgroundTint">@null</item>
+        <item name="android:textColor">@color/wehavephones_key_text</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:minHeight">48dp</item>
+        <item name="android:minWidth">88dp</item>
+        <item name="android:paddingLeft">14dp</item>
+        <item name="android:paddingRight">14dp</item>
+        <item name="android:stateListAnimator">@null</item>
+    </style>
+    <style name="WeHavePhonesDialogNegative" parent="@style/Widget.AppCompat.Button.ButtonBar.AlertDialog">
+        <item name="android:background">@drawable/wehavephones_button_outline</item>
+        <item name="android:backgroundTint">@null</item>
+        <item name="android:textColor">@color/wehavephones_text_title</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:minHeight">48dp</item>
+        <item name="android:minWidth">88dp</item>
+        <item name="android:paddingLeft">14dp</item>
+        <item name="android:paddingRight">14dp</item>
+        <item name="android:stateListAnimator">@null</item>
+    </style>
+    <style name="WeHavePhonesDialogNeutral" parent="@style/Widget.AppCompat.Button.ButtonBar.AlertDialog">
+        <item name="android:background">@drawable/wehavephones_button_outline</item>
+        <item name="android:backgroundTint">@null</item>
+        <item name="android:textColor">@color/wehavephones_text_title</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:minHeight">48dp</item>
+        <item name="android:minWidth">88dp</item>
+        <item name="android:paddingLeft">14dp</item>
+        <item name="android:paddingRight">14dp</item>
+        <item name="android:stateListAnimator">@null</item>
+    </style>
+</resources>

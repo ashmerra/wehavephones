@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:baselineAligned="false"
+    android:fitsSystemWindows="true"
+    android:orientation="horizontal"
+    android:background="@drawable/wehavephones_screen_background"
+    android:padding="8dp">
+    <ScrollView
+        android:layout_width="260dp"
+        android:layout_height="match_parent"
+        android:background="@drawable/wehavephones_lcd_frame"
+        android:scrollbars="none"
+        android:padding="12dp">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingLeft="12dp"
+            android:paddingRight="12dp"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+                <TextView
+                    style="@style/WeHavePhonesHeader"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:text="@string/wehavephones_addons_title"
+                    android:textSize="20sp" />
+                <Button
+                    android:id="@+id/BTAddonsSettings"
+                    style="@style/WeHavePhonesButtonSmall"
+                    android:layout_marginTop="0dp"
+                    android:text="@string/wehavephones_addons_providers" />
+            </LinearLayout>
+            <TextView
+                style="@style/WeHavePhonesSectionLabel"
+                android:layout_marginTop="8dp"
+                android:text="@string/wehavephones_game_version" />
+            <Spinner
+                android:id="@+id/SPAddonProduct"
+                android:layout_width="match_parent"
+                android:layout_height="44dp"
+                android:background="@drawable/wehavephones_dropdown"
+                android:popupBackground="@drawable/wehavephones_card_background" />
+            <TextView
+                android:id="@+id/TVAddonsPath"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:lineSpacingExtra="2dp"
+                android:textColor="@color/wehavephones_text_dim"
+                android:textSize="11sp" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:orientation="horizontal">
+                <Button
+                    android:id="@+id/BTAddonsRescan"
+                    style="@style/WeHavePhonesButtonSmall"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:text="@string/wehavephones_addons_rescan" />
+                <Button
+                    android:id="@+id/BTAddonsUpdateAll"
+                    style="@style/WeHavePhonesButtonSmall"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_marginStart="6dp"
+                    android:text="@string/wehavephones_addons_update_all" />
+            </LinearLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+                <Button
+                    android:id="@+id/BTAddonsBrowse"
+                    style="@style/WeHavePhonesButtonSmall"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:text="@string/wehavephones_addons_browse" />
+                <Button
+                    android:id="@+id/BTAddonsImport"
+                    style="@style/WeHavePhonesButtonSmall"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_marginStart="6dp"
+                    android:text="@string/wehavephones_addons_import" />
+            </LinearLayout>
+            <ProgressBar
+                android:id="@+id/PBAddons"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="4dp"
+                android:layout_marginTop="8dp"
+                android:indeterminate="true"
+                android:visibility="gone" />
+            <TextView
+                android:id="@+id/TVAddonsStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:lineSpacingExtra="2dp"
+                android:textColor="@color/wehavephones_text_dim"
+                android:textSize="12sp" />
+        </LinearLayout>
+    </ScrollView>
+    <FrameLayout
+        android:id="@+id/FLAddonsScreen"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:paddingLeft="14dp"
+        android:paddingRight="14dp"
+        android:paddingTop="8dp"
+        android:background="@drawable/wehavephones_lcd_frame"
+        android:padding="12dp"
+        android:layout_marginLeft="8dp" />
+</LinearLayout>

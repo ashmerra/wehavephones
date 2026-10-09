@@ -1,0 +1,11 @@
+{
+  "driverId": "turnip26.3.0-devel-1b51639c20",
+  "mesaVersion": "26.3.0-devel",
+  "mesaRevision": "1b51639c20",
+  "archiveAsset": "graphics_driver/adrenotools-turnip26.3.0-devel-1b51639c20.tzst",
+  "archiveSha256": "43c2f87e105594d3f5bf5ad317c551efa8b552a6b407d9790d0e38b0cc095207",
+  "libraryName": "vulkan.ad07xx.so",
+  "librarySha256": "6d924960369bddf190cd09365a8624a3aa04907f6622a22d520eb50adc043792",
+  "upstream": "https://gitlab.freedesktop.org/mesa/mesa",
+  "provenance": "Exact binary from an earlier private test container, validated in WeHavePhones on 2026-10-03. Original build publisher and build flags are not recorded."
+}
