@@ -43,7 +43,6 @@ Artifacts it installs:
 | `ntdll-grace-copysafe-10.0-34.dll` | `opt/proton-10.0-34-arm64ec/lib/wine/aarch64-windows/ntdll.dll` and prefix `drive_c/windows/system32/ntdll.dll` | `09adc21f…` |
 | `ntdll-grace-copysafe-10.0-34.so` | `opt/proton-10.0-34-arm64ec/lib/wine/aarch64-unix/ntdll.so` | `9f3e55a0…` |
 | `arm64-vkd3d.dll`, `arm64-libc++.dll`, `arm64-libunwind.dll` | `C:\arm64-*.dll` in the prefix | `f1c11399…`, `ed9edb58…`, `535c6c86…` |
-| stock GnuTLS `libgnutls.so` | `usr/lib/libgnutls.so` | `56377c88…` |
 
 The APK bundles the SHA-256-pinned GE-Proton 10.0-34 layer. First-run setup
 installs it offline, then `WeHavePhonesRuntimeApplier` copies the patched
@@ -93,11 +92,6 @@ trial. Non-Adreno devices retain the wrapper's system Vulkan path.
   diagnostics can fill stderr and block WoW's rendering thread.
   `scripts/test-wehavephones-process.sh` checks both full pipes without a
   logger, observer failure, and selection of the private log directory.
-- **GnuTLS.** The profile also copies the stock GnuTLS (`gnutls/libgnutls.so`,
-  byte-identical to `usr/lib/libgnutls.so` in `imagefs.txz`) over
-  `usr/lib/libgnutls.so`. Fresh installs already have that file, so the entry
-  only matters for containers whose library was replaced earlier; it can be
-  dropped once no install needs it.
 - **Shader cache.** The profile sets `MESA_SHADER_CACHE_DISABLE=true` as a
   workaround for a Mesa `compile failed!` abort that Classic Era hit right after
   creating its D3D12 device with the on-disk shader cache enabled. The applier

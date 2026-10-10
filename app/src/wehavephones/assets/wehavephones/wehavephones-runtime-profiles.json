@@ -63,11 +63,6 @@
           "asset": "dll/arm64-libunwind.dll",
           "target": "container:.wine/drive_c/arm64-libunwind.dll",
           "sha256": "535c6c8626c75f2b57cba17e0b550131d5fd699119d274290116fbe31e5b6046"
-        },
-        {
-          "asset": "gnutls/libgnutls.so",
-          "target": "usr/lib/libgnutls.so",
-          "sha256": "56377c8816d02ecca14246477028bba682b4705bd58216dfd15ae15237f60658"
         }
       ],
       "graphics": {

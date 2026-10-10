@@ -7,10 +7,9 @@ asserts the verified single-runtime contract:
   * mode/default/single/handoff profile names
   * every ntdll/files asset exists under the bundled assets and its sha256
     matches the profile entry
-  * p10-ge34 carries the verified Proton 10 copysafe ntdll pair, the three
-    WoW DLLs and the stock GnuTLS library with the expected targets
-  * the bundled GnuTLS is the full stock library, byte-identical to
-    usr/lib/libgnutls.so in imagefs.txz when that asset is present
+  * p10-ge34 carries the verified Proton 10 copysafe ntdll pair and the
+    three WoW DLLs with the expected targets
+  * no profile replaces the imagefs GnuTLS library
   * the p10-ge34 layer download URL/sha256 match
     out/wehavephones-runtime/artifacts.json when that manifest is present
 
@@ -21,13 +20,11 @@ import hashlib
 import json
 import pathlib
 import sys
-import tarfile
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 PROFILE_JSON = ROOT / "app/src/wehavephones/assets/wehavephones/wehavephones-runtime-profiles.json"
 ASSET_ROOT = ROOT / "app/src/wehavephones/assets/wehavephones"
 ARTIFACTS_JSON = ROOT / "out/wehavephones-runtime/artifacts.json"
-IMAGEFS_TXZ = ROOT / "app/src/main/assets/imagefs.txz"
 
 PASSED = 0
 FAILED = 0
@@ -87,60 +84,6 @@ EXPECTED_P10_GE34_FILES = [
      "535c6c8626c75f2b57cba17e0b550131d5fd699119d274290116fbe31e5b6046"),
 ]
 
-# Restores the stock library on installs that had the retired User-Agent
-# wrapper; a no-op on fresh installs.
-EXPECTED_GNUTLS_FILES = [
-    ("gnutls/libgnutls.so",
-     "usr/lib/libgnutls.so",
-     "56377c8816d02ecca14246477028bba682b4705bd58216dfd15ae15237f60658"),
-]
-
-def elf_dynamic(path):
-    """SONAME, DT_NEEDED list and exported function names of a 64-bit LE ELF."""
-    data = path.read_bytes()
-    shoff = int.from_bytes(data[0x28:0x30], "little")
-    shentsize = int.from_bytes(data[0x3a:0x3c], "little")
-    shnum = int.from_bytes(data[0x3c:0x3e], "little")
-    sections = []
-    for i in range(shnum):
-        base = shoff + i * shentsize
-        sh_type = int.from_bytes(data[base + 4:base + 8], "little")
-        offset = int.from_bytes(data[base + 24:base + 32], "little")
-        size = int.from_bytes(data[base + 32:base + 40], "little")
-        link = int.from_bytes(data[base + 40:base + 44], "little")
-        sections.append((sh_type, offset, size, link))
-
-    def string_at(table, index):
-        start = sections[table][1] + index
-        return data[start:data.index(b"\0", start)].decode()
-
-    soname, needed, exports = None, [], []
-    for sh_type, offset, size, link in sections:
-        if sh_type == 6:  # SHT_DYNAMIC
-            for entry in range(offset, offset + size, 16):
-                tag = int.from_bytes(data[entry:entry + 8], "little")
-                value = int.from_bytes(data[entry + 8:entry + 16], "little")
-                if tag == 1:
-                    needed.append(string_at(link, value))
-                elif tag == 14:
-                    soname = string_at(link, value)
-        elif sh_type == 11:  # SHT_DYNSYM
-            for entry in range(offset, offset + size, 24):
-                name = int.from_bytes(data[entry:entry + 4], "little")
-                info, shndx = data[entry + 4], int.from_bytes(data[entry + 6:entry + 8], "little")
-                if info >> 4 == 1 and info & 0xf == 2 and shndx != 0:  # GLOBAL FUNC, defined
-                    exports.append(string_at(link, name))
-    return soname, needed, exports
-
-
-def imagefs_member_sha256(name):
-    """sha256 of one regular file in imagefs.txz, streaming only up to it."""
-    with tarfile.open(IMAGEFS_TXZ, mode="r|xz") as archive:
-        for member in archive:
-            if member.name.removeprefix("./") == name and member.isfile():
-                return hashlib.sha256(archive.extractfile(member).read()).hexdigest()
-    return None
-
 
 def artifact_tuples(profile, key):
     return [(entry.get("asset", ""), entry.get("target", ""), entry.get("sha256", ""))
@@ -171,8 +114,7 @@ def main():
     expect(p10.get("wineVersion"), "proton-10.0-34-arm64ec", "p10-ge34 wineVersion")
     expect(p10.get("bnetFlags"), "--disable-gpu --enable-features=NetworkServiceInProcess2", "p10-ge34 bnetFlags")
     expect(artifact_tuples(p10, "ntdll"), EXPECTED_P10_GE34_NTDLL, "p10-ge34 ntdll pair")
-    expect(artifact_tuples(p10, "files"), EXPECTED_P10_GE34_FILES + EXPECTED_GNUTLS_FILES,
-           "p10-ge34 WoW DLL + GnuTLS files")
+    expect(artifact_tuples(p10, "files"), EXPECTED_P10_GE34_FILES, "p10-ge34 WoW DLL files")
 
     layer = p10.get("layer", {})
     expect(layer.get("name"), "proton-10.0-34-arm64ec", "p10-ge34 layer name")
@@ -184,19 +126,13 @@ def main():
            "50344ec9fa1f37ae22f5b1a5d509cb50cac818fe15f0ecc4fd187e8f97969110",
            "p10-ge34 layer sha256")
 
-    print("[wehavephones-runtime-selftest] GnuTLS asset is the stock imagefs library")
-    stock = ASSET_ROOT / "gnutls/libgnutls.so"
-    if check(stock.is_file(), "GnuTLS asset exists"):
-        soname, needed, exports = elf_dynamic(stock)
-        expect(soname, "libgnutls.so", "GnuTLS SONAME")
-        check("libgnutls-real.so" not in needed, "GnuTLS loads no wrapped library", str(needed))
-        check({"gnutls_init", "gnutls_handshake", "gnutls_record_send"} <= set(exports),
-              "GnuTLS exports the full library")
-        if IMAGEFS_TXZ.is_file():
-            expect(imagefs_member_sha256("usr/lib/libgnutls.so"), sha256(stock),
-                   "GnuTLS asset matches usr/lib/libgnutls.so in imagefs.txz")
-        else:
-            print("  skip imagefs.txz comparison (large assets not fetched)")
+    print("[wehavephones-runtime-selftest] no profile replaces the imagefs GnuTLS library")
+    gnutls_targets = [f"{name}.{kind} {target}"
+                      for name, profile in profiles.items()
+                      for kind in ("ntdll", "files")
+                      for _, target, _ in artifact_tuples(profile, kind)
+                      if "libgnutls" in target]
+    check(not gnutls_targets, "GnuTLS stays the imagefs library", ", ".join(gnutls_targets))
 
     print("[wehavephones-runtime-selftest] referenced assets exist and sha256 matches")
     referenced = set()
@@ -216,7 +152,7 @@ def main():
     print("[wehavephones-runtime-selftest] bundled artifacts are all referenced")
     bundled = sorted(
         str(path.relative_to(ASSET_ROOT))
-        for folder in ("ntdll", "dll", "gnutls")
+        for folder in ("ntdll", "dll")
         for path in (ASSET_ROOT / folder).glob("*")
         if path.is_file()
     )

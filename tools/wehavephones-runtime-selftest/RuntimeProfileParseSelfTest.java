@@ -68,12 +68,9 @@ public final class RuntimeProfileParseSelfTest {
                 "p10-ge34 unix asset name");
         check("9f3e55a032b2a22fb025676b9c010ec97a454c84b8d955036d452699b3b0cd16"
                 .equals(p10.ntdll.get(2).sha256), "p10-ge34 unix sha256");
-        check(p10.files.size() == 4, "p10-ge34 has 4 generic files");
+        check(p10.files.size() == 3, "p10-ge34 has 3 generic files");
         check("container:.wine/drive_c/arm64-vkd3d.dll".equals(p10.files.get(0).target),
                 "p10-ge34 vkd3d target");
-        check("gnutls/libgnutls.so".equals(p10.files.get(3).asset)
-                && "usr/lib/libgnutls.so".equals(p10.files.get(3).target),
-                "p10-ge34 restores the stock GnuTLS library");
         check(p10.layer != null && p10.layer.hasDownload(), "p10-ge34 layer carries a download");
         check("110 MB".equals(p10.layer.sizeLabel), "p10-ge34 layer size label");
         check("GE-proton-10.0-34-arm64ec.wcp".equals(p10.layer.archive), "p10-ge34 layer archive");
