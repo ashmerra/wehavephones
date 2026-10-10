@@ -7,6 +7,14 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2 -Wno-unused-function -Wimplicit-function
 # Android warns about unaligned libraries in debuggable builds.
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-z,max-page-size=16384")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-z,max-page-size=16384")
+# Keep build paths out of the libraries. __FILE__ strings (PRoot's talloc
+# locations) and debug info name the source, build and NDK directories
+# relatively, so the output does not depend on where the checkout lives.
+add_compile_options("-ffile-prefix-map=${CMAKE_SOURCE_DIR}=."
+                    "-ffile-prefix-map=${CMAKE_BINARY_DIR}=.")
+if(ANDROID_NDK)
+    add_compile_options("-ffile-prefix-map=${ANDROID_NDK}=ndk")
+endif()
 
 add_subdirectory(patchelf)
 add_subdirectory(adrenotools)
