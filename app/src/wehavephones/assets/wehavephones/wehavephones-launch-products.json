@@ -6,7 +6,7 @@
     { "dir": "_classic_", "uid": "wow_classic", "execCodes": ["WoW_wow_classic", "WoWC"], "exe": "WowClassic-arm64.exe", "confidence": "community" },
     { "dir": "_classic_era_", "uid": "wow_classic_era", "execCodes": ["WoW_wow_classic_era"], "exe": "WowClassic-arm64.exe", "confidence": "community" },
     { "dir": "_classic_titan_", "uid": "wow_classic_titan", "execCodes": ["WoW_wow_classic_titan"], "exe": "WowClassic-arm64.exe", "confidence": "community" },
-    { "dir": "_anniversary_", "uid": "wow_anniversary", "launchUid": "wow_classic_anniversary", "execCodes": ["WoW_wow_anniversary"], "exe": "WowClassic-arm64.exe", "confidence": "community" },
+    { "dir": "_anniversary_", "uid": "wow_classic_anniversary", "launchUid": "wow_classic_anniversary", "execCodes": ["WoW_wow_anniversary"], "exe": "WowClassic-arm64.exe", "confidence": "community", "note": "Battle.net's InstallState and product.db uid is wow_classic_anniversary; the TACT product code in .build.info is wow_anniversary." },
     { "dir": "_ptr_", "uid": "wow_ptr", "execCodes": ["WoW_wowt"], "exe": "WowT-ARM64.exe", "confidence": "community" },
     { "dir": "_xptr_", "uid": "wow_ptr_x", "execCodes": ["WoW_wowxptr"], "exe": "WowT-ARM64.exe", "confidence": "community" },
     { "dir": "_beta_", "uid": "wow_beta", "execCodes": ["WoW_wow_beta"], "exe": "WowB.exe", "confidence": "community" },

@@ -337,6 +337,10 @@ saved or entered password into it; that path is gone.)
      **and** `playable=1`, stable for `settleSeconds` (5 s). `Update`/`Install`
      or a missing `playable=1` shows *Updating…* (timeout 60 min); no sign-in
      within 420 s fails with a hint to sign in.
+     The launch table uses Battle.net's UID, which can differ from the TACT
+     product code in `.build.info`: Anniversary is `wow_classic_anniversary`
+     in `InstallState` and Agent `product.db`, while its file product code is
+     `wow_anniversary`. Page selection and the update gate both use the UID.
   4. Launch (`WeHavePhonesLaunchPlan.ladder`) for the game selected on Home:
      Battle.net starts with `--game=<uid>` so it opens on the game's page (a
      client that was already running gets one in-session `Battle.net.exe

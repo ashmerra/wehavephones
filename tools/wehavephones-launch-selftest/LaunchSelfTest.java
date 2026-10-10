@@ -30,6 +30,7 @@ public final class LaunchSelfTest {
         ladderOrdering(products);
         readinessWarm(fixtures);
         readinessUpdate(fixtures);
+        readinessAnniversary(products, fixtures);
         forwarderAndFields(fixtures);
         logFiles(fixtures);
         batGeneration(products, runtime);
@@ -59,6 +60,7 @@ public final class LaunchSelfTest {
         check("classic codes", "[WoW_wow_classic, WoWC]", classic.execCodes.toString());
         check("classic exe", "WowClassic-arm64.exe", classic.exe);
         check("era uid", "wow_classic_era", plan.resolve("_classic_era_").uid);
+        check("anniversary launcher uid", "wow_classic_anniversary", plan.resolve("_anniversary_").uid);
         check("anniversary launch uid", "wow_classic_anniversary", plan.resolve("_anniversary_").launchUid);
         check("titan uid", "wow_classic_titan", plan.resolve("_classic_titan_").uid);
         check("forever beta uid (_classic_beta_)", "wow_classic_beta", plan.resolve("_classic_beta_").uid);
@@ -147,6 +149,23 @@ public final class LaunchSelfTest {
         check("warm: era not installed -> updating", true, log.isUpdating("wow_classic_era"));
         check("warm: no launch for other uid", true, log.lastLaunch("wow_classic") == null);
         check("warm: installPath with spaces", "C:/Program Files (x86)/World of Warcraft", log.productFields("wow").get("installPath"));
+    }
+
+    private static void readinessAnniversary(String products, File fixtures) throws Exception {
+        WeHavePhonesLaunchPlan plan = WeHavePhonesLaunchPlan.parse(products, null);
+        WeHavePhonesLaunchPlan.Product anniversary = plan.resolve("_anniversary_");
+        BattleNetLauncherLog log = new BattleNetLauncherLog();
+        for (String line : Files.readAllLines(new File(fixtures, "anniversary-ready.log").toPath())) {
+            log.feed(line);
+        }
+        check("anniversary: launcher uid passes update gate", BattleNetLauncherLog.Phase.READY, log.phase(anniversary.uid));
+        check("anniversary: TACT code has no launcher state", BattleNetLauncherLog.Phase.CHECKING_UPDATES, log.phase("wow_anniversary"));
+        check("anniversary: cold start selects launcher uid", true,
+                WeHavePhonesLaunchPlan.startFlags(plan.options, anniversary).contains("--game=wow_classic_anniversary"));
+        check("anniversary: warm page selects launcher uid", true,
+                WeHavePhonesLaunchPlan.gameBat(WeHavePhonesLaunchPlan.BNET_DIR_X86, anniversary.uid).contains("--game=wow_classic_anniversary"));
+        check("anniversary: Play ladder uses launcher uid", "play:wow_classic_anniversary",
+                describe(plan.ladder(anniversary)).split(" -> ")[0]);
     }
 
     private static void readinessUpdate(File fixtures) throws Exception {

@@ -1,0 +1,3 @@
+D 2026-10-10 18:45:03.096705 [Main] {Main} IPC ShMem mode=server
+D 2026-10-10 18:45:19.163384 [ProductState] {Main} InstallState (wow_classic_anniversary): currentOperation=UpToDate currentOperationStatus=Paused installed=1 installPath=C:/Program Files (x86)/World of Warcraft sharedContainerSubpath=_anniversary_ playable=1 localVersion=2.5.6.69795 latestVersion=69795 progress=1 currentStage=Complete
+D 2026-10-10 18:45:30.293996 [Main] {Main} Logged into Battle.net successfully.

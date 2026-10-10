@@ -91,6 +91,7 @@ public final class WeHavePhonesLaunchPlan {
 
     public static final class Product {
         public final String dir;
+        /** Battle.net's InstallState/product.db uid and --game id, not the TACT product code. */
         public final String uid;
         public final String launchUid;
         public final ArrayList<String> execCodes;

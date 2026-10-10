@@ -71,6 +71,18 @@ public final class BattleNetGamesSelfTest {
         check("game installs exclude agent/other games", 2, db.gameInstalls().size());
         check("game config codes", "[wow, wow_classic_era, wow_anniversary]", db.gameConfigCodes().toString());
 
+        BattleNetProductDb anniversary = BattleNetProductDb.parse(new Proto().message(1, new Proto()
+                .string(1, "wow_classic_anniversary").string(2, "wow_anniversary")
+                .message(4, new Proto().message(1, new Proto()
+                        .varint(1, 1).varint(2, 1).varint(3, 1)))).bytes());
+        check("anniversary Agent gate uses launcher uid", true,
+                anniversary.isDownloadComplete("", "wow_classic_anniversary"));
+        check("anniversary TACT code is not the Agent uid", false,
+                anniversary.isDownloadComplete("", "wow_anniversary"));
+        anniversary.installs.get(0).updateComplete = false;
+        check("anniversary playable alone cannot pass Agent gate", false,
+                anniversary.isDownloadComplete("", "wow_classic_anniversary"));
+
         byte[] full = sampleDb();
         BattleNetProductDb truncated = BattleNetProductDb.parse(Arrays.copyOf(full, full.length / 2));
         check("truncated db does not throw and keeps whole records", true, truncated.installs.size() >= 1);
