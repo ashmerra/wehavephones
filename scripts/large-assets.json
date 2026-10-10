@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "release": {
-    "repo": "",
+    "repo": "ashmerra/wehavephones",
     "tag": "assets-v1",
     "groups": ["apk"]
   },

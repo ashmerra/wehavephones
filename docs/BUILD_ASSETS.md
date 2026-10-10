@@ -18,9 +18,8 @@ The fetcher takes each asset from the first place whose bytes match:
    `--replace` moves it aside (`<name>.mismatched-<sha>`) and fetches the pinned
    copy.
 2. **Our release** (`release.repo` and `release.tag` in the manifest), for the
-   groups listed in `release.groups`. Empty until the public repository
-   exists. `WEHAVEPHONES_ASSETS_BASE_URL` points the fetcher at any mirror that
-   uses the same file names.
+   groups listed in `release.groups`. `WEHAVEPHONES_ASSETS_BASE_URL` points the
+   fetcher at any mirror that uses the same file names.
 3. **The recorded upstream:** a direct download, or one member of an upstream
    archive. Archives are cached in `out/_cache/large-assets/`, which is safe to
    delete (the FrontMage APK alone is 695 MiB).
@@ -83,9 +82,9 @@ a private repository need a login, and the fetcher downloads without one.
      python3 scripts/large-assets.py --root /tmp/wh-assets-check fetch --release-only
    ```
 
-4. Set `"repo": "ashmerra/wehavephones"` under `release` in
-   `scripts/large-assets.json`, run `scripts/test-wehavephones-assets.sh`, and
-   commit.
+4. Check that `release` in `scripts/large-assets.json` has
+   `"repo": "ashmerra/wehavephones"` and the new tag, run
+   `scripts/test-wehavephones-assets.sh`, and commit any change.
 5. Repeat step 3 without `WEHAVEPHONES_ASSETS_BASE_URL`.
 
 ## Changing an asset
