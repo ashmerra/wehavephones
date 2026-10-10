@@ -48,6 +48,13 @@ body:
     validations:
       required: true
   - type: textarea
+    id: device-report
+    attributes:
+      label: Device report
+      description: |
+        Optional, but it helps a lot. The app's Report a problem button fills this in for you. Otherwise open the Diagnostics page, press Copy, and paste the block that starts with "== WeHavePhones device report ==". It contains only phone model, GPU, driver and build data, no account names.
+      render: text
+  - type: textarea
     id: what-happened
     attributes:
       label: What happened?
@@ -69,3 +76,17 @@ body:
       label: Logs or screenshots
       description: |
         Attach screenshots or files here. The Diagnostics page in the app has a Copy button that copies a report you can paste here.
+  - type: dropdown
+    id: source
+    attributes:
+      label: Where did this report come from?
+      description: Leave empty if you are reporting your own problem.
+      options:
+        - In the app
+        - Reported elsewhere (Reddit, Discord, etc.)
+  - type: input
+    id: source-link
+    attributes:
+      label: Link to the original report
+      description: Only if this was reported somewhere else, for example a Reddit post or comment.
+      placeholder: https://www.reddit.com/r/...

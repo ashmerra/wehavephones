@@ -1,0 +1,447 @@
+{
+  "schema": 1,
+  "updated": "2026-10-10",
+  "note": "Curated phone name/model code to SoC/GPU map used only by scripts/device-reports.py to group GitHub issues. It is not read by the app. Facts come from vendor spec pages, GSMArena and iFixit; entries with confidence 'low' are inferred or region-dependent. Model codes that could not be verified are omitted rather than guessed. 'variants' list the SoC per hardware variant; matching a model code selects one variant, matching only the marketing name keeps every variant as a candidate.",
+  "sources": [
+    "https://www.gsmarena.com (phone spec pages)",
+    "https://www.ifixit.com/Device (model numbers)",
+    "https://rog.asus.com/phones/ (ROG Phone model numbers)",
+    "Qualcomm and Samsung product briefs (SoC to GPU)"
+  ],
+  "socs": {
+    "SM8250": {"names": ["Snapdragon 865"], "gpu": "Adreno 650", "gpu_vendor": "adreno", "adreno_model": 650},
+    "SM8350": {"names": ["Snapdragon 888"], "gpu": "Adreno 660", "gpu_vendor": "adreno", "adreno_model": 660},
+    "SM8450": {"names": ["Snapdragon 8 Gen 1"], "gpu": "Adreno 730", "gpu_vendor": "adreno", "adreno_model": 730},
+    "SM8475": {"names": ["Snapdragon 8+ Gen 1"], "gpu": "Adreno 730", "gpu_vendor": "adreno", "adreno_model": 730},
+    "SM8550": {"names": ["Snapdragon 8 Gen 2", "Snapdragon 8 Gen 2 for Galaxy"], "gpu": "Adreno 740", "gpu_vendor": "adreno", "adreno_model": 740},
+    "SM8635": {"names": ["Snapdragon 8s Gen 3"], "gpu": "Adreno 735", "gpu_vendor": "adreno", "adreno_model": 735},
+    "SM8650": {"names": ["Snapdragon 8 Gen 3", "Snapdragon 8 Gen 3 for Galaxy"], "gpu": "Adreno 750", "gpu_vendor": "adreno", "adreno_model": 750},
+    "SM8750": {"names": ["Snapdragon 8 Elite", "Snapdragon 8 Elite for Galaxy"], "gpu": "Adreno 830", "gpu_vendor": "adreno", "adreno_model": 830},
+    "SM8850": {"names": ["Snapdragon 8 Elite Gen 5", "Snapdragon 8 Elite 5", "Snapdragon 8 Elite Gen 5 for Galaxy"], "gpu": "Adreno 840", "gpu_vendor": "adreno", "adreno_model": 840},
+    "EXYNOS2200": {"names": ["Exynos 2200"], "gpu": "Xclipse 920", "gpu_vendor": "xclipse"},
+    "EXYNOS2400": {"names": ["Exynos 2400", "Exynos 2400e"], "gpu": "Xclipse 940", "gpu_vendor": "xclipse"},
+    "EXYNOS2500": {"names": ["Exynos 2500"], "gpu": "Xclipse 950", "gpu_vendor": "xclipse", "confidence": "medium"},
+    "EXYNOS2600": {"names": ["Exynos 2600"], "gpu": "Xclipse 960", "gpu_vendor": "xclipse", "confidence": "medium"},
+    "TENSOR_G1": {"names": ["Google Tensor", "Tensor G1"], "gpu": "Mali-G78 MP20", "gpu_vendor": "mali"},
+    "TENSOR_G2": {"names": ["Google Tensor G2", "Tensor G2"], "gpu": "Mali-G710 MP7", "gpu_vendor": "mali"},
+    "TENSOR_G3": {"names": ["Google Tensor G3", "Tensor G3"], "gpu": "Mali-G715 MP7", "gpu_vendor": "mali"},
+    "TENSOR_G4": {"names": ["Google Tensor G4", "Tensor G4"], "gpu": "Mali-G715 MP7", "gpu_vendor": "mali"},
+    "TENSOR_G5": {"names": ["Google Tensor G5", "Tensor G5"], "gpu": "PowerVR DXT-48-1536", "gpu_vendor": "powervr", "confidence": "medium"}
+  },
+  "devices": [
+    {
+      "name": "Galaxy S23",
+      "aliases": ["Samsung Galaxy S23", "Galaxy S23"],
+      "variants": [{"soc": "SM8550", "model_codes": ["SM-S911"]}],
+      "confidence": "high",
+      "source": "Samsung; all regions use Snapdragon 8 Gen 2 for Galaxy"
+    },
+    {
+      "name": "Galaxy S23+",
+      "aliases": ["Samsung Galaxy S23+", "Galaxy S23+", "Galaxy S23 Plus", "Samsung Galaxy S23 Plus"],
+      "variants": [{"soc": "SM8550", "model_codes": ["SM-S916"]}],
+      "confidence": "high",
+      "source": "Samsung; all regions use Snapdragon 8 Gen 2 for Galaxy"
+    },
+    {
+      "name": "Galaxy S23 Ultra",
+      "aliases": ["Samsung Galaxy S23 Ultra", "Galaxy S23 Ultra"],
+      "variants": [{"soc": "SM8550", "model_codes": ["SM-S918"]}],
+      "confidence": "high",
+      "source": "Samsung; all regions use Snapdragon 8 Gen 2 for Galaxy"
+    },
+    {
+      "name": "Galaxy S24",
+      "aliases": ["Samsung Galaxy S24", "Galaxy S24"],
+      "variants": [
+        {"soc": "EXYNOS2400", "model_codes": ["SM-S921B", "SM-S921N"], "regions": "Europe, Korea, most other regions"},
+        {"soc": "SM8650", "model_codes": ["SM-S921U", "SM-S921W"], "regions": "US, Canada"},
+        {"soc": "SM8650", "model_codes": ["SM-S921E"], "regions": "India (reported)", "confidence": "low"}
+      ],
+      "confidence": "medium",
+      "source": "SamMobile, Android Headlines, FCC listings; the chip depends on region"
+    },
+    {
+      "name": "Galaxy S24+",
+      "aliases": ["Samsung Galaxy S24+", "Galaxy S24+", "Galaxy S24 Plus", "Samsung Galaxy S24 Plus"],
+      "variants": [
+        {"soc": "EXYNOS2400", "model_codes": ["SM-S926B", "SM-S926N"], "regions": "Europe, Korea, most other regions"},
+        {"soc": "SM8650", "model_codes": ["SM-S926U", "SM-S926W"], "regions": "US, Canada"}
+      ],
+      "confidence": "medium",
+      "source": "SamMobile, Android Headlines; the chip depends on region"
+    },
+    {
+      "name": "Galaxy S24 Ultra",
+      "aliases": ["Samsung Galaxy S24 Ultra", "Galaxy S24 Ultra"],
+      "variants": [{"soc": "SM8650", "model_codes": ["SM-S928"]}],
+      "confidence": "high",
+      "source": "Samsung; Snapdragon 8 Gen 3 for Galaxy in all regions"
+    },
+    {
+      "name": "Galaxy S24 FE",
+      "aliases": ["Samsung Galaxy S24 FE", "Galaxy S24 FE"],
+      "variants": [{"soc": "EXYNOS2400", "model_codes": ["SM-S721"]}],
+      "confidence": "medium",
+      "source": "Samsung; Exynos 2400e"
+    },
+    {
+      "name": "Galaxy S25",
+      "aliases": ["Samsung Galaxy S25", "Galaxy S25"],
+      "variants": [{"soc": "SM8750", "model_codes": ["SM-S931"]}],
+      "confidence": "high",
+      "source": "Samsung; Snapdragon 8 Elite for Galaxy in all regions"
+    },
+    {
+      "name": "Galaxy S25+",
+      "aliases": ["Samsung Galaxy S25+", "Galaxy S25+", "Galaxy S25 Plus", "Samsung Galaxy S25 Plus"],
+      "variants": [{"soc": "SM8750", "model_codes": ["SM-S936"]}],
+      "confidence": "high",
+      "source": "Samsung; Snapdragon 8 Elite for Galaxy in all regions"
+    },
+    {
+      "name": "Galaxy S25 Ultra",
+      "aliases": ["Samsung Galaxy S25 Ultra", "Galaxy S25 Ultra"],
+      "variants": [{"soc": "SM8750", "model_codes": ["SM-S938"]}],
+      "confidence": "high",
+      "source": "Samsung; Snapdragon 8 Elite for Galaxy in all regions"
+    },
+    {
+      "name": "Galaxy S25 Edge",
+      "aliases": ["Samsung Galaxy S25 Edge", "Galaxy S25 Edge"],
+      "variants": [{"soc": "SM8750", "model_codes": ["SM-S937"]}],
+      "confidence": "medium",
+      "source": "Samsung; Snapdragon 8 Elite for Galaxy"
+    },
+    {
+      "name": "Galaxy S25 FE",
+      "aliases": ["Samsung Galaxy S25 FE", "Galaxy S25 FE"],
+      "variants": [{"soc": "EXYNOS2400", "model_codes": ["SM-S731"]}],
+      "confidence": "low",
+      "source": "Samsung; Exynos 2400, not double-checked"
+    },
+    {
+      "name": "Galaxy S26",
+      "aliases": ["Samsung Galaxy S26", "Galaxy S26"],
+      "variants": [
+        {"soc": "EXYNOS2600", "model_codes": [], "regions": "Korea and several other regions (reported)", "confidence": "low"},
+        {"soc": "SM8850", "model_codes": [], "regions": "US, Canada, others (reported)", "confidence": "low"}
+      ],
+      "model_code_prefixes": ["SM-S942"],
+      "confidence": "low",
+      "source": "SamMobile, GSMArena, Notebookcheck; SM-S942 is the base model, the chip depends on region, no verified suffix mapping"
+    },
+    {
+      "name": "Galaxy S26+",
+      "aliases": ["Samsung Galaxy S26+", "Galaxy S26+", "Galaxy S26 Plus", "Samsung Galaxy S26 Plus"],
+      "variants": [
+        {"soc": "EXYNOS2600", "model_codes": [], "regions": "global (reported)", "confidence": "low"},
+        {"soc": "SM8850", "model_codes": ["SM-S947U"], "regions": "US, Canada (iFixit/TechInsights SM-S947U)", "confidence": "medium"}
+      ],
+      "model_code_prefixes": ["SM-S947"],
+      "confidence": "low",
+      "source": "iFixit, TechInsights; the chip depends on region"
+    },
+    {
+      "name": "Galaxy S26 Ultra",
+      "aliases": ["Samsung Galaxy S26 Ultra", "Galaxy S26 Ultra"],
+      "variants": [{"soc": "SM8850", "model_codes": ["SM-S948"]}],
+      "confidence": "medium",
+      "source": "SamMobile, Android Authority; Snapdragon 8 Elite Gen 5 for Galaxy in all regions (reported)"
+    },
+    {
+      "name": "Pixel 6",
+      "aliases": ["Google Pixel 6", "Pixel 6"],
+      "variants": [{"soc": "TENSOR_G1"}],
+      "confidence": "high",
+      "source": "Google; codename oriole"
+    },
+    {
+      "name": "Pixel 6 Pro",
+      "aliases": ["Google Pixel 6 Pro", "Pixel 6 Pro"],
+      "variants": [{"soc": "TENSOR_G1"}],
+      "confidence": "high",
+      "source": "Google; codename raven"
+    },
+    {
+      "name": "Pixel 6a",
+      "aliases": ["Google Pixel 6a", "Pixel 6a"],
+      "variants": [{"soc": "TENSOR_G1"}],
+      "confidence": "high",
+      "source": "Google; codename bluejay"
+    },
+    {
+      "name": "Pixel 7",
+      "aliases": ["Google Pixel 7", "Pixel 7"],
+      "variants": [{"soc": "TENSOR_G2"}],
+      "confidence": "high",
+      "source": "Google; codename panther"
+    },
+    {
+      "name": "Pixel 7 Pro",
+      "aliases": ["Google Pixel 7 Pro", "Pixel 7 Pro"],
+      "variants": [{"soc": "TENSOR_G2"}],
+      "confidence": "high",
+      "source": "Google; codename cheetah"
+    },
+    {
+      "name": "Pixel 7a",
+      "aliases": ["Google Pixel 7a", "Pixel 7a"],
+      "variants": [{"soc": "TENSOR_G2"}],
+      "confidence": "high",
+      "source": "Google; codename lynx"
+    },
+    {
+      "name": "Pixel 8",
+      "aliases": ["Google Pixel 8", "Pixel 8"],
+      "variants": [{"soc": "TENSOR_G3"}],
+      "confidence": "high",
+      "source": "Google; codename shiba"
+    },
+    {
+      "name": "Pixel 8 Pro",
+      "aliases": ["Google Pixel 8 Pro", "Pixel 8 Pro"],
+      "variants": [{"soc": "TENSOR_G3"}],
+      "confidence": "high",
+      "source": "Google; codename husky"
+    },
+    {
+      "name": "Pixel 8a",
+      "aliases": ["Google Pixel 8a", "Pixel 8a"],
+      "variants": [{"soc": "TENSOR_G3"}],
+      "confidence": "high",
+      "source": "Google; codename akita; tested by this project (Mali-G715)"
+    },
+    {
+      "name": "Pixel 9",
+      "aliases": ["Google Pixel 9", "Pixel 9"],
+      "variants": [{"soc": "TENSOR_G4"}],
+      "confidence": "high",
+      "source": "Google; codename tokay"
+    },
+    {
+      "name": "Pixel 9 Pro",
+      "aliases": ["Google Pixel 9 Pro", "Pixel 9 Pro"],
+      "variants": [{"soc": "TENSOR_G4"}],
+      "confidence": "high",
+      "source": "Google; codename caiman"
+    },
+    {
+      "name": "Pixel 9 Pro XL",
+      "aliases": ["Google Pixel 9 Pro XL", "Pixel 9 Pro XL"],
+      "variants": [{"soc": "TENSOR_G4"}],
+      "confidence": "high",
+      "source": "Google; codename komodo"
+    },
+    {
+      "name": "Pixel 9 Pro Fold",
+      "aliases": ["Google Pixel 9 Pro Fold", "Pixel 9 Pro Fold"],
+      "variants": [{"soc": "TENSOR_G4"}],
+      "confidence": "high",
+      "source": "Google; codename comet"
+    },
+    {
+      "name": "Pixel 9a",
+      "aliases": ["Google Pixel 9a", "Pixel 9a"],
+      "variants": [{"soc": "TENSOR_G4"}],
+      "confidence": "high",
+      "source": "Google; codename tegu"
+    },
+    {
+      "name": "Pixel 10",
+      "aliases": ["Google Pixel 10", "Pixel 10"],
+      "variants": [{"soc": "TENSOR_G5"}],
+      "confidence": "medium",
+      "source": "Google; Tensor G5 with an Imagination PowerVR DXT GPU (DXT-48-1536 from the pre-launch Geekbench listing)"
+    },
+    {
+      "name": "Pixel 10 Pro",
+      "aliases": ["Google Pixel 10 Pro", "Pixel 10 Pro"],
+      "variants": [{"soc": "TENSOR_G5"}],
+      "confidence": "medium",
+      "source": "Google; Tensor G5 with an Imagination PowerVR DXT GPU"
+    },
+    {
+      "name": "Pixel 10 Pro XL",
+      "aliases": ["Google Pixel 10 Pro XL", "Pixel 10 Pro XL"],
+      "variants": [{"soc": "TENSOR_G5"}],
+      "confidence": "medium",
+      "source": "Google; Tensor G5 with an Imagination PowerVR DXT GPU"
+    },
+    {
+      "name": "Pixel 10 Pro Fold",
+      "aliases": ["Google Pixel 10 Pro Fold", "Pixel 10 Pro Fold"],
+      "variants": [{"soc": "TENSOR_G5"}],
+      "confidence": "medium",
+      "source": "Google; Tensor G5 with an Imagination PowerVR DXT GPU"
+    },
+    {
+      "name": "OnePlus 12",
+      "aliases": ["OnePlus 12"],
+      "variants": [{"soc": "SM8650", "model_codes": ["CPH2573", "PJD110"]}],
+      "confidence": "high",
+      "source": "OnePlus; CPH2573 global, PJD110 China"
+    },
+    {
+      "name": "OnePlus 12R",
+      "aliases": ["OnePlus 12R"],
+      "variants": [{"soc": "SM8550"}],
+      "confidence": "high",
+      "source": "OnePlus; Snapdragon 8 Gen 2"
+    },
+    {
+      "name": "OnePlus 13",
+      "aliases": ["OnePlus 13"],
+      "variants": [{"soc": "SM8750", "model_codes": ["CPH2655", "PJZ110"]}],
+      "confidence": "high",
+      "source": "OnePlus; CPH2655 global, PJZ110 China"
+    },
+    {
+      "name": "OnePlus 13R",
+      "aliases": ["OnePlus 13R"],
+      "variants": [{"soc": "SM8650"}],
+      "confidence": "high",
+      "source": "OnePlus; Snapdragon 8 Gen 3"
+    },
+    {
+      "name": "OnePlus 15",
+      "aliases": ["OnePlus 15"],
+      "variants": [{"soc": "SM8850", "model_codes": ["CPH2747", "PLK110"]}],
+      "confidence": "high",
+      "source": "GSMArena, iFixit; CPH2747 global, PLK110 China; GitHub issue 13"
+    },
+    {
+      "name": "Xiaomi 14",
+      "aliases": ["Xiaomi 14"],
+      "variants": [{"soc": "SM8650", "model_codes": ["23127PN0CG", "23127PN0CC"]}],
+      "confidence": "high",
+      "source": "Xiaomi; 23127PN0CG global, 23127PN0CC China"
+    },
+    {
+      "name": "Xiaomi 14 Ultra",
+      "aliases": ["Xiaomi 14 Ultra"],
+      "variants": [{"soc": "SM8650", "model_codes": ["24030PN60G"]}],
+      "confidence": "medium",
+      "source": "Xiaomi; global model code"
+    },
+    {
+      "name": "Xiaomi 15",
+      "aliases": ["Xiaomi 15"],
+      "variants": [{"soc": "SM8750", "model_codes": ["24129PN74G", "2410DPN6CC"]}],
+      "confidence": "medium",
+      "source": "Xiaomi; 24129PN74G global, 2410DPN6CC China"
+    },
+    {
+      "name": "Xiaomi 15 Ultra",
+      "aliases": ["Xiaomi 15 Ultra"],
+      "variants": [{"soc": "SM8750", "model_codes": ["25010PN30G"]}],
+      "confidence": "medium",
+      "source": "Xiaomi; global model code"
+    },
+    {
+      "name": "Xiaomi 17",
+      "aliases": ["Xiaomi 17"],
+      "variants": [{"soc": "SM8850"}],
+      "confidence": "medium",
+      "source": "GSMArena; model codes omitted (not verified)"
+    },
+    {
+      "name": "Xiaomi 17 Pro",
+      "aliases": ["Xiaomi 17 Pro"],
+      "variants": [{"soc": "SM8850"}],
+      "confidence": "medium",
+      "source": "GSMArena; model codes omitted (not verified)"
+    },
+    {
+      "name": "Xiaomi 17 Pro Max",
+      "aliases": ["Xiaomi 17 Pro Max"],
+      "variants": [{"soc": "SM8850", "model_codes": ["2509FPN0BC"]}],
+      "confidence": "medium",
+      "source": "GSMArena, Kalvo; Snapdragon 8 Elite Gen 5, Adreno 840"
+    },
+    {
+      "name": "Xiaomi 17 Ultra",
+      "aliases": ["Xiaomi 17 Ultra"],
+      "variants": [{"soc": "SM8850"}],
+      "confidence": "low",
+      "source": "Reported Snapdragon 8 Elite Gen 5; model codes omitted"
+    },
+    {
+      "name": "RedMagic 9 Pro",
+      "aliases": ["RedMagic 9 Pro", "Red Magic 9 Pro", "REDMAGIC 9 Pro", "Nubia RedMagic 9 Pro"],
+      "variants": [{"soc": "SM8650", "model_codes": ["NX769J"]}],
+      "confidence": "medium",
+      "source": "Nubia; Snapdragon 8 Gen 3"
+    },
+    {
+      "name": "RedMagic 10 Pro",
+      "aliases": ["RedMagic 10 Pro", "Red Magic 10 Pro", "REDMAGIC 10 Pro", "Nubia RedMagic 10 Pro"],
+      "variants": [{"soc": "SM8750", "model_codes": ["NX789J"]}],
+      "confidence": "high",
+      "source": "Notebookcheck, Nubia; Snapdragon 8 Elite"
+    },
+    {
+      "name": "RedMagic 10S Pro",
+      "aliases": ["RedMagic 10S Pro", "Red Magic 10S Pro", "REDMAGIC 10S Pro"],
+      "variants": [{"soc": "SM8750"}],
+      "confidence": "medium",
+      "source": "Nubia; Snapdragon 8 Elite, model code omitted"
+    },
+    {
+      "name": "RedMagic 10 Air",
+      "aliases": ["RedMagic 10 Air", "Red Magic 10 Air", "REDMAGIC 10 Air"],
+      "variants": [{"soc": "SM8750"}],
+      "confidence": "medium",
+      "source": "Nubia; Snapdragon 8 Elite, model code omitted"
+    },
+    {
+      "name": "RedMagic 11 Pro",
+      "aliases": ["RedMagic 11 Pro", "Red Magic 11 Pro", "REDMAGIC 11 Pro", "Nubia RedMagic 11 Pro"],
+      "variants": [{"soc": "SM8850", "model_codes": ["NX809J"]}],
+      "confidence": "medium",
+      "source": "iFixit, Notebookcheck; NX809J also appears on the China-only 11 Pro+ and 11s Pro listings"
+    },
+    {
+      "name": "ROG Phone 8",
+      "aliases": ["ROG Phone 8", "Asus ROG Phone 8", "ASUS ROG Phone 8 Pro", "ROG Phone 8 Pro"],
+      "variants": [{"soc": "SM8650", "model_codes": ["AI2401"]}],
+      "confidence": "medium",
+      "source": "ASUS; Snapdragon 8 Gen 3; the FE variant reuses the AI2401 prefix and is not listed"
+    },
+    {
+      "name": "ROG Phone 9",
+      "aliases": ["ROG Phone 9", "Asus ROG Phone 9", "ASUS ROG Phone 9 Pro", "ROG Phone 9 Pro"],
+      "variants": [{"soc": "SM8750", "model_codes": ["AI2501"]}],
+      "confidence": "high",
+      "source": "rog.asus.com; Snapdragon 8 Elite"
+    },
+    {
+      "name": "AYN Odin 2",
+      "aliases": ["AYN Odin 2", "Odin 2", "Odin2", "AYN Odin2", "Odin 2 Portal", "Odin2 Portal", "Odin 2 Mini", "Odin2 Mini"],
+      "variants": [{"soc": "SM8550"}],
+      "confidence": "high",
+      "source": "AYN; Snapdragon 8 Gen 2 (Odin 2, Portal and Mini)"
+    },
+    {
+      "name": "AYN Odin 3",
+      "aliases": ["AYN Odin 3", "Odin 3", "Odin3", "AYN Odin3"],
+      "variants": [{"soc": "SM8750"}],
+      "confidence": "high",
+      "source": "Android Central, Android Authority; Snapdragon 8 Elite"
+    },
+    {
+      "name": "Retroid Pocket 5",
+      "aliases": ["Retroid Pocket 5", "RP5"],
+      "variants": [{"soc": "SM8250"}],
+      "confidence": "medium",
+      "source": "Retroid; Snapdragon 865"
+    },
+    {
+      "name": "Retroid Pocket 6",
+      "aliases": ["Retroid Pocket 6", "RP6"],
+      "variants": [{"soc": "SM8550"}],
+      "confidence": "high",
+      "source": "Retroid; Snapdragon 8 Gen 2 with Adreno 740"
+    }
+  ]
+}
