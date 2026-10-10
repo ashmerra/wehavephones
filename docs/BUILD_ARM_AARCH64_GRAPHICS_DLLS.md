@@ -18,10 +18,27 @@ Default versions:
 - DXVK: `v2.3.1`
 - VKD3D-Proton: `v2.8`
 
+The container matches the host architecture (x86_64 or arm64) and uses the
+matching llvm-mingw host build; both cross-compile to aarch64 Windows.
+
 Output:
 
 - `out/arm-graphics/aarch64/system32/*.dll`
 - `out/arm-graphics/aarch64/system32/manifest.txt`
+
+`--swaptrace` adds the upstream SWAPTRACE debug logging, which writes a line
+for every present and draw. Use it only for swapchain debugging and never ship
+its DLLs.
+
+The app ships these DXVK DLLs as an overlay over the default DXVK's aarch64
+DLLs (see [BUILD_ASSETS.md](BUILD_ASSETS.md)). Refresh it with:
+
+```bash
+scripts/build-arm-graphics-dlls-docker.sh --skip-vkd3d --package-dxvk
+```
+
+A changed overlay reaches existing containers only when the DXVK cache id in
+`XServerDisplayActivity.getDXWrapperCacheId` changes too.
 
 If your network is unstable, set proxy first:
 
