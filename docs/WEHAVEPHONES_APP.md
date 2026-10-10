@@ -140,8 +140,18 @@ desktop wallpaper.
   automatically. An app-wide completion preference keeps this screen out of
   navigation and future boots, even after a container/profile change.
 - **Setup** (`SetupFragment`): active container selection and **Manage
-  containers**. Changing the active container retains the running-session
-  protection. The runtime profile selector is hidden (`LLRuntimeProfile`,
+  containers**, plus **Import WoW files** from `Download/World of Warcraft`.
+  `WowImportService` runs the copy as a foreground data-sync service with a
+  progress notification and cancellation, retaining it across navigation and
+  screen-off. `WowFileImporter` validates the complete folder and free space,
+  refuses both existing supported install paths, and stages the copy beside
+  the destination before publishing it by rename. Failed/cancelled copies
+  remove only staging; a retry discards any staging left by process death.
+  Downloads is retained. Play, inherited session launches, container switching
+  and the Setup container-management button are blocked during import. See
+  [Reuse existing WoW game files](REUSE_WOW_FILES.md).
+  Changing the active container retains the running-session protection.
+  The runtime profile selector is hidden (`LLRuntimeProfile`,
   `visibility="gone"`) while the bundled file ships one profile; its code is
   kept for handoff mode.
 - **Settings** (`WeHavePhonesSettingsFragment`): **Game resolution**

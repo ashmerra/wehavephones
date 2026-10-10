@@ -43,7 +43,24 @@ file/storage permission. If you changed the drive mapping, open **Containers**,
 use the active container's three-dot menu → **Edit** → **Drives**, and check
 which drive points to the transfer folder.
 
-## 3. Copy into the active container
+## 3. Import into the active container
+
+Open **Setup → Import WoW files**. The app finds
+`Download/World of Warcraft` and copies it into the active container at
+`C:\Program Files (x86)\World of Warcraft`. It checks the folder and free space
+before copying, shows progress, and continues if you switch apps or turn off
+the screen. Tap **Cancel** in Setup or the import notification to stop it.
+
+Import preserves the Downloads copy and refuses to replace an existing WoW
+folder in the container, including one under `C:\Program Files`. Use another
+container for a separate installation, or manage an existing installation
+manually. Close any running session before importing; game launches and
+container switching are blocked until the import finishes or is cancelled.
+
+After a failed or cancelled copy, try **Import WoW files** again. An interrupted
+import is kept out of the game list, and the next attempt starts a fresh copy.
+
+### Manual alternative
 
 In WeHavePhones, open **Containers**, then the active container's three-dot menu
 → **Run**. In the container's file manager:
@@ -90,6 +107,12 @@ separate containers and game files; a copy into one app is not visible in the ot
 
 - **The transfer folder is missing from `D:`:** check the active container's
   **Drives** mapping and WeHavePhones' file/storage permission in Android settings.
+- **Import cannot find the source:** put the entire folder at
+  `Download/World of Warcraft`, with `Data`, `.build.info`, and the version
+  folders inside it. Automatic import always checks Downloads, even if you
+  changed the container's `D:` mapping.
+- **Import reports an existing installation:** it will not overwrite either
+  supported `C:` location. Use another container or the manual alternative.
 - **Battle.net says the folder contains the wrong version:** select the matching
   **Game Version**, choose the parent **World of Warcraft** folder, and check
   that shared `Data` and hidden metadata files survived the transfer.

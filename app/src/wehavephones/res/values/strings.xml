@@ -10,6 +10,21 @@
     <string name="wehavephones_runtime">Containers</string>
     <string name="wehavephones_play">Play</string>
     <string name="wehavephones_setup_short">Setup</string>
+    <string name="wehavephones_import_title">Import WoW files</string>
+    <string name="wehavephones_import_hint">Copy your entire World of Warcraft folder to Downloads, then import it here. Keep room for a second copy.</string>
+    <string name="wehavephones_import_needs_container">Set up a container before importing WoW files.</string>
+    <string name="wehavephones_import_close_session">Close the running Battle.net or WoW session before importing.</string>
+    <string name="wehavephones_import_checking">Checking files and free space…</string>
+    <string name="wehavephones_import_progress">Copying %1$s of %2$s…</string>
+    <string name="wehavephones_import_done">Files imported into %1$s. Open Battle.net and use Locate the game to select C:\\Program Files (x86)\\World of Warcraft.</string>
+    <string name="wehavephones_import_missing">World of Warcraft was not found in Downloads. Copy the entire game folder there first.</string>
+    <string name="wehavephones_import_invalid">Copy the complete Windows World of Warcraft folder, including Data, hidden .build.info, and your game version folders.</string>
+    <string name="wehavephones_import_existing">This container already has a World of Warcraft folder. Import will not replace it. Use another container to import a separate installation.</string>
+    <string name="wehavephones_import_source_changed">The source files changed during import. Close Battle.net on your PC, finish the transfer to Downloads, then try again.</string>
+    <string name="wehavephones_import_cancelled">Import cancelled. Your files in Downloads are unchanged.</string>
+    <string name="wehavephones_import_no_space">Import needs %1$s of free space; %2$s is available. Free some space and try again.</string>
+    <string name="wehavephones_import_copy_failed">Could not finish importing. Check storage access and free space, then try again. Your files in Downloads are unchanged.</string>
+    <string name="wehavephones_import_wait">Wait for the WoW import to finish, or cancel it in Setup.</string>
     <string name="wehavephones_addons">Add-ons</string>
     <string name="wehavephones_settings">Settings</string>
 

@@ -2,12 +2,15 @@ package com.wehavephones.mobile;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -29,6 +32,18 @@ public class SetupFragment extends Fragment {
     private WeHavePhonesActivity activity;
     private Spinner containerSpinner, profileSpinner;
     private TextView profileDescription;
+    private View importButton, cancelImportButton, manageContainers;
+    private TextView importStatus;
+    private ProgressBar importProgress;
+    private boolean hasContainers;
+    private final Handler importHandler = new Handler(Looper.getMainLooper());
+    private final Runnable refreshImport = new Runnable() {
+        @Override public void run() {
+            if (!isAdded() || getView() == null) return;
+            renderImport();
+            importHandler.postDelayed(this, 500);
+        }
+    };
     private WeHavePhonesRuntimeProfiles profiles;
     private ArrayList<WeHavePhonesRuntimeProfiles.Profile> profileList = new ArrayList<>();
 
@@ -42,10 +57,23 @@ public class SetupFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         activity = (WeHavePhonesActivity)getActivity();
         containerSpinner = view.findViewById(R.id.SPActiveContainer);
-        view.findViewById(R.id.BTManageContainers).setOnClickListener(v -> {
+        manageContainers = view.findViewById(R.id.BTManageContainers);
+        manageContainers.setOnClickListener(v -> {
             Intent intent = new Intent(activity, MainActivity.class);
             intent.putExtra("selected_menu_item_id", R.id.main_menu_containers);
             startActivity(intent);
+        });
+        importButton = view.findViewById(R.id.BTImportWow);
+        cancelImportButton = view.findViewById(R.id.BTCancelWowImport);
+        importStatus = view.findViewById(R.id.TVImportWowStatus);
+        importProgress = view.findViewById(R.id.PBImportWow);
+        importButton.setOnClickListener(v -> activity.withStoragePermissions(() -> {
+            WowImportService.start(activity.getApplicationContext(), WeHavePhonesContainers.resolve(activity));
+            if (getView() != null) renderImport();
+        }));
+        cancelImportButton.setOnClickListener(v -> {
+            WowImportService.cancel();
+            cancelImportButton.setEnabled(false);
         });
         profileSpinner = view.findViewById(R.id.SPRuntimeProfile);
         profileDescription = view.findViewById(R.id.TVProfileDescription);
@@ -87,10 +115,37 @@ public class SetupFragment extends Fragment {
         // Container management can create, rename, or remove entries while this
         // setup view stays on the back stack.
         refreshContainers();
+        importHandler.post(refreshImport);
+    }
+
+    @Override public void onPause() {
+        importHandler.removeCallbacks(refreshImport);
+        super.onPause();
+    }
+
+    @Override public void onDestroyView() {
+        importHandler.removeCallbacks(refreshImport);
+        super.onDestroyView();
+    }
+
+    private void renderImport() {
+        WowImportService.State state = WowImportService.state();
+        importButton.setEnabled(hasContainers && !state.running);
+        manageContainers.setEnabled(!state.running);
+        containerSpinner.setEnabled(hasContainers && !state.running);
+        cancelImportButton.setVisibility(state.running ? View.VISIBLE : View.GONE);
+        importProgress.setVisibility(state.running ? View.VISIBLE : View.GONE);
+        importProgress.setIndeterminate(state.total == 0);
+        if (state.total > 0) importProgress.setProgress(state.percent());
+        importStatus.setVisibility(state.message.isEmpty() ? View.GONE : View.VISIBLE);
+        importStatus.setText(state.message);
+        importStatus.setTextColor(activity.getColor(state.error ? R.color.wehavephones_error : R.color.wehavephones_text_dim));
+        if (!state.running) cancelImportButton.setEnabled(true);
     }
 
     private void refreshContainers() {
         ArrayList<Container> containers = new ContainerManager(activity).getContainers();
+        hasContainers = !containers.isEmpty();
         containers.sort(Comparator.comparingInt(container -> container.id));
         Container active = WeHavePhonesContainers.resolve(activity);
         ArrayList<String> labels = new ArrayList<>();
@@ -106,7 +161,7 @@ public class SetupFragment extends Fragment {
         ArrayAdapter<String> adapter = new ArrayAdapter<>(activity, R.layout.wehavephones_spinner_item, labels);
         adapter.setDropDownViewResource(R.layout.wehavephones_spinner_dropdown_item);
         containerSpinner.setAdapter(adapter);
-        containerSpinner.setEnabled(!containers.isEmpty());
+        containerSpinner.setEnabled(hasContainers && !WowImportService.isRunning());
         containerSpinner.setSelection(selected, false);
         containerSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
@@ -114,6 +169,11 @@ public class SetupFragment extends Fragment {
                 if (position < 0 || position >= containers.size()) return;
                 Container container = containers.get(position);
                 if (container.id == WeHavePhonesConfig.getContainerId(activity)) return;
+                if (WowImportService.isRunning()) {
+                    Toast.makeText(activity, R.string.wehavephones_import_wait, Toast.LENGTH_LONG).show();
+                    refreshContainers();
+                    return;
+                }
                 XServerDisplayActivity session = XServerDisplayActivity.getActiveInstance();
                 if ((session != null && session.isSessionActive()) || OneButtonLauncher.isRunning()
                         || ProcessScanner.isWineSessionRunning()) {

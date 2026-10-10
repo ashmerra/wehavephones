@@ -8,6 +8,8 @@ import java.io.File;
 public final class SessionLaunchExtras {
     private SessionLaunchExtras() {}
 
+    public static boolean canStartSession(XServerDisplayActivity activity) { return true; }
+
     /**
      * Guest path of a program that runs a batch file without a console
      * window, or null to start batch files normally.

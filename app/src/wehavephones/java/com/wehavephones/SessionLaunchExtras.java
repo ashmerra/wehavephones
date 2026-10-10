@@ -25,6 +25,14 @@ public final class SessionLaunchExtras {
 
     private SessionLaunchExtras() {}
 
+    /** Imports own the container until the complete game folder is published. */
+    public static boolean canStartSession(XServerDisplayActivity activity) {
+        if (!com.wehavephones.mobile.WowImportService.isRunning()) return true;
+        android.widget.Toast.makeText(activity, com.wehavephones.R.string.wehavephones_import_wait,
+                android.widget.Toast.LENGTH_LONG).show();
+        return false;
+    }
+
     /**
      * Copies wcrun.exe into C:\windows and returns its guest path, or null
      * when it could not be installed (batch files then start normally).

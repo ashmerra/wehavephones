@@ -17,8 +17,15 @@ import java.util.concurrent.Executors;
 public final class WeHavePhonesPlayController {
     private WeHavePhonesPlayController() {}
 
+    private static boolean blockDuringImport(WeHavePhonesActivity activity) {
+        if (!WowImportService.isRunning()) return false;
+        activity.updateStageStatus(activity.getString(R.string.wehavephones_import_wait), true);
+        return true;
+    }
+
     /** Play always goes through Battle.net, which signs the game in. */
     public static void play(final WeHavePhonesActivity activity) {
+        if (blockDuringImport(activity)) return;
         if (RuntimeStageController.isRunning()) {
             activity.updateStageStatus(activity.getString(R.string.wehavephones_stage_already_running), false);
             return;
@@ -67,6 +74,7 @@ public final class WeHavePhonesPlayController {
      * (location, size) in the Battle.net window.
      */
     public static void install(final WeHavePhonesActivity activity, final BattleNetGames.Game game) {
+        if (blockDuringImport(activity)) return;
         final String name = game.getDisplayName();
         final String flags = WeHavePhonesLaunchPlan.installFlags(game.bnetGameId());
         if (flags.isEmpty()) {
@@ -157,6 +165,7 @@ public final class WeHavePhonesPlayController {
      * Battle.net alone, which signs in with the login it saved itself.
      */
     public static void openBattleNet(WeHavePhonesActivity activity, WeHavePhonesActivity.StageUpdater listener) {
+        if (blockDuringImport(activity)) return;
         listener.onStageUpdate(activity.getString(R.string.wehavephones_bnet_launching), false);
         XServerDisplayActivity live = XServerDisplayActivity.getActiveInstance();
         if (live != null && live.isSessionActive()) {
