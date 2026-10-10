@@ -21,6 +21,8 @@ AGENTS.md
 # large archives kept out of git
 10.0/
 dxvk-*.tzst
+# clean aarch64 DXVK overlay (scripts/build-arm-graphics-dlls-docker.sh --package-dxvk)
+!app/src/main/assets/dxwrapper/aarch64/dxvk-2.3.1.tzst
 app/src/main/assets/imagefs.txz
 app/src/main/assets/imagefs_patches.tzst
 app/src/main/assets/container_pattern.tzst

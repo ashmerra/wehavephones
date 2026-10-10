@@ -36,6 +36,12 @@ The fetcher takes each asset from the first place whose bytes match:
 | `wincomponents/direct3d.tzst` (Microsoft) | apk | FrontMage `wincomponents-v1`; identical to the copy upstream Winlator commits |
 | `preinstall/proton-10-arm64ec.wcp.xz` | runtime | StevenMXZ/Winlator-Contents release `1.0`; `runtime` flavor only |
 
+The default DXVK's aarch64 DLLs (its `system32/`) were built with per-frame
+`SWAPTRACE` debug logging. The app extracts
+`dxwrapper/aarch64/dxvk-2.3.1.tzst` over them: a clean DXVK v2.3.1 build,
+tracked in git and made with
+`scripts/build-arm-graphics-dlls-docker.sh --skip-vkd3d --package-dxvk`.
+
 ## Commands
 
 ```bash

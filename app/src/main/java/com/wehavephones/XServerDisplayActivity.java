@@ -1625,10 +1625,21 @@ import java.util.concurrent.Executors;
         return configured != null && !configured.isEmpty() ? configured : DefaultVersion.DXVK;
     }
 
+    /**
+     * Clean rebuild of the default DXVK's aarch64 (system32) DLLs, whose bundled
+     * copies log SWAPTRACE lines on every frame. Made by
+     * scripts/build-arm-graphics-dlls-docker.sh --package-dxvk.
+     */
+    private static String getDxvkAarch64Overlay(String ver) {
+        return "2.3.1-arm64ec-gplasync".equals(ver) ? "dxwrapper/aarch64/dxvk-2.3.1.tzst" : null;
+    }
+
     private String getDXWrapperCacheId() {
         if (dxwrapper == null || dxwrapper.isEmpty()) return "wined3d";
         if (dxwrapper.startsWith("dxvk")) {
             String ver = resolveDxvkVersion();
+            // A new cache id makes existing containers extract the overlay.
+            if (getDxvkAarch64Overlay(ver) != null) ver += "+aarch64-notrace";
             if (dxwrapper.equals("dxvk+vkd3d")) {
                 // Vanilla default: dxvk enabled, vkd3d not installed (vkd3dVersion=None).
                 return "dxvk-" + ver + ";vkd3d-None";
@@ -1660,6 +1671,8 @@ import java.util.concurrent.Executors;
             // Keep Wine's original d3d12 path unless VKD3D is enabled.
             restoreOriginalDllFiles("d3d12.dll", "d3d12core.dll", "ddraw.dll");
             TarCompressorUtils.extract(TarCompressorUtils.Type.ZSTD, this, "dxwrapper/dxvk-" + ver + ".tzst", windowsDir, onExtractFileListener);
+            String overlay = getDxvkAarch64Overlay(ver);
+            if (overlay != null) TarCompressorUtils.extract(TarCompressorUtils.Type.ZSTD, this, overlay, windowsDir, onExtractFileListener);
             TarCompressorUtils.extract(TarCompressorUtils.Type.ZSTD, this, "dxwrapper/d8vk-" + DefaultVersion.D8VK + ".tzst", windowsDir, onExtractFileListener);
         }
 

@@ -5,20 +5,30 @@ set -euo pipefail
 # - DXVK:  dxgi.dll d3d11.dll d3d10core.dll d3d9.dll
 # - VKD3D: d3d12.dll (d3d12core.dll when present in chosen version)
 #
-# Default versions are intentionally conservative for D3D12 swapchain debugging:
-# - DXVK v2.3.1
+# Default versions are intentionally conservative:
+# - DXVK v2.3.1 (the aarch64 half of the bundled default DXVK)
 # - VKD3D-Proton v2.8
+#
+# --swaptrace adds the swapchain/pipeline debug logging (SWAPTRACE*) that the
+# upstream FrontMage build shipped with; it logs on every frame and draw, so
+# never ship a build made with it.
 #
 # Usage:
 #   scripts/build-arm-graphics-dlls-docker.sh
+#   scripts/build-arm-graphics-dlls-docker.sh --skip-vkd3d --package-dxvk
 #   scripts/build-arm-graphics-dlls-docker.sh --skip-vkd3d
 #   scripts/build-arm-graphics-dlls-docker.sh --dxvk-version v2.4.1 --vkd3d-version v2.9
 
 ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "${ROOT_DIR}"
 
+case "$(uname -m)" in
+  aarch64|arm64) HOST_ARCH="aarch64"; HOST_PLATFORM="linux/arm64" ;;
+  *) HOST_ARCH="x86_64"; HOST_PLATFORM="linux/amd64" ;;
+esac
+
 DOCKER_IMAGE="${DOCKER_IMAGE:-ubuntu:22.04}"
-DOCKER_PLATFORM="${DOCKER_PLATFORM:-linux/arm64}"
+DOCKER_PLATFORM="${DOCKER_PLATFORM:-${HOST_PLATFORM}}"
 DOCKER_CONTAINER_NAME="${DOCKER_CONTAINER_NAME:-winlator-arm-graphics-builder}"
 
 DXVK_REPO_URL="https://github.com/doitsujin/dxvk"
@@ -27,13 +37,17 @@ VKD3D_REPO_URL="https://github.com/HansKristian-Work/vkd3d-proton"
 VKD3D_VERSION="v2.8"
 
 TOOLCHAIN_TAG="20250920"
-TOOLCHAIN_TAR="${TOOLCHAIN_TAR:-llvm-mingw-${TOOLCHAIN_TAG}-ucrt-ubuntu-22.04-aarch64.tar.xz}"
+# llvm-mingw cross-compiles to aarch64-w64-mingw32 from either host architecture.
+TOOLCHAIN_TAR="${TOOLCHAIN_TAR:-llvm-mingw-${TOOLCHAIN_TAG}-ucrt-ubuntu-22.04-${HOST_ARCH}.tar.xz}"
 TOOLCHAIN_URL="https://github.com/bylaws/llvm-mingw/releases/download/${TOOLCHAIN_TAG}/${TOOLCHAIN_TAR}"
 
 OUT_DIR="out/arm-graphics"
 CACHE_DIR="out/_cache"
 SKIP_DXVK=0
 SKIP_VKD3D=0
+SWAPTRACE=0
+PACKAGE_DXVK=0
+DXVK_OVERLAY="app/src/main/assets/dxwrapper/aarch64/dxvk-2.3.1.tzst"
 RECREATE_CONTAINER=0
 
 usage() {
@@ -48,8 +62,11 @@ Options:
   --vkd3d-version <tag>     Default: v2.8
   --skip-dxvk               Build only vkd3d-proton
   --skip-vkd3d              Build only dxvk
+  --swaptrace               Add the per-frame SWAPTRACE debug logging (debugging only)
+  --package-dxvk            Pack the DXVK DLLs into the app's aarch64 overlay
+                            (app/src/main/assets/dxwrapper/aarch64/dxvk-2.3.1.tzst)
   --docker-image <image>    Default: ubuntu:22.04 (or env DOCKER_IMAGE)
-  --docker-platform <plat>  Default: linux/arm64 (or env DOCKER_PLATFORM)
+  --docker-platform <plat>  Default: the host's (or env DOCKER_PLATFORM)
   --container-name <name>   Default: winlator-arm-graphics-builder (or env DOCKER_CONTAINER_NAME)
   --recreate-container      Remove and recreate builder container before build
   -h, --help                Show this message.
@@ -72,6 +89,14 @@ while [[ $# -gt 0 ]]; do
       ;;
     --skip-vkd3d)
       SKIP_VKD3D=1
+      shift
+      ;;
+    --swaptrace)
+      SWAPTRACE=1
+      shift
+      ;;
+    --package-dxvk)
+      PACKAGE_DXVK=1
       shift
       ;;
     --docker-image)
@@ -105,6 +130,10 @@ if [[ "${SKIP_DXVK}" -eq 1 && "${SKIP_VKD3D}" -eq 1 ]]; then
   echo "Both --skip-dxvk and --skip-vkd3d were set. Nothing to build." >&2
   exit 2
 fi
+if [[ "${PACKAGE_DXVK}" -eq 1 && ( "${SKIP_DXVK}" -eq 1 || "${SWAPTRACE}" -eq 1 || "${DXVK_VERSION}" != "v2.3.1" ) ]]; then
+  echo "--package-dxvk needs a DXVK v2.3.1 build without --swaptrace." >&2
+  exit 2
+fi
 
 if ! command -v docker >/dev/null 2>&1; then
   echo "docker not found" >&2
@@ -119,7 +148,7 @@ Build inputs:
 - Docker platform: ${DOCKER_PLATFORM}
 - Builder name:    ${DOCKER_CONTAINER_NAME}
 - llvm-mingw:      ${TOOLCHAIN_TAR}
-- DXVK:            ${DXVK_REPO_URL} @ ${DXVK_VERSION} (skip=${SKIP_DXVK})
+- DXVK:            ${DXVK_REPO_URL} @ ${DXVK_VERSION} (skip=${SKIP_DXVK}, swaptrace=${SWAPTRACE})
 - VKD3D:           ${VKD3D_REPO_URL} @ ${VKD3D_VERSION} (skip=${SKIP_VKD3D})
 
 Output directory:
@@ -544,7 +573,9 @@ if [[ "${SKIP_DXVK}" != "1" ]]; then
     exit 1
   fi
 
-  apply_dxvk_swaptrace_patch "${DXVK_SRC}"
+  if [[ "${SWAPTRACE}" == "1" ]]; then
+    apply_dxvk_swaptrace_patch "${DXVK_SRC}"
+  fi
 
   # Newer llvm-mingw d3d9 headers already define D3DDEVINFO_RESOURCEMANAGER.
   # DXVK v2.3.1 carries an old MinGW fallback typedef that then causes redefinition.
@@ -643,7 +674,7 @@ docker exec -t \
   -e "DXVK_REPO_URL=${DXVK_REPO_URL}" -e "DXVK_VERSION=${DXVK_VERSION}" \
   -e "VKD3D_REPO_URL=${VKD3D_REPO_URL}" -e "VKD3D_VERSION=${VKD3D_VERSION}" \
   -e "TOOLCHAIN_TAR=${TOOLCHAIN_TAR}" -e "TOOLCHAIN_URL=${TOOLCHAIN_URL}" \
-  -e "SKIP_DXVK=${SKIP_DXVK}" -e "SKIP_VKD3D=${SKIP_VKD3D}" \
+  -e "SKIP_DXVK=${SKIP_DXVK}" -e "SKIP_VKD3D=${SKIP_VKD3D}" -e "SWAPTRACE=${SWAPTRACE}" \
   -e "VKD3D_WINE_ARM64_WORKAROUND=${VKD3D_WINE_ARM64_WORKAROUND:-0}" \
   "${DOCKER_CONTAINER_NAME}" \
   bash "/work/${build_script_rel}"
@@ -655,9 +686,23 @@ mkdir -p "$(dirname -- "${manifest}")"
   echo "dxvk_version=${DXVK_VERSION}"
   echo "vkd3d_repo=${VKD3D_REPO_URL}"
   echo "vkd3d_version=${VKD3D_VERSION}"
+  echo "swaptrace=${SWAPTRACE}"
   echo "toolchain=${TOOLCHAIN_TAR}"
   echo "built_at_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 } > "${manifest}"
 
 echo "Wrote manifest: ${manifest}"
+
+if [[ "${PACKAGE_DXVK}" -eq 1 ]]; then
+  # The app extracts this over the default DXVK's system32 (aarch64) DLLs.
+  package_dir="$(mktemp -d)"
+  mkdir -p "${package_dir}/system32" "$(dirname -- "${DXVK_OVERLAY}")"
+  for dll in d3d10core.dll d3d11.dll d3d9.dll dxgi.dll; do
+    cp -f "${OUT_DIR}/aarch64/system32/${dll}" "${package_dir}/system32/${dll}"
+  done
+  tar -C "${package_dir}" --sort=name --mtime=@0 --owner=0 --group=0 --numeric-owner \
+    -cf - system32 | zstd -19 -q -f -o "${DXVK_OVERLAY}"
+  rm -rf "${package_dir}"
+  echo "Packed ${DXVK_OVERLAY} ($(sha256sum "${DXVK_OVERLAY}" | cut -d' ' -f1))"
+fi
 echo "Done."
