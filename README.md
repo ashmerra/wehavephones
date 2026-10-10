@@ -23,7 +23,8 @@ Other games and versions have not been tested.
 1. Download the latest APK from [Releases](https://github.com/ashmerra/wehavephones/releases).
 2. Allow your browser or file manager to install unknown apps, then open the APK.
 3. Open WeHavePhones and follow Setup: prepare the container, install Battle.net, sign in, and download your WoW version.
-4. Press Play.
+4. When the game finishes installing, close Battle.net: swipe in from the left edge of the screen to open the side menu, then tap Exit. Launching the game from the Battle.net window is not recommended.
+5. Back in the WeHavePhones app, press Play.
 
 You need a 64-bit ARM phone with Android 8.0 or newer and enough free space for the game.
 
