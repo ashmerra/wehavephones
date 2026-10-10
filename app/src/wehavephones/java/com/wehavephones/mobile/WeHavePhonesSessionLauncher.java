@@ -21,7 +21,7 @@ public final class WeHavePhonesSessionLauncher {
     }
 
     public static boolean launch(Context context, Container container, File shortcutFile) {
-        if (container == null) return false;
+        if (container == null || WowImportService.isRunning()) return false;
         // Found on the Pixel 8a: leftovers from earlier sessions pile up as
         // phantom processes and crashed Android 17's system_server.
         if (XServerDisplayActivity.getActiveInstance() == null && !ProcessScanner.isWineSessionRunning()) {

@@ -51,6 +51,8 @@ public final class PhoneUiValidation extends Instrumentation {
             capture("play");
             show(new SetupFragment());
             require(R.id.SPActiveContainer);
+            require(R.id.BTImportWow);
+            fullyVisible(R.id.BTImportWow);
             capture("setup");
             show(new WeHavePhonesSettingsFragment());
             require(R.id.CBDisableVirtualGamepad); require(R.id.CBKeepRunningInBackground);

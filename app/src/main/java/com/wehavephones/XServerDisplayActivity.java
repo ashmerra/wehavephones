@@ -185,6 +185,11 @@ import java.util.concurrent.Executors;
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if (!SessionLaunchExtras.canStartSession(this)) {
+            shutdownCompleted = true;
+            finish();
+            return;
+        }
         activeInstance = new WeakReference<>(this);
         AppUtils.hideSystemUI(this);
         AppUtils.keepScreenOn(this);

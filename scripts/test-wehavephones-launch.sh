@@ -203,6 +203,20 @@ if [[ -n "$JAVAC" && -n "$JAVA" ]]; then
 fi
 
 echo
+echo "[test-wehavephones-launch] == 1h. WoW file import (integrity, space, cancellation, preservation) =="
+if [[ -n "$JAVAC" && -n "$JAVA" ]]; then
+  rm -rf "$WORK_DIR"
+  mkdir -p "$WORK_DIR"
+  if "$JAVAC" -encoding UTF-8 -d "$WORK_DIR" "$SRC_DIR/WowFlavor.java" "$SRC_DIR/WowFileImporter.java" \
+      "$SELF_TEST_DIR/WowFileImporterSelfTest.java"; then
+    "$JAVA" -cp "$WORK_DIR" com.wehavephones.mobile.WowFileImporterSelfTest || fail "WowFileImporterSelfTest"
+  else
+    fail "javac failed for WowFileImporterSelfTest"
+  fi
+  rm -rf "$WORK_DIR"
+fi
+
+echo
 echo "[test-wehavephones-launch] == 2. reconnect helper (fake adb) =="
 if ! "$PYTHON" "$SELF_TEST_DIR/reconnect_selftest.py"; then
   fail "reconnect_selftest.py"

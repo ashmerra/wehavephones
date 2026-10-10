@@ -65,8 +65,17 @@ public class WeHavePhonesActivity extends AppCompatActivity {
                     .commitNow();
         }
         setUpRail();
+        if (!firstRunShowing && (WowImportService.isRunning() || getIntent().getBooleanExtra("show_wow_import", false))) {
+            showSection(new SetupFragment());
+        }
         ConsolePortUpdater.syncInBackground(this);
         DeviceRulesStore.refreshAsync(getApplicationContext());
+    }
+
+    @Override protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        if (intent.getBooleanExtra("show_wow_import", false)) showSection(new SetupFragment());
     }
 
     @Override

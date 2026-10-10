@@ -22,9 +22,18 @@ Other games and versions have not been tested. Other phones are matched to a gra
 
 1. Download the latest APK from [Releases](https://github.com/ashmerra/wehavephones/releases).
 2. Allow your browser or file manager to install unknown apps, then open the APK.
-3. Open WeHavePhones and follow Setup: prepare the container, install Battle.net, sign in, and download your WoW version.
+3. Open WeHavePhones and follow Setup: prepare the container, install Battle.net, sign in, and download your WoW version (or import existing files as described below).
 4. When the game finishes installing, close Battle.net: swipe in from the left edge of the screen to open the side menu, then tap Exit. Launching the game from the Battle.net window is not recommended.
 5. Back in the WeHavePhones app, press Play.
+
+Already have WoW installed on a Windows PC? Once the container and Battle.net are ready:
+
+1. Copy your entire **World of Warcraft** folder into the phone's **Downloads**.
+2. In WeHavePhones, tap **Setup → Import WoW files** and wait.
+3. Open Battle.net, choose the matching game version, and use **Locate the game** to select the imported folder. Finish updates, exit through the side menu, then press **Play** in WeHavePhones.
+
+Allow space for two copies during import. Battle.net may still download missing
+files or updates. See [detailed instructions](docs/REUSE_WOW_FILES.md).
 
 You need a 64-bit ARM phone with Android 8.0 or newer and enough free space for the game.
 
@@ -42,6 +51,7 @@ The APK is written to `app/build/outputs/apk/wehavephones/debug/app-wehavephones
 
 ## Documentation
 
+- [Reuse existing WoW game files](docs/REUSE_WOW_FILES.md)
 - [App architecture](docs/WEHAVEPHONES_APP.md)
 - [Runtime and the patched Wine ntdll](docs/WEHAVEPHONES_RUNTIME.md)
 - [Addon manager](docs/WEHAVEPHONES_ADDONS.md)
