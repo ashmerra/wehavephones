@@ -380,7 +380,8 @@ public class GuestProgramLauncherComponent extends EnvironmentComponent {
             final long[] lastFlushMs = new long[] { 0L };
             try {
                 // Always keep a persistent log on disk for FEX/arm64ec debugging.
-                // Rotate on every container launch so reproductions are easy to diff.
+                // Rotate on every container launch so reproductions are easy to diff,
+                // keeping only the newest few so verbose sessions don't fill storage.
                 // Keep writing to wine.log (latest) so users always know where to look.
                 if (wineLogFile.isFile() && wineLogFile.length() > 0) {
                     String ts = new java.text.SimpleDateFormat("yyyyMMdd-HHmmss", java.util.Locale.US)
@@ -390,6 +391,7 @@ public class GuestProgramLauncherComponent extends EnvironmentComponent {
                     //noinspection ResultOfMethodCallIgnored
                     wineLogFile.renameTo(rotated);
                 }
+                SessionLogs.pruneRotatedWineLogs(externalLogDir, SessionLogs.ROTATED_WINE_LOGS_KEPT);
                 wineLogWriter[0] = new BufferedWriter(new FileWriter(wineLogFile, false));
                 synchronized (wineLogWriter) {
                     wineLogWriter[0].write("----- WeHavePhones arm64ec wine session: " + new java.util.Date().toString() + " -----");

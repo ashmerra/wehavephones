@@ -57,6 +57,29 @@ public final class ProcessOutputSelfTest {
         }
     }
 
+    private static void wineLogPruning() throws Exception {
+        File dir = Files.createTempDirectory("wehavephones-wine-logs").toFile();
+        try {
+            for (int day = 10; day <= 22; day++) {
+                check(new File(dir, "wine-202609" + day + "-120000.log").createNewFile(), "rotated log not created");
+            }
+            String[] others = {"wine.log", "guest.log", "wine-notes.log"};
+            for (String name : others) check(new File(dir, name).createNewFile(), name + " not created");
+            SessionLogs.pruneRotatedWineLogs(dir, 10);
+            for (int day = 10; day <= 12; day++) {
+                check(!new File(dir, "wine-202609" + day + "-120000.log").exists(), "old rotated log " + day + " kept");
+            }
+            for (int day = 13; day <= 22; day++) {
+                check(new File(dir, "wine-202609" + day + "-120000.log").isFile(), "recent rotated log " + day + " deleted");
+            }
+            for (String name : others) check(new File(dir, name).isFile(), name + " was pruned");
+        } finally {
+            File[] files = dir.listFiles();
+            if (files != null) for (File file : files) file.delete();
+            dir.delete();
+        }
+    }
+
     public static void main(String[] args) throws Exception {
         if (args.length > 0 && args[0].equals("--child")) {
             String line = "diagnostic:" + "x".repeat(1024);
@@ -96,6 +119,7 @@ public final class ProcessOutputSelfTest {
             ProcessHelper.removeAllDebugCallbacks();
         }
         logFallback();
-        System.out.println("ProcessOutputSelfTest PASS: both pipes drain without logging, observer failures, and private log fallback");
+        wineLogPruning();
+        System.out.println("ProcessOutputSelfTest PASS: both pipes drain without logging, observer failures, private log fallback, and wine log pruning");
     }
 }
