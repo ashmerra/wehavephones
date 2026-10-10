@@ -35,7 +35,8 @@ add_library(wehavephones SHARED
             wehavephones/xconnector_epoll.c
             wehavephones/xsocket_output.c
             wehavephones/alsa_client.c
-            wehavephones/vulkan.c)
+            wehavephones/vulkan.c
+            wehavephones/gpu_probe.c)
 
 target_link_libraries(wehavephones
                       log
