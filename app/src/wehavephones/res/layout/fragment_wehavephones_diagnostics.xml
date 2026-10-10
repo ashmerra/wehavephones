@@ -5,37 +5,54 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
+    <TextView
+        style="@style/WeHavePhonesScreenTitle"
+        android:text="@string/wehavephones_diagnostics" />
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:baselineAligned="false"
         android:gravity="center_vertical"
         android:orientation="horizontal">
-        <TextView
-            style="@style/WeHavePhonesScreenTitle"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:text="@string/wehavephones_diagnostics" />
         <Button
             android:id="@+id/BTRefresh"
             style="@style/WeHavePhonesButtonSmall"
+            android:layout_width="0dp"
             android:layout_marginTop="0dp"
-            android:minWidth="96dp"
+            android:layout_weight="1"
             android:text="@string/wehavephones_diag_refresh" />
         <Button
             android:id="@+id/BTCopy"
             style="@style/WeHavePhonesButtonSmall"
+            android:layout_width="0dp"
             android:layout_marginLeft="8dp"
             android:layout_marginTop="0dp"
-            android:minWidth="96dp"
+            android:layout_weight="1"
             android:text="@string/wehavephones_diag_copy" />
         <Button
             android:id="@+id/BTSaveMemory"
             style="@style/WeHavePhonesButtonSmall"
+            android:layout_width="0dp"
             android:layout_marginLeft="8dp"
             android:layout_marginTop="0dp"
-            android:minWidth="96dp"
+            android:layout_weight="1"
             android:text="@string/wehavephones_diag_memory_save" />
+        <Button
+            android:id="@+id/BTDeviceUpdate"
+            style="@style/WeHavePhonesButtonSmall"
+            android:layout_width="0dp"
+            android:layout_marginLeft="8dp"
+            android:layout_marginTop="0dp"
+            android:layout_weight="2"
+            android:text="@string/wehavephones_diag_device_update" />
+        <Button
+            android:id="@+id/BTDeviceReport"
+            style="@style/WeHavePhonesButtonSmall"
+            android:layout_width="0dp"
+            android:layout_marginLeft="8dp"
+            android:layout_marginTop="0dp"
+            android:layout_weight="1.5"
+            android:text="@string/wehavephones_diag_device_report" />
     </LinearLayout>
     <LinearLayout
         android:layout_width="match_parent"
@@ -74,16 +91,6 @@
                 <TextView
                     style="@style/WeHavePhonesSectionLabel"
                     android:text="@string/wehavephones_diag_device_title" />
-                <Button
-                    android:id="@+id/BTDeviceUpdate"
-                    style="@style/WeHavePhonesButtonSmall"
-                    android:layout_width="match_parent"
-                    android:text="@string/wehavephones_diag_device_update" />
-                <Button
-                    android:id="@+id/BTDeviceReport"
-                    style="@style/WeHavePhonesButtonSmall"
-                    android:layout_width="match_parent"
-                    android:text="@string/wehavephones_diag_device_report" />
                 <TextView
                     style="@style/WeHavePhonesHint"
                     android:layout_marginTop="6dp"
