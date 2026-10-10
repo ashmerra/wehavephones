@@ -26,6 +26,10 @@ Other games and versions have not been tested.
 4. When the game finishes installing, close Battle.net: swipe in from the left edge of the screen to open the side menu, then tap Exit. Launching the game from the Battle.net window is not recommended.
 5. Back in the WeHavePhones app, press Play.
 
+Already have WoW installed on a Windows PC? After setting up the container and
+Battle.net in step 3, follow [Reuse existing WoW game files](docs/REUSE_WOW_FILES.md)
+to copy the installation to your phone instead of downloading the full game again.
+
 You need a 64-bit ARM phone with Android 8.0 or newer and enough free space for the game.
 
 ## Build from source
@@ -42,6 +46,7 @@ The APK is written to `app/build/outputs/apk/wehavephones/debug/app-wehavephones
 
 ## Documentation
 
+- [Reuse existing WoW game files](docs/REUSE_WOW_FILES.md)
 - [App architecture](docs/WEHAVEPHONES_APP.md)
 - [Runtime and the patched Wine ntdll](docs/WEHAVEPHONES_RUNTIME.md)
 - [Addon manager](docs/WEHAVEPHONES_ADDONS.md)
