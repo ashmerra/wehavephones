@@ -1,0 +1,11 @@
+{
+  "driverId": "turnip-gen8-stevenmxz-v37",
+  "mesaVersion": "26.3.0-devel",
+  "mesaRevision": "a995eaeda4",
+  "archiveAsset": "graphics_driver/adrenotools-turnip-gen8-stevenmxz-v37.tzst",
+  "archiveSha256": "73019a2b9167754c2ad40f0be99b90abf58ddaf89e37cf604845d73636140711",
+  "libraryName": "libvulkan_freedreno.so",
+  "librarySha256": "b6d445f512d15bb94be3d46bb2e2d27f604f161bf7400f32ed6008de59844c7f",
+  "upstream": "https://gitlab.freedesktop.org/mesa/mesa",
+  "provenance": "Adreno 8xx (Gen 8) Turnip, 'Turnip Gen8 V37' by StevenMXZ, released 2026-09-30 (https://github.com/StevenMXZ/Adreno-Tools-Drivers/releases/tag/v37), built from Mesa commit a995eaeda4 plus the whitebelyash/mesa-unified turnip/gen8 branch (https://github.com/whitebelyash/mesa-unified). Downloaded from https://github.com/StevenMXZ/Adreno-Tools-Drivers/releases/download/v37/Turnip_Gen8_V37.zip (upstream archive SHA-256 d0335542ec996fe33e83dfbec0d86aed301da95d22b671a88b40a4722d115b48); the unmodified libvulkan_freedreno.so and the upstream meta.json fields were repackaged as .tzst with mesaRevision, version and librarySha256 added to meta.json. Chip ids verified by scanning the library bytes: Adreno 840 as 0xffff44050A31, 0xffff44050A21 and 0x44050A21 (retail SM8850, same GPU info as 0x44050A31), Adreno 830 as 0xffff44050000, 0xffff44050001 and 0x44050001, Adreno 829 as 0x44030A20 and 0x44030A00, Adreno 810 as 0xffff44010000, plus the A7xx entries 0x43050A01/0xffff43050A01 (740) and 0x43030B00 (735). Verified by byte scan only; not yet run on an Adreno 8xx device."
+}
