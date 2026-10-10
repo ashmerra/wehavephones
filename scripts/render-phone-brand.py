@@ -98,12 +98,15 @@ def wordmark(x,y,size,color='#FFFFFF'):
 
 def brand():
     folder=ROOT/'docs/brand'
-    for name,w,h in [('banner',1280,400),('social-preview',1280,640)]:
+    # The social preview enlarges the banner layout about the centre of its
+    # drawn area (x 85-1038, y 191-440) so it fills the taller canvas.
+    for name,w,h,zoom in [('banner',1280,400,1),('social-preview',1280,640,1.25)]:
         y=(h-280)/2
-        content=f'<rect width="{w}" height="{h}" fill="#0B2344"/>'+mark(65,y,265)+wordmark(380,h/2,76)
+        content=mark(65,y,265)+wordmark(380,h/2,76)
         content+=f'<text x="384" y="{h/2+48}" fill="#BCD0A6" font-family="DejaVu Sans" font-size="22">World of Warcraft on Android and Wine.</text>'
         content+=f'<text x="384" y="{h/2+84}" fill="#A9BDCD" font-family="DejaVu Sans" font-size="17">Unofficial; not affiliated with Blizzard.</text>'
-        output(document(content,w,h),folder/f'{name}.png')
+        if zoom!=1:content=f'<g transform="translate({w/2} {h/2}) scale({zoom}) translate(-561.5 {-h/2+4})">{content}</g>'
+        output(document(f'<rect width="{w}" height="{h}" fill="#0B2344"/>'+content,w,h),folder/f'{name}.png')
     output(document(mark(18,4,276)+wordmark(330,181,95,'#0D315A'),1200,300),folder/'logo.png')
     output(document('<rect width="512" height="512" rx="94" fill="#287FD0"/>'+mark(48,15,416),512,512),folder/'icon.png')
     print('Rendered README banner, social preview and transparent wordmark')
