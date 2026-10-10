@@ -54,20 +54,26 @@ phone from a computer, for manual tests.
 
 ### Graphics default
 
-WeHavePhones bundles **Mesa Turnip 26.3.0-devel (git-1b51639c20)** for Adreno,
+The graphics setup is chosen per device by the [device rules](DEVICE_PROFILES.md); the rules
+bundled with the app reproduce the earlier defaults for the phones that were tested.
+
+Adreno 6xx and 7xx (and an unknown GPU) use **Mesa Turnip 26.3.0-devel (git-1b51639c20)**,
 under the immutable driver ID `turnip26.3.0-devel-1b51639c20`. This is the exact
 binary tested with Classic Era on a Galaxy S23+, rather than a stable Mesa 26.3
 release or a moving nightly. The
 [driver manifest](../app/src/wehavephones/assets/wehavephones/graphics/turnip.json)
 pins both the archive and library SHA-256; the build helper and runtime checks
-verify the archive before packaging.
+verify the archive before packaging. Adreno 830 and 84x phones try **Gen 8 Turnip**
+([manifest](../app/src/wehavephones/assets/wehavephones/graphics/turnip-gen8-stevenmxz-v37.json))
+first, because the pinned Turnip does not know the retail Adreno 840 chip id; if a driver fails its
+test load, the next one in the profile (finally the system driver) is used. Non-Adreno devices
+retain the wrapper's system Vulkan path with the BCn compat layer.
 
-New containers derive their driver selection from `DefaultVersion`. The
-`p10-ge34` profile also sets the graphics `version`, so Play upgrades existing
-managed containers through the usual snapshot and read-back verification. Other
-graphics settings and the shader cache / Wine descriptor workarounds are
-retained. The old 26.0 archive remains available for an explicit rollback
-trial. Non-Adreno devices retain the wrapper's system Vulkan path.
+The rules replace the graphics `version` of the container at session start. The `p10-ge34` profile
+still sets that `version` so Play keeps existing managed containers consistent through the usual
+snapshot and read-back verification, but it no longer decides the driver. Other graphics settings
+and the shader cache / Wine descriptor workarounds are retained. The old 26.0 archive remains
+available for an explicit rollback trial.
 
 ## Behavior notes
 

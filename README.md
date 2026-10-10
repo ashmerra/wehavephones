@@ -16,7 +16,7 @@ Built-in addon manager.
 
 \* Not tested past the login screen because I don't have beta access.
 
-Other games and versions have not been tested.
+Other games and versions have not been tested. Other phones are matched to a graphics setup by device rules; if yours misbehaves, use Report a problem in Diagnostics.
 
 ## Install
 
@@ -45,6 +45,8 @@ The APK is written to `app/build/outputs/apk/wehavephones/debug/app-wehavephones
 - [App architecture](docs/WEHAVEPHONES_APP.md)
 - [Runtime and the patched Wine ntdll](docs/WEHAVEPHONES_RUNTIME.md)
 - [Addon manager](docs/WEHAVEPHONES_ADDONS.md)
+- [Device profiles](docs/DEVICE_PROFILES.md)
+- [Device reports](docs/DEVICE_REPORTS.md)
 - [Build assets](docs/BUILD_ASSETS.md)
 
 ## Credits
