@@ -87,6 +87,56 @@ a private repository need a login, and the fetcher downloads without one.
    `scripts/test-wehavephones-assets.sh`, and commit any change.
 5. Repeat step 3 without `WEHAVEPHONES_ASSETS_BASE_URL`.
 
+## Publishing a mirror outside GitHub
+
+A mirror serves the same versioned files as our release, with anonymous HTTPS
+downloads. Builders select it with `WEHAVEPHONES_ASSETS_BASE_URL`; this changes
+the release download location and leaves the manifest's size and SHA-256 checks
+in place. Use `--release-only` to check that the mirror supplies every asset
+without falling back to upstream. The default fetch checks the `apk` group;
+the `runtime` group is not part of `assets-v1`.
+
+1. Fetch and stage the pinned release assets:
+
+   ```bash
+   scripts/fetch-large-assets.sh
+   python3 scripts/large-assets.py stage
+   ```
+
+2. Upload the staged files, including `SHA256SUMS`, under a directory or item
+   dedicated to `assets-v1`. Keep each archive's basename; do not combine them
+   into a new archive. Include the staged release notes and
+   `THIRD_PARTY_NOTICES.md` so the mirror retains the upstream attribution.
+   Keep published versions immutable, just like the GitHub release tags.
+
+   For a SourceForge project named `wehavephones`, a project maintainer can
+   upload using [rsync over SSH](https://sourceforge.net/p/forge/documentation/rsync/):
+
+   ```bash
+   SOURCEFORGE_USER=your-username
+   rsync -av --progress --partial-dir=.rsync-partial --ignore-existing \
+     out/release-assets/assets-v1/ \
+     "$SOURCEFORGE_USER@frs.sourceforge.net:/home/frs/project/wehavephones/assets-v1/"
+   ```
+
+   Verify the [SSH host key](https://sourceforge.net/p/forge/documentation/SSH%20Key%20Fingerprints/)
+   on first connection. `--ignore-existing` preserves files already published;
+   the partial directory lets interrupted uploads resume before publication.
+
+3. Prove the public mirror works by fetching into a new, empty directory:
+
+   ```bash
+   mirror_check_dir=$(mktemp -d "${TMPDIR:-/tmp}/wehavephones-mirror.XXXXXX")
+   WEHAVEPHONES_ASSETS_BASE_URL=https://downloads.sourceforge.net/project/wehavephones/assets-v1 \
+     python3 scripts/large-assets.py --root "$mirror_check_dir" fetch --release-only
+   ```
+
+   Success must report `10 assets verified (10 fetched).` for `assets-v1`.
+   A check in an existing checkout can reuse local assets and therefore does
+   not prove that the mirror is complete. Wait for uploads to reach the public
+   download mirrors before running this check. Remove the temporary directory
+   when finished.
+
 ## Changing an asset
 
 Never replace or delete a file in a published tag: older commits pin its hash
