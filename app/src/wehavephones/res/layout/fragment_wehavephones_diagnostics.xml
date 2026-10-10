@@ -71,6 +71,24 @@
                     android:layout_marginTop="6dp"
                     android:text="@string/wehavephones_diag_memory_hint"
                     android:textSize="11sp" />
+                <TextView
+                    style="@style/WeHavePhonesSectionLabel"
+                    android:text="@string/wehavephones_diag_device_title" />
+                <Button
+                    android:id="@+id/BTDeviceUpdate"
+                    style="@style/WeHavePhonesButtonSmall"
+                    android:layout_width="match_parent"
+                    android:text="@string/wehavephones_diag_device_update" />
+                <Button
+                    android:id="@+id/BTDeviceReport"
+                    style="@style/WeHavePhonesButtonSmall"
+                    android:layout_width="match_parent"
+                    android:text="@string/wehavephones_diag_device_report" />
+                <TextView
+                    style="@style/WeHavePhonesHint"
+                    android:layout_marginTop="6dp"
+                    android:text="@string/wehavephones_diag_device_hint"
+                    android:textSize="11sp" />
             </LinearLayout>
         </ScrollView>
         <ScrollView

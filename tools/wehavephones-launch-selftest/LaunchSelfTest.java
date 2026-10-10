@@ -249,6 +249,10 @@ public final class LaunchSelfTest {
                         + "cd /d \"C:\\Program Files (x86)\\World of Warcraft\\_retail_\"\r\n"
                         + "start \"\" \"Wow-ARM64.exe\" -launcherlogin -uid wow -d3d12\r\n",
                 WeHavePhonesLaunchPlan.directBat(WeHavePhonesLaunchPlan.WOW_DIR_X86, retail, ""));
+        check("direct bat null api arg == default", WeHavePhonesLaunchPlan.directBat(WeHavePhonesLaunchPlan.WOW_DIR_X86, retail, ""),
+                WeHavePhonesLaunchPlan.directBat(WeHavePhonesLaunchPlan.WOW_DIR_X86, retail, "", null));
+        check("direct bat device api arg", true,
+                WeHavePhonesLaunchPlan.directBat(WeHavePhonesLaunchPlan.WOW_DIR_X86, retail, "", "-d3d11").endsWith("-uid wow -d3d11\r\n"));
         check("direct bat anniversary uid", true,
                 WeHavePhonesLaunchPlan.directBat(WeHavePhonesLaunchPlan.WOW_DIR_X86, plan.resolve("_anniversary_"), "").contains("-uid wow_classic_anniversary -d3d12"));
 

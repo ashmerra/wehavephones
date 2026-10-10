@@ -12,6 +12,7 @@ import com.wehavephones.R;
 import com.wehavephones.XServerDisplayActivity;
 import com.wehavephones.container.Container;
 import com.wehavephones.core.FileUtils;
+import com.wehavephones.mobile.devices.DeviceProfileSelector;
 import com.wehavephones.winhandler.WinHandler;
 import com.wehavephones.xserver.Window;
 import com.wehavephones.xserver.XLock;
@@ -422,7 +423,8 @@ public final class OneButtonLauncher {
             case PLAY:
                 return clickPlay();
             case DIRECT:
-                return writeLaunchBat(WeHavePhonesLaunchPlan.directBat(WeHavePhonesPaths.wowGuestRoot(container), product, product.exe))
+                return writeLaunchBat(WeHavePhonesLaunchPlan.directBat(WeHavePhonesPaths.wowGuestRoot(container), product, product.exe,
+                        DeviceProfileSelector.wowApiArg(appContext)))
                         && execInSession(winHandler, WeHavePhonesLaunchPlan.LAUNCH_BAT_GUEST);
         }
         return false;

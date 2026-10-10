@@ -18,6 +18,8 @@ import java.util.Locale;
 public final class WeHavePhonesRuntimeProfiles {
     public static final String ASSET_PATH = "wehavephones/wehavephones-runtime-profiles.json";
     public static final String DEFAULT_PRODUCT_DIR = "_retail_";
+    /** The WoW graphics API flag used unless the device profile sets another. */
+    public static final String DEFAULT_WOW_API_ARG = "-d3d12";
     public static final String DEFAULT_WOW_EXECUTABLE = "Wow-ARM64.exe";
 
     public enum Mode {
@@ -219,10 +221,16 @@ public final class WeHavePhonesRuntimeProfiles {
     }
 
     public String buildWowBat(String productDir, String executable) {
+        return buildWowBat(productDir, executable, null);
+    }
+
+    /** {@code apiArg} is the device profile's graphics API flag; null or empty keeps "-d3d12". */
+    public String buildWowBat(String productDir, String executable, String apiArg) {
         String template = !wowBatTemplate.isEmpty() ? wowBatTemplate : defaultWowBat();
         String resolvedProduct = productDir != null && !productDir.isEmpty() ? productDir : DEFAULT_PRODUCT_DIR;
         String resolvedExecutable = executable != null && !executable.isEmpty() ? executable : DEFAULT_WOW_EXECUTABLE;
-        return template.replace("{productDir}", resolvedProduct).replace("{exe}", resolvedExecutable);
+        String resolvedApiArg = apiArg != null && !apiArg.isEmpty() ? apiArg : DEFAULT_WOW_API_ARG;
+        return template.replace("{productDir}", resolvedProduct).replace("{exe}", resolvedExecutable).replace("{apiArg}", resolvedApiArg);
     }
 
     public String describe() {
@@ -310,6 +318,6 @@ public final class WeHavePhonesRuntimeProfiles {
     }
 
     private static String defaultWowBat() {
-        return "@echo off\r\ncd /d \"C:\\Program Files (x86)\\World of Warcraft\\{productDir}\"\r\n{exe} -d3d12\r\n";
+        return "@echo off\r\ncd /d \"C:\\Program Files (x86)\\World of Warcraft\\{productDir}\"\r\n{exe} {apiArg}\r\n";
     }
 }

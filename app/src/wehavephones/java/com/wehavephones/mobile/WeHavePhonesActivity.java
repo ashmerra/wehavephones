@@ -17,6 +17,7 @@ import androidx.fragment.app.FragmentManager;
 
 import com.wehavephones.mobile.addons.AddonsActivity;
 import com.wehavephones.mobile.addons.required.ConsolePortUpdater;
+import com.wehavephones.mobile.devices.DeviceRulesStore;
 import com.wehavephones.MainActivity;
 import com.wehavephones.R;
 import com.wehavephones.SessionKeepAliveService;
@@ -65,6 +66,7 @@ public class WeHavePhonesActivity extends AppCompatActivity {
         }
         setUpRail();
         ConsolePortUpdater.syncInBackground(this);
+        DeviceRulesStore.refreshAsync(getApplicationContext());
     }
 
     @Override

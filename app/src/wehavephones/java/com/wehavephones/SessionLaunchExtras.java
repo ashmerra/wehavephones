@@ -7,6 +7,8 @@ import android.view.ViewGroup;
 import com.wehavephones.mobile.LaunchOverlayController;
 import com.wehavephones.mobile.WeHavePhonesConfig;
 import com.wehavephones.mobile.WeHavePhonesLaunchPlan;
+import com.wehavephones.mobile.devices.DeviceProfileSelector;
+import com.wehavephones.core.GraphicsPlan;
 import com.wehavephones.core.FileUtils;
 import com.wehavephones.xenvironment.ImageFs;
 
@@ -74,5 +76,13 @@ public final class SessionLaunchExtras {
     /** The first application window was mapped (any thread). */
     public static void onFirstWindowShown(XServerDisplayActivity activity) {
         LaunchOverlayController.onWindowShown();
+    }
+
+    /**
+     * Per-device graphics setup from the device rules. Blocks (driver extraction, first-run
+     * probe), so call it from the session's background setup thread.
+     */
+    public static GraphicsPlan graphicsPlan(XServerDisplayActivity activity) {
+        return DeviceProfileSelector.select(activity);
     }
 }

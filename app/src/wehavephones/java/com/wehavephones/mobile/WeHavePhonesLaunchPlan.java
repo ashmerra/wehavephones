@@ -32,6 +32,8 @@ public final class WeHavePhonesLaunchPlan {
     public static final String CMD_EXE = "C:\\windows\\system32\\cmd.exe";
     /** Runs {@code cmd /c <bat>} without a console window (tools/wcrun). */
     public static final String HIDDEN_RUNNER_NAME = "wcrun.exe";
+    /** The WoW graphics API flag used unless the device profile sets another. */
+    public static final String DEFAULT_WOW_API_ARG = "-d3d12";
     public static final String HIDDEN_RUNNER_GUEST = "C:\\windows\\" + HIDDEN_RUNNER_NAME;
 
     /** WinHandler.exec sends one 64-byte datagram: code + 3 int32 + filename + parameters. */
@@ -326,11 +328,17 @@ public final class WeHavePhonesLaunchPlan {
     }
 
     public static String directBat(String wowGuestRoot, Product product, String executable) {
+        return directBat(wowGuestRoot, product, executable, null);
+    }
+
+    /** {@code apiArg} is the device profile's graphics API flag (for example "-d3d11"); null keeps "-d3d12". */
+    public static String directBat(String wowGuestRoot, Product product, String executable, String apiArg) {
         String exe = executable != null && !executable.isEmpty() ? executable : product.exe;
         return "@echo off\r\n"
                 + "rem WeHavePhones one-button launch (direct " + product.launchUid + ")\r\n"
                 + "cd /d \"" + wowGuestRoot + "\\" + product.dir + "\"\r\n"
-                + "start \"\" \"" + exe + "\" -launcherlogin -uid " + product.launchUid + " -d3d12\r\n";
+                + "start \"\" \"" + exe + "\" -launcherlogin -uid " + product.launchUid + " "
+                + (apiArg != null && !apiArg.isEmpty() ? apiArg : DEFAULT_WOW_API_ARG) + "\r\n";
     }
 
     /**

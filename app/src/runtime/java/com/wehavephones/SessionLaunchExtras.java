@@ -2,6 +2,8 @@ package com.wehavephones;
 
 import android.view.ViewGroup;
 
+import com.wehavephones.core.GraphicsPlan;
+
 import java.io.File;
 
 /** Flavor hook for the session start command; the winlator flavor adds nothing. */
@@ -38,4 +40,9 @@ public final class SessionLaunchExtras {
 
     /** Called when the first application window is mapped; nothing to do here. */
     public static void onFirstWindowShown(XServerDisplayActivity activity) {}
+
+    /** No device rules in this flavor: the session keeps the built-in graphics setup. */
+    public static GraphicsPlan graphicsPlan(XServerDisplayActivity activity) {
+        return null;
+    }
 }

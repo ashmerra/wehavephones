@@ -3,13 +3,21 @@ package com.wehavephones.mobile;
 import android.content.Context;
 import android.os.Environment;
 
+import com.wehavephones.BuildConfig;
 import com.wehavephones.container.Container;
 import com.wehavephones.core.FileUtils;
+import com.wehavephones.core.GraphicsPlan;
+import com.wehavephones.mobile.devices.DeviceIdentity;
+import com.wehavephones.mobile.devices.DeviceProfileSelector;
+import com.wehavephones.mobile.devices.DeviceReport;
+import com.wehavephones.mobile.devices.DeviceRules;
+import com.wehavephones.mobile.devices.DeviceRulesStore;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.LinkedHashMap;
 
 public final class WeHavePhonesDiagnostics {
     private WeHavePhonesDiagnostics() {}
@@ -21,6 +29,9 @@ public final class WeHavePhonesDiagnostics {
         builder.append("== WeHavePhones diagnostics ==\n");
         builder.append("Package: ").append(context.getPackageName()).append('\n');
         builder.append("User id: ").append(android.os.Process.myUid()).append('\n');
+
+        builder.append("\n-- Device --\n");
+        builder.append(deviceReport(context)).append('\n');
 
         builder.append("\n-- Runtime profile --\n");
         if (status.profiles == null) {
@@ -99,6 +110,39 @@ public final class WeHavePhonesDiagnostics {
         builder.append(processes.isEmpty() ? "None" : processes).append('\n');
 
         return builder.toString();
+    }
+
+    /** The device report block (rule, profile, driver, probes, GPU and phone identity); call off the UI thread. */
+    public static String deviceReport(Context context) {
+        return DeviceReport.text(deviceReportFields(context));
+    }
+
+    /** Ordered report fields; the plan is the last session's, or the matched profile before any session ran. */
+    public static LinkedHashMap<String, String> deviceReportFields(Context context) {
+        LinkedHashMap<String, String> fields = new LinkedHashMap<>();
+        fields.put("app", BuildConfig.VERSION_NAME + " (" + BuildConfig.VERSION_CODE + ") " + context.getPackageName());
+        DeviceIdentity identity = DeviceIdentity.detect(context);
+        GraphicsPlan plan = DeviceProfileSelector.lastPlan(context);
+        String vkDevice = "";
+        if (plan != null) {
+            fields.put("rules", plan.rulesSource + " v" + plan.rulesVersion);
+            fields.put("rule", plan.ruleId);
+            fields.put("profile", plan.profileName + " (" + plan.profileStatus + ")");
+            fields.put("driver", plan.driverId + " (" + (plan.useAdrenotools ? "adrenotools" : "system") + ")");
+            fields.put("driver_probes", DeviceProfileSelector.driverProbes(plan));
+            vkDevice = DeviceReport.vkDevice(DeviceProfileSelector.cachedProbe(context, plan.driverId));
+        }
+        else {
+            DeviceRulesStore.Loaded loaded = DeviceRulesStore.load(context);
+            DeviceRules.Match match = loaded.rules.match(identity);
+            fields.put("rules", loaded.source + " v" + loaded.rules.getRulesVersion());
+            fields.put("rule", match.rule.id);
+            fields.put("profile", match.profile.name + " (" + match.profile.status + ")");
+            fields.put("driver", "not selected yet (no session has started)");
+        }
+        DeviceReport.putLines(fields, identity.toReportText());
+        fields.put("vk_device", vkDevice);
+        return fields;
     }
 
     private static void appendAppliedNtdll(Context context, StringBuilder builder) {

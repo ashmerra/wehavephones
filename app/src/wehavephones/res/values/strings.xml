@@ -118,6 +118,15 @@
     <string name="wehavephones_diag_copy">Copy</string>
     <string name="wehavephones_diag_copied">Diagnostics copied to clipboard.</string>
     <string name="wehavephones_diag_empty">Gathering diagnostics...</string>
+    <string name="wehavephones_diag_device_title">Device</string>
+    <string name="wehavephones_diag_device_update">Check for device updates</string>
+    <string name="wehavephones_diag_device_checking">Checking for device updates...</string>
+    <string name="wehavephones_diag_device_updated">Device rules updated to version %1$d.</string>
+    <string name="wehavephones_diag_device_current">Device rules are up to date (version %1$d).</string>
+    <string name="wehavephones_diag_device_failed">Could not check for device updates (version %1$d in use): %2$s</string>
+    <string name="wehavephones_diag_device_report">Report a problem</string>
+    <string name="wehavephones_diag_device_report_failed">Could not open the browser. Use Copy and paste the report into a GitHub issue.</string>
+    <string name="wehavephones_diag_device_hint">The report holds your phone model, GPU and graphics driver; no accounts or serial numbers. It opens a prefilled GitHub issue in your browser.</string>
     <string name="wehavephones_diag_memory_title">Memory panel</string>
     <string name="wehavephones_diag_memory_save">Save report</string>
     <string name="wehavephones_diag_memory_saved">Memory report saved: %1$s</string>

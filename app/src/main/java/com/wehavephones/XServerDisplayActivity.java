@@ -47,6 +47,7 @@ import com.wehavephones.core.EnvVars;
 import com.wehavephones.core.FileUtils;
 import com.wehavephones.core.GeneralComponents;
 import com.wehavephones.core.GPUInformation;
+import com.wehavephones.core.GraphicsPlan;
 import com.wehavephones.core.KeyValueSet;
 import com.wehavephones.core.OnExtractFileListener;
 import com.wehavephones.core.PreloaderDialog;
@@ -102,6 +103,7 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.Executors;
 
     public class XServerDisplayActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
@@ -1321,7 +1323,21 @@ import java.util.concurrent.Executors;
 
             // Adrenotools driver bundle version (e.g. "turnip26.0.0"). Turnip only drives Adreno;
             // elsewhere the wrapper falls back to the system libvulkan.so.
-            if (!envVars.has("ADRENOTOOLS_DRIVER_PATH") && !envVars.has("ADRENOTOOLS_DRIVER_NAME") &&
+            // The wehavephones flavor picks the driver per device (device rules); this thread is the
+            // background setup executor, so the plan may block on driver extraction and the probe.
+            GraphicsPlan plan = SessionLaunchExtras.graphicsPlan(this);
+            if (plan != null) {
+                Log.i(TAG_GUEST_DEBUG, "Graphics plan: rule=" + plan.ruleId + " profile=" + plan.profileName +
+                    " (" + plan.profileStatus + ") driver=" + plan.driverId + " adrenotools=" + plan.useAdrenotools +
+                    " compatLayer=" + plan.vulkanCompatLayer + " rules=" + plan.rulesSource + " v" + plan.rulesVersion);
+                if (!envVars.has("ADRENOTOOLS_DRIVER_PATH") && !envVars.has("ADRENOTOOLS_DRIVER_NAME") && plan.useAdrenotools) {
+                    new AdrenotoolsManager(this).setDriverById(envVars, imageFs, plan.driverId);
+                }
+                for (Map.Entry<String, String> entry : plan.env.entrySet()) {
+                    if (!envVars.has(entry.getKey())) envVars.put(entry.getKey(), entry.getValue());
+                }
+            }
+            else if (!envVars.has("ADRENOTOOLS_DRIVER_PATH") && !envVars.has("ADRENOTOOLS_DRIVER_NAME") &&
                 GPUInformation.mayBeAdreno(this)) {
                 String driverId = cfg.get("version", "turnip" + DefaultVersion.ADRENOTOOLS_TURNIP);
                 new AdrenotoolsManager(this).setDriverById(envVars, imageFs, driverId);
@@ -1357,7 +1373,7 @@ import java.util.concurrent.Executors;
 
             // Pixel 8a (Mali-G715): without this layer DXVK sees no BCn support and
             // its uploads skip the emulation, so WoW cannot draw its textures.
-            if (!GPUInformation.mayBeAdreno(this)) VulkanCompatLayer.install(this, rootDir, envVars);
+            if (plan != null ? plan.vulkanCompatLayer : !GPUInformation.mayBeAdreno(this)) VulkanCompatLayer.install(this, rootDir, envVars);
 
             boolean enableWrapperLog = preferences.getBoolean("enable_wrapper_log", false);
             if (enableWrapperLog) {

@@ -12,7 +12,7 @@
     "target": "C:\\wow.bat"
   },
   "bnetBat": "@echo off\r\ncd /d \"C:\\Program Files (x86)\\Battle.net\"\r\nif exist \"C:\\arm64-vkd3d.dll\" copy /Y \"C:\\arm64-vkd3d.dll\" \"C:\\windows\\system32\\d3d12.dll\" >NUL\r\nif exist \"C:\\arm64-libc++.dll\" copy /Y \"C:\\arm64-libc++.dll\" \"C:\\windows\\system32\\libc++.dll\" >NUL\r\nif exist \"C:\\arm64-libunwind.dll\" copy /Y \"C:\\arm64-libunwind.dll\" \"C:\\windows\\system32\\libunwind.dll\" >NUL\r\nBattle.net.exe{flags}\r\n",
-  "wowBat": "@echo off\r\ncd /d \"C:\\Program Files (x86)\\World of Warcraft\\{productDir}\"\r\ncopy /Y \"C:\\arm64-vkd3d.dll\" \"C:\\windows\\system32\\d3d12.dll\" >NUL\r\nif errorlevel 1 exit /b 1\r\ncopy /Y \"C:\\arm64-libc++.dll\" \"C:\\windows\\system32\\libc++.dll\" >NUL\r\nif errorlevel 1 exit /b 1\r\ncopy /Y \"C:\\arm64-libunwind.dll\" \"C:\\windows\\system32\\libunwind.dll\" >NUL\r\nif errorlevel 1 exit /b 1\r\n{exe} -d3d12\r\n",
+  "wowBat": "@echo off\r\ncd /d \"C:\\Program Files (x86)\\World of Warcraft\\{productDir}\"\r\ncopy /Y \"C:\\arm64-vkd3d.dll\" \"C:\\windows\\system32\\d3d12.dll\" >NUL\r\nif errorlevel 1 exit /b 1\r\ncopy /Y \"C:\\arm64-libc++.dll\" \"C:\\windows\\system32\\libc++.dll\" >NUL\r\nif errorlevel 1 exit /b 1\r\ncopy /Y \"C:\\arm64-libunwind.dll\" \"C:\\windows\\system32\\libunwind.dll\" >NUL\r\nif errorlevel 1 exit /b 1\r\n{exe} {apiArg}\r\n",
   "profiles": {
     "p10-ge34": {
       "description": "Verified single runtime: GE-Proton 10.0-34 arm64ec with the copyable-syscall/grace ntdll pair. Battle.net uses an in-process CEF network service to avoid utility-process crashes; WoW runs with no runtime switch.",

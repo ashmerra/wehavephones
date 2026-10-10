@@ -3,6 +3,8 @@ package com.wehavephones.mobile;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -16,7 +18,11 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+import com.wehavephones.BuildConfig;
 import com.wehavephones.R;
+import com.wehavephones.mobile.devices.DeviceIdentity;
+import com.wehavephones.mobile.devices.DeviceReport;
+import com.wehavephones.mobile.devices.DeviceRulesStore;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
@@ -63,6 +69,8 @@ public class DiagnosticsFragment extends Fragment {
         view.findViewById(R.id.BTRefresh).setOnClickListener((v) -> refresh());
         view.findViewById(R.id.BTCopy).setOnClickListener((v) -> copyToClipboard());
         view.findViewById(R.id.BTSaveMemory).setOnClickListener((v) -> saveMemoryReport());
+        view.findViewById(R.id.BTDeviceUpdate).setOnClickListener((v) -> checkDeviceUpdates());
+        view.findViewById(R.id.BTDeviceReport).setOnClickListener((v) -> reportProblem());
         refresh();
     }
 
@@ -135,6 +143,63 @@ public class DiagnosticsFragment extends Fragment {
                     ? host.getString(R.string.wehavephones_diag_memory_saved, file.getPath())
                     : host.getString(R.string.wehavephones_diag_memory_save_failed);
             host.runOnUiThread(() -> Toast.makeText(host, message, Toast.LENGTH_LONG).show());
+        });
+    }
+
+    private void checkDeviceUpdates() {
+        final WeHavePhonesActivity host = activity;
+        if (host == null) return;
+        final Context appContext = host.getApplicationContext();
+        Toast.makeText(host, R.string.wehavephones_diag_device_checking, Toast.LENGTH_SHORT).show();
+        Executors.newSingleThreadExecutor().execute(() -> {
+            String message;
+            try {
+                DeviceRulesStore.RefreshResult result = DeviceRulesStore.refreshNow(appContext);
+                if (result.isUpdated()) {
+                    message = host.getString(R.string.wehavephones_diag_device_updated, result.rulesVersion);
+                }
+                else if (DeviceRulesStore.RefreshResult.CURRENT.equals(result.status)) {
+                    message = host.getString(R.string.wehavephones_diag_device_current, result.rulesVersion);
+                }
+                else {
+                    message = host.getString(R.string.wehavephones_diag_device_failed, result.rulesVersion, result.message);
+                }
+            }
+            catch (Throwable throwable) {
+                message = host.getString(R.string.wehavephones_diag_device_failed, 0, String.valueOf(throwable));
+            }
+            final String text = message;
+            host.runOnUiThread(() -> {
+                Toast.makeText(host, text, Toast.LENGTH_LONG).show();
+                if (isAdded()) refresh();
+            });
+        });
+    }
+
+    private void reportProblem() {
+        final WeHavePhonesActivity host = activity;
+        if (host == null) return;
+        final Context appContext = host.getApplicationContext();
+        Executors.newSingleThreadExecutor().execute(() -> {
+            String url;
+            try {
+                DeviceIdentity identity = DeviceIdentity.detect(appContext);
+                String phone = (identity.manufacturer + " " + identity.model).trim();
+                url = DeviceReport.issueUrl(WeHavePhonesDiagnostics.deviceReportFields(appContext),
+                        BuildConfig.VERSION_NAME, phone, identity.glRenderer, identity.release);
+            }
+            catch (Throwable throwable) {
+                url = DeviceReport.ISSUE_URL + "&source=In%20the%20app";
+            }
+            final String link = url;
+            host.runOnUiThread(() -> {
+                try {
+                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(link)));
+                }
+                catch (RuntimeException e) {
+                    Toast.makeText(host, R.string.wehavephones_diag_device_report_failed, Toast.LENGTH_LONG).show();
+                }
+            });
         });
     }
 

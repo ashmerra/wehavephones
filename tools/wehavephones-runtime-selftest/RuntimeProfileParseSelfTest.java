@@ -51,6 +51,11 @@ public final class RuntimeProfileParseSelfTest {
                 "single mode ignores the stored selection (p10-ge34)");
 
         WeHavePhonesRuntimeProfiles.Profile p10 = profiles.getProfile("p10-ge34");
+        String wowBat = profiles.buildWowBat("_retail_", "Wow-ARM64.exe");
+        check(wowBat.endsWith("\r\nWow-ARM64.exe -d3d12\r\n"), "default wow.bat keeps -d3d12");
+        check(wowBat.equals(profiles.buildWowBat("_retail_", "Wow-ARM64.exe", null)), "null api arg keeps wow.bat byte-identical");
+        check(profiles.buildWowBat("_retail_", "Wow-ARM64.exe", "-d3d11").endsWith("\r\nWow-ARM64.exe -d3d11\r\n"), "device api arg replaces -d3d12");
+        check(!wowBat.contains("{"), "wow.bat has no unresolved placeholders");
         check(p10 != null, "p10-ge34 profile exists");
         check("proton-10.0-34-arm64ec".equals(p10.wineVersion), "p10-ge34 wineVersion");
         check(("turnip" + DefaultVersion.ADRENOTOOLS_TURNIP).equals(p10.graphics.get("version")),

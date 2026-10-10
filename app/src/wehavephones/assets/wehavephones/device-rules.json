@@ -1,0 +1,223 @@
+{
+  "schema": 1,
+  "rulesVersion": 1,
+  "minAppVersionCode": 1,
+  "updatedAt": "2026-10-10",
+  "drivers": {
+    "system": {
+      "type": "system",
+      "description": "The phone's own Vulkan driver via the wrapper"
+    },
+    "turnip26.3.0-devel-1b51639c20": {
+      "type": "adrenotools",
+      "asset": "graphics_driver/adrenotools-turnip26.3.0-devel-1b51639c20.tzst",
+      "url": null,
+      "sha256": "43c2f87e105594d3f5bf5ad317c551efa8b552a6b407d9790d0e38b0cc095207",
+      "libraryName": "vulkan.ad07xx.so",
+      "librarySha256": "6d924960369bddf190cd09365a8624a3aa04907f6622a22d520eb50adc043792",
+      "source": "Mesa 26.3.0-devel 1b51639c20 Turnip; validated on the Galaxy S23 (Adreno 740) on 2026-10-03; see graphics/turnip.json"
+    },
+    "turnip-gen8-stevenmxz-v37": {
+      "type": "adrenotools",
+      "asset": "graphics_driver/adrenotools-turnip-gen8-stevenmxz-v37.tzst",
+      "url": null,
+      "sha256": "73019a2b9167754c2ad40f0be99b90abf58ddaf89e37cf604845d73636140711",
+      "libraryName": "libvulkan_freedreno.so",
+      "librarySha256": "b6d445f512d15bb94be3d46bb2e2d27f604f161bf7400f32ed6008de59844c7f",
+      "source": "Turnip Gen8 V37 by StevenMXZ (Mesa a995eaeda4 plus the turnip/gen8 branch), 2026-09-30; knows A840 as 0x44050A21 and A830 as 0x44050001; see graphics/turnip-gen8-stevenmxz-v37.json"
+    }
+  },
+  "profiles": {
+    "adreno-7xx": {
+      "status": "tested",
+      "drivers": [
+        "turnip26.3.0-devel-1b51639c20",
+        "system"
+      ],
+      "env": {},
+      "vulkanCompatLayer": false,
+      "wowApiArg": null,
+      "notes": "Adreno 7xx (Galaxy S23, Adreno 740): the pinned Turnip, the long-standing default."
+    },
+    "adreno-6xx": {
+      "status": "untested",
+      "drivers": [
+        "turnip26.3.0-devel-1b51639c20",
+        "system"
+      ],
+      "env": {},
+      "vulkanCompatLayer": false,
+      "wowApiArg": null,
+      "notes": "Adreno 6xx: same driver choice as before device rules existed; no 6xx phone has been tested."
+    },
+    "adreno-83x": {
+      "status": "community",
+      "drivers": [
+        "turnip-gen8-stevenmxz-v37",
+        "turnip26.3.0-devel-1b51639c20",
+        "system"
+      ],
+      "env": {
+        "TU_DEBUG": "noconform,sysmem"
+      },
+      "vulkanCompatLayer": false,
+      "wowApiArg": null,
+      "notes": "Adreno 830 (Snapdragon 8 Elite): Gen 8 Turnip first, then the pinned Turnip, then the system driver. Not yet run on an Adreno 830 phone."
+    },
+    "adreno-84x": {
+      "status": "community",
+      "drivers": [
+        "turnip-gen8-stevenmxz-v37",
+        "system"
+      ],
+      "env": {},
+      "vulkanCompatLayer": false,
+      "wowApiArg": null,
+      "notes": "Adreno 840 (Snapdragon 8 Elite Gen 5, OnePlus 15): the pinned Turnip shows corruption here (issue #13) because it only knows A840 as 0xffff44050A31 while retail phones report 0x44050A21; Gen 8 Turnip knows both. Not yet run on an Adreno 840 phone."
+    },
+    "adreno-other": {
+      "status": "untested",
+      "drivers": [
+        "turnip26.3.0-devel-1b51639c20",
+        "system"
+      ],
+      "env": {},
+      "vulkanCompatLayer": false,
+      "wowApiArg": null,
+      "notes": "Any other Adreno: same driver choice as before device rules existed."
+    },
+    "mali": {
+      "status": "tested",
+      "drivers": [
+        "system"
+      ],
+      "env": {},
+      "vulkanCompatLayer": true,
+      "wowApiArg": null,
+      "notes": "Mali and Immortalis (Pixel 8a, Mali-G715): the system driver with the BCn compat layer."
+    },
+    "non-adreno-other": {
+      "status": "untested",
+      "drivers": [
+        "system"
+      ],
+      "env": {},
+      "vulkanCompatLayer": true,
+      "wowApiArg": null,
+      "notes": "Xclipse, PowerVR and other non-Adreno GPUs: the system driver with the BCn compat layer, as before device rules existed."
+    },
+    "unknown-gpu": {
+      "status": "untested",
+      "drivers": [
+        "turnip26.3.0-devel-1b51639c20",
+        "system"
+      ],
+      "env": {},
+      "vulkanCompatLayer": false,
+      "wowApiArg": null,
+      "notes": "No GL renderer string: treated as a possible Adreno like before device rules existed."
+    }
+  },
+  "rules": [
+    {
+      "id": "adreno-84x",
+      "match": {
+        "gpuVendor": [
+          "adreno"
+        ],
+        "adrenoModel": [
+          "840-859"
+        ]
+      },
+      "profile": "adreno-84x",
+      "source": "GL renderer reports an Adreno 840-859"
+    },
+    {
+      "id": "adreno-84x-chip",
+      "match": {
+        "chipId": [
+          "0x44050AFF"
+        ]
+      },
+      "profile": "adreno-84x",
+      "source": "KGSL chip id 0x44050Axx (A840 retail 0x44050A21 and 0x44050A31); works when the renderer string has no model"
+    },
+    {
+      "id": "adreno-83x",
+      "match": {
+        "gpuVendor": [
+          "adreno"
+        ],
+        "adrenoModel": [
+          "830-839"
+        ]
+      },
+      "profile": "adreno-83x",
+      "source": "GL renderer reports an Adreno 830-839"
+    },
+    {
+      "id": "adreno-7xx",
+      "match": {
+        "gpuVendor": [
+          "adreno"
+        ],
+        "adrenoModel": [
+          "700-799"
+        ]
+      },
+      "profile": "adreno-7xx",
+      "source": "Galaxy S23+ (Adreno 740) test device"
+    },
+    {
+      "id": "adreno-6xx",
+      "match": {
+        "gpuVendor": [
+          "adreno"
+        ],
+        "adrenoModel": [
+          "600-699"
+        ]
+      },
+      "profile": "adreno-6xx",
+      "source": "GL renderer reports an Adreno 600-699"
+    },
+    {
+      "id": "adreno-other",
+      "match": {
+        "gpuVendor": [
+          "adreno"
+        ]
+      },
+      "profile": "adreno-other",
+      "source": "Adreno without a recognised model"
+    },
+    {
+      "id": "mali",
+      "match": {
+        "gpuVendor": [
+          "mali"
+        ]
+      },
+      "profile": "mali",
+      "source": "Pixel 8a (Mali-G715) test device"
+    },
+    {
+      "id": "non-adreno-other",
+      "match": {
+        "gpuVendor": [
+          "xclipse",
+          "powervr",
+          "other"
+        ]
+      },
+      "profile": "non-adreno-other",
+      "source": "Known non-Adreno renderer"
+    },
+    {
+      "id": "catch-all",
+      "match": {},
+      "profile": "unknown-gpu",
+      "source": "Empty or unreadable renderer string"
+    }
+  ]
+}
