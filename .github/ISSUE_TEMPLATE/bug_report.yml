@@ -16,7 +16,7 @@ body:
     attributes:
       label: WeHavePhones version
       description: Shown on the About screen. Open Containers, then the menu, then About.
-      placeholder: "0.0.1"
+      placeholder: "0.0.2"
     validations:
       required: true
   - type: input
