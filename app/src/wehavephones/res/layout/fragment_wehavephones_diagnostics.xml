@@ -88,14 +88,6 @@
                     android:layout_marginTop="6dp"
                     android:text="@string/wehavephones_diag_memory_hint"
                     android:textSize="11sp" />
-                <TextView
-                    style="@style/WeHavePhonesSectionLabel"
-                    android:text="@string/wehavephones_diag_device_title" />
-                <TextView
-                    style="@style/WeHavePhonesHint"
-                    android:layout_marginTop="6dp"
-                    android:text="@string/wehavephones_diag_device_hint"
-                    android:textSize="11sp" />
             </LinearLayout>
         </ScrollView>
         <ScrollView
@@ -105,14 +97,29 @@
             android:layout_weight="1.4"
             android:scrollbars="vertical"
             android:scrollbarStyle="insideInset">
-            <TextView
-                android:id="@+id/TVDiagnostics"
-                style="@style/WeHavePhonesPanel"
-                android:text="@string/wehavephones_diag_empty"
-                android:textColor="@color/wehavephones_text"
-                android:textIsSelectable="true"
-                android:textSize="12sp"
-                android:typeface="monospace" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+                <TextView
+                    style="@style/WeHavePhonesSectionLabel"
+                    android:layout_marginTop="0dp"
+                    android:text="@string/wehavephones_diag_device_title" />
+                <TextView
+                    style="@style/WeHavePhonesHint"
+                    android:layout_marginTop="6dp"
+                    android:text="@string/wehavephones_diag_device_hint"
+                    android:textSize="11sp" />
+                <TextView
+                    android:id="@+id/TVDiagnostics"
+                    style="@style/WeHavePhonesPanel"
+                    android:layout_marginTop="10dp"
+                    android:text="@string/wehavephones_diag_empty"
+                    android:textColor="@color/wehavephones_text"
+                    android:textIsSelectable="true"
+                    android:textSize="12sp"
+                    android:typeface="monospace" />
+            </LinearLayout>
         </ScrollView>
     </LinearLayout>
 </LinearLayout>
