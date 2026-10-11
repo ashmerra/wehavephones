@@ -60,8 +60,8 @@ public final class RuntimeProfileParseSelfTest {
         check("proton-10.0-34-arm64ec".equals(p10.wineVersion), "p10-ge34 wineVersion");
         check(("turnip" + DefaultVersion.ADRENOTOOLS_TURNIP).equals(p10.graphics.get("version")),
                 "single runtime upgrades existing containers to the bundled Turnip default");
-        check("true".equals(p10.env.get("MESA_SHADER_CACHE_DISABLE")),
-                "single runtime bypasses the Turnip shader-cache compile failure");
+        check("false".equals(p10.env.get("MESA_SHADER_CACHE_DISABLE")),
+                "single runtime re-enables the shader cache on existing containers");
         check("off".equals(p10.env.get("WINE_FDSAN_LEVEL")),
                 "single runtime requests the Wine fd ownership workaround");
         check(p10.ntdll.size() == 3, "p10-ge34 has 3 ntdll artifacts");

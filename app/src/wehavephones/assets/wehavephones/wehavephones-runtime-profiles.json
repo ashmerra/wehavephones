@@ -19,7 +19,7 @@
       "wineVersion": "proton-10.0-34-arm64ec",
       "env": {
         "FEX_MULTIBLOCK": "0",
-        "MESA_SHADER_CACHE_DISABLE": "true",
+        "MESA_SHADER_CACHE_DISABLE": "false",
         "WINE_FDSAN_LEVEL": "off"
       },
       "bnetFlags": "--disable-gpu --enable-features=NetworkServiceInProcess2",

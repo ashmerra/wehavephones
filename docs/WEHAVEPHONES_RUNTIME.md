@@ -32,7 +32,7 @@ The profile is
 | --- | --- |
 | `wineVersion` | `proton-10.0-34-arm64ec` |
 | Battle.net flags (`bnet.bat`) | `--disable-gpu --enable-features=NetworkServiceInProcess2` |
-| Environment | `FEX_MULTIBLOCK=0`, `MESA_SHADER_CACHE_DISABLE=true`, `WINE_FDSAN_LEVEL=off` |
+| Environment | `FEX_MULTIBLOCK=0`, `MESA_SHADER_CACHE_DISABLE=false`, `WINE_FDSAN_LEVEL=off` |
 | Graphics driver | `turnip26.3.0-devel-1b51639c20` |
 
 Artifacts it installs:
@@ -72,7 +72,7 @@ retain the wrapper's system Vulkan path with the BCn compat layer.
 The rules replace the graphics `version` of the container at session start. The `p10-ge34` profile
 still sets that `version` so Play keeps existing managed containers consistent through the usual
 snapshot and read-back verification, but it no longer decides the driver. Other graphics settings
-and the shader cache / Wine descriptor workarounds are retained. The old 26.0 archive remains
+and the Wine descriptor workaround is retained. The old 26.0 archive remains
 available for an explicit rollback trial.
 
 ## Behavior notes
@@ -98,13 +98,15 @@ available for an explicit rollback trial.
   diagnostics can fill stderr and block WoW's rendering thread.
   `scripts/test-wehavephones-process.sh` checks both full pipes without a
   logger, observer failure, and selection of the private log directory.
-- **Shader cache.** The profile sets `MESA_SHADER_CACHE_DISABLE=true` as a
-  workaround for a Mesa `compile failed!` abort that Classic Era hit right after
-  creating its D3D12 device with the on-disk shader cache enabled. The applier
-  replaces the inherited value before Play starts Wine, including for existing
-  prepared containers, and leaves cache files intact. Disabling the
+- **Shader cache.** The profile sets `MESA_SHADER_CACHE_DISABLE=false`, so the
   [on-disk shader cache](https://docs.mesa3d.org/envvars.html#mesa-shader-cache-disable)
-  can increase shader compilation work on later launches.
+  stays on and later launches reuse compiled shaders. Earlier profiles disabled it
+  to work around a Mesa `compile failed!` abort that Classic Era hit right after
+  creating its D3D12 device on an older Turnip. With the cache re-enabled on
+  Turnip 26.3, the game launched without that abort on the S23+ on 2026-10-11.
+  The value is set explicitly rather than omitted because the applier only
+  replaces keys the profile lists, so existing prepared containers would
+  otherwise keep the old `true`. Cache files are never deleted.
 - **fdsan.** The profile requests `WINE_FDSAN_LEVEL=off`. On Android API 29+ the
   guest launcher preloads `libwehavephones_fdsan.so` before Wine starts when a
   container requests `off` or diagnostic `warn`. This extends the Android 17
