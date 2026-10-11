@@ -11,12 +11,14 @@ Built-in addon manager.
 
 ## Tested on
 
-| Phone | Chip / GPU | Android | Classic Era | Retail | Forever (beta) |
-|---|---|---|---|---|---|
-| Samsung Galaxy S23+ | Snapdragon 8 Gen 2 / Adreno 740 | 16 | Playable in world | Playable in world | Launches to login screen* |
-| Google Pixel 8a | Tensor G3 / Mali-G715 | 17 | Playable in world | Not tested | Not tested |
+| Phone | Chip / GPU | Android | Classic Era | Burning Crusade Anniversary | Mists of Pandaria Classic | Retail | Forever (beta) |
+|---|---|---|---|---|---|---|---|
+| Samsung Galaxy S23+ | Snapdragon 8 Gen 2 / Adreno 740 | 16 | Playable in world | Playable in world | Playable in world | Playable in world | Launches to login screen* |
+| Google Pixel 8a | Tensor G3 / Mali-G715 | 17 | Playable in world | Not tested | Not tested | Not tested | Not tested |
 
 \* Not tested past the login screen because I don't have beta access.
+
+The four live clients in the Americas & Oceania catalog were validated on the S23+ with 0.0.2-dev on 2026-10-10. Classic Era, Burning Crusade Anniversary and Mists of Pandaria Classic reached the world through automated phone control; Retail's new-character world login was confirmed manually. Hardcore and Season of Discovery share Classic Era's launch path and were not exercised separately. Beta and PTR clients were excluded from this run.
 
 Other games and versions have not been tested. Other phones are matched to a graphics setup by device rules; if yours misbehaves, use Report a problem in Diagnostics.
 
