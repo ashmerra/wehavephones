@@ -7,8 +7,8 @@ files reports from other sites should include.
 ## How reports flow
 
 1. **In the app.** Diagnostics has a Copy button and a Report a problem button. Both use the same
-   text block, `== WeHavePhones device report ==` (model, GPU, rule, profile, driver and probe
-   results; no account names, emails or serial numbers). Report a problem opens a prefilled
+   text block, `== WeHavePhones device report ==` (model, GPU, rule, profile, driver, the driver
+   picked in Diagnostics and probe results; no account names, emails or serial numbers). Report a problem opens a prefilled
    issue form in the browser (see below); Copy lets the user paste the block into any issue.
 2. **Issue form.** `.github/ISSUE_TEMPLATE/bug_report.yml` asks for version, phone, chipset,
    Android version, game, a free-text description and an optional `Device report` field.
