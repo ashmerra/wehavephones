@@ -20,6 +20,7 @@ imagery, and a single radius scale. Light and dark themes follow the system
 preference until the visitor chooses a theme. Entry motion establishes the
 reading order; hover motion provides feedback. Reduced motion disables both.
 
-`assets/gameplay.jpg` is the thumbnail from the project's own YouTube demo.
+`assets/gameplay-60s.jpg` is a frame at 1:00 from the project's own YouTube demo,
+chosen to show the whole screen without a hand covering the gameplay.
 The icon and logo come from `docs/brand/`. The font's license is included in
 `assets/geist-LICENSE.txt`.
