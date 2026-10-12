@@ -1,8 +1,8 @@
 {
   "schema": 1,
-  "rulesVersion": 1,
+  "rulesVersion": 2,
   "minAppVersionCode": 1,
-  "updatedAt": "2026-10-10",
+  "updatedAt": "2026-10-11",
   "drivers": {
     "system": {
       "type": "system",
@@ -25,6 +25,15 @@
       "libraryName": "libvulkan_freedreno.so",
       "librarySha256": "b6d445f512d15bb94be3d46bb2e2d27f604f161bf7400f32ed6008de59844c7f",
       "source": "Turnip Gen8 V37 by StevenMXZ (Mesa a995eaeda4 plus the turnip/gen8 branch), 2026-09-30; knows A840 as 0x44050A21 and A830 as 0x44050001; see graphics/turnip-gen8-stevenmxz-v37.json"
+    },
+    "turnip-v32-rp6sched": {
+      "type": "adrenotools",
+      "asset": null,
+      "url": "https://raw.githubusercontent.com/arusiasotto/wow-forever-a840/f9312100803afb1fd59dc5555d34429935c2828d/driver/turnip-V32-RP6sched.zip",
+      "sha256": "05434d3c102563a4577f514410cc713494bcf900f52c2b935391adf87a76b77a",
+      "libraryName": "libvulkan_freedreno.so",
+      "librarySha256": "5eb018451354d531f8db1f0417337d026ec9d8495916560a50d5cdd8c0e335d9",
+      "source": "Turnip-V32-RP6sched by arusiasotto (github.com/arusiasotto/wow-forever-a840), 2026-09-26: whitebelyash/mesa-unified turnip/gen8 9c7e022 plus the RP6 ir3 barycentric scheduler patch and vk_icd exports (Mesa 26.3.0-devel-9c7e022+rp6sched); the driver of the only reported in-world WoW run on an Adreno 840 (RedMagic 11 Pro, D3D11). Knows A840 as 0xffff44050A31 and A825 as 0x44030000. Downloaded on first use; the download and install were verified on the Galaxy S23 on 2026-10-11, where WoW renders broken in-world, so keep it to Adreno 8xx profiles."
     }
   },
   "profiles": {
@@ -50,9 +59,10 @@
       "wowApiArg": null,
       "notes": "Adreno 6xx: same driver choice as before device rules existed; no 6xx phone has been tested."
     },
-    "adreno-83x": {
+    "adreno-8xx": {
       "status": "community",
       "drivers": [
+        "turnip-v32-rp6sched",
         "turnip-gen8-stevenmxz-v37",
         "turnip26.3.0-devel-1b51639c20",
         "system"
@@ -61,19 +71,20 @@
         "TU_DEBUG": "noconform,sysmem"
       },
       "vulkanCompatLayer": false,
-      "wowApiArg": null,
-      "notes": "Adreno 830 (Snapdragon 8 Elite): Gen 8 Turnip first, then the pinned Turnip, then the system driver. Not yet run on an Adreno 830 phone."
+      "wowApiArg": "-d3d11",
+      "notes": "Adreno 800-839 (Gen 8 below the 840: 810, 825, 829, 830; Snapdragon 8 Elite, 8s Gen 4): the Adreno 840 setup (V32-RP6sched, then Gen 8 V37, with D3D11), then the pinned Turnip and the system driver. A Lenovo tablet with an Adreno 825 drew incorrectly on the pinned Turnip with D3D12 (issue #17). Not yet run on an Adreno 8xx phone."
     },
     "adreno-84x": {
       "status": "community",
       "drivers": [
+        "turnip-v32-rp6sched",
         "turnip-gen8-stevenmxz-v37",
         "system"
       ],
       "env": {},
       "vulkanCompatLayer": false,
-      "wowApiArg": null,
-      "notes": "Adreno 840 (Snapdragon 8 Elite Gen 5, OnePlus 15): the pinned Turnip shows corruption here (issue #13) because it only knows A840 as 0xffff44050A31 while retail phones report 0x44050A21; Gen 8 Turnip knows both. Not yet run on an Adreno 840 phone."
+      "wowApiArg": "-d3d11",
+      "notes": "Adreno 840 (Snapdragon 8 Elite Gen 5): V32-RP6sched with D3D11, the setup of the only reported in-world WoW run on an 840, then Gen 8 V37 and the system driver. Mainline Turnip (0.0.1) and V37 (0.0.2) both drew corruption with D3D12 on a OnePlus 15 (issue #13, chip 0x44050A31, which every bundled driver knows). D3D11 renders correctly on the Galaxy S23. Not yet run on an Adreno 840 phone."
     },
     "adreno-other": {
       "status": "untested",
@@ -140,20 +151,20 @@
         ]
       },
       "profile": "adreno-84x",
-      "source": "KGSL chip id 0x44050Axx (A840 retail 0x44050A21 and 0x44050A31); works when the renderer string has no model"
+      "source": "KGSL chip id 0x44050Axx (the OnePlus 15 and Galaxy S26 Ultra report 0x44050A31; 0x44050A21 was seen on a POCO F9 Pro); works when the renderer string has no model"
     },
     {
-      "id": "adreno-83x",
+      "id": "adreno-8xx",
       "match": {
         "gpuVendor": [
           "adreno"
         ],
         "adrenoModel": [
-          "830-839"
+          "800-839"
         ]
       },
-      "profile": "adreno-83x",
-      "source": "GL renderer reports an Adreno 830-839"
+      "profile": "adreno-8xx",
+      "source": "GL renderer reports an Adreno 800-839 (Gen 8 below the 840)"
     },
     {
       "id": "adreno-7xx",

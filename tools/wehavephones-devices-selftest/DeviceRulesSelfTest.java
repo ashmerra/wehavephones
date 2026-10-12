@@ -45,6 +45,7 @@ public final class DeviceRulesSelfTest {
 
     private static final String TURNIP = "turnip26.3.0-devel-1b51639c20";
     private static final String GEN8 = "turnip-gen8-stevenmxz-v37";
+    private static final String V32 = "turnip-v32-rp6sched";
 
     public static void main(String[] args) throws Exception {
         if (args.length < 1) throw new IllegalArgumentException("usage: DeviceRulesSelfTest <device-rules.json>");
@@ -240,15 +241,17 @@ public final class DeviceRulesSelfTest {
         eq("tested", match("Adreno (TM) 740", -1).profile.status, "S23 status");
         eq("mali", match("Mali-G715", -1).rule.id, "Pixel 8a rule");
         eq("mali", match("Mali-G715", -1).profile.name, "Pixel 8a profile");
-        eq("adreno-84x", match("Adreno (TM) 840", 0x44050A21L).rule.id, "OnePlus 15 rule");
-        eq("adreno-84x", match("Adreno (TM) 840", 0x44050A21L).profile.name, "OnePlus 15 profile");
+        eq("adreno-84x", match("Adreno (TM) 840", 0x44050A31L).rule.id, "OnePlus 15 rule");
+        eq("adreno-84x", match("Adreno (TM) 840", 0x44050A31L).profile.name, "OnePlus 15 profile");
+        eq("adreno-84x", match("Adreno (TM) 840", 0x44050A21L).profile.name, "A840 0x44050A21 profile");
         eq("adreno-84x", match("Adreno (TM) 840", -1).profile.name, "A840 without chip id");
         eq("adreno-84x-chip", match("Adreno (TM)", 0x44050A21L).rule.id, "chip-only match with unknown renderer model");
         eq("adreno-84x-chip", match("", 0x44050A31L).rule.id, "chip-only match with empty renderer");
-        eq("adreno-83x", match("Adreno (TM) 830", 0x44050001L).rule.id, "A830 rule");
-        eq("adreno-83x", match("Adreno (TM) 830", -1).profile.name, "A830 profile");
+        eq("adreno-8xx", match("Adreno (TM) 830", 0x44050001L).rule.id, "A830 rule");
+        eq("adreno-8xx", match("Adreno (TM) 830", -1).profile.name, "A830 profile");
+        eq("adreno-8xx", match("Adreno (TM) 825", 0x44030000L).rule.id, "A825 rule (Lenovo TB390FU, issue #17)");
+        eq("adreno-8xx", match("Adreno (TM) 810", -1).rule.id, "A810 rule");
         eq("adreno-6xx", match("Adreno (TM) 650", -1).rule.id, "A650 rule");
-        eq("adreno-other", match("Adreno (TM) 810", -1).rule.id, "A810 falls to adreno-other");
         eq("adreno-other", match("Adreno (TM)", -1).rule.id, "Adreno without model");
         eq("catch-all", match("", -1).rule.id, "empty renderer catch-all");
         eq("unknown-gpu", match("", -1).profile.name, "empty renderer profile");
@@ -259,13 +262,22 @@ public final class DeviceRulesSelfTest {
 
         DeviceRules rules = parseBundled();
         DeviceRules.Profile p84 = rules.getProfile("adreno-84x");
-        eq(GEN8, p84.drivers.get(0), "84x first driver");
+        eq(V32, p84.drivers.get(0), "84x first driver");
+        eq(GEN8, p84.drivers.get(1), "84x second driver");
         eq("system", p84.drivers.get(p84.drivers.size() - 1), "84x last driver");
-        DeviceRules.Profile p83 = rules.getProfile("adreno-83x");
-        eq(GEN8, p83.drivers.get(0), "83x first driver");
-        eq(TURNIP, p83.drivers.get(1), "83x second driver");
-        eq("noconform,sysmem", p83.env.get("TU_DEBUG"), "83x TU_DEBUG");
-        eq("community", p83.status, "83x status");
+        eq("-d3d11", p84.wowApiArg, "84x wowApiArg");
+        DeviceRules.Profile p8xx = rules.getProfile("adreno-8xx");
+        eq(V32, p8xx.drivers.get(0), "8xx first driver");
+        eq(GEN8, p8xx.drivers.get(1), "8xx second driver");
+        eq(TURNIP, p8xx.drivers.get(2), "8xx third driver");
+        eq("noconform,sysmem", p8xx.env.get("TU_DEBUG"), "8xx TU_DEBUG");
+        eq("-d3d11", p8xx.wowApiArg, "8xx wowApiArg");
+        eq("community", p8xx.status, "8xx status");
+        // V32 is downloaded, never bundled, and stays out of the profiles of GPUs it draws broken on.
+        DeviceRules.Driver v32 = rules.getDriver(V32);
+        check(v32.asset == null && v32.url != null, "V32 is a url driver");
+        eq("zip", v32.archiveKind(), "V32 archive kind");
+        check(!rules.getProfile("adreno-7xx").drivers.contains(V32), "V32 not used on Adreno 7xx");
         // Every rule has a source note.
         for (DeviceRules.Rule rule : rules.getRules()) check(!rule.source.isEmpty(), "rule " + rule.id + " has a source");
     }
@@ -753,23 +765,32 @@ public final class DeviceRulesSelfTest {
         // 8xx fallback order: first fails, second wins.
         Context fallback = newContext();
         FakeProber failFirst = new FakeProber();
-        failFirst.outcomes.put(GEN8, false);
+        failFirst.outcomes.put(V32, false);
         GraphicsPlan a830 = select(fallback, identity("Adreno (TM) 830", -1), failFirst, available());
-        eq(java.util.Arrays.asList(GEN8, TURNIP), failFirst.calls, "probe order");
-        eq(TURNIP, a830.driverId, "second driver wins after the first fails");
-        eq("noconform,sysmem", a830.env.get("TU_DEBUG"), "83x env in plan");
-        check(a830.log.toString().contains("probe " + GEN8 + "=failed"), "failure logged");
-        eq(GEN8 + "=failed; " + TURNIP + "=ok; system=not-tried", DeviceProfileSelector.driverProbes(a830), "probe summary with a failure");
+        eq(java.util.Arrays.asList(V32, GEN8), failFirst.calls, "probe order");
+        eq(GEN8, a830.driverId, "second driver wins after the first fails");
+        eq("noconform,sysmem", a830.env.get("TU_DEBUG"), "8xx env in plan");
+        eq("-d3d11", a830.wowApiArg, "8xx wowApiArg in plan");
+        check(a830.log.toString().contains("probe " + V32 + "=failed"), "failure logged");
+        eq(V32 + "=failed; " + GEN8 + "=ok; " + TURNIP + "=not-tried; system=not-tried", DeviceProfileSelector.driverProbes(a830), "probe summary with a failure");
 
         // Cached failure is not retried.
         failFirst.calls.clear();
         select(fallback, identity("Adreno (TM) 830", -1), failFirst, available());
         eq(0, failFirst.calls.size(), "no probes at all on the second run");
 
-        // Unavailable driver is skipped without a probe.
+        // A url driver that is not downloaded yet is skipped without a probe.
+        Context notYet = newContext();
+        FakeProber notYetProber = new FakeProber();
+        GraphicsPlan beforeDownload = select(notYet, identity("Adreno (TM) 840", 0x44050A31L), notYetProber, available(V32));
+        eq(java.util.Arrays.asList(GEN8), notYetProber.calls, "only the installed Gen 8 driver is probed");
+        eq(GEN8, beforeDownload.driverId, "Gen 8 driver until V32 is downloaded");
+        check(beforeDownload.log.toString().contains("probe " + V32 + "=unavailable"), "missing download logged");
+
+        // Unavailable drivers are skipped without a probe.
         Context skip = newContext();
         FakeProber skipProber = new FakeProber();
-        GraphicsPlan skipped = select(skip, identity("Adreno (TM) 840", 0x44050A21L), skipProber, available(GEN8));
+        GraphicsPlan skipped = select(skip, identity("Adreno (TM) 840", 0x44050A21L), skipProber, available(V32, GEN8));
         eq(0, skipProber.calls.size(), "unavailable driver skipped, nothing probed");
         eq("system", skipped.driverId, "falls back to system");
         check(!skipped.useAdrenotools, "system is not adrenotools");
@@ -778,16 +799,18 @@ public final class DeviceRulesSelfTest {
         // All adrenotools drivers fail: system.
         Context allFail = newContext();
         FakeProber failing = new FakeProber();
+        failing.outcomes.put(V32, false);
         failing.outcomes.put(GEN8, false);
         GraphicsPlan fallbackSystem = select(allFail, identity("Adreno (TM) 840", 0x44050A21L), failing, available());
         eq("system", fallbackSystem.driverId, "all failed uses system");
         check(fallbackSystem.log.toString().contains("probe " + GEN8 + "=failed"), "failure kept in the log");
 
-        // OnePlus 15 happy path.
+        // OnePlus 15 happy path (chip id from the device report in issue #13).
         Context op = newContext();
         FakeProber opProber = new FakeProber();
-        GraphicsPlan oneplus = select(op, identity("Adreno (TM) 840", 0x44050A21L), opProber, available());
-        eq(GEN8, oneplus.driverId, "OnePlus 15 gets the Gen 8 driver");
+        GraphicsPlan oneplus = select(op, identity("Adreno (TM) 840", 0x44050A31L), opProber, available());
+        eq(V32, oneplus.driverId, "OnePlus 15 gets V32-RP6sched");
+        eq("-d3d11", oneplus.wowApiArg, "OnePlus 15 runs WoW with D3D11");
         eq("adreno-84x", oneplus.ruleId, "OnePlus rule");
         eq("community", oneplus.profileStatus, "OnePlus status");
 
@@ -861,7 +884,7 @@ public final class DeviceRulesSelfTest {
     private static void testEquivalence() throws Exception {
         String[] renderers = {
             "Adreno (TM) 740", "Adreno (TM) 730", "Adreno (TM) 650", "Adreno (TM) 619", "Adreno (TM) 750",
-            "Adreno (TM) 810", "Mali-G715", "Mali-G78", "Immortalis-G720", "Samsung Xclipse 940", "PowerVR Rogue GE8320",
+            "Mali-G715", "Mali-G78", "Immortalis-G720", "Samsung Xclipse 940", "PowerVR Rogue GE8320",
             "llvmpipe (LLVM 15.0.7, 128 bits)", "",
         };
         for (String renderer : renderers) {
