@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Run World of Warcraft on your Android phone with WeHavePhones. Controller support, a built-in addon manager, and open source code.">
+    <meta name="color-scheme" content="light dark">
+    <meta property="og:title" content="WeHavePhones | World of Warcraft on Android">
+    <meta property="og:description" content="We do have phones. And also Wine. An independent, open source project for playing WoW on Android.">
+    <title>WeHavePhones | World of Warcraft on Android</title>
+    <link rel="icon" href="assets/icon.png" type="image/png">
+    <link rel="preload" href="assets/geist-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="styles.css">
+    <script>
+      try {
+        const theme = localStorage.getItem('whp-theme');
+        if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme;
+      } catch {}
+    </script>
+    <script src="site.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header shell">
+      <a class="brand" href="#" aria-label="WeHavePhones home">
+        <img src="assets/icon.png" alt="" width="40" height="40">
+        <span>We<span class="brand-accent">Have</span>Phones</span>
+      </a>
+      <nav aria-label="Main navigation">
+        <a href="#setup">Get started</a>
+        <a href="https://github.com/ashmerra/wehavephones">GitHub <span aria-hidden="true">↗</span></a>
+        <button class="theme-toggle" type="button" aria-label="Switch color theme" hidden>Light mode</button>
+      </nav>
+    </header>
+
+    <main id="main">
+      <section class="hero shell" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <p class="eyebrow">World of Warcraft on Android</p>
+          <h1 id="hero-title">Azeroth, on your phone.</h1>
+          <p class="hero-description">We do have phones. And also Wine.<br>Play WoW on Android, with controllers and your favorite addons.</p>
+          <div class="hero-actions">
+            <a class="button" href="https://github.com/ashmerra/wehavephones/releases/latest">Download APK <span aria-hidden="true">↓</span></a>
+            <a class="text-link" href="https://github.com/ashmerra/wehavephones">Explore the source <span aria-hidden="true">↗</span></a>
+          </div>
+        </div>
+        <figure class="demo">
+          <a class="demo-image" href="https://www.youtube.com/watch?v=4wet8as_QfA" aria-label="Watch the WeHavePhones gameplay demo on YouTube">
+            <img src="assets/gameplay.jpg" alt="World of Warcraft running on an Android phone, with touch controls in Teldrassil" width="1280" height="720" fetchpriority="high">
+          </a>
+          <figcaption>
+            <span>Yes, that's WoW. On a phone.</span>
+            <a href="https://www.youtube.com/watch?v=4wet8as_QfA">Watch the demo <span aria-hidden="true">↗</span></a>
+          </figcaption>
+        </figure>
+      </section>
+
+      <section class="features shell" aria-labelledby="features-title">
+        <div class="feature-intro">
+          <h2 id="features-title">Small screen.<br>Same adventure.</h2>
+          <p>A Winlator fork built for World of Warcraft and Battle.net on Android.</p>
+          <img class="phone-mark" src="assets/logo.png" alt="" width="160" height="160" loading="lazy">
+        </div>
+        <div class="feature-list">
+          <article>
+            <h3>Bring your controller</h3>
+            <p>Controller support powered by ConsolePort, so your next session can feel right at home.</p>
+          </article>
+          <article>
+            <h3>Keep your favorite addons</h3>
+            <p>Manage addons from inside the app. Less file juggling, more time in game.</p>
+          </article>
+          <article>
+            <h3>Start with your existing game files</h3>
+            <p>Already installed on a PC? Import your WoW folder, then let Battle.net finish the updates.</p>
+            <a class="text-link" href="https://github.com/ashmerra/wehavephones/blob/main/docs/REUSE_WOW_FILES.md">See how importing works <span aria-hidden="true">↗</span></a>
+          </article>
+        </div>
+      </section>
+
+      <section class="compatibility shell" aria-labelledby="compatibility-title">
+        <div class="section-heading">
+          <h2 id="compatibility-title">A few phones. A lot of testing.</h2>
+          <p>These are the phones we've tested. Other devices may need a different graphics setup.</p>
+        </div>
+        <div class="devices">
+          <article class="device">
+            <h3>Samsung Galaxy S23+</h3>
+            <p class="device-chip">Snapdragon 8 Gen 2 / Adreno 740</p>
+            <p>Classic Era, Burning Crusade Anniversary, Mists of Pandaria Classic, and Retail playable in world.</p>
+          </article>
+          <article class="device">
+            <h3>Google Pixel 8a</h3>
+            <p class="device-chip">Tensor G3 / Mali-G715</p>
+            <p>Classic Era playable in world. Other versions haven't been tested on this phone yet.</p>
+          </article>
+        </div>
+        <a class="text-link" href="https://github.com/ashmerra/wehavephones#tested-on">Full compatibility notes <span aria-hidden="true">↗</span></a>
+      </section>
+
+      <section class="setup shell" id="setup" aria-labelledby="setup-title">
+        <div class="setup-intro">
+          <h2 id="setup-title">Your next login<br>could be on Android.</h2>
+          <p>Download the APK from GitHub, install it, and follow Setup in the app. Then you're ready to press Play.</p>
+          <a class="text-link" href="https://github.com/ashmerra/wehavephones#install">Read the installation guide <span aria-hidden="true">↗</span></a>
+        </div>
+        <div class="questions">
+          <details>
+            <summary>What do I need?</summary>
+            <p>A 64-bit ARM phone running Android 8.0 or newer, enough storage for the game, and your own Blizzard account and game license. Performance varies by device.</p>
+          </details>
+          <details>
+            <summary>How do I install it?</summary>
+            <p>Download the latest APK from GitHub Releases and allow your browser or file manager to install it. Open WeHavePhones and follow Setup to prepare the container, install Battle.net, and download or import WoW.</p>
+          </details>
+          <details>
+            <summary>Is this an official Blizzard app?</summary>
+            <p>No. WeHavePhones is an independent, unofficial project, and it includes no Blizzard game files. Blizzard does not officially support Wine or Android. See the <a href="https://github.com/ashmerra/wehavephones#trademarks-and-disclaimer">project disclaimer</a> for details.</p>
+          </details>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer shell">
+      <div class="footer-top">
+        <a class="brand" href="#"><img src="assets/icon.png" alt="" width="32" height="32"><span>WeHavePhones</span></a>
+        <nav aria-label="Project links">
+          <a href="https://github.com/ashmerra/wehavephones">Source code</a>
+          <a href="https://github.com/ashmerra/wehavephones/issues">Report an issue</a>
+          <a href="https://github.com/ashmerra/wehavephones/blob/main/LICENSE">MIT license</a>
+        </nav>
+      </div>
+      <p>Built on <a href="https://github.com/FrontMage/winlator-llm">Winlator LLM</a> by FrontMage and <a href="https://github.com/brunodev85/winlator">Winlator</a> by BrunoSX. <a href="https://github.com/ashmerra/wehavephones#credits">Meet the projects behind it.</a></p>
+      <p>Independent and unofficial. Not affiliated with or endorsed by Blizzard Entertainment, Microsoft, or the Winlator projects. World of Warcraft and Battle.net are Blizzard trademarks.</p>
+    </footer>
+  </body>
+</html>
