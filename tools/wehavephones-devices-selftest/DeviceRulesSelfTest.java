@@ -970,6 +970,17 @@ public final class DeviceRulesSelfTest {
         eq("", ignored.driverChoice, "unoffered pick not recorded");
         check(ignored.log.toString().contains("is not offered"), "unoffered pick logged");
 
+        // The driver Automatic uses, for the picker: the first listed driver not known to fail.
+        DeviceRules.Profile s23Profile = rules.match(s23).profile;
+        eq(TURNIP, DeviceProfileSelector.automaticDriver(newContext(), s23Profile).id, "Automatic before any probe");
+        eq(TURNIP, DeviceProfileSelector.automaticDriver(auto, s23Profile).id, "Automatic after its driver loaded");
+        Context brokenFirst = newContext();
+        FakeProber brokenProber = new FakeProber();
+        brokenProber.outcomes.put(TURNIP, false);
+        DeviceProfileSelector.select(brokenFirst, s23, loaded, brokenProber, available());
+        eq("system", DeviceProfileSelector.automaticDriver(brokenFirst, s23Profile).id, "Automatic skips a failed driver");
+        check(DeviceProfileSelector.automaticDriver(auto, null) == null, "no profile, no Automatic driver");
+
         // Back to Automatic.
         DeviceProfileSelector.setDriverChoice(pick, null);
         eq("", DeviceProfileSelector.driverChoice(pick), "pick cleared");

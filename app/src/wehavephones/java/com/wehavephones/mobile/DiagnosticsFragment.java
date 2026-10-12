@@ -1,6 +1,5 @@
 package com.wehavephones.mobile;
 
-import android.app.AlertDialog;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
@@ -12,7 +11,6 @@ import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ListPopupWindow;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -22,19 +20,14 @@ import androidx.fragment.app.Fragment;
 
 import com.wehavephones.BuildConfig;
 import com.wehavephones.R;
-import com.wehavephones.core.GraphicsPlan;
-import com.wehavephones.mobile.devices.DeviceDriverStore;
 import com.wehavephones.mobile.devices.DeviceIdentity;
-import com.wehavephones.mobile.devices.DeviceProfileSelector;
 import com.wehavephones.mobile.devices.DeviceReport;
-import com.wehavephones.mobile.devices.DeviceRules;
 import com.wehavephones.mobile.devices.DeviceRulesStore;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.Executors;
 
@@ -45,11 +38,6 @@ public class DiagnosticsFragment extends Fragment {
     private WeHavePhonesActivity activity;
     private TextView diagnosticsView;
     private TextView memoryView;
-    private View driverSection;
-    private View driverSwitch;
-    private TextView driverName;
-    private TextView driverMeta;
-    private List<DriverChoiceAdapter.Row> driverRows = new ArrayList<>();
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final ArrayList<MemoryReport.Sample> samples = new ArrayList<>();
     private volatile String appliedLabels = "";
@@ -78,18 +66,12 @@ public class DiagnosticsFragment extends Fragment {
         activity = (WeHavePhonesActivity)getActivity();
         diagnosticsView = view.findViewById(R.id.TVDiagnostics);
         memoryView = view.findViewById(R.id.TVMemoryPanel);
-        driverSection = view.findViewById(R.id.LLDriverSection);
-        driverSwitch = view.findViewById(R.id.LLDriverSwitch);
-        driverName = view.findViewById(R.id.TVDriverName);
-        driverMeta = view.findViewById(R.id.TVDriverMeta);
-        driverSwitch.setOnClickListener((v) -> showDriverPicker());
         view.findViewById(R.id.BTRefresh).setOnClickListener((v) -> refresh());
         view.findViewById(R.id.BTCopy).setOnClickListener((v) -> copyToClipboard());
         view.findViewById(R.id.BTSaveMemory).setOnClickListener((v) -> saveMemoryReport());
         view.findViewById(R.id.BTDeviceUpdate).setOnClickListener((v) -> checkDeviceUpdates());
         view.findViewById(R.id.BTDeviceReport).setOnClickListener((v) -> reportProblem());
         refresh();
-        refreshDriverPicker();
     }
 
     @Override
@@ -109,10 +91,6 @@ public class DiagnosticsFragment extends Fragment {
         handler.removeCallbacks(sampler);
         diagnosticsView = null;
         memoryView = null;
-        driverSection = null;
-        driverSwitch = null;
-        driverName = null;
-        driverMeta = null;
         super.onDestroyView();
     }
 
@@ -193,106 +171,7 @@ public class DiagnosticsFragment extends Fragment {
             final String text = message;
             host.runOnUiThread(() -> {
                 Toast.makeText(host, text, Toast.LENGTH_LONG).show();
-                if (isAdded()) {
-                    refresh();
-                    refreshDriverPicker();
-                }
-            });
-        });
-    }
-
-    // The dropdown shows when this phone's profile offers more than one driver (not on Mali).
-    private void refreshDriverPicker() {
-        final WeHavePhonesActivity host = activity;
-        if (host == null) return;
-        final Context appContext = host.getApplicationContext();
-        Executors.newSingleThreadExecutor().execute(() -> {
-            final List<DriverChoiceAdapter.Row> rows = driverRows(host, appContext);
-            host.runOnUiThread(() -> {
-                if (!isAdded() || driverSwitch == null) return;
-                driverRows = rows;
-                driverSection.setVisibility(rows.size() > 2 ? View.VISIBLE : View.GONE);
-                DriverChoiceAdapter.Row current = rows.isEmpty() ? null : rows.get(0);
-                for (DriverChoiceAdapter.Row row : rows) {
-                    if (row.selected) current = row;
-                }
-                if (current == null) return;
-                driverName.setText(current.name);
-                driverMeta.setText(current.meta);
-            });
-        });
-    }
-
-    // Automatic, then the profile's drivers and choices; no rows when the rules cannot be read.
-    private static List<DriverChoiceAdapter.Row> driverRows(Context host, Context appContext) {
-        ArrayList<DriverChoiceAdapter.Row> rows = new ArrayList<>();
-        DeviceRules.Profile profile = DeviceProfileSelector.matchedProfile(appContext);
-        if (profile == null) return rows;
-        DeviceRules.Driver picked = profile.pickerDriver(DeviceProfileSelector.driverChoice(appContext));
-        GraphicsPlan plan = DeviceProfileSelector.lastPlan(appContext);
-        DeviceRules.Driver used = plan != null && plan.driverChoice.isEmpty() && profile.name.equals(plan.profileName)
-                ? profile.pickerDriver(plan.driverId) : null;
-        rows.add(new DriverChoiceAdapter.Row(null, host.getString(R.string.wehavephones_diag_driver_automatic),
-                used != null ? host.getString(R.string.wehavephones_diag_driver_row_automatic, used.id)
-                        : host.getString(R.string.wehavephones_diag_driver_row_automatic_rules),
-                picked == null));
-        for (DeviceRules.Driver driver : profile.pickerDrivers()) {
-            int meta = driver.isSystem() ? R.string.wehavephones_diag_driver_row_system
-                    : driver.asset != null ? R.string.wehavephones_diag_driver_row_builtin
-                    : DeviceDriverStore.isInstalled(appContext, driver) ? R.string.wehavephones_diag_driver_row_downloaded
-                    : R.string.wehavephones_diag_driver_row_download;
-            rows.add(new DriverChoiceAdapter.Row(driver, driver.id, host.getString(meta), driver == picked));
-        }
-        return rows;
-    }
-
-    private void showDriverPicker() {
-        final WeHavePhonesActivity host = activity;
-        if (host == null || driverSwitch == null || driverRows.isEmpty()) return;
-        final List<DriverChoiceAdapter.Row> rows = driverRows;
-        final ListPopupWindow popup = new ListPopupWindow(host);
-        popup.setAnchorView(driverSwitch);
-        popup.setAdapter(new DriverChoiceAdapter(host, rows));
-        popup.setBackgroundDrawable(host.getDrawable(R.drawable.wehavephones_card_background));
-        popup.setModal(true);
-        popup.setOnItemClickListener((parent, item, position, id) -> {
-            popup.dismiss();
-            if (!isAdded() || position >= rows.size() || rows.get(position).selected) return;
-            pickDriver(rows.get(position).driver);
-        });
-        popup.show();
-    }
-
-    // Saves the pick once the driver is on the phone, downloading it first when needed.
-    private void pickDriver(final DeviceRules.Driver driver) {
-        final WeHavePhonesActivity host = activity;
-        if (host == null) return;
-        final Context appContext = host.getApplicationContext();
-        final String name = driver != null ? driver.id : host.getString(R.string.wehavephones_diag_driver_automatic);
-        final AlertDialog progress = driver != null && !driver.isSystem()
-                ? new AlertDialog.Builder(host)
-                        .setMessage(host.getString(R.string.wehavephones_diag_driver_downloading, name))
-                        .setCancelable(false)
-                        .show()
-                : null;
-        Executors.newSingleThreadExecutor().execute(() -> {
-            String message;
-            try {
-                if (driver != null) DeviceDriverStore.install(appContext, driver);
-                DeviceProfileSelector.setDriverChoice(appContext, driver);
-                message = host.getString(R.string.wehavephones_diag_driver_saved, name);
-            }
-            catch (Throwable throwable) {
-                message = host.getString(R.string.wehavephones_diag_driver_failed, name, String.valueOf(throwable.getMessage()));
-            }
-            final String text = message;
-            host.runOnUiThread(() -> {
-                if (progress != null) progress.dismiss();
-                Toast.makeText(host, text, Toast.LENGTH_LONG).show();
-                if (isAdded()) {
-                    refresh();
-                    refreshDriverPicker();
-                }
+                if (isAdded()) refresh();
             });
         });
     }

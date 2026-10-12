@@ -17,9 +17,10 @@ import com.wehavephones.mobile.devices.DeviceRules;
 import java.util.List;
 
 /**
- * Rows of the Diagnostics "Graphics driver" dropdown, styled like the Play
- * screen's game versions: a gem, the driver name and a line saying where the
- * driver comes from. The current pick is bright, the others dimmed.
+ * Rows of the Play screen's "Graphics driver" dropdown, styled like its game
+ * versions: a gem, the driver name and a line saying where the driver comes
+ * from. The current pick is bright, the others dimmed; the line of the driver
+ * Automatic uses says so in the accent color.
  */
 final class DriverChoiceAdapter extends ArrayAdapter<DriverChoiceAdapter.Row> {
     static final class Row {
@@ -28,12 +29,15 @@ final class DriverChoiceAdapter extends ArrayAdapter<DriverChoiceAdapter.Row> {
         final String name;
         final String meta;
         final boolean selected;
+        /** The driver Automatic uses. */
+        final boolean automatic;
 
-        Row(DeviceRules.Driver driver, String name, String meta, boolean selected) {
+        Row(DeviceRules.Driver driver, String name, String meta, boolean selected, boolean automatic) {
             this.driver = driver;
             this.name = name;
             this.meta = meta;
             this.selected = selected;
+            this.automatic = automatic;
         }
     }
 
@@ -55,6 +59,7 @@ final class DriverChoiceAdapter extends ArrayAdapter<DriverChoiceAdapter.Row> {
         name.setText(row.name);
         name.setTextColor(context.getColor(row.selected ? R.color.wehavephones_accent : R.color.wehavephones_text));
         meta.setText(row.meta);
+        meta.setTextColor(context.getColor(row.automatic ? R.color.wehavephones_accent : R.color.wehavephones_text_dim));
         view.setPaddingRelative(view.getPaddingStart(), view.getPaddingTop(), view.getPaddingStart(), view.getPaddingBottom());
 
         Drawable gem = view.findViewById(R.id.VGameGem).getBackground().mutate();

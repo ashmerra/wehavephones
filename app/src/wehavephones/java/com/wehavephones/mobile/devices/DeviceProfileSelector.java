@@ -25,7 +25,7 @@ import java.util.Map;
 /**
  * Turns the device rules into a {@link GraphicsPlan} for this session: match the device to a
  * profile, then try the profile's drivers in order, each through a cached test load, and fall
- * back to the system driver. A driver picked in Diagnostics is tried first; if it is not offered,
+ * back to the system driver. A driver picked on the Play screen is tried first; if it is not offered,
  * not installed or fails its probe, the session uses the automatic order. Runs in the process that
  * starts the session; the first probe of a driver loads it, later sessions reuse the cached result.
  */
@@ -136,7 +136,7 @@ public final class DeviceProfileSelector {
         return plan;
     }
 
-    // The Diagnostics pick when the profile offers it and it loads; null means use the automatic order.
+    // The Play screen pick when the profile offers it and it loads; null means use the automatic order.
     private static DeviceRules.Driver pickedDriver(Context context, SharedPreferences preferences, DeviceRules.Profile profile,
                                                    Prober prober, Availability availability, GraphicsPlan plan) {
         String choice = preferences.getString(KEY_DRIVER_CHOICE, "");
@@ -147,7 +147,7 @@ public final class DeviceProfileSelector {
             return null;
         }
         plan.driverChoice = driver.id;
-        note(plan, "driver choice " + driver.id + " (picked in Diagnostics)");
+        note(plan, "driver choice " + driver.id + " (picked on the Play screen)");
         if (driver.isSystem()) {
             note(plan, "probe " + driver.id + "=not-tried");
             return driver;
@@ -163,7 +163,7 @@ public final class DeviceProfileSelector {
         return null;
     }
 
-    /** The driver picked in Diagnostics, or "" for Automatic. */
+    /** The driver picked on the Play screen, or "" for Automatic. */
     public static String driverChoice(Context context) {
         String choice = context.getSharedPreferences(DeviceRulesStore.PREFERENCES, Context.MODE_PRIVATE)
             .getString(KEY_DRIVER_CHOICE, "");
@@ -171,7 +171,7 @@ public final class DeviceProfileSelector {
     }
 
     /**
-     * Saves the Diagnostics pick ("" or null for Automatic). Picking a driver again forgets its
+     * Saves the Play screen pick ("" or null for Automatic). Picking a driver again forgets its
      * cached probe result, so a driver that failed once is test-loaded again at the next start.
      */
     public static void setDriverChoice(Context context, DeviceRules.Driver driver) {
@@ -200,6 +200,22 @@ public final class DeviceProfileSelector {
             Log.w(TAG, "could not match the device profile: " + e);
             return null;
         }
+    }
+
+    /**
+     * The driver Automatic uses at the next start, without probing or downloading: the first of the
+     * profile's drivers whose cached test load has not failed, else the system driver when the
+     * profile offers it. Null without a profile.
+     */
+    public static DeviceRules.Driver automaticDriver(Context context, DeviceRules.Profile profile) {
+        if (profile == null) return null;
+        SharedPreferences preferences = context.getSharedPreferences(DeviceRulesStore.PREFERENCES, Context.MODE_PRIVATE);
+        for (DeviceRules.Driver driver : profile.driverEntries) {
+            if (driver.isSystem()) return driver;
+            String cached = preferences.getString(probeKey(driver), null);
+            if (cached == null || GpuProbe.ProbeResult.fromJson(cached).ok) return driver;
+        }
+        return profile.pickerDriver(DeviceRules.SYSTEM_DRIVER);
     }
 
     /** The WoW graphics API argument of the matched profile (for example "-d3d11"); null keeps "-d3d12". */

@@ -163,5 +163,65 @@
                 android:text="@string/wehavephones_setup_details"
                 android:visibility="gone" />
         </LinearLayout>
+        <LinearLayout
+            android:id="@+id/LLDriverSection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:orientation="vertical"
+            android:visibility="gone">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+                <TextView
+                    style="@style/WeHavePhonesSectionLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_marginTop="0dp"
+                    android:layout_marginBottom="0dp"
+                    android:textColor="@color/wehavephones_text_title"
+                    android:textSize="17sp"
+                    android:text="@string/wehavephones_driver_title" />
+                <LinearLayout
+                    android:id="@+id/LLDriverSwitch"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="14dp"
+                    android:minHeight="36dp"
+                    android:background="@drawable/wehavephones_card_background"
+                    android:paddingLeft="12dp"
+                    android:paddingRight="8dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center_vertical"
+                    android:contentDescription="@string/wehavephones_driver_title"
+                    android:orientation="horizontal">
+                    <TextView
+                        android:id="@+id/TVDriverName"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:maxWidth="220dp"
+                        android:fontFamily="sans-serif-medium"
+                        android:textColor="@color/wehavephones_text_title"
+                        android:textSize="14sp"
+                        android:maxLines="1"
+                        android:ellipsize="end"
+                        android:text="@string/wehavephones_driver_automatic"
+                        android:includeFontPadding="false" />
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_marginLeft="6dp"
+                        android:src="@drawable/wehavephones_ic_caret_down"
+                        android:tint="@color/wehavephones_text_title"
+                        android:importantForAccessibility="no" />
+                </LinearLayout>
+            </LinearLayout>
+            <TextView
+                style="@style/WeHavePhonesHint"
+                android:layout_marginTop="6dp"
+                android:text="@string/wehavephones_driver_hint" />
+        </LinearLayout>
     </LinearLayout>
 </ScrollView>

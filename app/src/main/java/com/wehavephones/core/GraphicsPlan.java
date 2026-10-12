@@ -19,7 +19,7 @@ public final class GraphicsPlan {
     public final LinkedHashMap<String, String> env = new LinkedHashMap<>();
     public boolean vulkanCompatLayer;
     public String wowApiArg;
-    /** The driver picked in Diagnostics, or "" for Automatic; driverId says what actually ran. */
+    /** The driver picked on the Play screen, or "" for Automatic; driverId says what actually ran. */
     public String driverChoice = "";
     public String ruleId = "", profileName = "", profileStatus = "", rulesSource = "";
     public int rulesVersion;

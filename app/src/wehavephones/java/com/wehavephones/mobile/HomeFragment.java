@@ -40,6 +40,7 @@ public class HomeFragment extends Fragment {
     private ImageView playIcon;
     private View openBattleNet;
     private View setupDetails;
+    private DriverPicker driverPicker;
     private BattleNetGames.Game selectedGame;
     private WeHavePhonesStatus status;
     private String stageMessage = "";
@@ -75,6 +76,8 @@ public class HomeFragment extends Fragment {
         playIcon = view.findViewById(R.id.IVPlayIcon);
         openBattleNet = view.findViewById(R.id.BTOpenBattleNet);
         setupDetails = view.findViewById(R.id.TVSetupDetails);
+        driverPicker = new DriverPicker(this, view.findViewById(R.id.LLDriverSection),
+                view.findViewById(R.id.LLDriverSwitch), view.findViewById(R.id.TVDriverName));
 
         playButton.setOnClickListener((v) -> {
             if (status == null) return;
@@ -106,6 +109,7 @@ public class HomeFragment extends Fragment {
         activity.setStageUpdater(stageUpdater);
         activity.setAtmosphereAnimated(true);
         refresh();
+        driverPicker.refresh();
     }
 
     @Override

@@ -21,7 +21,7 @@ compat layer is installed, and optionally the WoW graphics API flag.
   8 Elite): the same, with the pinned Turnip before the system driver.
 - Anything else falls through to a catch-all rule that matches the old behavior.
 
-Players can also pick a driver themselves in Diagnostics (see [Driver picker](#driver-picker)).
+Players can also pick a driver themselves on the Play screen (see [Driver picker](#driver-picker)).
 Adreno 840 phones are offered 16 drivers and other Adreno 8xx phones 14: the profile's own, plus
 other public Turnip builds and Qualcomm driver builds that the rules list as `choices`.
 
@@ -80,7 +80,7 @@ show how much a setup has been run on real hardware.
    that loads wins. If none does, the system driver is used.
 5. The plan (driver, environment, compat layer) is applied to the session and saved for Diagnostics.
 
-A driver picked in Diagnostics goes before step 4: it is used if the matched profile offers it, it
+A driver picked on the Play screen goes before step 4: it is used if the matched profile offers it, it
 is installed and it loads. Otherwise the session logs why and uses the automatic order. The pick
 does not change the profile's environment, compat layer or WoW API flag.
 
@@ -92,11 +92,15 @@ under the `WeHavePhonesDevices` logcat tag.
 
 ## Driver picker
 
-Diagnostics has a "Graphics driver" button in the Device section on phones whose profile offers
-more than one driver (not on Mali). It lists Automatic, then the profile's `drivers`, then its
-`choices`. Picking a driver that is not on the phone downloads and verifies it right away; the
-pick is saved only after that works, and it applies from the next game start. Picking a driver
-again forgets its cached probe result, so a driver that failed to load once is tried again.
+The Play screen has a "Graphics driver" section below the Play button on phones whose profile
+offers more than one driver (not on Mali): a small dropdown next to the heading and, below it, a
+note to try another driver after graphical glitches or crashes. The dropdown lists Automatic, then the profile's `drivers`, then its
+`choices`. The closed dropdown says only "Automatic" when nothing is picked;
+the open list marks the driver Automatic uses next ("Used by Automatic"): the first of the
+profile's `drivers` whose cached test load has not failed. Picking a driver that is not on the
+phone downloads and verifies it right away; the pick is saved only after that works, and it
+applies from the next game start. Picking a driver again forgets its cached probe result, so a
+driver that failed to load once is tried again.
 
 The device report has a `driver_choice` line (`automatic`, or the picked id), next to `driver`,
 which says what the last session actually used.
