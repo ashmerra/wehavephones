@@ -234,16 +234,10 @@ public final class DeviceRulesSelfTest {
         check(rejects(mutate(r -> r.getJSONObject("profiles").getJSONObject("adreno-7xx").put("choices", new JSONArray().put(TURNIP)))), "choice already in drivers rejected");
         check(rejects(mutate(r -> r.getJSONObject("profiles").getJSONObject("adreno-7xx").put("choices", new JSONArray().put(GEN8).put(GEN8)))), "duplicate choice rejected");
         check(rejects(mutate(r -> r.getJSONObject("profiles").getJSONObject("adreno-7xx").put("choices", GEN8))), "choices must be an array");
-        check(rejects(mutate(r -> r.getJSONObject("drivers").getJSONObject(TURNIP).put("label", 3))), "non-string label rejected");
-        DeviceRules picker = DeviceRules.parse(mutate(r -> {
-            r.getJSONObject("profiles").getJSONObject("adreno-7xx").put("choices", new JSONArray().put(GEN8).put(V32));
-            r.getJSONObject("drivers").getJSONObject(GEN8).put("label", "Gen 8 V37");
-            r.getJSONObject("drivers").getJSONObject(V32).remove("label");
-        }));
+        DeviceRules picker = DeviceRules.parse(mutate(r ->
+            r.getJSONObject("profiles").getJSONObject("adreno-7xx").put("choices", new JSONArray().put(GEN8).put(V32))));
         DeviceRules.Profile s23 = picker.getProfile("adreno-7xx");
         eq(java.util.Arrays.asList(TURNIP, "system", GEN8, V32), ids(s23.pickerDrivers()), "picker lists drivers, then choices");
-        eq("Gen 8 V37", picker.getDriver(GEN8).displayName(), "label is the display name");
-        eq(V32, picker.getDriver(V32).displayName(), "no label shows the id");
         check(s23.pickerDriver("nope") == null, "unknown picker id");
         eq(java.util.Arrays.asList("system"), ids(picker.getProfile("mali").pickerDrivers()), "Mali offers only the system driver");
     }

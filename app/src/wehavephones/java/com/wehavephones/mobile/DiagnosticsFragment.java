@@ -45,6 +45,7 @@ public class DiagnosticsFragment extends Fragment {
     private WeHavePhonesActivity activity;
     private TextView diagnosticsView;
     private TextView memoryView;
+    private View driverSection;
     private View driverSwitch;
     private TextView driverName;
     private TextView driverMeta;
@@ -77,6 +78,7 @@ public class DiagnosticsFragment extends Fragment {
         activity = (WeHavePhonesActivity)getActivity();
         diagnosticsView = view.findViewById(R.id.TVDiagnostics);
         memoryView = view.findViewById(R.id.TVMemoryPanel);
+        driverSection = view.findViewById(R.id.LLDriverSection);
         driverSwitch = view.findViewById(R.id.LLDriverSwitch);
         driverName = view.findViewById(R.id.TVDriverName);
         driverMeta = view.findViewById(R.id.TVDriverMeta);
@@ -107,6 +109,7 @@ public class DiagnosticsFragment extends Fragment {
         handler.removeCallbacks(sampler);
         diagnosticsView = null;
         memoryView = null;
+        driverSection = null;
         driverSwitch = null;
         driverName = null;
         driverMeta = null;
@@ -204,44 +207,33 @@ public class DiagnosticsFragment extends Fragment {
         if (host == null) return;
         final Context appContext = host.getApplicationContext();
         Executors.newSingleThreadExecutor().execute(() -> {
-            final DriverRows loaded = driverRows(host, appContext);
-            final List<DriverChoiceAdapter.Row> rows = loaded.rows;
+            final List<DriverChoiceAdapter.Row> rows = driverRows(host, appContext);
             host.runOnUiThread(() -> {
                 if (!isAdded() || driverSwitch == null) return;
                 driverRows = rows;
-                driverSwitch.setVisibility(rows.size() > 2 ? View.VISIBLE : View.GONE);
+                driverSection.setVisibility(rows.size() > 2 ? View.VISIBLE : View.GONE);
                 DriverChoiceAdapter.Row current = rows.isEmpty() ? null : rows.get(0);
                 for (DriverChoiceAdapter.Row row : rows) {
                     if (row.selected) current = row;
                 }
                 if (current == null) return;
                 driverName.setText(current.name);
-                driverMeta.setText(current.driver == null && loaded.automaticUses != null
-                        ? host.getString(R.string.wehavephones_diag_driver_meta_using, loaded.automaticUses)
-                        : host.getString(R.string.wehavephones_diag_driver_title));
+                driverMeta.setText(current.meta);
             });
         });
     }
 
-    private static final class DriverRows {
-        final ArrayList<DriverChoiceAdapter.Row> rows = new ArrayList<>();
-        /** The driver Automatic used in the last session, or null when unknown. */
-        String automaticUses;
-    }
-
     // Automatic, then the profile's drivers and choices; no rows when the rules cannot be read.
-    private static DriverRows driverRows(Context host, Context appContext) {
-        DriverRows result = new DriverRows();
-        ArrayList<DriverChoiceAdapter.Row> rows = result.rows;
+    private static List<DriverChoiceAdapter.Row> driverRows(Context host, Context appContext) {
+        ArrayList<DriverChoiceAdapter.Row> rows = new ArrayList<>();
         DeviceRules.Profile profile = DeviceProfileSelector.matchedProfile(appContext);
-        if (profile == null) return result;
+        if (profile == null) return rows;
         DeviceRules.Driver picked = profile.pickerDriver(DeviceProfileSelector.driverChoice(appContext));
         GraphicsPlan plan = DeviceProfileSelector.lastPlan(appContext);
         DeviceRules.Driver used = plan != null && plan.driverChoice.isEmpty() && profile.name.equals(plan.profileName)
                 ? profile.pickerDriver(plan.driverId) : null;
-        if (used != null) result.automaticUses = used.displayName();
         rows.add(new DriverChoiceAdapter.Row(null, host.getString(R.string.wehavephones_diag_driver_automatic),
-                used != null ? host.getString(R.string.wehavephones_diag_driver_row_automatic, used.displayName())
+                used != null ? host.getString(R.string.wehavephones_diag_driver_row_automatic, used.id)
                         : host.getString(R.string.wehavephones_diag_driver_row_automatic_rules),
                 picked == null));
         for (DeviceRules.Driver driver : profile.pickerDrivers()) {
@@ -249,9 +241,9 @@ public class DiagnosticsFragment extends Fragment {
                     : driver.asset != null ? R.string.wehavephones_diag_driver_row_builtin
                     : DeviceDriverStore.isInstalled(appContext, driver) ? R.string.wehavephones_diag_driver_row_downloaded
                     : R.string.wehavephones_diag_driver_row_download;
-            rows.add(new DriverChoiceAdapter.Row(driver, driver.displayName(), host.getString(meta), driver == picked));
+            rows.add(new DriverChoiceAdapter.Row(driver, driver.id, host.getString(meta), driver == picked));
         }
-        return result;
+        return rows;
     }
 
     private void showDriverPicker() {
@@ -276,7 +268,7 @@ public class DiagnosticsFragment extends Fragment {
         final WeHavePhonesActivity host = activity;
         if (host == null) return;
         final Context appContext = host.getApplicationContext();
-        final String name = driver != null ? driver.displayName() : host.getString(R.string.wehavephones_diag_driver_automatic);
+        final String name = driver != null ? driver.id : host.getString(R.string.wehavephones_diag_driver_automatic);
         final AlertDialog progress = driver != null && !driver.isSystem()
                 ? new AlertDialog.Builder(host)
                         .setMessage(host.getString(R.string.wehavephones_diag_driver_downloading, name))

@@ -50,11 +50,9 @@ public final class DeviceRules {
         public final String libraryName;
         public final String librarySha256;
         public final String source;
-        /** Name shown in the driver picker; empty means the id. */
-        public final String label;
 
         Driver(String id, String type, String description, String asset, String url, String sha256,
-               String libraryName, String librarySha256, String source, String label) {
+               String libraryName, String librarySha256, String source) {
             this.id = id;
             this.type = type;
             this.description = description;
@@ -64,11 +62,6 @@ public final class DeviceRules {
             this.libraryName = libraryName;
             this.librarySha256 = librarySha256;
             this.source = source;
-            this.label = label;
-        }
-
-        public String displayName() {
-            return label.isEmpty() ? id : label;
         }
 
         public boolean isSystem() {
@@ -313,8 +306,7 @@ public final class DeviceRules {
         String description = optString(json, "description", "", where);
         if ("system".equals(type)) {
             if (!SYSTEM_DRIVER.equals(id)) throw new JSONException(where + ": only 'system' may be of type system");
-            return new Driver(id, type, description, null, null, null, null, null, optString(json, "source", "", where),
-                optString(json, "label", "", where));
+            return new Driver(id, type, description, null, null, null, null, null, optString(json, "source", "", where));
         }
         if (!"adrenotools".equals(type)) throw new JSONException(where + ": unknown type " + type);
         if (SYSTEM_DRIVER.equals(id)) throw new JSONException(where + ": 'system' must be of type system");
@@ -335,7 +327,7 @@ public final class DeviceRules {
         String librarySha256 = requireString(json, "librarySha256", where).toLowerCase(Locale.ROOT);
         if (!SHA256.matcher(librarySha256).matches()) throw new JSONException(where + ": invalid librarySha256");
         return new Driver(id, type, description, asset, url, sha256, libraryName, librarySha256,
-            optString(json, "source", "", where), optString(json, "label", "", where));
+            optString(json, "source", "", where));
     }
 
     private static String urlPath(String url) {

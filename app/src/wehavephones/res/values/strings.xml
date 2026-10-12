@@ -142,7 +142,6 @@
     <string name="wehavephones_diag_device_report">Report a problem</string>
     <string name="wehavephones_diag_device_report_failed">Could not open the browser. Use Copy and paste the report into a GitHub issue.</string>
     <string name="wehavephones_diag_driver_automatic">Automatic</string>
-    <string name="wehavephones_diag_driver_meta_using">Graphics driver · %1$s</string>
     <string name="wehavephones_diag_driver_row_automatic">Uses %1$s</string>
     <string name="wehavephones_diag_driver_row_automatic_rules">Picked by the device rules</string>
     <string name="wehavephones_diag_driver_row_system">The phone\'s own driver</string>
@@ -153,7 +152,7 @@
     <string name="wehavephones_diag_driver_downloading">Downloading %1$s...</string>
     <string name="wehavephones_diag_driver_saved">%1$s will be used the next time the game starts.</string>
     <string name="wehavephones_diag_driver_failed">Could not download %1$s: %2$s</string>
-    <string name="wehavephones_diag_device_hint">The report holds your phone model, GPU and graphics driver; no accounts or serial numbers. It opens a prefilled GitHub issue in your browser.</string>
+    <string name="wehavephones_diag_device_hint">The report holds your phone model, GPU and graphics driver; no accounts or serial numbers.</string>
     <string name="wehavephones_diag_memory_title">Memory panel</string>
     <string name="wehavephones_diag_memory_save">Save report</string>
     <string name="wehavephones_diag_memory_saved">Memory report saved: %1$s</string>

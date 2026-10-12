@@ -82,8 +82,6 @@ def validate(doc):
             bad(where + ": must be an object")
             continue
         kind = driver.get("type")
-        if "label" in driver and not isinstance(driver["label"], str):
-            bad(where + ": label must be a string")
         if kind == "system":
             if driver_id != "system":
                 bad(where + ": only 'system' may be of type system")
@@ -320,7 +318,6 @@ def negative_cases():
     expect_invalid("blocked env", lambda d: d["profiles"]["adreno-7xx"]["env"].update(LD_PRELOAD="x"))
     expect_invalid("unknown choice", lambda d: d["profiles"]["adreno-7xx"].update(choices=["nope"]))
     expect_invalid("choice already in drivers", lambda d: d["profiles"]["adreno-7xx"].update(choices=["system"]))
-    expect_invalid("non-string label", lambda d: d["drivers"]["system"].update(label=3))
 
 
 def main():

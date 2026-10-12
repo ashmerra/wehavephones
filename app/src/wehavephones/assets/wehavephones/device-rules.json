@@ -1,17 +1,15 @@
 {
   "schema": 1,
-  "rulesVersion": 4,
+  "rulesVersion": 5,
   "minAppVersionCode": 1,
   "updatedAt": "2026-10-11",
   "drivers": {
     "system": {
       "type": "system",
-      "label": "System driver",
       "description": "The phone's own Vulkan driver via the wrapper"
     },
     "turnip26.3.0-devel-1b51639c20": {
       "type": "adrenotools",
-      "label": "Mainline Turnip 26.3",
       "asset": "graphics_driver/adrenotools-turnip26.3.0-devel-1b51639c20.tzst",
       "url": null,
       "sha256": "43c2f87e105594d3f5bf5ad317c551efa8b552a6b407d9790d0e38b0cc095207",
@@ -21,7 +19,6 @@
     },
     "turnip-gen8-stevenmxz-v37": {
       "type": "adrenotools",
-      "label": "Turnip Gen8 V37 by StevenMXZ",
       "asset": "graphics_driver/adrenotools-turnip-gen8-stevenmxz-v37.tzst",
       "url": null,
       "sha256": "73019a2b9167754c2ad40f0be99b90abf58ddaf89e37cf604845d73636140711",
@@ -31,7 +28,6 @@
     },
     "turnip-v32-rp6sched": {
       "type": "adrenotools",
-      "label": "Turnip V32-RP6sched by arusiasotto",
       "asset": null,
       "url": "https://raw.githubusercontent.com/arusiasotto/wow-forever-a840/f9312100803afb1fd59dc5555d34429935c2828d/driver/turnip-V32-RP6sched.zip",
       "sha256": "05434d3c102563a4577f514410cc713494bcf900f52c2b935391adf87a76b77a",
@@ -41,7 +37,6 @@
     },
     "turnip-whitebelyash-v32": {
       "type": "adrenotools",
-      "label": "Mainline Turnip V32 by whitebelyash",
       "asset": null,
       "url": "https://github.com/whitebelyash/freedreno_turnip-CI/releases/download/tu_v32/mainline-turnip-V32.zip",
       "sha256": "a40b086926916e3960c832fce3014c26ec946b956c46681a726d927e2700ad10",
@@ -51,7 +46,6 @@
     },
     "turnip-whitebelyash-stable-v2": {
       "type": "adrenotools",
-      "label": "Stable Turnip V2 by whitebelyash",
       "asset": null,
       "url": "https://github.com/whitebelyash/freedreno_turnip-CI/releases/download/stu_v2/stable-turnip-V2.zip",
       "sha256": "426846964f9b9c3f182b9298a805e85c1f062a590f622cf4ddc9b0b5934a581e",
@@ -61,7 +55,6 @@
     },
     "turnip-whitebelyash-a8xx-v29": {
       "type": "adrenotools",
-      "label": "A8XX Turnip V29 by whitebelyash",
       "asset": null,
       "url": "https://github.com/whitebelyash/freedreno_turnip-CI/releases/download/tu_v29/a8xx-turnip-gen8-V29.zip",
       "sha256": "d0b70db415f58d4ff94b9ded883c3c5ffb90fa3e8f653b9582c7ea6dec262efc",
@@ -71,7 +64,6 @@
     },
     "turnip-gen8-stevenmxz-v33": {
       "type": "adrenotools",
-      "label": "Turnip Gen8 V33 by StevenMXZ",
       "asset": null,
       "url": "https://github.com/StevenMXZ/freedreno_turnip-CI/releases/download/v33/Turnip_Gen8_V33.zip",
       "sha256": "b8b67b04c1ba1e5243faa693eaed813da24f3203c2b11b52664dec00c5e66f43",
@@ -81,7 +73,6 @@
     },
     "turnip-gen8-stevenmxz-v30": {
       "type": "adrenotools",
-      "label": "Turnip Gen8 V30 by StevenMXZ",
       "asset": null,
       "url": "https://github.com/StevenMXZ/freedreno_turnip-CI/releases/download/gen_8_v30/Turnip_Gen8_V30.zip",
       "sha256": "0f57b8400bec62fdd9140e2d6fd3caa603ed56b6e532a0708c871647d85320ca",
@@ -91,7 +82,6 @@
     },
     "turnip-mrpurple-t30": {
       "type": "adrenotools",
-      "label": "Turnip T30 by MrPurple",
       "asset": null,
       "url": "https://github.com/MrPurple666/purple-turnip/releases/download/vturnip_mrpurple_T30-toasted.adpkg/turnip_mrpurple_T30-toasted.adpkg.zip",
       "sha256": "f65b2d3353fd4aa7190bb5426b94468e99ffea7a58a830bc0c4651db89353227",
@@ -101,7 +91,6 @@
     },
     "turnip-mrpurple-t26": {
       "type": "adrenotools",
-      "label": "Turnip T26 by MrPurple",
       "asset": null,
       "url": "https://github.com/MrPurple666/purple-turnip/releases/download/vturnip_mrpurple_T26-toasted.adpkg/turnip_mrpurple_T26-toasted.adpkg.zip",
       "sha256": "318c41e96d828674f7936a7c0b562614fb0a7db66d33d5f41ffb8376c2f9b486",
@@ -111,7 +100,6 @@
     },
     "turnip-gamehub-v26.0.0-r8-b12": {
       "type": "adrenotools",
-      "label": "Turnip v26.0.0 R8 b12 (GameHub)",
       "asset": null,
       "url": "https://downloads.gamenative.app/drivers/turnip_v26.0.0_R8_b12.zip",
       "sha256": "d9784136bc4eed0a549c303fbe4183481248e6a726bb955100df50fac34019b3",
@@ -121,7 +109,6 @@
     },
     "qualcomm-891.7": {
       "type": "adrenotools",
-      "label": "Qualcomm driver v891.7",
       "asset": null,
       "url": "https://github.com/StevenMXZ/freedreno_turnip-CI/releases/download/v891.7/v891.7.zip",
       "sha256": "2ddf93b839db165db82a76a440564f73694c6f6e3c84097e56abb95075d469e7",
@@ -131,7 +118,6 @@
     },
     "qualcomm-863.1": {
       "type": "adrenotools",
-      "label": "Qualcomm driver v863.1",
       "asset": null,
       "url": "https://github.com/StevenMXZ/freedreno_turnip-CI/releases/download/v863.1/v863.1.zip",
       "sha256": "99267d762347b0be90db54cae8948a2c71725b35c9370ae348a149793ff7b900",
@@ -141,7 +127,6 @@
     },
     "qualcomm-849": {
       "type": "adrenotools",
-      "label": "Qualcomm driver v849",
       "asset": null,
       "url": "https://github.com/K11MCH1/AdrenoToolsDrivers/releases/download/v849/Qualcomm_849_adpkg.zip",
       "sha256": "3e193ed6b271a519429ef34af2209f1009c9e5892b3c8be19cea03d91f829c9c",
@@ -151,7 +136,6 @@
     },
     "qualcomm-842.6": {
       "type": "adrenotools",
-      "label": "Qualcomm driver v842.6",
       "asset": null,
       "url": "https://github.com/K11MCH1/AdrenoToolsDrivers/releases/download/v842.6/8Elite2-842.6.zip",
       "sha256": "1c18001cc568724ea7d7424f3ade0cd659ba695bb51170cf87f578677af78a56",

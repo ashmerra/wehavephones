@@ -43,7 +43,7 @@ show how much a setup has been run on real hardware.
 ```json
 {
   "schema": 1, "rulesVersion": 1, "minAppVersionCode": 1, "updatedAt": "2026-10-10",
-  "drivers":  { "<id>": { "type": "system" | "adrenotools", "label": "...", "asset": "...", "url": null,
+  "drivers":  { "<id>": { "type": "system" | "adrenotools", "asset": "...", "url": null,
                           "sha256": "...", "libraryName": "...", "librarySha256": "...", "source": "..." } },
   "profiles": { "<name>": { "status": "tested", "drivers": ["<id>", "system"], "choices": ["<id>"], "env": {},
                             "vulkanCompatLayer": false, "wowApiArg": null, "notes": "..." } },
@@ -60,10 +60,8 @@ show how much a setup has been run on real hardware.
 - An `adrenotools` driver needs an `asset` in the APK, or a `url` plus `sha256` (archive) and
   `librarySha256`. Archives are `.tzst` or adrenotools `.zip`. Downloaded drivers are installed only
   after both hashes match.
-- `label` (optional) is the driver's name in the picker; without it the picker shows the id.
 - `choices` (optional) lists extra drivers the picker offers for the profile. Automatic never tries
-  them, and a choice may not repeat a driver from `drivers`. Apps older than the picker ignore both
-  keys.
+  them, and a choice may not repeat a driver from `drivers`. Apps older than the picker ignore it.
 - `env` is applied only for keys the container does not already set. The default
   `TU_DEBUG` logic still runs afterwards (`noconform`, always plus `sysmem`).
 - `wowApiArg: null` keeps `-d3d12` in `wow.bat` and the direct launch; a profile may set `-d3d11`.
