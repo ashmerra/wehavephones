@@ -21,6 +21,10 @@ compat layer is installed, and optionally the WoW graphics API flag.
   8 Elite): the same, with the pinned Turnip before the system driver.
 - Anything else falls through to a catch-all rule that matches the old behavior.
 
+Players can also pick a driver themselves in Diagnostics (see [Driver picker](#driver-picker)).
+Adreno 840 phones are offered 16 drivers and other Adreno 8xx phones 14: the profile's own, plus
+other public Turnip builds and Qualcomm driver builds that the rules list as `choices`.
+
 Each profile has a `status` (`tested`, `community` or `untested`) so Diagnostics and issue reports
 show how much a setup has been run on real hardware.
 
@@ -39,9 +43,9 @@ show how much a setup has been run on real hardware.
 ```json
 {
   "schema": 1, "rulesVersion": 1, "minAppVersionCode": 1, "updatedAt": "2026-10-10",
-  "drivers":  { "<id>": { "type": "system" | "adrenotools", "asset": "...", "url": null,
+  "drivers":  { "<id>": { "type": "system" | "adrenotools", "label": "...", "asset": "...", "url": null,
                           "sha256": "...", "libraryName": "...", "librarySha256": "...", "source": "..." } },
-  "profiles": { "<name>": { "status": "tested", "drivers": ["<id>", "system"], "env": {},
+  "profiles": { "<name>": { "status": "tested", "drivers": ["<id>", "system"], "choices": ["<id>"], "env": {},
                             "vulkanCompatLayer": false, "wowApiArg": null, "notes": "..." } },
   "rules":    [ { "id": "...", "match": { }, "profile": "<name>", "source": "..." } ]
 }
@@ -56,6 +60,10 @@ show how much a setup has been run on real hardware.
 - An `adrenotools` driver needs an `asset` in the APK, or a `url` plus `sha256` (archive) and
   `librarySha256`. Archives are `.tzst` or adrenotools `.zip`. Downloaded drivers are installed only
   after both hashes match.
+- `label` (optional) is the driver's name in the picker; without it the picker shows the id.
+- `choices` (optional) lists extra drivers the picker offers for the profile. Automatic never tries
+  them, and a choice may not repeat a driver from `drivers`. Apps older than the picker ignore both
+  keys.
 - `env` is applied only for keys the container does not already set. The default
   `TU_DEBUG` logic still runs afterwards (`noconform`, always plus `sysmem`).
 - `wowApiArg: null` keeps `-d3d12` in `wow.bat` and the direct launch; a profile may set `-d3d11`.
@@ -74,11 +82,26 @@ show how much a setup has been run on real hardware.
    that loads wins. If none does, the system driver is used.
 5. The plan (driver, environment, compat layer) is applied to the session and saved for Diagnostics.
 
+A driver picked in Diagnostics goes before step 4: it is used if the matched profile offers it, it
+is installed and it loads. Otherwise the session logs why and uses the automatic order. The pick
+does not change the profile's environment, compat layer or WoW API flag.
+
 Probe results are cached per driver, driver hash, `Build.FINGERPRINT` and app version code, so the
 test runs once per driver and again after a system or app update. Before each probe the app records
 that it is running; if the process dies inside the driver, the next start sees the record, marks
 that driver as failed ("crashed during probe") and moves on to the next one. Decisions are logged
 under the `WeHavePhonesDevices` logcat tag.
+
+## Driver picker
+
+Diagnostics has a "Graphics driver" button in the Device section on phones whose profile offers
+more than one driver (not on Mali). It lists Automatic, then the profile's `drivers`, then its
+`choices`. Picking a driver that is not on the phone downloads and verifies it right away; the
+pick is saved only after that works, and it applies from the next game start. Picking a driver
+again forgets its cached probe result, so a driver that failed to load once is tried again.
+
+The device report has a `driver_choice` line (`automatic`, or the picked id), next to `driver`,
+which says what the last session actually used.
 
 ## Updates
 
