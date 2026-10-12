@@ -3,7 +3,14 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="com.wehavephones">
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <application>
+        <activity android:name="com.wehavephones.mobile.updates.AppUpdateInstallActivity"
+            android:theme="@style/WeHavePhonesTheme"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:screenOrientation="sensorLandscape"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize|density|navigation|uiMode" />
         <service android:name="com.wehavephones.mobile.WowImportService"
             android:exported="false"
             android:foregroundServiceType="dataSync" />

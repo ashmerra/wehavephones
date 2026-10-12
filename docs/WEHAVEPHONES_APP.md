@@ -291,6 +291,28 @@ product folder only, which current installs do not have.
    (`Battle.net`, `AAWoW_Retail`) are created if missing.
 5. Battle.net install is optional and can be run at any time.
 
+### Update the app
+
+Official release builds check the public GitHub releases list at most once a
+day when the completed setup's menu gains focus. Settings exposes a manual
+check and an opt-out for automatic checks. `mobile/updates/AppRelease` chooses
+the highest newer three-part version with a matching uploaded release APK and
+a SHA-256 digest or `SHA256SUMS`; drafts, prereleases and asset-only tags are
+excluded. No GitHub account or token is needed.
+
+`AppUpdates` owns the worker and cached metadata independently of the screen.
+It streams the APK into private cache with cancellation and progress, checks
+space, size and SHA-256, then verifies the package, versionCode, versionName,
+Android requirement and signing certificates against the installed app. Failed
+or interrupted downloads restart; a complete download is reverified and reused.
+`AppUpdateInstallActivity` repeats verification, stages a `PackageInstaller`
+session and handles Android's confirmation/cancellation/failure callbacks. It
+requires the install-source permission and user approval and refuses while a
+Wine session, launch or WoW file import is active. It never uninstalls or clears
+data. Debug builds expose an explanation instead of updating the Dev package
+from official releases. Run `scripts/test-wehavephones-updates.sh` for the host
+release-selection and APK verification policy checks.
+
 ### Install Battle.net
 
 1. Reuse an existing installer: `Download/Battle.net-Setup.exe`, the `D:` drive

@@ -18,6 +18,7 @@ import androidx.fragment.app.FragmentManager;
 import com.wehavephones.mobile.addons.AddonsActivity;
 import com.wehavephones.mobile.addons.required.ConsolePortUpdater;
 import com.wehavephones.mobile.devices.DeviceRulesStore;
+import com.wehavephones.mobile.updates.AppUpdateUi;
 import com.wehavephones.MainActivity;
 import com.wehavephones.R;
 import com.wehavephones.SessionKeepAliveService;
@@ -39,6 +40,7 @@ public class WeHavePhonesActivity extends AppCompatActivity {
     private boolean storagePermissionPending;
     private boolean notificationChannelPrepared;
     private Runnable afterStoragePermission;
+    private AppUpdateUi appUpdateUi;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,6 +50,7 @@ public class WeHavePhonesActivity extends AppCompatActivity {
             storagePermissionPending = savedInstanceState.getBoolean("storagePermissionPending");
         }
         setContentView(R.layout.activity_wehavephones);
+        appUpdateUi = new AppUpdateUi(this);
         colorLogo(findViewById(R.id.TVWeHavePhonesLogo));
         lastStageMessage = WeHavePhonesConfig.getLastStageStatus(this);
         WeHavePhonesMemoryTrim.install();
@@ -90,6 +93,7 @@ public class WeHavePhonesActivity extends AppCompatActivity {
             requestAppPermissions();
         }
         prepareNotificationPermission();
+        if (!storagePermissionPending && !firstRunShowing) appUpdateUi.onForegroundReady();
     }
 
     private void prepareNotificationPermission() {
@@ -110,8 +114,16 @@ public class WeHavePhonesActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        appUpdateUi.onResume();
         if (firstRunShowing && WeHavePhonesInitialSetup.isComplete(this)) finishInitialSetup();
     }
+
+    @Override protected void onPause() {
+        appUpdateUi.onPause();
+        super.onPause();
+    }
+
+    public void checkForAppUpdates() { appUpdateUi.checkManually(); }
 
     /** Landscape navigation rail; each entry replaces the screen on top of Play, so Back returns to Play. */
     private void setUpRail() {

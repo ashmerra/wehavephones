@@ -28,6 +28,14 @@ Other games and versions have not been tested. Other phones are matched to a gra
 4. When the game finishes installing, close Battle.net: swipe in from the left edge of the screen to open the side menu, then tap Exit. Launching the game from the Battle.net window is not recommended.
 5. Back in the WeHavePhones app, press Play.
 
+The app checks GitHub for newer app releases at most once a day when opened.
+Use **Settings → Check for updates** to check immediately or turn daily checks
+off. Updates show the release notes, download and verify the APK, then ask for
+Android's installation confirmation. The first in-app update also asks you to
+allow WeHavePhones to install unknown apps. Close WoW/Battle.net and finish any
+file import before updating; installing keeps your games and settings. Dev
+builds are separate apps and do not install official release updates.
+
 Already have WoW installed on a Windows PC? Once the container and Battle.net are ready:
 
 1. Copy your entire **World of Warcraft** folder into the phone's **Downloads**.
