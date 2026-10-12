@@ -7,7 +7,7 @@ Winlator fork for running World of Warcraft (ARM64 Windows version) and Battle.n
 Controller support.\
 Built-in addon manager.
 
-[![WeHavePhones demo video](https://img.youtube.com/vi/4wet8as_QfA/maxresdefault.jpg)](https://www.youtube.com/watch?v=4wet8as_QfA)
+[![WeHavePhones demo video](website/assets/gameplay-60s.jpg)](https://www.youtube.com/watch?v=4wet8as_QfA)
 
 ## Tested on
 
