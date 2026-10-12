@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "rulesVersion": 2,
+  "rulesVersion": 3,
   "minAppVersionCode": 1,
   "updatedAt": "2026-10-11",
   "drivers": {
@@ -68,11 +68,12 @@
         "system"
       ],
       "env": {
-        "TU_DEBUG": "noconform,sysmem"
+        "TU_DEBUG": "noconform,sysmem",
+        "WINEDLLOVERRIDES": "d3d12,d3d12core=d"
       },
       "vulkanCompatLayer": false,
       "wowApiArg": "-d3d11",
-      "notes": "Adreno 800-839 (Gen 8 below the 840: 810, 825, 829, 830; Snapdragon 8 Elite, 8s Gen 4): the Adreno 840 setup (V32-RP6sched, then Gen 8 V37, with D3D11), then the pinned Turnip and the system driver. A Lenovo tablet with an Adreno 825 drew incorrectly on the pinned Turnip with D3D12 (issue #17). Not yet run on an Adreno 8xx phone."
+      "notes": "Adreno 800-839 (Gen 8 below the 840: 810, 825, 829, 830; Snapdragon 8 Elite, 8s Gen 4): the Adreno 840 setup (V32-RP6sched, then Gen 8 V37, with D3D11), then the pinned Turnip and the system driver. D3D12 is disabled because Battle.net's Play starts WoW without -d3d11 and WoW keeps its saved GxApi; without d3d12.dll it falls back to D3D11. A Lenovo tablet with an Adreno 825 drew incorrectly on the pinned Turnip with D3D12 (issue #17). Not yet run on an Adreno 8xx phone."
     },
     "adreno-84x": {
       "status": "community",
@@ -81,10 +82,12 @@
         "turnip-gen8-stevenmxz-v37",
         "system"
       ],
-      "env": {},
+      "env": {
+        "WINEDLLOVERRIDES": "d3d12,d3d12core=d"
+      },
       "vulkanCompatLayer": false,
       "wowApiArg": "-d3d11",
-      "notes": "Adreno 840 (Snapdragon 8 Elite Gen 5): V32-RP6sched with D3D11, the setup of the only reported in-world WoW run on an 840, then Gen 8 V37 and the system driver. Mainline Turnip (0.0.1) and V37 (0.0.2) both drew corruption with D3D12 on a OnePlus 15 (issue #13, chip 0x44050A31, which every bundled driver knows). D3D11 renders correctly on the Galaxy S23. Not yet run on an Adreno 840 phone."
+      "notes": "Adreno 840 (Snapdragon 8 Elite Gen 5): V32-RP6sched with D3D11, the setup of the only reported in-world WoW run on an 840, then Gen 8 V37 and the system driver. D3D12 is disabled because Battle.net's Play starts WoW without -d3d11 and WoW keeps its saved GxApi; without d3d12.dll it falls back to D3D11 (verified on the Galaxy S23). Mainline Turnip (0.0.1) and V37 (0.0.2) both drew corruption with D3D12 on a OnePlus 15 (issue #13, chip 0x44050A31, which every bundled driver knows). D3D11 renders correctly on the Galaxy S23. Not yet run on an Adreno 840 phone."
     },
     "adreno-other": {
       "status": "untested",
