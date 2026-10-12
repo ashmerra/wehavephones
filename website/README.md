@@ -4,6 +4,11 @@ A single-page, buildless site for GitHub Pages or another static host. All
 assets and the Geist font are served locally. Project and download links point
 to GitHub; the gameplay demo links to the video from the project README.
 
+The public site is https://ashmerra.github.io/wehavephones/.
+`.github/workflows/deploy-website.yml` publishes this directory with GitHub
+Actions when website changes are pushed to `main`. It can also be run manually.
+GitHub Pages must use GitHub Actions as its publishing source.
+
 Preview from the repository root:
 
 ```sh
