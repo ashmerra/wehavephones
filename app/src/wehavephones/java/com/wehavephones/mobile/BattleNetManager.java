@@ -18,6 +18,10 @@ public final class BattleNetManager {
     public static final String OFFICIAL_INSTALLER_URL =
             "https://us.battle.net/download/getInstallerForGame?os=win&version=LIVE&gameProgram=BATTLENET_APP";
     public static final String INSTALLER_NAME = "Battle.net-Setup.exe";
+    /** The global app cannot sign in to China accounts; China has its own installer. */
+    public static final String CHINA_INSTALLER_URL =
+            "https://downloader.battlenet.com.cn/download/getInstallerForGame?os=win&version=LIVE&gameProgram=BATTLENET_APP";
+    public static final String CHINA_INSTALLER_NAME = "Battle.net-Setup-CN.exe";
 
     public interface Callback {
         void onReady(File installer, String guestPath, String error);
@@ -29,38 +33,51 @@ public final class BattleNetManager {
         return container != null && WeHavePhonesPaths.isBnetInstalled(container);
     }
 
-    public static File findExistingInstaller(Activity activity, Container container) {
-        File publicDownload = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), INSTALLER_NAME);
+    public static String installerUrl(String region) {
+        return WowFirstBoot.isChina(region) ? CHINA_INSTALLER_URL : OFFICIAL_INSTALLER_URL;
+    }
+
+    /** Distinct names keep a downloaded installer from being reused for the other app. */
+    public static String installerName(String region) {
+        return WowFirstBoot.isChina(region) ? CHINA_INSTALLER_NAME : INSTALLER_NAME;
+    }
+
+    public static File findExistingInstaller(Activity activity, Container container, String name) {
+        File publicDownload = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), name);
         if (publicDownload.isFile()) return publicDownload;
 
         if (container != null) {
             for (String[] drive : container.drivesIterator()) {
-                File candidate = new File(drive[1], INSTALLER_NAME);
+                File candidate = new File(drive[1], name);
                 if (candidate.isFile()) return candidate;
             }
-            File driveC = new File(WeHavePhonesPaths.driveC(container), INSTALLER_NAME);
+            File driveC = new File(WeHavePhonesPaths.driveC(container), name);
             if (driveC.isFile()) return driveC;
         }
 
-        File privateCopy = new File(WeHavePhonesPaths.installerDir(activity), INSTALLER_NAME);
+        File privateCopy = new File(WeHavePhonesPaths.installerDir(activity), name);
         return privateCopy.isFile() ? privateCopy : null;
     }
 
-    public static void prepareInstaller(final Activity activity, final Container container, final Callback callback) {
+    /** Fetches the installer for {@code region}'s Battle.net app (China's or the global one). */
+    public static void prepareInstaller(final Activity activity, final Container container, final String region,
+            final Callback callback) {
+        final String url = installerUrl(region);
+        final String name = installerName(region);
         Executors.newSingleThreadExecutor().execute(() -> {
-            File existing = findExistingInstaller(activity, container);
+            File existing = findExistingInstaller(activity, container, name);
             if (existing != null) {
                 finish(activity, container, existing, "existing copy", callback);
                 return;
             }
 
-            if (!verifyUrl(OFFICIAL_INSTALLER_URL)) {
-                postError(activity, callback, "Official Battle.net installer URL is not reachable (HEAD " + OFFICIAL_INSTALLER_URL + ")");
+            if (!verifyUrl(url)) {
+                postError(activity, callback, "Official Battle.net installer URL is not reachable (HEAD " + url + ")");
                 return;
             }
 
-            final File destination = chooseDestination(activity);
-            activity.runOnUiThread(() -> HttpUtils.download(activity, OFFICIAL_INSTALLER_URL, destination, (success) -> {
+            final File destination = chooseDestination(activity, name);
+            activity.runOnUiThread(() -> HttpUtils.download(activity, url, destination, (success) -> {
                 if (success && destination.isFile() && destination.length() > 0) {
                     Executors.newSingleThreadExecutor().execute(() -> finish(activity, container, destination, "downloaded", callback));
                 }
@@ -162,7 +179,7 @@ public final class BattleNetManager {
         try {
             String guestPath = toGuestPath(container, installer);
             if (guestPath.toLowerCase(Locale.US).startsWith("c:\\")) {
-                File target = new File(WeHavePhonesPaths.driveC(container), INSTALLER_NAME);
+                File target = new File(WeHavePhonesPaths.driveC(container), installer.getName());
                 if (!installer.getPath().equals(target.getPath())) FileUtils.copy(installer, target);
             }
             final String resolved = guestPath;
@@ -179,20 +196,20 @@ public final class BattleNetManager {
             String root = new File(drive[1]).getAbsolutePath();
             if (!path.startsWith(root)) continue;
             String relative = path.substring(root.length()).replaceFirst("^/", "").replace('/', '\\');
-            if (relative.isEmpty()) return drive[0] + ":\\" + INSTALLER_NAME;
+            if (relative.isEmpty()) return drive[0] + ":\\" + installer.getName();
             return drive[0] + ":\\" + relative;
         }
-        return "C:\\" + INSTALLER_NAME;
+        return "C:\\" + installer.getName();
     }
 
-    private static File chooseDestination(Activity activity) {
+    private static File chooseDestination(Activity activity, String name) {
         File publicDownload = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
         if (publicDownload.isDirectory() && publicDownload.canWrite()) {
-            return new File(publicDownload, INSTALLER_NAME);
+            return new File(publicDownload, name);
         }
         File privateDir = WeHavePhonesPaths.installerDir(activity);
         if (!privateDir.isDirectory()) privateDir.mkdirs();
-        return new File(privateDir, INSTALLER_NAME);
+        return new File(privateDir, name);
     }
 
     private static void postError(Activity activity, final Callback callback, final String message) {

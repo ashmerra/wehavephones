@@ -36,6 +36,12 @@ public final class WowClientFilesSelfTest {
         check("classic intro skipped", "14".equals(WowClientFiles.cvarValue(classic, "playIntroMovie")));
         check("classic photosensitivity skipped", "4".equals(WowClientFiles.cvarValue(classic, "showPhotosensitivityWarning")));
         check("unknown region rejected", !WowFirstBoot.validRegion("../invalid"));
+        String china = WowFirstBoot.configure("", "cn", true, "1024x576");
+        check("China region seeded", "cn".equals(WowClientFiles.cvarValue(china, "portal")));
+        check("China language seeded", "zhCN".equals(WowClientFiles.cvarValue(china, "textLocale")));
+        check("China audio language seeded", "zhCN".equals(WowClientFiles.cvarValue(china, "audioLocale")));
+        check("China keeps a chosen language", "enUS".equals(WowClientFiles.cvarValue(
+                WowFirstBoot.configure("SET textLocale \"enUS\"\n", "cn", true, "1024x576"), "textLocale")));
         check("no API flag leaves GxApi alone", WowClientFiles.cvarValue(fresh, "GxApi") == null);
         String played = "SET GxApi \"D3D12\"\r\nSET farclip \"1000\"\r\n";
         String d3d11 = WowFirstBoot.configure(played, "us", true, "1024x576", false, "-d3d11");

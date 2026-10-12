@@ -193,7 +193,8 @@ public final class BattleNetLauncherLog {
             String path = uri.getPath();
             return "https".equalsIgnoreCase(uri.getScheme()) && host != null
                     && (host.equalsIgnoreCase("account.battle.net")
-                    || host.toLowerCase(Locale.ROOT).endsWith(".account.battle.net"))
+                    || host.toLowerCase(Locale.ROOT).endsWith(".account.battle.net")
+                    || host.equalsIgnoreCase("account.battlenet.com.cn"))
                     && path != null && path.matches("/login/[A-Za-z_-]+/(?:login\\.app)?");
         }
         catch (IllegalArgumentException ignored) {

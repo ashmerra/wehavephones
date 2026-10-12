@@ -566,6 +566,11 @@ public final class LaunchSelfTest {
         fresh.feed("UAuth: begin loading: https://example.invalid/login/en/");
         fresh.feed("UAuth: finished loading. statusCode=200 state=Login");
         check("switch account: unrelated locale root stays excluded", BattleNetLauncherLog.LoginForm.NONE, fresh.loginForm());
+
+        BattleNetLauncherLog china = new BattleNetLauncherLog();
+        china.feed("UAuth: begin loading: https://account.battlenet.com.cn/login/zh-cn/?app=app");
+        china.feed("UAuth: finished loading. statusCode=200 state=Login");
+        check("China email: own account host is the email form", BattleNetLauncherLog.LoginForm.EMAIL, china.loginForm());
     }
 
     // ---- helpers ------------------------------------------------------------------------

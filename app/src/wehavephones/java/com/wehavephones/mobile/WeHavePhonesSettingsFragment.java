@@ -1,5 +1,6 @@
 package com.wehavephones.mobile;
 
+import android.app.AlertDialog;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
@@ -67,9 +68,18 @@ public class WeHavePhonesSettingsFragment extends Fragment {
         region.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override public void onItemSelected(AdapterView<?> parent, View child, int position, long id) {
                 String selected = WowFirstBoot.REGIONS[position];
-                if (selected.equals(WeHavePhonesConfig.getGameRegion(activity))) return;
+                String current = WeHavePhonesConfig.getGameRegion(activity);
+                if (selected.equals(current)) return;
                 WeHavePhonesConfig.setGameRegionOverride(activity, selected);
                 activity.updateStageStatus(getString(R.string.wehavephones_settings_saved), false);
+                // The installed Battle.net app only signs in to its own side.
+                if (WowFirstBoot.isChina(selected) != WowFirstBoot.isChina(current)
+                        && BattleNetManager.isInstalled(WeHavePhonesContainers.resolve(activity))) {
+                    new AlertDialog.Builder(activity)
+                            .setMessage(R.string.wehavephones_settings_region_china)
+                            .setPositiveButton(android.R.string.ok, null)
+                            .show();
+                }
             }
             @Override public void onNothingSelected(AdapterView<?> parent) {}
         });

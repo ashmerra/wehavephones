@@ -133,7 +133,10 @@ desktop wallpaper.
   rail is hidden. Region selection and two primary install buttons replace the
   old four-step screen. **Install container** ensures imagefs and Wine layers,
   creates/reuses the container, applies the runtime and creates shortcuts;
-  **Install Battle.net** then opens the official installer. Completion is
+  **Install Battle.net** then opens the official installer: Blizzard's China
+  app (`Battle.net-Setup-CN.exe` from `downloader.battlenet.com.cn`) when the
+  region is China, the global one otherwise; the global app cannot sign in to
+  China accounts. China also seeds `zhCN` as the game language. Completion is
   detected while this screen is visible and on return from the installer.
   Sign-in and WoW downloads are not completion requirements. Interrupted setup
   resumes from the prepared-container marker; existing installations migrate
@@ -165,7 +168,9 @@ desktop wallpaper.
   (`WowExitWatcher`), Battle.net always closes after launching WoW, and the
   first-boot photosensitivity warning and intro cinematic are always skipped
   (`WowFirstBoot`). Explicit region changes
-  replace WoW's saved portal on the next launch; other existing
+  replace WoW's saved portal on the next launch (switching to or from China
+  once Battle.net is installed shows a note that it needs the other Battle.net
+  app, which only a fresh setup installs); other existing
   language/intro preferences remain preserved. With no detected game, Home
   offers **Open Battle.net**.
 - **Diagnostics** (`DiagnosticsFragment`): live memory panel (MemAvailable,

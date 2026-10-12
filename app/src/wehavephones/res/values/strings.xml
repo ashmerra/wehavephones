@@ -63,11 +63,12 @@
     <string name="wehavephones_first_run_bnet_locked">Install your container first.</string>
     <string name="wehavephones_first_run_bnet_hint">Complete the installation in the Battle.net window.</string>
     <string name="wehavephones_first_run_status">Two steps, then you\'re ready to choose your game.</string>
-    <string name="wehavephones_first_run_region_later">Region can be changed later in Settings.</string>
+    <string name="wehavephones_first_run_region_later">Region can be changed later in Settings, except to or from China, which uses its own Battle.net app.</string>
     <string name="wehavephones_settings_intro">Game preferences and launch behavior.</string>
     <string name="wehavephones_settings_game_preferences">Game preferences</string>
     <string name="wehavephones_settings_disable_virtual_gamepad">Disable virtual gamepad</string>
     <string name="wehavephones_settings_region_hint">Changes apply the next time you launch the game.</string>
+    <string name="wehavephones_settings_region_china">China uses its own Battle.net app, chosen during first-time setup. To switch to or from China, reinstall WeHavePhones and pick the region before installing Battle.net.</string>
     <string name="wehavephones_open_bnet">Open Battle.net</string>
     <string name="wehavephones_home_setup_complete">Setup complete. Sign in to Battle.net and install your WoW version.</string>
 
@@ -88,7 +89,7 @@
     <string name="wehavephones_setup_region">Game region</string>
     <string name="wehavephones_setup_wine_bundled">Installing bundled Wine %1$s (%2$s)…</string>
     <string-array name="wehavephones_regions">
-        <item>Americas &amp; Oceania</item><item>Europe</item><item>Korea</item><item>Taiwan</item>
+        <item>Americas &amp; Oceania</item><item>Europe</item><item>Korea</item><item>Taiwan</item><item>China</item>
     </string-array>
     <string name="wehavephones_setup_log_hint">Setup progress appears here.</string>
     <string name="wehavephones_setup_steps">Individual steps</string>

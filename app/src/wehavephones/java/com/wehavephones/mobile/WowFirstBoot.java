@@ -8,13 +8,25 @@ import java.util.LinkedHashMap;
 
 /** First-load settings verified against Blizzard's 12.1.0.69933 Glue UI. */
 public final class WowFirstBoot {
-    public static final String[] REGIONS = {"us", "eu", "kr", "tw"};
+    /** Spinner order of R.array.wehavephones_regions. */
+    public static final String[] REGIONS = {"us", "eu", "kr", "tw", "cn"};
+    /** Blizzard runs China on its own Battle.net app, accounts and game client. */
+    public static final String CHINA = "cn";
 
     private WowFirstBoot() {}
 
     public static boolean validRegion(String region) {
         for (String value : REGIONS) if (value.equals(region)) return true;
         return false;
+    }
+
+    public static boolean isChina(String region) {
+        return CHINA.equals(region);
+    }
+
+    /** The language seeded on first boot: China's client is Simplified Chinese. */
+    public static String defaultLocale(String region) {
+        return isChina(region) ? "zhCN" : "enUS";
     }
 
     public static String configure(String existing, String region, boolean retail, String screenSize) {
@@ -39,8 +51,8 @@ public final class WowFirstBoot {
         // all three, preserving choices a player already made in the game.
         if (overrideRegion) settings.put("portal", region);
         else addMissing(settings, existing, "portal", region);
-        addMissing(settings, existing, "textLocale", "enUS");
-        addMissing(settings, existing, "audioLocale", "enUS");
+        addMissing(settings, existing, "textLocale", defaultLocale(region));
+        addMissing(settings, existing, "audioLocale", defaultLocale(region));
         // Skip the first-boot photosensitivity warning and intro cinematic.
         addMissing(settings, existing, "showPhotosensitivityWarning", retail ? "11" : "4");
         addMissing(settings, existing, "playIntroMovie", retail ? "15" : "14");

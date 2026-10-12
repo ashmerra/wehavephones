@@ -309,7 +309,7 @@ public class FirstRunSetupFragment extends Fragment {
         }
         appendLine(activity.getString(R.string.wehavephones_setup_bnet_downloading));
         refreshState();
-        BattleNetManager.prepareInstaller(activity, container, (installer, guestPath, error) -> {
+        BattleNetManager.prepareInstaller(activity, container, selectedRegion, (installer, guestPath, error) -> {
             if (error != null) {
                 appendLine(activity.getString(R.string.wehavephones_error_prefix) + error);
                 finishBusy();
