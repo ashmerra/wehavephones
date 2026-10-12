@@ -23,6 +23,16 @@ public final class WowFirstBoot {
 
     public static String configure(String existing, String region, boolean retail,
             String screenSize, boolean overrideRegion) {
+        return configure(existing, region, retail, screenSize, overrideRegion, null);
+    }
+
+    /**
+     * {@code apiArg} is the device profile's graphics API flag ("-d3d11"); it
+     * is written as GxApi because Battle.net's Play button starts the game
+     * without our command line. Null leaves the game's own choice alone.
+     */
+    public static String configure(String existing, String region, boolean retail,
+            String screenSize, boolean overrideRegion, String apiArg) {
         if (!validRegion(region)) throw new IllegalArgumentException("Invalid WoW region");
         LinkedHashMap<String, String> settings = new LinkedHashMap<>();
         // The native language/region dialogs run before D3D initializes. Seed
@@ -37,7 +47,16 @@ public final class WowFirstBoot {
         for (java.util.Map.Entry<String, String> entry : MemoryTransforms.resolutionCvars(screenSize).entrySet()) {
             addMissing(settings, existing, entry.getKey(), entry.getValue());
         }
+        String gxApi = gxApi(apiArg);
+        if (gxApi != null && !gxApi.equalsIgnoreCase(WowClientFiles.cvarValue(existing, "GxApi"))) settings.put("GxApi", gxApi);
         return MemoryTransforms.editConfigWtf(existing, settings);
+    }
+
+    /** GxApi value for a WoW API flag ("-d3d11" -> "D3D11"), or null for no or another flag. */
+    public static String gxApi(String apiArg) {
+        if ("-d3d11".equalsIgnoreCase(apiArg)) return "D3D11";
+        if ("-d3d12".equalsIgnoreCase(apiArg)) return "D3D12";
+        return null;
     }
 
     private static void addMissing(LinkedHashMap<String, String> settings, String existing, String name, String value) {
@@ -51,9 +70,14 @@ public final class WowFirstBoot {
 
     public static boolean prepare(File productDir, String region, boolean retail,
             String screenSize, boolean overrideRegion) throws IOException {
+        return prepare(productDir, region, retail, screenSize, overrideRegion, null);
+    }
+
+    public static boolean prepare(File productDir, String region, boolean retail,
+            String screenSize, boolean overrideRegion, String apiArg) throws IOException {
         File config = new File(productDir, "WTF/Config.wtf");
         String existing = config.isFile() ? new String(Files.readAllBytes(config.toPath()), StandardCharsets.UTF_8) : "";
-        String updated = configure(existing, region, retail, screenSize, overrideRegion);
+        String updated = configure(existing, region, retail, screenSize, overrideRegion, apiArg);
         if (updated.equals(existing)) return false;
         if (config.isFile()) {
             File backup = new File(config.getPath() + ".wehavephones-firstboot-backup");

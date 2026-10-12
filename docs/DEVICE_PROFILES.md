@@ -57,6 +57,9 @@ show how much a setup has been run on real hardware.
 - `env` is applied only for keys the container does not already set. The default
   `TU_DEBUG` logic still runs afterwards (`noconform`, always plus `sysmem`).
 - `wowApiArg: null` keeps `-d3d12` in `wow.bat` and the direct launch; a profile may set `-d3d11`.
+  Battle.net's Play button starts the game without our command line, so before each launch the app
+  also writes `-d3d11`/`-d3d12` as `SET GxApi` in the game's `Config.wtf`. A null flag leaves the
+  saved `GxApi` alone, so a profile that drops `-d3d11` keeps D3D11 until the player changes it.
 - Unknown keys are ignored; a newer `schema` than the app supports is rejected.
 
 ## Selection

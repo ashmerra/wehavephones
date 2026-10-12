@@ -183,7 +183,8 @@ public final class OneButtonLauncher {
         product = plan.resolve(installed.directoryName);
         WowFirstBoot.prepare(installed.directory, WeHavePhonesConfig.getGameRegion(appContext),
                 installed.getFlavor() == WowFlavor.RETAIL,
-                WeHavePhonesConfig.getGameScreenSize(appContext), WeHavePhonesConfig.isGameRegionOverride(appContext));
+                WeHavePhonesConfig.getGameScreenSize(appContext), WeHavePhonesConfig.isGameRegionOverride(appContext),
+                DeviceProfileSelector.wowApiArg(appContext));
         // The scanned exe (native ARM64 first) wins; the table's exe is the fallback.
         String exe = installed.getExecutable();
         if (exe.isEmpty()) exe = product.exe;

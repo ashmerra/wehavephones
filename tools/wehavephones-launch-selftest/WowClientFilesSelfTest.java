@@ -36,6 +36,17 @@ public final class WowClientFilesSelfTest {
         check("classic intro skipped", "14".equals(WowClientFiles.cvarValue(classic, "playIntroMovie")));
         check("classic photosensitivity skipped", "4".equals(WowClientFiles.cvarValue(classic, "showPhotosensitivityWarning")));
         check("unknown region rejected", !WowFirstBoot.validRegion("../invalid"));
+        check("no API flag leaves GxApi alone", WowClientFiles.cvarValue(fresh, "GxApi") == null);
+        String played = "SET GxApi \"D3D12\"\r\nSET farclip \"1000\"\r\n";
+        String d3d11 = WowFirstBoot.configure(played, "us", true, "1024x576", false, "-d3d11");
+        check("D3D11 profile replaces the saved GxApi", "D3D11".equals(WowClientFiles.cvarValue(d3d11, "GxApi")));
+        check("GxApi edit keeps other CVars", "1000".equals(WowClientFiles.cvarValue(d3d11, "farclip")));
+        check("GxApi edit is idempotent", d3d11.equals(WowFirstBoot.configure(d3d11, "us", true, "1024x576", false, "-d3d11")));
+        check("GxApi matches case-insensitively", "d3d11".equals(WowClientFiles.cvarValue(
+                WowFirstBoot.configure("SET gxapi \"d3d11\"\n", "us", true, "1024x576", false, "-d3d11"), "GxApi")));
+        check("null profile flag keeps the saved GxApi", "D3D12".equals(WowClientFiles.cvarValue(
+                WowFirstBoot.configure(played, "us", true, "1024x576", false, null), "GxApi")));
+        check("unknown flag does not map to GxApi", WowFirstBoot.gxApi("-dx9") == null);
 
         File dir = Files.createTempDirectory("wow-client-files").toFile();
         try {
