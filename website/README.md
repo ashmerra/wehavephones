@@ -13,6 +13,11 @@ python3 -m http.server 4173 --bind 0.0.0.0 --directory website
 Open `http://localhost:4173`, or the host's Tailscale IP with port `4173` from
 another device on the same tailnet. Only `website/` is served.
 
+The download button links directly to the APK. `site.js` checks GitHub's latest
+release API on page load and updates it to the versioned APK asset. The HTML
+contains a direct download fallback for visitors without JavaScript or when
+GitHub's API is unavailable. Update that fallback when publishing a new release.
+
 The website follows the local taste skill with `DESIGN_VARIANCE: 6`,
 `MOTION_INTENSITY: 4`, and `VISUAL_DENSITY: 3`. It uses native HTML and CSS for
 simple static hosting, self-hosted Geist, the existing blue brand, real gameplay
