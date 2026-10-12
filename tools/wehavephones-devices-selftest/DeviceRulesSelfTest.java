@@ -40,6 +40,7 @@ public final class DeviceRulesSelfTest {
     private static final ArrayList<String> failures = new ArrayList<>();
     private static File workRoot;
     private static String bundledJson;
+    private static int bundledVersion;
     private static int counter;
 
     private static final String TURNIP = "turnip26.3.0-devel-1b51639c20";
@@ -48,6 +49,7 @@ public final class DeviceRulesSelfTest {
     public static void main(String[] args) throws Exception {
         if (args.length < 1) throw new IllegalArgumentException("usage: DeviceRulesSelfTest <device-rules.json>");
         bundledJson = new String(Files.readAllBytes(new File(args[0]).toPath()), StandardCharsets.UTF_8);
+        bundledVersion = new JSONObject(bundledJson).getInt("rulesVersion");
         workRoot = Files.createTempDirectory("device-rules-selftest").toFile();
         try {
             testIdentity();
@@ -189,7 +191,7 @@ public final class DeviceRulesSelfTest {
 
     private static void testParseValidation() throws Exception {
         DeviceRules rules = parseBundled();
-        eq(1, rules.getRulesVersion(), "bundled rulesVersion");
+        eq(bundledVersion, rules.getRulesVersion(), "bundled rulesVersion");
         eq(1, rules.getSchema(), "bundled schema");
         check(rules.getDriver("system").isSystem(), "system driver");
         eq("vulkan.ad07xx.so", rules.getDriver(TURNIP).libraryName, "turnip library");
@@ -375,9 +377,14 @@ public final class DeviceRulesSelfTest {
         return fetcher;
     }
 
+    /** Remote versions in these tests count from the bundled rulesVersion: rel(1) equals it, rel(2) is the next one. */
+    private static int rel(int rulesVersion) {
+        return bundledVersion - 1 + rulesVersion;
+    }
+
     private static String version(int rulesVersion, int minApp) throws Exception {
         return mutate(r -> {
-            r.put("rulesVersion", rulesVersion);
+            r.put("rulesVersion", rel(rulesVersion));
             r.put("minAppVersionCode", minApp);
         });
     }
@@ -396,10 +403,10 @@ public final class DeviceRulesSelfTest {
 
         DeviceRulesStore.RefreshResult good = DeviceRulesStore.refresh(ctx, remote(key, version(2, 1)), key.getPublic(), 1, now);
         eq("updated", good.status, "good signature accepted: " + good);
-        eq(2, good.rulesVersion, "updated version");
+        eq(rel(2), good.rulesVersion, "updated version");
         DeviceRulesStore.Loaded loaded = DeviceRulesStore.load(ctx, key.getPublic());
         eq("remote", loaded.source, "load uses the remote cache");
-        eq(2, loaded.rules.getRulesVersion(), "cached rulesVersion");
+        eq(rel(2), loaded.rules.getRulesVersion(), "cached rulesVersion");
 
         // Same version again is current, not an error.
         eq("current", DeviceRulesStore.refresh(ctx, remote(key, version(2, 1)), key.getPublic(), 1, now).status, "same cached version is current");
@@ -408,7 +415,7 @@ public final class DeviceRulesSelfTest {
         eq("updated", DeviceRulesStore.refresh(withThree, remote(key, version(3, 1)), key.getPublic(), 1, now).status, "v3 accepted");
         DeviceRulesStore.RefreshResult lower = DeviceRulesStore.refresh(withThree, remote(key, version(2, 1)), key.getPublic(), 1, now);
         eq("rejected", lower.status, "lower than cached rejected: " + lower);
-        eq(3, DeviceRulesStore.load(withThree, key.getPublic()).rules.getRulesVersion(), "cache stays at v3");
+        eq(rel(3), DeviceRulesStore.load(withThree, key.getPublic()).rules.getRulesVersion(), "cache stays at v3");
 
         // Equal to bundled and lower than bundled.
         Context fresh = newContext();
@@ -431,9 +438,9 @@ public final class DeviceRulesSelfTest {
         eq("updated", DeviceRulesStore.refresh(fresh, remote(key, version(6, 2)), key.getPublic(), 2, now).status, "same file accepted by a newer app");
         // Unsupported schema, correctly signed.
         Context schemaCtx = newContext();
-        eq("rejected", DeviceRulesStore.refresh(schemaCtx, remote(key, mutate(r -> { r.put("rulesVersion", 9); r.put("schema", 2); })), key.getPublic(), 1, now).status, "unsupported schema rejected");
+        eq("rejected", DeviceRulesStore.refresh(schemaCtx, remote(key, mutate(r -> { r.put("rulesVersion", rel(9)); r.put("schema", 2); })), key.getPublic(), 1, now).status, "unsupported schema rejected");
         // Valid signature, invalid content (no catch-all).
-        eq("rejected", DeviceRulesStore.refresh(schemaCtx, remote(key, mutate(r -> { r.put("rulesVersion", 9); r.getJSONArray("rules").remove(r.getJSONArray("rules").length() - 1); })), key.getPublic(), 1, now).status, "invalid content rejected");
+        eq("rejected", DeviceRulesStore.refresh(schemaCtx, remote(key, mutate(r -> { r.put("rulesVersion", rel(9)); r.getJSONArray("rules").remove(r.getJSONArray("rules").length() - 1); })), key.getPublic(), 1, now).status, "invalid content rejected");
         eq("bundled", DeviceRulesStore.load(schemaCtx, key.getPublic()).source, "nothing cached after rejections");
 
         // Network failure and size cap.
@@ -466,7 +473,7 @@ public final class DeviceRulesSelfTest {
         check(cached.isFile(), "cache file written under files/wehavephones/device-rules/");
 
         // Edit the cached file on disk: signature no longer matches.
-        String edited = new String(Files.readAllBytes(cached.toPath()), StandardCharsets.UTF_8).replace("\"rulesVersion\":2", "\"rulesVersion\":9");
+        String edited = new String(Files.readAllBytes(cached.toPath()), StandardCharsets.UTF_8).replace("\"rulesVersion\":" + rel(2), "\"rulesVersion\":" + rel(9));
         Files.write(cached.toPath(), edited.getBytes(StandardCharsets.UTF_8));
         eq("bundled", DeviceRulesStore.load(ctx, key.getPublic()).source, "tampered cache ignored");
 
@@ -721,7 +728,7 @@ public final class DeviceRulesSelfTest {
         eq("adreno-7xx", plan.profileName, "S23 plan profile");
         eq("tested", plan.profileStatus, "S23 plan status");
         eq("bundled", plan.rulesSource, "plan rules source");
-        eq(1, plan.rulesVersion, "plan rules version");
+        eq(bundledVersion, plan.rulesVersion, "plan rules version");
         eq(1, prober.calls.size(), "one probe");
         check(plan.log.size() > 3, "plan keeps its decision log");
         eq(TURNIP + "=ok; system=not-tried", DeviceProfileSelector.driverProbes(plan), "driver probes summary");
