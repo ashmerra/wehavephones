@@ -570,7 +570,8 @@ public final class LaunchSelfTest {
         BattleNetLauncherLog china = new BattleNetLauncherLog();
         china.feed("UAuth: begin loading: https://account.battlenet.com.cn/login/zh-cn/?app=app");
         china.feed("UAuth: finished loading. statusCode=200 state=Login");
-        check("China email: own account host is the email form", BattleNetLauncherLog.LoginForm.EMAIL, china.loginForm());
+        // China's login.app is a NetEase account gate (terms checkbox and buttons), not an email field.
+        check("China: NetEase gate page is not an email field", BattleNetLauncherLog.LoginForm.NONE, china.loginForm());
     }
 
     // ---- helpers ------------------------------------------------------------------------
