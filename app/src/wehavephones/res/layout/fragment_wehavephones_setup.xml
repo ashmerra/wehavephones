@@ -37,6 +37,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
+                android:baselineAligned="false"
                 android:gravity="center_vertical">
                 <CheckBox
                     android:id="@+id/CBAutomaticAppUpdates"
@@ -46,7 +47,19 @@
                     android:text="@string/wehavephones_update_automatic" />
                 <Button
                     android:id="@+id/BTCheckAppUpdates"
-                    style="@style/WeHavePhonesButtonSmall"
+                    style="@style/WeHavePhonesButtonOutline"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="0dp"
+                    android:layout_marginStart="12dp"
+                    android:minWidth="0dp"
+                    android:minHeight="48dp"
+                    android:paddingLeft="16dp"
+                    android:paddingRight="16dp"
+                    android:paddingTop="0dp"
+                    android:paddingBottom="0dp"
+                    android:gravity="center"
+                    android:singleLine="true"
                     android:text="@string/wehavephones_update_check" />
             </LinearLayout>
         </LinearLayout>
