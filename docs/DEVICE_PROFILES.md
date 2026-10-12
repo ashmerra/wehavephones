@@ -12,13 +12,14 @@ compat layer is installed, and optionally the WoW graphics API flag.
 
 - Galaxy S23 (Adreno 7xx): the pinned Turnip, as before.
 - Pixel 8a and other Mali phones: the phone's own Vulkan driver with the BCn compat layer, as before.
-- Adreno 840 and newer (Snapdragon 8 Elite Gen 5): WoW in D3D11 with Turnip V32-RP6sched, downloaded on
-  first use, then Gen 8 Turnip V37, then the system driver. This is the setup of the only reported
-  in-world WoW run on an Adreno 840. The profile also disables `d3d12.dll`
+- Adreno 840 and newer (Snapdragon 8 Elite Gen 5): WoW in D3D11 with the system driver. On a OnePlus 15
+  every offered Turnip build drew glitches in WoW Retail, while the Qualcomm drivers played in-world
+  (issue #13); the Turnip builds stay in the driver picker. The profile also disables `d3d12.dll`
   (`WINEDLLOVERRIDES=d3d12,d3d12core=d`): Battle.net's Play starts WoW without `-d3d11` and WoW keeps
   the API saved in `Config.wtf`, but without D3D12 it falls back to D3D11.
 - Other Adreno 8xx (800-839, such as the 825 in the Snapdragon 8s Gen 4 and the 830 in the Snapdragon
-  8 Elite): the same, with the pinned Turnip before the system driver.
+  8 Elite): WoW in D3D11, also without `d3d12.dll`, with Turnip V32-RP6sched, downloaded on first use,
+  then Gen 8 Turnip V37, the pinned Turnip and the system driver.
 - Anything else falls through to a catch-all rule that matches the old behavior.
 
 Players can also pick a driver themselves on the Play screen (see [Driver picker](#driver-picker)).

@@ -281,9 +281,9 @@ public final class DeviceRulesSelfTest {
 
         DeviceRules rules = parseBundled();
         DeviceRules.Profile p84 = rules.getProfile("adreno-84x");
-        eq(V32, p84.drivers.get(0), "84x first driver");
-        eq(GEN8, p84.drivers.get(1), "84x second driver");
-        eq("system", p84.drivers.get(p84.drivers.size() - 1), "84x last driver");
+        // Every Turnip build drew glitches on a OnePlus 15 (issue #13); they stay in the picker.
+        eq(java.util.Arrays.asList("system"), p84.drivers, "84x uses the system driver");
+        eq(java.util.Arrays.asList(V32, GEN8), ids(p84.choiceEntries.subList(0, 2)), "84x picker offers V32 and Gen 8 first");
         eq("-d3d11", p84.wowApiArg, "84x wowApiArg");
         DeviceRules.Profile p8xx = rules.getProfile("adreno-8xx");
         eq(V32, p8xx.drivers.get(0), "8xx first driver");
@@ -801,7 +801,7 @@ public final class DeviceRulesSelfTest {
         // A url driver that is not downloaded yet is skipped without a probe.
         Context notYet = newContext();
         FakeProber notYetProber = new FakeProber();
-        GraphicsPlan beforeDownload = select(notYet, identity("Adreno (TM) 840", 0x44050A31L), notYetProber, available(V32));
+        GraphicsPlan beforeDownload = select(notYet, identity("Adreno (TM) 830", -1), notYetProber, available(V32));
         eq(java.util.Arrays.asList(GEN8), notYetProber.calls, "only the installed Gen 8 driver is probed");
         eq(GEN8, beforeDownload.driverId, "Gen 8 driver until V32 is downloaded");
         check(beforeDownload.log.toString().contains("probe " + V32 + "=unavailable"), "missing download logged");
@@ -809,7 +809,7 @@ public final class DeviceRulesSelfTest {
         // Unavailable drivers are skipped without a probe.
         Context skip = newContext();
         FakeProber skipProber = new FakeProber();
-        GraphicsPlan skipped = select(skip, identity("Adreno (TM) 840", 0x44050A21L), skipProber, available(V32, GEN8));
+        GraphicsPlan skipped = select(skip, identity("Adreno (TM) 830", -1), skipProber, available(V32, GEN8, TURNIP));
         eq(0, skipProber.calls.size(), "unavailable driver skipped, nothing probed");
         eq("system", skipped.driverId, "falls back to system");
         check(!skipped.useAdrenotools, "system is not adrenotools");
@@ -820,15 +820,18 @@ public final class DeviceRulesSelfTest {
         FakeProber failing = new FakeProber();
         failing.outcomes.put(V32, false);
         failing.outcomes.put(GEN8, false);
-        GraphicsPlan fallbackSystem = select(allFail, identity("Adreno (TM) 840", 0x44050A21L), failing, available());
+        failing.outcomes.put(TURNIP, false);
+        GraphicsPlan fallbackSystem = select(allFail, identity("Adreno (TM) 830", -1), failing, available());
         eq("system", fallbackSystem.driverId, "all failed uses system");
         check(fallbackSystem.log.toString().contains("probe " + GEN8 + "=failed"), "failure kept in the log");
 
-        // OnePlus 15 happy path (chip id from the device report in issue #13).
+        // OnePlus 15 (chip id from the device report in issue #13): the system driver, nothing probed.
         Context op = newContext();
         FakeProber opProber = new FakeProber();
         GraphicsPlan oneplus = select(op, identity("Adreno (TM) 840", 0x44050A31L), opProber, available());
-        eq(V32, oneplus.driverId, "OnePlus 15 gets V32-RP6sched");
+        eq("system", oneplus.driverId, "OnePlus 15 gets the system driver");
+        check(!oneplus.useAdrenotools, "OnePlus 15 is not adrenotools");
+        eq(0, opProber.calls.size(), "OnePlus 15 probes nothing");
         eq("-d3d11", oneplus.wowApiArg, "OnePlus 15 runs WoW with D3D11");
         eq("adreno-84x", oneplus.ruleId, "OnePlus rule");
         eq("community", oneplus.profileStatus, "OnePlus status");

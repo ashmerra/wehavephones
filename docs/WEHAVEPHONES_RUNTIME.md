@@ -63,10 +63,12 @@ binary tested with Classic Era on a Galaxy S23+, rather than a stable Mesa 26.3
 release or a moving nightly. The
 [driver manifest](../app/src/wehavephones/assets/wehavephones/graphics/turnip.json)
 pins both the archive and library SHA-256; the build helper and runtime checks
-verify the archive before packaging. Adreno 830 and 84x phones try **Gen 8 Turnip**
+verify the archive before packaging. Adreno 800-839 phones try Turnip V32-RP6sched and
+**Gen 8 Turnip**
 ([manifest](../app/src/wehavephones/assets/wehavephones/graphics/turnip-gen8-stevenmxz-v37.json))
-first, because the pinned Turnip does not know the retail Adreno 840 chip id; if a driver fails its
-test load, the next one in the profile (finally the system driver) is used. Non-Adreno devices
+first; if a driver fails its test load, the next one in the profile (finally the system driver) is
+used. Adreno 840 phones use the system driver, because every Turnip build drew glitches in WoW on a
+OnePlus 15. Non-Adreno devices
 retain the wrapper's system Vulkan path with the BCn compat layer.
 
 The rules replace the graphics `version` of the container at session start. The `p10-ge34` profile

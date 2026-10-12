@@ -1,8 +1,8 @@
 {
   "schema": 1,
-  "rulesVersion": 5,
+  "rulesVersion": 6,
   "minAppVersionCode": 1,
-  "updatedAt": "2026-10-11",
+  "updatedAt": "2026-10-12",
   "drivers": {
     "system": {
       "type": "system",
@@ -198,11 +198,11 @@
     "adreno-84x": {
       "status": "community",
       "drivers": [
-        "turnip-v32-rp6sched",
-        "turnip-gen8-stevenmxz-v37",
         "system"
       ],
       "choices": [
+        "turnip-v32-rp6sched",
+        "turnip-gen8-stevenmxz-v37",
         "turnip-whitebelyash-v32",
         "turnip-whitebelyash-stable-v2",
         "turnip-whitebelyash-a8xx-v29",
@@ -222,7 +222,7 @@
       },
       "vulkanCompatLayer": false,
       "wowApiArg": "-d3d11",
-      "notes": "Adreno 840 (Snapdragon 8 Elite Gen 5): V32-RP6sched with D3D11, the setup of the only reported in-world WoW run on an 840, then Gen 8 V37 and the system driver. D3D12 is disabled because Battle.net's Play starts WoW without -d3d11 and WoW keeps its saved GxApi; without d3d12.dll it falls back to D3D11 (verified on the Galaxy S23). Mainline Turnip (0.0.1) and V37 (0.0.2) both drew corruption with D3D12 on a OnePlus 15 (issue #13, chip 0x44050A31, which every bundled driver knows). D3D11 renders correctly on the Galaxy S23. Not yet run on an Adreno 840 phone."
+      "notes": "Adreno 840 (Snapdragon 8 Elite Gen 5): the system driver with D3D11. On a OnePlus 15 (issue #13, chip 0x44050A31) every offered Turnip build drew glitches in WoW Retail, also with D3D11 (turnip-gamehub-v26.0.0-r8-b12 crashed at character select instead), while qualcomm-842.6 played in-world with some frame drops and the reporter called the system driver the best way to play. The Turnip builds stay in the picker: V32-RP6sched with D3D11 is the setup of the only other reported in-world run on an 840 (WoW Forever on a RedMagic 11 Pro). D3D12 is disabled because Battle.net's Play starts WoW without -d3d11 and WoW keeps its saved GxApi; without d3d12.dll it falls back to D3D11 (verified on the Galaxy S23)."
     },
     "adreno-other": {
       "status": "untested",
