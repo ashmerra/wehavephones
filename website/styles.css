@@ -91,12 +91,6 @@ p { font-size: 15px; line-height: 1.7; }
 .feature-list article + article { margin-top: 29px; }
 .feature-list p { color: var(--muted); max-width: 420px; margin: 9px 0 0; }
 .feature-list .text-link { margin-top: 7px; }
-.compatibility { background: var(--surface); border-radius: var(--radius); padding: 44px 48px 35px; }
-.section-heading p { color: var(--muted); max-width: 570px; margin: 15px 0 32px; }
-.devices { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; }
-.device p { color: var(--muted); max-width: 450px; }
-.device .device-chip { font-size: 12px; margin: 8px 0 15px; }
-.compatibility > .text-link { margin-top: 15px; }
 .setup { display: grid; grid-template-columns: 1fr 1fr; gap: 100px; padding-block: 96px; }
 .setup-intro p { color: var(--muted); max-width: 360px; margin: 20px 0 15px; }
 .questions { align-self: start; border-top: 1px solid var(--border); }
@@ -106,7 +100,7 @@ summary::-webkit-details-marker { display: none; }
 summary::after { content: '+'; color: var(--accent); font-size: 25px; font-weight: 400; flex-shrink: 0; }
 details[open] summary::after { content: '−'; }
 details p { color: var(--muted); margin: 0 0 24px; }
-details p a { text-decoration: underline; text-underline-offset: 4px; color: var(--accent); }
+details p a, .feature-list p a { text-decoration: underline; text-underline-offset: 4px; color: var(--accent); }
 .site-footer { padding-block: 30px 36px; border-top: 1px solid var(--border); }
 .footer-top { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 22px; }
 .footer-top .brand { font-size: 16px; }
@@ -151,10 +145,6 @@ details p a { text-decoration: underline; text-underline-offset: 4px; color: var
   .phone-mark { display: none; }
   .feature-intro p { max-width: 400px; }
   .feature-list article + article { margin-top: 26px; }
-  .compatibility { padding: 28px 24px; }
-  .devices { grid-template-columns: 1fr; gap: 22px; }
-  .section-heading p { margin-bottom: 24px; }
-  .device p { margin-bottom: 0; }
   .setup { grid-template-columns: 1fr; gap: 30px; padding-block: 52px; }
   .setup-intro p { max-width: 430px; }
   .footer-top { flex-direction: column; align-items: flex-start; gap: 8px; }
