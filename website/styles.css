@@ -91,7 +91,7 @@ p { font-size: 15px; line-height: 1.7; }
 .feature-list article + article { margin-top: 29px; }
 .feature-list p { color: var(--muted); max-width: 420px; margin: 9px 0 0; }
 .feature-list .text-link { margin-top: 7px; }
-.setup { display: grid; grid-template-columns: 1fr 1fr; gap: 100px; padding-block: 96px; }
+.setup { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; padding: 56px 48px; margin-bottom: 80px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
 .setup-intro p { color: var(--muted); max-width: 360px; margin: 20px 0 15px; }
 .questions { align-self: start; border-top: 1px solid var(--border); }
 details { border-bottom: 1px solid var(--border); }
@@ -145,7 +145,7 @@ details p a, .feature-list p a { text-decoration: underline; text-underline-offs
   .phone-mark { display: none; }
   .feature-intro p { max-width: 400px; }
   .feature-list article + article { margin-top: 26px; }
-  .setup { grid-template-columns: 1fr; gap: 30px; padding-block: 52px; }
+  .setup { grid-template-columns: 1fr; gap: 30px; padding: 32px 24px; margin-bottom: 52px; }
   .setup-intro p { max-width: 430px; }
   .footer-top { flex-direction: column; align-items: flex-start; gap: 8px; }
   .footer-top nav { flex-wrap: wrap; gap: 20px; }
