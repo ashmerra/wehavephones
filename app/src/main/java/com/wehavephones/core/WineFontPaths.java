@@ -7,6 +7,7 @@ import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -27,7 +28,8 @@ public final class WineFontPaths {
         File registry = new File(prefix, "system.reg");
         File sourceDir = new File(wineDir, "share/wine/fonts");
         File[] sources = sourceDir.listFiles(File::isFile);
-        if (!registry.isFile() || sources == null) return 0;
+        if (!registry.isFile()) return 0;
+        if (sources == null) sources = new File[0];
 
         File prefixFonts = new File(prefix, "drive_c/windows/Fonts");
         Map<String, String> paths = new HashMap<>();
@@ -53,6 +55,9 @@ public final class WineFontPaths {
 
         String before = new String(Files.readAllBytes(registry.toPath()), StandardCharsets.UTF_8);
         String after = repairRegistry(before, paths);
+        // Battle.net's pages read fonts through DirectWrite, which only sees registered files.
+        String cjk = WineFontRegistry.repair(after, path -> WineFontRegistry.exists(path, prefixFonts, imageFs));
+        if (cjk != null) after = cjk;
         // wineboot imports wine.inf on the first launch and can restore bare NT font
         // names. Import this small patch in the guest after wineboot has completed.
         String startup = startupRegistry(after, paths);
@@ -107,7 +112,9 @@ public final class WineFontPaths {
             Matcher value = STRING_VALUE.matcher(line);
             if (!value.matches()) continue;
             String path = value.group(2).replace("\\\\", "\\");
-            if (!paths.containsValue(path)) continue;
+            String name = value.group(1);
+            boolean cjk = section.equals(WINNT) && WineFontRegistry.manages(name.substring(1, name.length() - 3));
+            if (!paths.containsValue(path) && !cjk) continue;
             if (!wroteSection) {
                 result.append("\r\n[HKEY_LOCAL_MACHINE\\")
                         .append(section.substring(1, section.length() - 1).replace("\\\\", "\\"))
@@ -142,11 +149,11 @@ public final class WineFontPaths {
         return result.toString();
     }
 
+    /** Lines of {@code after} not in {@code before}: edited or added values. */
     private static int changedValues(String before, String after) {
-        String[] oldLines = before.split("\n", -1);
-        String[] newLines = after.split("\n", -1);
+        HashSet<String> oldLines = new HashSet<>(java.util.Arrays.asList(before.split("\n", -1)));
         int changed = 0;
-        for (int i = 0; i < oldLines.length; i++) if (!oldLines[i].equals(newLines[i])) changed++;
+        for (String line : after.split("\n", -1)) if (!oldLines.contains(line)) changed++;
         return changed;
     }
 }

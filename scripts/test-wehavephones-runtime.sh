@@ -19,6 +19,8 @@
 #   5. Java check (tools/wehavephones-runtime-selftest/WineFontPathsSelfTest):
 #      repair inherited Wine font basenames before CEF starts; preserve custom
 #      fonts, unrelated registry data, and subsequent launches.
+#      WineFontRegistrySelfTest: register the prefix's real CJK fonts so
+#      Battle.net's web pages draw Chinese and Korean text.
 #
 # No adb, no device. Exits non-zero when any check fails.
 set -euo pipefail
@@ -134,8 +136,10 @@ if [[ -n "$JAVAC" && -n "$JAVA" ]]; then
   mkdir -p "$WORK_DIR"
   if "$JAVAC" -encoding UTF-8 -d "$WORK_DIR" \
       "$ROOT_DIR/app/src/main/java/com/wehavephones/core/WineFontPaths.java" \
-      "$SELF_TEST_DIR/WineFontPathsSelfTest.java"; then
+      "$ROOT_DIR/app/src/main/java/com/wehavephones/core/WineFontRegistry.java" \
+      "$SELF_TEST_DIR/WineFontPathsSelfTest.java" "$SELF_TEST_DIR/WineFontRegistrySelfTest.java"; then
     "$JAVA" -cp "$WORK_DIR" com.wehavephones.core.WineFontPathsSelfTest || fail "WineFontPathsSelfTest"
+    "$JAVA" -cp "$WORK_DIR" com.wehavephones.core.WineFontRegistrySelfTest || fail "WineFontRegistrySelfTest"
   else
     fail "javac failed for WineFontPathsSelfTest"
   fi

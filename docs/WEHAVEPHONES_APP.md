@@ -136,7 +136,11 @@ desktop wallpaper.
   **Install Battle.net** then opens the official installer: Blizzard's China
   app (`Battle.net-Setup-CN.exe` from `downloader.battlenet.com.cn`) when the
   region is China, the global one otherwise; the global app cannot sign in to
-  China accounts. China also seeds `zhCN` as the game language. Completion is
+  China accounts. China also seeds `zhCN` as the game language. Battle.net's
+  web pages draw text through DirectWrite, which only sees registered fonts, so
+  every session start registers the prefix's CJK fonts (`WineFontRegistry`,
+  run by `WineFontPaths`); without it Chinese and Korean page text is empty
+  boxes. Completion is
   detected while this screen is visible and on return from the installer.
   Sign-in and WoW downloads are not completion requirements. Interrupted setup
   resumes from the prepared-container marker; existing installations migrate
