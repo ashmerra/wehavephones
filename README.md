@@ -18,8 +18,6 @@ Built-in addon manager.
 
 \* Not tested past the login screen because I don't have beta access.
 
-The four live clients in the Americas & Oceania catalog were validated on the S23+ with 0.0.2-dev on 2026-10-10. Classic Era, Burning Crusade Anniversary and Mists of Pandaria Classic reached the world through automated phone control; Retail's new-character world login was confirmed manually. Hardcore and Season of Discovery share Classic Era's launch path and were not exercised separately. Beta and PTR clients were excluded from this run.
-
 Other games and versions have not been tested. Other phones are matched to a graphics setup by device rules; if yours misbehaves, use Report a problem in Diagnostics.
 
 ## Install
