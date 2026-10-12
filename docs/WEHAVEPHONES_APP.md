@@ -142,6 +142,10 @@ desktop wallpaper.
   resumes from the prepared-container marker; existing installations migrate
   automatically. An app-wide completion preference keeps this screen out of
   navigation and future boots, even after a container/profile change.
+  Setup's **Set up a new container** reopens it as a section
+  (`FirstRunSetupFragment.forNewContainer()`) for one more container, named
+  after its region (`WeHavePhones WoW (CN)`), with its own Battle.net; other
+  containers are left as they are and the new one becomes active.
 - **Setup** (`SetupFragment`): active container selection and **Manage
   containers**, plus **Import WoW files** from `Download/World of Warcraft`.
   `WowImportService` runs the copy as a foreground data-sync service with a
@@ -168,9 +172,10 @@ desktop wallpaper.
   (`WowExitWatcher`), Battle.net always closes after launching WoW, and the
   first-boot photosensitivity warning and intro cinematic are always skipped
   (`WowFirstBoot`). Explicit region changes
-  replace WoW's saved portal on the next launch (switching to or from China
-  once Battle.net is installed shows a note that it needs the other Battle.net
-  app, which only a fresh setup installs); other existing
+  replace WoW's saved portal on the next launch. Switching to or from China
+  once Battle.net is installed is refused with a note pointing to **Set up a
+  new container**, since the installed Battle.net app cannot sign in to the
+  other side; other existing
   language/intro preferences remain preserved. With no detected game, Home
   offers **Open Battle.net**.
 - **Diagnostics** (`DiagnosticsFragment`): live memory panel (MemAvailable,

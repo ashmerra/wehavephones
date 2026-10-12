@@ -20,20 +20,29 @@ import androidx.fragment.app.Fragment;
 import com.wehavephones.R;
 import com.wehavephones.XServerDisplayActivity;
 import com.wehavephones.container.Container;
+import com.wehavephones.container.ContainerManager;
 import com.wehavephones.core.TarCompressorUtils;
 import com.wehavephones.xenvironment.ImageFs;
 import com.wehavephones.xenvironment.ImageFsInstaller;
 
 import java.io.File;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * First-time setup, also reopened from Setup to add another container with its
+ * own Battle.net (China runs a separate Battle.net app).
+ */
 public class FirstRunSetupFragment extends Fragment {
+    private static final String ARG_NEW_CONTAINER = "newContainer";
     private static final AtomicBoolean WORKING = new AtomicBoolean();
     private static final ExecutorService WORKER = Executors.newSingleThreadExecutor();
     private static volatile String lastMessage = "";
+    /** The container created by the new-container screen, 0 until it exists. */
+    private static volatile int addedContainerId;
     private final Handler refreshHandler = new Handler(Looper.getMainLooper());
     private final Runnable refresh = new Runnable() {
         @Override public void run() {
@@ -49,6 +58,34 @@ public class FirstRunSetupFragment extends Fragment {
     private Button prepareButton, bnetButton;
     private Spinner regionSpinner;
     private TextView bnetGuidance;
+
+    /** Setup for an extra container; existing containers are left as they are. */
+    public static FirstRunSetupFragment forNewContainer() {
+        if (!WORKING.get()) {
+            addedContainerId = 0;
+            lastMessage = "";
+        }
+        FirstRunSetupFragment fragment = new FirstRunSetupFragment();
+        Bundle args = new Bundle();
+        args.putBoolean(ARG_NEW_CONTAINER, true);
+        fragment.setArguments(args);
+        return fragment;
+    }
+
+    private boolean isNewContainer() {
+        return getArguments() != null && getArguments().getBoolean(ARG_NEW_CONTAINER);
+    }
+
+    /** The container this screen sets up: the active one, or the one it added. */
+    private Container targetContainer() {
+        if (!isNewContainer()) return WeHavePhonesContainers.resolve(activity);
+        return addedContainerId > 0 ? new ContainerManager(activity).getContainerById(addedContainerId) : null;
+    }
+
+    private InitialSetupState setupState() {
+        if (!isNewContainer()) return WeHavePhonesInitialSetup.load(activity);
+        return WeHavePhonesInitialSetup.load(activity, targetContainer(), false);
+    }
 
     @Nullable
     @Override
@@ -68,7 +105,7 @@ public class FirstRunSetupFragment extends Fragment {
         prepareButton.setOnClickListener(v -> runPreparation());
         bnetButton.setOnClickListener(v -> {
             activity.withStoragePermissions(() -> {
-                if (liveSession() || !WeHavePhonesInitialSetup.load(activity).containerPrepared
+                if (liveSession() || !setupState().containerPrepared
                         || !WORKING.compareAndSet(false, true)) return;
                 refreshState();
                 installBattleNet();
@@ -77,6 +114,12 @@ public class FirstRunSetupFragment extends Fragment {
         bnetGuidance = view.findViewById(R.id.TVBnetGuidance);
         Spinner region = regionSpinner = view.findViewById(R.id.SPSetupRegion);
         selectedRegion = WeHavePhonesConfig.getGameRegion(activity);
+        if (isNewContainer()) {
+            ((TextView)view.findViewById(R.id.TVFirstRunLabel)).setText(R.string.wehavephones_new_container_label);
+            ((TextView)view.findViewById(R.id.TVFirstRunTitle)).setText(R.string.wehavephones_new_container_title);
+            ((TextView)view.findViewById(R.id.TVFirstRunIntro)).setText(R.string.wehavephones_new_container_intro);
+            ((TextView)view.findViewById(R.id.TVFirstRunRegionLater)).setText(R.string.wehavephones_new_container_region);
+        }
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(activity,
                 R.array.wehavephones_regions, R.layout.wehavephones_spinner_item);
         adapter.setDropDownViewResource(R.layout.wehavephones_spinner_dropdown_item);
@@ -87,7 +130,11 @@ public class FirstRunSetupFragment extends Fragment {
         region.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override public void onItemSelected(AdapterView<?> parent, View child, int position, long id) {
                 selectedRegion = WowFirstBoot.REGIONS[position];
-                WeHavePhonesConfig.setGameRegion(activity, WowFirstBoot.REGIONS[position]);
+                // Before the new container exists, the active one is another container.
+                Container target = targetContainer();
+                if (target != null && target.id == WeHavePhonesConfig.getContainerId(activity)) {
+                    WeHavePhonesConfig.setGameRegion(activity, WowFirstBoot.REGIONS[position]);
+                }
             }
             @Override public void onNothingSelected(AdapterView<?> parent) {}
         });
@@ -126,10 +173,11 @@ public class FirstRunSetupFragment extends Fragment {
 
     void refreshState() {
         if (!isAdded() || prepareButton == null) return;
-        InitialSetupState state = WeHavePhonesInitialSetup.load(activity);
+        InitialSetupState state = setupState();
         boolean busy = WORKING.get();
         if (!busy && state.complete && isResumed()) {
-            activity.finishInitialSetup();
+            if (isNewContainer()) activity.showHome();
+            else activity.finishInitialSetup();
             return;
         }
         boolean live = liveSession();
@@ -172,23 +220,30 @@ public class FirstRunSetupFragment extends Fragment {
                     finishBusy();
                     return;
                 }
-                Container container = WeHavePhonesContainers.resolve(activity);
+                Container container = targetContainer();
                 if (container != null) {
+                    WeHavePhonesContainers.remember(activity, container);
                     appendLine(activity.getString(R.string.wehavephones_setup_container_ok, container.getName()));
                     continueRunAll();
                     return;
                 }
                 String wineVersion = currentWineVersion();
-                WeHavePhonesContainers.createDefault(activity, wineVersion, (created, error) -> {
+                WeHavePhonesContainers.CreateCallback onCreated = (created, error) -> {
                     if (created == null) {
                         appendLine(activity.getString(R.string.wehavephones_error_prefix) + error);
                         finishBusy();
                         return;
                     }
+                    if (isNewContainer()) addedContainerId = created.id;
                     appendLine(activity.getString(R.string.wehavephones_setup_container_created, created.getName()));
                     WeHavePhonesConfig.setGameRegion(activity, selectedRegion);
                     continueRunAll();
-                });
+                };
+                if (isNewContainer()) {
+                    WeHavePhonesContainers.create(activity, activity.getString(R.string.wehavephones_new_container_name,
+                            selectedRegion.toUpperCase(Locale.US)), wineVersion, onCreated);
+                }
+                else WeHavePhonesContainers.createDefault(activity, wineVersion, onCreated);
             }
             catch (Throwable throwable) {
                 appendLine(activity.getString(R.string.wehavephones_error_prefix) + throwable);
@@ -301,7 +356,8 @@ public class FirstRunSetupFragment extends Fragment {
     }
 
     private void installBattleNet() {
-        final Container container = WeHavePhonesContainers.resolve(activity);
+        final Container container = targetContainer();
+        WeHavePhonesContainers.remember(activity, container);
         if (container != null && BattleNetManager.isInstalled(container)) {
             appendLine(activity.getString(R.string.wehavephones_setup_bnet_installed));
             finishBusy();

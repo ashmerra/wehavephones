@@ -46,6 +46,7 @@
                     android:textSize="8sp" />
             </LinearLayout>
             <TextView
+                android:id="@+id/TVFirstRunLabel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:fontFamily="sans-serif-medium"
@@ -55,12 +56,14 @@
                 android:textSize="10sp" />
         </LinearLayout>
         <TextView
+            android:id="@+id/TVFirstRunTitle"
             style="@style/WeHavePhonesScreenTitle"
             android:layout_marginTop="8dp"
             android:text="@string/wehavephones_first_run_title"
             android:textColor="@color/wehavephones_text_title"
             android:textSize="26sp" />
         <TextView
+            android:id="@+id/TVFirstRunIntro"
             style="@style/WeHavePhonesHint"
             android:layout_marginTop="5dp"
             android:text="@string/wehavephones_first_run_intro"
@@ -167,6 +170,7 @@
             style="@style/WeHavePhonesHint"
             android:text="@string/wehavephones_first_run_status" />
         <TextView
+            android:id="@+id/TVFirstRunRegionLater"
             style="@style/WeHavePhonesHint"
             android:layout_marginTop="4dp"
             android:text="@string/wehavephones_first_run_region_later" />

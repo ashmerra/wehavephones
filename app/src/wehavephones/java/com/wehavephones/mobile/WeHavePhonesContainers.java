@@ -48,16 +48,20 @@ public final class WeHavePhonesContainers {
     }
 
     public static void createDefault(final Context context, final String wineVersion, final CreateCallback callback) {
+        create(context, "WeHavePhones WoW", wineVersion, callback);
+    }
+
+    public static void create(final Context context, final String name, final String wineVersion, final CreateCallback callback) {
         final Handler handler = new Handler(Looper.getMainLooper());
         // createContainerAsync() binds its Handler to the calling thread, so it
         // must start on a Looper thread; first-run setup calls us from a worker.
         if (Looper.myLooper() != Looper.getMainLooper()) {
-            handler.post(() -> createDefault(context, wineVersion, callback));
+            handler.post(() -> create(context, name, wineVersion, callback));
             return;
         }
         try {
             JSONObject data = new JSONObject();
-            data.put("name", "WeHavePhones WoW");
+            data.put("name", name);
             if (wineVersion != null && !wineVersion.isEmpty()) data.put("wineVersion", wineVersion);
             data.put("screenSize", WeHavePhonesConfig.getGameScreenSize(context));
 

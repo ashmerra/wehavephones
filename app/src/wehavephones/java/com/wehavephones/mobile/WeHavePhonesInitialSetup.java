@@ -11,8 +11,12 @@ public final class WeHavePhonesInitialSetup {
     private WeHavePhonesInitialSetup() {}
 
     public static InitialSetupState load(Context context) {
-        Container container = WeHavePhonesContainers.resolve(context);
-        return new InitialSetupState(WeHavePhonesConfig.isInitialSetupComplete(context),
+        return load(context, WeHavePhonesContainers.resolve(context), WeHavePhonesConfig.isInitialSetupComplete(context));
+    }
+
+    /** Setup state of one container; completedBefore is false when setting up an extra container. */
+    public static InitialSetupState load(Context context, Container container, boolean completedBefore) {
+        return new InitialSetupState(completedBefore,
                 ImageFs.find(context).isValid(), container != null,
                 container != null && !container.getExtra(PREPARED_PROFILE).isEmpty(),
                 container != null && WeHavePhonesShortcuts.findBnetShortcut(container) != null

@@ -63,12 +63,17 @@
     <string name="wehavephones_first_run_bnet_locked">Install your container first.</string>
     <string name="wehavephones_first_run_bnet_hint">Complete the installation in the Battle.net window.</string>
     <string name="wehavephones_first_run_status">Two steps, then you\'re ready to choose your game.</string>
-    <string name="wehavephones_first_run_region_later">Region can be changed later in Settings, except to or from China, which uses its own Battle.net app.</string>
+    <string name="wehavephones_first_run_region_later">Region can be changed later in Settings. China uses its own Battle.net app, so switching to or from it needs a new container (Setup).</string>
+    <string name="wehavephones_new_container_label">NEW CONTAINER</string>
+    <string name="wehavephones_new_container_title">Set up a new container</string>
+    <string name="wehavephones_new_container_intro">Pick its region, then install the container and Battle.net. Your other containers stay as they are.</string>
+    <string name="wehavephones_new_container_region">Switch between containers in Setup.</string>
+    <string name="wehavephones_new_container_name">WeHavePhones WoW (%1$s)</string>
     <string name="wehavephones_settings_intro">Game preferences and launch behavior.</string>
     <string name="wehavephones_settings_game_preferences">Game preferences</string>
     <string name="wehavephones_settings_disable_virtual_gamepad">Disable virtual gamepad</string>
     <string name="wehavephones_settings_region_hint">Changes apply the next time you launch the game.</string>
-    <string name="wehavephones_settings_region_china">China uses its own Battle.net app, chosen during first-time setup. To switch to or from China, reinstall WeHavePhones and pick the region before installing Battle.net.</string>
+    <string name="wehavephones_settings_region_china">China uses its own Battle.net app, so this container\'s Battle.net can\'t switch to or from it. Use "Set up a new container" in Setup and pick the region there.</string>
     <string name="wehavephones_open_bnet">Open Battle.net</string>
     <string name="wehavephones_home_setup_complete">Setup complete. Sign in to Battle.net and install your WoW version.</string>
 
@@ -127,6 +132,8 @@
     <string name="wehavephones_settings_container_empty">No containers yet</string>
     <string name="wehavephones_settings_container_hint">Play, Battle.net, and Add-ons use this container. Close the running session before switching.</string>
     <string name="wehavephones_settings_container_manage">Manage containers</string>
+    <string name="wehavephones_settings_container_new">Set up a new container</string>
+    <string name="wehavephones_settings_container_new_hint">Adds a container with its own Battle.net, for example to play in China.</string>
     <string name="wehavephones_settings_container_selected">Active container: %1$s.</string>
     <string name="wehavephones_settings_container_busy">Close the running session before changing containers.</string>
 

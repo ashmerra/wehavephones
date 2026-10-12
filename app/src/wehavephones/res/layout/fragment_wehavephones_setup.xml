@@ -58,6 +58,19 @@
                     android:paddingRight="16dp"
                     android:layout_marginTop="16dp"
                     android:text="@string/wehavephones_settings_container_manage" />
+                <Button
+                    android:id="@+id/BTNewContainer"
+                    style="@style/WeHavePhonesButtonOutline"
+                    android:layout_width="wrap_content"
+                    android:paddingLeft="16dp"
+                    android:paddingRight="16dp"
+                    android:layout_marginTop="10dp"
+                    android:text="@string/wehavephones_settings_container_new" />
+                <TextView
+                    style="@style/WeHavePhonesHint"
+                    android:layout_marginTop="6dp"
+                    android:text="@string/wehavephones_settings_container_new_hint"
+                    android:textSize="13sp" />
             </LinearLayout>
             <LinearLayout
                 android:layout_width="0dp"

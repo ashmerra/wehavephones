@@ -63,6 +63,13 @@ public class SetupFragment extends Fragment {
             intent.putExtra("selected_menu_item_id", R.id.main_menu_containers);
             startActivity(intent);
         });
+        view.findViewById(R.id.BTNewContainer).setOnClickListener(v -> {
+            if (WowImportService.isRunning()) {
+                Toast.makeText(activity, R.string.wehavephones_import_wait, Toast.LENGTH_LONG).show();
+                return;
+            }
+            activity.showSection(FirstRunSetupFragment.forNewContainer());
+        });
         importButton = view.findViewById(R.id.BTImportWow);
         cancelImportButton = view.findViewById(R.id.BTCancelWowImport);
         importStatus = view.findViewById(R.id.TVImportWowStatus);

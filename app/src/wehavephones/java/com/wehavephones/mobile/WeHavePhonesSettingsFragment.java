@@ -70,16 +70,18 @@ public class WeHavePhonesSettingsFragment extends Fragment {
                 String selected = WowFirstBoot.REGIONS[position];
                 String current = WeHavePhonesConfig.getGameRegion(activity);
                 if (selected.equals(current)) return;
-                WeHavePhonesConfig.setGameRegionOverride(activity, selected);
-                activity.updateStageStatus(getString(R.string.wehavephones_settings_saved), false);
                 // The installed Battle.net app only signs in to its own side.
                 if (WowFirstBoot.isChina(selected) != WowFirstBoot.isChina(current)
                         && BattleNetManager.isInstalled(WeHavePhonesContainers.resolve(activity))) {
+                    region.setSelection(Arrays.asList(WowFirstBoot.REGIONS).indexOf(current), false);
                     new AlertDialog.Builder(activity)
                             .setMessage(R.string.wehavephones_settings_region_china)
                             .setPositiveButton(android.R.string.ok, null)
                             .show();
+                    return;
                 }
+                WeHavePhonesConfig.setGameRegionOverride(activity, selected);
+                activity.updateStageStatus(getString(R.string.wehavephones_settings_saved), false);
             }
             @Override public void onNothingSelected(AdapterView<?> parent) {}
         });
