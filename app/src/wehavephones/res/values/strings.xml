@@ -11,7 +11,7 @@
     <string name="wehavephones_play">Play</string>
     <string name="wehavephones_setup_short">Setup</string>
     <string name="wehavephones_import_title">Import WoW files</string>
-    <string name="wehavephones_import_hint">Copy your entire World of Warcraft folder to Downloads, then import it here. Keep room for a second copy.</string>
+    <string name="wehavephones_import_hint">Copy your entire World of Warcraft folder to Downloads, then import it here.</string>
     <string name="wehavephones_import_needs_container">Set up a container before importing WoW files.</string>
     <string name="wehavephones_import_close_session">Close the running Battle.net or WoW session before importing.</string>
     <string name="wehavephones_import_checking">Checking files and free space…</string>

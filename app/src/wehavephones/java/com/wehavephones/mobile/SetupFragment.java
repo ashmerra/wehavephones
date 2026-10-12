@@ -9,6 +9,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.CheckBox;
 import android.widget.Spinner;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -19,10 +20,12 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import com.wehavephones.R;
+import com.wehavephones.BuildConfig;
 import com.wehavephones.MainActivity;
 import com.wehavephones.XServerDisplayActivity;
 import com.wehavephones.container.Container;
 import com.wehavephones.container.ContainerManager;
+import com.wehavephones.mobile.updates.AppUpdates;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -56,6 +59,15 @@ public class SetupFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         activity = (WeHavePhonesActivity)getActivity();
+        AppUpdates updates = AppUpdates.get(activity);
+        ((TextView)view.findViewById(R.id.TVAppUpdateVersion)).setText(getString(R.string.wehavephones_update_version, BuildConfig.VERSION_NAME));
+        ((TextView)view.findViewById(R.id.TVAppUpdateHint)).setText(updates.isSupported()
+                ? R.string.wehavephones_update_hint : R.string.wehavephones_update_dev);
+        CheckBox automaticUpdates = view.findViewById(R.id.CBAutomaticAppUpdates);
+        automaticUpdates.setChecked(updates.isSupported() && updates.isAutomatic());
+        automaticUpdates.setEnabled(updates.isSupported());
+        automaticUpdates.setOnCheckedChangeListener((button, checked) -> updates.setAutomatic(checked));
+        view.findViewById(R.id.BTCheckAppUpdates).setOnClickListener(v -> activity.checkForAppUpdates());
         containerSpinner = view.findViewById(R.id.SPActiveContainer);
         manageContainers = view.findViewById(R.id.BTManageContainers);
         manageContainers.setOnClickListener(v -> {

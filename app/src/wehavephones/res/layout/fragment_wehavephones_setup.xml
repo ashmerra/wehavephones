@@ -22,6 +22,37 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:orientation="vertical"
+            android:background="@drawable/wehavephones_card_background"
+            android:padding="12dp">
+            <TextView
+                android:id="@+id/TVAppUpdateVersion"
+                style="@style/WeHavePhonesSectionLabel"
+                android:layout_marginTop="0dp" />
+            <TextView
+                android:id="@+id/TVAppUpdateHint"
+                style="@style/WeHavePhonesHint" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+                <CheckBox
+                    android:id="@+id/CBAutomaticAppUpdates"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/wehavephones_update_automatic" />
+                <Button
+                    android:id="@+id/BTCheckAppUpdates"
+                    style="@style/WeHavePhonesButtonSmall"
+                    android:text="@string/wehavephones_update_check" />
+            </LinearLayout>
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:baselineAligned="false"
             android:layout_marginTop="14dp">

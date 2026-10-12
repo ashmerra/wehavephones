@@ -294,7 +294,7 @@ product folder only, which current installs do not have.
 ### Update the app
 
 Official release builds check the public GitHub releases list at most once a
-day when the completed setup's menu gains focus. Settings exposes a manual
+day when the completed setup's menu gains focus. Setup exposes a manual
 check and an opt-out for automatic checks. `mobile/updates/AppRelease` chooses
 the highest newer three-part version with a matching uploaded release APK and
 a SHA-256 digest or `SHA256SUMS`; drafts, prereleases and asset-only tags are

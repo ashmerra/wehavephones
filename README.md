@@ -29,7 +29,7 @@ Other games and versions have not been tested. Other phones are matched to a gra
 5. Back in the WeHavePhones app, press Play.
 
 The app checks GitHub for newer app releases at most once a day when opened.
-Use **Settings → Check for updates** to check immediately or turn daily checks
+Use **Setup → Check for updates** to check immediately or turn daily checks
 off. Updates show the release notes, download and verify the APK, then ask for
 Android's installation confirmation. The first in-app update also asks you to
 allow WeHavePhones to install unknown apps. Close WoW/Battle.net and finish any
