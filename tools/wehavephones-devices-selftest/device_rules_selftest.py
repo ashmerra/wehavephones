@@ -82,6 +82,8 @@ def validate(doc):
             bad(where + ": must be an object")
             continue
         kind = driver.get("type")
+        if "label" in driver and not isinstance(driver["label"], str):
+            bad(where + ": label must be a string")
         if kind == "system":
             if driver_id != "system":
                 bad(where + ": only 'system' may be of type system")
@@ -140,6 +142,18 @@ def validate(doc):
         api = profile.get("wowApiArg")
         if api is not None and not (isinstance(api, str) and API_ARG.match(api)):
             bad(where + ": invalid wowApiArg")
+        choices = profile.get("choices")
+        if choices is not None:
+            if not isinstance(choices, list):
+                bad(where + ": choices must be an array")
+                choices = []
+            if len(set(map(str, choices))) != len(choices):
+                bad(where + ": duplicate choice")
+            for driver_id in choices:
+                if driver_id not in drivers:
+                    bad(where + ": unknown choice %r" % (driver_id,))
+                if driver_id in names:
+                    bad(where + ": choice %r is already in drivers" % (driver_id,))
 
     rules = doc.get("rules")
     if not isinstance(rules, list) or not rules:
@@ -304,6 +318,9 @@ def negative_cases():
     expect_invalid("bad chip id", lambda d: d["rules"][1]["match"].update(chipId=["0x123"]))
     expect_invalid("reversed model range", lambda d: d["rules"][0]["match"].update(adrenoModel=["849-840"]))
     expect_invalid("blocked env", lambda d: d["profiles"]["adreno-7xx"]["env"].update(LD_PRELOAD="x"))
+    expect_invalid("unknown choice", lambda d: d["profiles"]["adreno-7xx"].update(choices=["nope"]))
+    expect_invalid("choice already in drivers", lambda d: d["profiles"]["adreno-7xx"].update(choices=["system"]))
+    expect_invalid("non-string label", lambda d: d["drivers"]["system"].update(label=3))
 
 
 def main():

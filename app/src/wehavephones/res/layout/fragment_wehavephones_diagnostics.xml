@@ -110,6 +110,57 @@
                     android:layout_marginTop="6dp"
                     android:text="@string/wehavephones_diag_device_hint"
                     android:textSize="11sp" />
+                <LinearLayout
+                    android:id="@+id/LLDriverSwitch"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:minHeight="44dp"
+                    android:background="@drawable/wehavephones_card_background"
+                    android:padding="6dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center_vertical"
+                    android:contentDescription="@string/wehavephones_diag_driver_title"
+                    android:orientation="horizontal"
+                    android:visibility="gone">
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginLeft="6dp"
+                        android:orientation="vertical">
+                        <TextView
+                            android:id="@+id/TVDriverName"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif-medium"
+                            android:textColor="@color/wehavephones_text_title"
+                            android:textSize="15sp"
+                            android:maxLines="1"
+                            android:ellipsize="end"
+                            android:text="@string/wehavephones_diag_driver_automatic"
+                            android:includeFontPadding="false" />
+                        <TextView
+                            android:id="@+id/TVDriverMeta"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:textColor="@color/wehavephones_text_dim"
+                            android:textSize="11sp"
+                            android:maxLines="1"
+                            android:ellipsize="end"
+                            android:text="@string/wehavephones_diag_driver_title"
+                            android:includeFontPadding="false" />
+                    </LinearLayout>
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_marginLeft="8dp"
+                        android:src="@drawable/wehavephones_ic_caret_down"
+                        android:tint="@color/wehavephones_text_title"
+                        android:importantForAccessibility="no" />
+                </LinearLayout>
                 <TextView
                     android:id="@+id/TVDiagnostics"
                     style="@style/WeHavePhonesPanel"

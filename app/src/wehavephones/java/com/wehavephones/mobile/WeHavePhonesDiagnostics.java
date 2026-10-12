@@ -123,12 +123,16 @@ public final class WeHavePhonesDiagnostics {
         fields.put("app", BuildConfig.VERSION_NAME + " (" + BuildConfig.VERSION_CODE + ") " + context.getPackageName());
         DeviceIdentity identity = DeviceIdentity.detect(context);
         GraphicsPlan plan = DeviceProfileSelector.lastPlan(context);
+        String picked = DeviceProfileSelector.driverChoice(context);
         String vkDevice = "";
         if (plan != null) {
             fields.put("rules", plan.rulesSource + " v" + plan.rulesVersion);
             fields.put("rule", plan.ruleId);
             fields.put("profile", plan.profileName + " (" + plan.profileStatus + ")");
             fields.put("driver", plan.driverId + " (" + (plan.useAdrenotools ? "adrenotools" : "system") + ")");
+            String choice = choiceLabel(plan.driverChoice);
+            if (!picked.equals(plan.driverChoice)) choice += "; next start: " + choiceLabel(picked);
+            fields.put("driver_choice", choice);
             fields.put("driver_probes", DeviceProfileSelector.driverProbes(plan));
             vkDevice = DeviceReport.vkDevice(DeviceProfileSelector.cachedProbe(context, plan.driverId));
         }
@@ -139,10 +143,15 @@ public final class WeHavePhonesDiagnostics {
             fields.put("rule", match.rule.id);
             fields.put("profile", match.profile.name + " (" + match.profile.status + ")");
             fields.put("driver", "not selected yet (no session has started)");
+            fields.put("driver_choice", choiceLabel(picked));
         }
         DeviceReport.putLines(fields, identity.toReportText());
         fields.put("vk_device", vkDevice);
         return fields;
+    }
+
+    private static String choiceLabel(String driverId) {
+        return driverId == null || driverId.isEmpty() ? "automatic" : driverId + " (picked)";
     }
 
     private static void appendAppliedNtdll(Context context, StringBuilder builder) {

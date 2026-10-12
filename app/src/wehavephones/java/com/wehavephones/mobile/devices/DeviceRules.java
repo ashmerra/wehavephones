@@ -50,9 +50,11 @@ public final class DeviceRules {
         public final String libraryName;
         public final String librarySha256;
         public final String source;
+        /** Name shown in the driver picker; empty means the id. */
+        public final String label;
 
         Driver(String id, String type, String description, String asset, String url, String sha256,
-               String libraryName, String librarySha256, String source) {
+               String libraryName, String librarySha256, String source, String label) {
             this.id = id;
             this.type = type;
             this.description = description;
@@ -62,6 +64,11 @@ public final class DeviceRules {
             this.libraryName = libraryName;
             this.librarySha256 = librarySha256;
             this.source = source;
+            this.label = label;
+        }
+
+        public String displayName() {
+            return label.isEmpty() ? id : label;
         }
 
         public boolean isSystem() {
@@ -83,22 +90,40 @@ public final class DeviceRules {
         public final List<String> drivers;
         /** The same drivers resolved against the rules' driver table. */
         public final List<Driver> driverEntries;
+        /** Extra drivers the picker offers; Automatic never tries them. */
+        public final List<Driver> choiceEntries;
         public final LinkedHashMap<String, String> env;
         public final boolean vulkanCompatLayer;
         /** Null keeps the current default WoW graphics API argument. */
         public final String wowApiArg;
         public final String notes;
 
-        Profile(String name, String status, List<String> drivers, List<Driver> driverEntries,
+        Profile(String name, String status, List<String> drivers, List<Driver> driverEntries, List<Driver> choiceEntries,
                 LinkedHashMap<String, String> env, boolean vulkanCompatLayer, String wowApiArg, String notes) {
             this.name = name;
             this.status = status;
             this.drivers = Collections.unmodifiableList(drivers);
             this.driverEntries = Collections.unmodifiableList(driverEntries);
+            this.choiceEntries = Collections.unmodifiableList(choiceEntries);
             this.env = env;
             this.vulkanCompatLayer = vulkanCompatLayer;
             this.wowApiArg = wowApiArg;
             this.notes = notes;
+        }
+
+        /** What the driver picker lists after Automatic: the profile's drivers, then its choices. */
+        public List<Driver> pickerDrivers() {
+            ArrayList<Driver> list = new ArrayList<>(driverEntries);
+            list.addAll(choiceEntries);
+            return Collections.unmodifiableList(list);
+        }
+
+        /** The picker entry with this id, or null when the profile does not offer it. */
+        public Driver pickerDriver(String id) {
+            for (Driver driver : pickerDrivers()) {
+                if (driver.id.equals(id)) return driver;
+            }
+            return null;
         }
     }
 
@@ -288,7 +313,8 @@ public final class DeviceRules {
         String description = optString(json, "description", "", where);
         if ("system".equals(type)) {
             if (!SYSTEM_DRIVER.equals(id)) throw new JSONException(where + ": only 'system' may be of type system");
-            return new Driver(id, type, description, null, null, null, null, null, optString(json, "source", "", where));
+            return new Driver(id, type, description, null, null, null, null, null, optString(json, "source", "", where),
+                optString(json, "label", "", where));
         }
         if (!"adrenotools".equals(type)) throw new JSONException(where + ": unknown type " + type);
         if (SYSTEM_DRIVER.equals(id)) throw new JSONException(where + ": 'system' must be of type system");
@@ -309,7 +335,7 @@ public final class DeviceRules {
         String librarySha256 = requireString(json, "librarySha256", where).toLowerCase(Locale.ROOT);
         if (!SHA256.matcher(librarySha256).matches()) throw new JSONException(where + ": invalid librarySha256");
         return new Driver(id, type, description, asset, url, sha256, libraryName, librarySha256,
-            optString(json, "source", "", where));
+            optString(json, "source", "", where), optString(json, "label", "", where));
     }
 
     private static String urlPath(String url) {
@@ -344,6 +370,22 @@ public final class DeviceRules {
             driverList.add(id);
             driverEntries.add(drivers.get(id));
         }
+        ArrayList<Driver> choiceEntries = new ArrayList<>();
+        if (json.has("choices") && !json.isNull("choices")) {
+            Object choicesValue = json.get("choices");
+            if (!(choicesValue instanceof JSONArray)) throw new JSONException(where + ": choices must be an array");
+            JSONArray choicesJson = (JSONArray)choicesValue;
+            for (int i = 0; i < choicesJson.length(); i++) {
+                Object value = choicesJson.get(i);
+                if (!(value instanceof String)) throw new JSONException(where + ": choices must be strings");
+                String id = (String)value;
+                if (!drivers.containsKey(id)) throw new JSONException(where + ": unknown choice " + id);
+                if (driverList.contains(id) || choiceEntries.contains(drivers.get(id))) {
+                    throw new JSONException(where + ": duplicate choice " + id);
+                }
+                choiceEntries.add(drivers.get(id));
+            }
+        }
         LinkedHashMap<String, String> env = new LinkedHashMap<>();
         if (json.has("env") && !json.isNull("env")) {
             JSONObject envJson = requireObject(json, "env", where);
@@ -371,7 +413,8 @@ public final class DeviceRules {
         }
         String apiArg = optNullableString(json, "wowApiArg", where);
         if (apiArg != null && !API_ARG.matcher(apiArg).matches()) throw new JSONException(where + ": invalid wowApiArg");
-        return new Profile(name, status, driverList, driverEntries, env, compat, apiArg, optString(json, "notes", "", where));
+        return new Profile(name, status, driverList, driverEntries, choiceEntries, env, compat, apiArg,
+            optString(json, "notes", "", where));
     }
 
     private static Rule parseRule(JSONObject json, int index, Map<String, Profile> profiles) throws JSONException {

@@ -25,14 +25,16 @@ import java.util.Map;
 /**
  * Turns the device rules into a {@link GraphicsPlan} for this session: match the device to a
  * profile, then try the profile's drivers in order, each through a cached test load, and fall
- * back to the system driver. Runs in the process that starts the session; the first probe of a
- * driver loads it, later sessions reuse the cached result.
+ * back to the system driver. A driver picked in Diagnostics is tried first; if it is not offered,
+ * not installed or fails its probe, the session uses the automatic order. Runs in the process that
+ * starts the session; the first probe of a driver loads it, later sessions reuse the cached result.
  */
 public final class DeviceProfileSelector {
     private static final String TAG = DeviceRulesStore.TAG;
     private static final String KEY_INFLIGHT = "probe_inflight";
     private static final String KEY_INFLIGHT_LABEL = "probe_inflight_label";
     private static final String PROBE_PREFIX = "probe.";
+    private static final String KEY_DRIVER_CHOICE = "driver_choice";
     private static final Object LOCK = new Object();
 
     /** Test-loads one driver; production uses {@link GpuProbe}. */
@@ -98,8 +100,11 @@ public final class DeviceProfileSelector {
             + " model=" + identity.adrenoModel + " chip=" + DeviceIdentity.chipIdHex(identity.chipId));
         note(plan, "rule " + match.rule.id + " -> profile " + profile.name + " (" + profile.status + ")");
 
-        DeviceRules.Driver chosen = null;
+        DeviceRules.Driver chosen = pickedDriver(context, preferences, profile, prober, availability, plan);
+        if (chosen == null && !plan.driverChoice.isEmpty()) note(plan, "automatic driver order");
         for (DeviceRules.Driver driver : profile.driverEntries) {
+            // The pick was already tried above, whatever its result.
+            if (driver.id.equals(plan.driverChoice)) continue;
             if (chosen != null) {
                 note(plan, "probe " + driver.id + "=not-tried");
                 continue;
@@ -129,6 +134,57 @@ public final class DeviceProfileSelector {
         note(plan, "driver " + plan.driverId + (plan.useAdrenotools ? " (adrenotools)" : " (system)")
             + " compatLayer=" + plan.vulkanCompatLayer + " env=" + plan.env);
         return plan;
+    }
+
+    // The Diagnostics pick when the profile offers it and it loads; null means use the automatic order.
+    private static DeviceRules.Driver pickedDriver(Context context, SharedPreferences preferences, DeviceRules.Profile profile,
+                                                   Prober prober, Availability availability, GraphicsPlan plan) {
+        String choice = preferences.getString(KEY_DRIVER_CHOICE, "");
+        if (choice == null || choice.isEmpty()) return null;
+        DeviceRules.Driver driver = profile.pickerDriver(choice);
+        if (driver == null) {
+            note(plan, "driver choice " + choice + " is not offered for profile " + profile.name + "; using Automatic");
+            return null;
+        }
+        plan.driverChoice = driver.id;
+        note(plan, "driver choice " + driver.id + " (picked in Diagnostics)");
+        if (driver.isSystem()) {
+            note(plan, "probe " + driver.id + "=not-tried");
+            return driver;
+        }
+        if (!availability.ensureAvailable(context, driver)) {
+            note(plan, "probe " + driver.id + "=unavailable (not installed and not downloadable now)");
+            note(plan, "driver choice " + driver.id + " is not downloaded; using Automatic");
+            return null;
+        }
+        GpuProbe.ProbeResult result = probeCached(context, preferences, driver, prober, plan);
+        if (result.ok) return driver;
+        note(plan, "driver choice " + driver.id + " failed to load; using Automatic");
+        return null;
+    }
+
+    /** The driver picked in Diagnostics, or "" for Automatic. */
+    public static String driverChoice(Context context) {
+        String choice = context.getSharedPreferences(DeviceRulesStore.PREFERENCES, Context.MODE_PRIVATE)
+            .getString(KEY_DRIVER_CHOICE, "");
+        return choice != null ? choice : "";
+    }
+
+    /**
+     * Saves the Diagnostics pick ("" or null for Automatic). Picking a driver again forgets its
+     * cached probe result, so a driver that failed once is test-loaded again at the next start.
+     */
+    public static void setDriverChoice(Context context, DeviceRules.Driver driver) {
+        SharedPreferences preferences = context.getSharedPreferences(DeviceRulesStore.PREFERENCES, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = preferences.edit();
+        if (driver == null) {
+            editor.remove(KEY_DRIVER_CHOICE);
+        }
+        else {
+            editor.putString(KEY_DRIVER_CHOICE, driver.id);
+            if (!driver.isSystem()) editor.remove(probeKey(driver));
+        }
+        editor.commit();
     }
 
     /**

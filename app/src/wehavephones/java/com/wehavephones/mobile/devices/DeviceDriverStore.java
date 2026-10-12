@@ -100,31 +100,61 @@ public final class DeviceDriverStore {
     static void prefetchNow(Context context, DeviceRules.Profile profile) {
         for (DeviceRules.Driver driver : profile.driverEntries) {
             if (driver.isSystem() || driver.url == null) continue;
-            synchronized (LOCK) {
+            if (driver.asset != null && assetExists(context, driver.asset)) continue;
+            try {
+                downloadAndInstall(context, driver);
+            }
+            catch (IOException e) {
+                Log.w(TAG, "driver " + driver.id + " download failed: " + e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Makes one driver ready now (the Diagnostics driver picker): installs it from the APK or
+     * downloads, verifies and installs it. Blocking; call it off the UI thread.
+     */
+    public static void install(Context context, DeviceRules.Driver driver) throws IOException {
+        if (driver.isSystem()) return;
+        if (ensureAvailable(context, driver)) return;
+        if (driver.url == null) throw new IOException("driver " + driver.id + " is not in this app and has no download");
+        if (!downloadAndInstall(context, driver)) throw new IOException("driver " + driver.id + " did not install");
+    }
+
+    private static boolean downloadAndInstall(Context context, DeviceRules.Driver driver) throws IOException {
+        synchronized (LOCK) {
+            if (isInstalled(driverDir(context, driver.id), driver)) return true;
+            File archive = downloadedArchive(context, driver);
+            if (!archive.isFile() || !driver.sha256.equals(sha256(archive))) {
+                File dir = archive.getParentFile();
+                if (!dir.isDirectory() && !dir.mkdirs()) throw new IOException("Could not create " + dir);
+                File part = new File(archive.getPath() + ".part");
+                Log.i(TAG, "downloading driver " + driver.id);
                 try {
-                    if (isInstalled(driverDir(context, driver.id), driver)) continue;
-                    if (driver.asset != null && assetExists(context, driver.asset)) continue;
-                    File archive = downloadedArchive(context, driver);
-                    if (!archive.isFile() || !driver.sha256.equals(sha256(archive))) {
-                        File dir = archive.getParentFile();
-                        if (!dir.isDirectory() && !dir.mkdirs()) throw new IOException("Could not create " + dir);
-                        File part = new File(archive.getPath() + ".part");
-                        Log.i(TAG, "downloading driver " + driver.id);
-                        try {
-                            downloader.download(driver.url, part, MAX_ARCHIVE_BYTES);
-                            if (!driver.sha256.equals(sha256(part))) throw new IOException("sha256 mismatch");
-                            archive.delete();
-                            if (!part.renameTo(archive)) throw new IOException("could not save the download");
-                        }
-                        finally {
-                            part.delete();
-                        }
-                    }
-                    if (installFromArchive(context, driver, archive)) archive.delete();
+                    downloader.download(driver.url, part, MAX_ARCHIVE_BYTES);
+                    if (!driver.sha256.equals(sha256(part))) throw new IOException("sha256 mismatch");
+                    archive.delete();
+                    if (!part.renameTo(archive)) throw new IOException("could not save the download");
                 }
-                catch (IOException e) {
-                    Log.w(TAG, "driver " + driver.id + " download failed: " + e.getMessage());
+                finally {
+                    part.delete();
                 }
+            }
+            boolean installed = installFromArchive(context, driver, archive);
+            if (installed) archive.delete();
+            return installed;
+        }
+    }
+
+    /** True when the driver is installed under its rules entry (no download, no extraction). */
+    public static boolean isInstalled(Context context, DeviceRules.Driver driver) {
+        if (driver.isSystem()) return true;
+        synchronized (LOCK) {
+            try {
+                return isInstalled(driverDir(context, driver.id), driver);
+            }
+            catch (IOException e) {
+                return false;
             }
         }
     }

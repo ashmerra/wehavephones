@@ -19,6 +19,8 @@ public final class GraphicsPlan {
     public final LinkedHashMap<String, String> env = new LinkedHashMap<>();
     public boolean vulkanCompatLayer;
     public String wowApiArg;
+    /** The driver picked in Diagnostics, or "" for Automatic; driverId says what actually ran. */
+    public String driverChoice = "";
     public String ruleId = "", profileName = "", profileStatus = "", rulesSource = "";
     public int rulesVersion;
     public final ArrayList<String> log = new ArrayList<>();
@@ -33,6 +35,7 @@ public final class GraphicsPlan {
             json.put("env", envJson);
             json.put("vulkanCompatLayer", vulkanCompatLayer);
             json.put("wowApiArg", wowApiArg != null ? wowApiArg : JSONObject.NULL);
+            json.put("driverChoice", driverChoice);
             json.put("ruleId", ruleId);
             json.put("profileName", profileName);
             json.put("profileStatus", profileStatus);
@@ -64,6 +67,7 @@ public final class GraphicsPlan {
             }
             plan.vulkanCompatLayer = json.optBoolean("vulkanCompatLayer", false);
             plan.wowApiArg = json.isNull("wowApiArg") ? null : json.optString("wowApiArg", null);
+            plan.driverChoice = json.optString("driverChoice", "");
             plan.ruleId = json.optString("ruleId", "");
             plan.profileName = json.optString("profileName", "");
             plan.profileStatus = json.optString("profileStatus", "");

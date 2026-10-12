@@ -61,6 +61,7 @@ public final class DeviceRulesSelfTest {
             testCachedRulesRevalidated();
             testDriverStore();
             testSelector();
+            testDriverChoice();
             testEquivalence();
             testGraphicsPlanJson();
         }
@@ -227,6 +228,30 @@ public final class DeviceRulesSelfTest {
         check(!rejects(mutate(r -> r.put("futureKey", "ignored"))), "unknown top-level key ignored");
         check(!rejects(mutate(r -> r.getJSONObject("profiles").getJSONObject("mali").put("wowApiArg", "-d3d11"))), "wowApiArg -d3d11 accepted");
         check(!rejects(mutate(r -> r.getJSONObject("profiles").getJSONObject("mali").put("futureField", 1))), "unknown profile key ignored");
+
+        // Driver picker fields.
+        check(rejects(mutate(r -> r.getJSONObject("profiles").getJSONObject("adreno-7xx").put("choices", new JSONArray().put("nope")))), "unknown choice rejected");
+        check(rejects(mutate(r -> r.getJSONObject("profiles").getJSONObject("adreno-7xx").put("choices", new JSONArray().put(TURNIP)))), "choice already in drivers rejected");
+        check(rejects(mutate(r -> r.getJSONObject("profiles").getJSONObject("adreno-7xx").put("choices", new JSONArray().put(GEN8).put(GEN8)))), "duplicate choice rejected");
+        check(rejects(mutate(r -> r.getJSONObject("profiles").getJSONObject("adreno-7xx").put("choices", GEN8))), "choices must be an array");
+        check(rejects(mutate(r -> r.getJSONObject("drivers").getJSONObject(TURNIP).put("label", 3))), "non-string label rejected");
+        DeviceRules picker = DeviceRules.parse(mutate(r -> {
+            r.getJSONObject("profiles").getJSONObject("adreno-7xx").put("choices", new JSONArray().put(GEN8).put(V32));
+            r.getJSONObject("drivers").getJSONObject(GEN8).put("label", "Gen 8 V37");
+            r.getJSONObject("drivers").getJSONObject(V32).remove("label");
+        }));
+        DeviceRules.Profile s23 = picker.getProfile("adreno-7xx");
+        eq(java.util.Arrays.asList(TURNIP, "system", GEN8, V32), ids(s23.pickerDrivers()), "picker lists drivers, then choices");
+        eq("Gen 8 V37", picker.getDriver(GEN8).displayName(), "label is the display name");
+        eq(V32, picker.getDriver(V32).displayName(), "no label shows the id");
+        check(s23.pickerDriver("nope") == null, "unknown picker id");
+        eq(java.util.Arrays.asList("system"), ids(picker.getProfile("mali").pickerDrivers()), "Mali offers only the system driver");
+    }
+
+    private static java.util.List<String> ids(java.util.List<DeviceRules.Driver> drivers) {
+        ArrayList<String> list = new ArrayList<>();
+        for (DeviceRules.Driver driver : drivers) list.add(driver.id);
+        return list;
     }
 
     // ---- matching ----
@@ -871,6 +896,93 @@ public final class DeviceRulesSelfTest {
         GPUInformation.renderer = "";
     }
 
+    // ---- driver picker ----
+
+    private static void testDriverChoice() throws Exception {
+        Build.FINGERPRINT = "samsung/test/fingerprint";
+        DeviceRules rules = DeviceRules.parse(mutate(r ->
+            r.getJSONObject("profiles").getJSONObject("adreno-7xx").put("choices", new JSONArray().put(GEN8).put(V32))));
+        DeviceRulesStore.Loaded loaded = new DeviceRulesStore.Loaded(rules, "bundled");
+        DeviceIdentity s23 = identity("Adreno (TM) 740", -1);
+
+        // Automatic: no pick, nothing changes.
+        Context auto = newContext();
+        FakeProber autoProber = new FakeProber();
+        GraphicsPlan automatic = DeviceProfileSelector.select(auto, s23, loaded, autoProber, available());
+        eq(TURNIP, automatic.driverId, "automatic keeps the profile order");
+        eq("", automatic.driverChoice, "no pick recorded");
+        eq("", DeviceProfileSelector.driverChoice(auto), "no pick saved");
+
+        // A picked choice that loads wins; the profile drivers are not probed.
+        Context pick = newContext();
+        DeviceProfileSelector.setDriverChoice(pick, rules.getDriver(GEN8));
+        eq(GEN8, DeviceProfileSelector.driverChoice(pick), "pick saved");
+        FakeProber pickProber = new FakeProber();
+        GraphicsPlan picked = DeviceProfileSelector.select(pick, s23, loaded, pickProber, available());
+        eq(GEN8, picked.driverId, "picked driver used");
+        eq(GEN8, picked.driverChoice, "pick recorded in the plan");
+        eq(java.util.Arrays.asList(GEN8), pickProber.calls, "only the pick is probed");
+        eq(GEN8 + "=ok; " + TURNIP + "=not-tried; system=not-tried", DeviceProfileSelector.driverProbes(picked), "probe summary with a pick");
+
+        // A pick that fails to load falls back to the automatic order and keeps the record.
+        Context failing = newContext();
+        DeviceProfileSelector.setDriverChoice(failing, rules.getDriver(GEN8));
+        FakeProber failProber = new FakeProber();
+        failProber.outcomes.put(GEN8, false);
+        GraphicsPlan fellBack = DeviceProfileSelector.select(failing, s23, loaded, failProber, available());
+        eq(TURNIP, fellBack.driverId, "failed pick falls back to Automatic");
+        eq(GEN8, fellBack.driverChoice, "failed pick still recorded");
+        eq(java.util.Arrays.asList(GEN8, TURNIP), failProber.calls, "pick probed, then the automatic order");
+        check(fellBack.log.toString().contains("failed to load; using Automatic"), "fallback logged");
+        DeviceProfileSelector.select(failing, s23, loaded, failProber, available());
+        eq(2, failProber.calls.size(), "cached failure is not retried by itself");
+        DeviceProfileSelector.setDriverChoice(failing, rules.getDriver(GEN8));
+        DeviceProfileSelector.select(failing, s23, loaded, failProber, available());
+        eq(3, failProber.calls.size(), "picking the driver again probes it again");
+
+        // A pick that is not downloaded yet is skipped without a probe.
+        Context missing = newContext();
+        DeviceProfileSelector.setDriverChoice(missing, rules.getDriver(V32));
+        FakeProber missingProber = new FakeProber();
+        GraphicsPlan notDownloaded = DeviceProfileSelector.select(missing, s23, loaded, missingProber, available(V32));
+        eq(TURNIP, notDownloaded.driverId, "missing pick falls back");
+        eq(java.util.Arrays.asList(TURNIP), missingProber.calls, "missing pick not probed");
+        check(notDownloaded.log.toString().contains("is not downloaded; using Automatic"), "missing pick logged");
+
+        // Picking the system driver: no probes, no adrenotools.
+        Context system = newContext();
+        DeviceProfileSelector.setDriverChoice(system, rules.getDriver("system"));
+        FakeProber systemProber = new FakeProber();
+        GraphicsPlan systemPlan = DeviceProfileSelector.select(system, s23, loaded, systemProber, available());
+        eq("system", systemPlan.driverId, "system pick");
+        check(!systemPlan.useAdrenotools, "system pick is not adrenotools");
+        eq(0, systemProber.calls.size(), "system pick probes nothing");
+
+        // Picking a driver the profile already lists probes it once.
+        Context listed = newContext();
+        DeviceProfileSelector.setDriverChoice(listed, rules.getDriver(TURNIP));
+        FakeProber listedProber = new FakeProber();
+        GraphicsPlan listedPlan = DeviceProfileSelector.select(listed, s23, loaded, listedProber, available());
+        eq(TURNIP, listedPlan.driverId, "listed pick");
+        eq(java.util.Arrays.asList(TURNIP), listedProber.calls, "listed pick probed once");
+        eq(TURNIP + "=ok; system=not-tried", DeviceProfileSelector.driverProbes(listedPlan), "listed pick summary has no duplicate");
+
+        // A pick the matched profile does not offer (rules changed, or another GPU) is ignored.
+        Context stale = newContext();
+        DeviceProfileSelector.setDriverChoice(stale, rules.getDriver(GEN8));
+        FakeProber staleProber = new FakeProber();
+        GraphicsPlan ignored = select(stale, s23, staleProber, available());
+        eq(TURNIP, ignored.driverId, "pick not offered by the bundled 7xx profile");
+        eq("", ignored.driverChoice, "unoffered pick not recorded");
+        check(ignored.log.toString().contains("is not offered"), "unoffered pick logged");
+
+        // Back to Automatic.
+        DeviceProfileSelector.setDriverChoice(pick, null);
+        eq("", DeviceProfileSelector.driverChoice(pick), "pick cleared");
+        FakeProber clearedProber = new FakeProber();
+        eq(TURNIP, DeviceProfileSelector.select(pick, s23, loaded, clearedProber, available()).driverId, "Automatic again");
+    }
+
     // ---- equivalence with the pre-rules behaviour ----
 
     // The code in XServerDisplayActivity before device rules, reduced to its decisions.
@@ -941,6 +1053,9 @@ public final class DeviceRulesSelfTest {
         eq(7, back.rulesVersion, "json rulesVersion");
         eq(plan.log, back.log, "json log");
         eq("remote", back.rulesSource, "json rulesSource");
+        eq("", back.driverChoice, "json empty driverChoice");
+        plan.driverChoice = "picked";
+        eq("picked", GraphicsPlan.fromJson(plan.toJson()).driverChoice, "json driverChoice");
 
         GraphicsPlan empty = GraphicsPlan.fromJson(new GraphicsPlan().toJson());
         check(empty != null && empty.wowApiArg == null, "null wowApiArg round trip");
