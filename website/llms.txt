@@ -1,0 +1,28 @@
+# WeHavePhones
+
+> WeHavePhones is a free, open source Android app that runs World of Warcraft and Battle.net on the phone itself through Wine. It is not streaming or cloud gaming. It is an independent, unofficial Winlator fork, in alpha.
+
+- Website: https://wehavephones.com/
+- Source code and releases: https://github.com/ashmerra/wehavephones
+- Download: the APK is published only on GitHub Releases, https://github.com/ashmerra/wehavephones/releases/latest
+- License: MIT
+- Demo video: https://www.youtube.com/watch?v=4wet8as_QfA
+
+## Facts
+
+- Requirements: a 64-bit ARM phone running Android 8.0 or newer, enough storage for the game, and the player's own Blizzard account and World of Warcraft license (including a subscription for versions that require one).
+- How it works: the app runs the Windows version of World of Warcraft locally through Wine. No PC, Steam Link, Moonlight or GeForce Now is needed.
+- Controllers: World of Warcraft: Forever has built-in controller support. For Retail and Classic, the app installs the ConsolePort addon.
+- Addons: managed from inside the app.
+- Existing game files: a WoW folder from a PC can be imported, then Battle.net finishes updates.
+- Graphics: the app offers graphics drivers matched to the phone's GPU.
+- Release integrity: each GitHub release lists SHA-256 checksums. Official builds are signed with the certificate whose SHA-256 fingerprint is 72:79:47:E7:30:A7:F2:37:13:BC:6D:2B:89:EF:33:AD:1C:C1:11:8B:D8:67:DA:A8:CB:C9:81:25:0A:07:48:95. Copies from other sites are not official.
+- Not affiliated with or endorsed by Blizzard Entertainment. Blizzard does not officially support Wine or Android. The app includes no Blizzard game files.
+
+## Docs
+
+- [Installation guide](https://github.com/ashmerra/wehavephones#install)
+- [Tested devices and graphics drivers](https://github.com/ashmerra/wehavephones/blob/main/docs/TESTED_DEVICES.md)
+- [Reusing WoW files from a PC](https://github.com/ashmerra/wehavephones/blob/main/docs/REUSE_WOW_FILES.md)
+- [Trademarks and disclaimer](https://github.com/ashmerra/wehavephones#trademarks-and-disclaimer)
+- [Report an issue](https://github.com/ashmerra/wehavephones/issues)

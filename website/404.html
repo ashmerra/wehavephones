@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Page not found | WeHavePhones</title>
+    <meta name="robots" content="noindex">
+    <meta name="color-scheme" content="light dark">
+    <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48">
+    <link rel="stylesheet" href="/styles.css">
+    <script>
+      try {
+        const theme = localStorage.getItem('whp-theme');
+        if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme;
+      } catch {}
+    </script>
+  </head>
+  <body>
+    <header class="site-header shell">
+      <a class="brand" href="/" aria-label="WeHavePhones home">
+        <img src="/assets/icon.png" alt="" width="40" height="40">
+        <span>We<span class="brand-accent">Have</span>Phones</span>
+      </a>
+    </header>
+    <main class="not-found shell">
+      <h1>This page is off the map.</h1>
+      <p>The link may be old, or the page has moved.</p>
+      <a class="button" href="/">Back to WeHavePhones <span aria-hidden="true">→</span></a>
+    </main>
+  </body>
+</html>

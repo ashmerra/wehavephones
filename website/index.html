@@ -3,12 +3,27 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Run World of Warcraft on your Android phone with WeHavePhones. Controller support, a built-in addon manager, and open source code.">
+    <title>Play World of Warcraft on Android | WeHavePhones</title>
+    <meta name="description" content="Play World of Warcraft on your Android phone without PC streaming. Free and open source, with controller support, addons, Classic and Retail.">
+    <meta name="robots" content="max-image-preview:large">
+    <link rel="canonical" href="https://wehavephones.com/">
     <meta name="color-scheme" content="light dark">
+    <meta name="theme-color" content="#f5f8fc" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#0c192b" media="(prefers-color-scheme: dark)">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="WeHavePhones">
+    <meta property="og:url" content="https://wehavephones.com/">
     <meta property="og:title" content="WeHavePhones | World of Warcraft on Android">
     <meta property="og:description" content="We do have phones. And also Wine. An independent, open source project for playing WoW on Android.">
-    <title>WeHavePhones | World of Warcraft on Android</title>
-    <link rel="icon" href="assets/icon.png" type="image/png">
+    <meta property="og:image" content="https://wehavephones.com/assets/og-image.jpg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="World of Warcraft running on an Android phone, with touch controls in Teldrassil">
+    <meta property="og:locale" content="en_US">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48">
+    <link rel="icon" href="assets/icon.png" type="image/png" sizes="512x512">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
     <link rel="preload" href="assets/geist-latin.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="styles.css">
     <script>
@@ -18,11 +33,114 @@
       } catch {}
     </script>
     <script src="site.js" defer></script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://wehavephones.com/#website",
+            "url": "https://wehavephones.com/",
+            "name": "WeHavePhones",
+            "inLanguage": "en",
+            "publisher": { "@id": "https://wehavephones.com/#project" }
+          },
+          {
+            "@type": "Organization",
+            "@id": "https://wehavephones.com/#project",
+            "name": "WeHavePhones",
+            "url": "https://wehavephones.com/",
+            "logo": "https://wehavephones.com/assets/icon.png",
+            "sameAs": [
+              "https://github.com/ashmerra/wehavephones",
+              "https://www.youtube.com/@ashmerra-wehavephones"
+            ]
+          },
+          {
+            "@type": "SoftwareApplication",
+            "@id": "https://wehavephones.com/#app",
+            "name": "WeHavePhones",
+            "description": "An independent, open source Winlator fork that runs World of Warcraft and Battle.net on Android phones through Wine, with controller support and a built-in addon manager.",
+            "url": "https://wehavephones.com/",
+            "applicationCategory": "GameApplication",
+            "operatingSystem": "Android 8.0 or newer",
+            "processorRequirements": "64-bit ARM (arm64-v8a)",
+            "downloadUrl": "https://github.com/ashmerra/wehavephones/releases/latest",
+            "installUrl": "https://github.com/ashmerra/wehavephones/releases/latest",
+            "license": "https://github.com/ashmerra/wehavephones/blob/main/LICENSE",
+            "isAccessibleForFree": true,
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+            "image": "https://wehavephones.com/assets/icon.png",
+            "screenshot": "https://wehavephones.com/assets/gameplay-60s.jpg",
+            "featureList": [
+              "Runs World of Warcraft on the phone, without PC or cloud streaming",
+              "Controller support, with ConsolePort included for Retail and Classic",
+              "Built-in addon manager",
+              "Import existing WoW game files from a PC",
+              "Graphics driver picker matched to the phone"
+            ],
+            "sameAs": "https://github.com/ashmerra/wehavephones",
+            "publisher": { "@id": "https://wehavephones.com/#project" },
+            "subjectOf": { "@id": "https://wehavephones.com/#demo" }
+          },
+          {
+            "@type": "VideoObject",
+            "@id": "https://wehavephones.com/#demo",
+            "name": "WeHavePhones: World of Warcraft running locally on android. S23+.",
+            "description": "World of Warcraft running on a Samsung Galaxy S23+ with WeHavePhones, with touch controls in Teldrassil. No streaming.",
+            "thumbnailUrl": [
+              "https://wehavephones.com/assets/gameplay-60s.jpg",
+              "https://i.ytimg.com/vi/4wet8as_QfA/hqdefault.jpg"
+            ],
+            "uploadDate": "2026-10-10T13:04:01-07:00",
+            "duration": "PT1M10S",
+            "url": "https://www.youtube.com/watch?v=4wet8as_QfA",
+            "embedUrl": "https://www.youtube.com/embed/4wet8as_QfA"
+          },
+          {
+            "@type": "FAQPage",
+            "@id": "https://wehavephones.com/#faq",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "What do I need?",
+                "acceptedAnswer": { "@type": "Answer", "text": "A 64-bit ARM phone running Android 8.0 or newer, enough storage for the game, and your own Blizzard account and game license. Performance varies by device." }
+              },
+              {
+                "@type": "Question",
+                "name": "Is this streaming or cloud gaming?",
+                "acceptedAnswer": { "@type": "Answer", "text": "No. WeHavePhones runs the Windows version of World of Warcraft on the phone itself, using Wine. Nothing is streamed from a PC or the cloud, so you don't need Steam Link, Moonlight or GeForce Now." }
+              },
+              {
+                "@type": "Question",
+                "name": "How do I install it?",
+                "acceptedAnswer": { "@type": "Answer", "text": "Download the latest APK from GitHub Releases and allow your browser or file manager to install it. Open WeHavePhones and follow Setup to prepare the container, install Battle.net, and download or import WoW." }
+              },
+              {
+                "@type": "Question",
+                "name": "Is the APK safe to install?",
+                "acceptedAnswer": { "@type": "Answer", "text": "Download it only from the project's GitHub Releases. The source code is public under the MIT license, and each release lists SHA-256 checksums for its files. Official builds are signed with the certificate whose SHA-256 fingerprint is 72:79:47:E7:30:A7:F2:37:13:BC:6D:2B:89:EF:33:AD:1C:C1:11:8B:D8:67:DA:A8:CB:C9:81:25:0A:07:48:95. Android refuses updates signed with any other key." }
+              },
+              {
+                "@type": "Question",
+                "name": "Is it free?",
+                "acceptedAnswer": { "@type": "Answer", "text": "Yes. WeHavePhones is free and open source. You still need your own Blizzard account and a WoW license, including a subscription for the versions that require one." }
+              },
+              {
+                "@type": "Question",
+                "name": "Is this an official Blizzard app?",
+                "acceptedAnswer": { "@type": "Answer", "text": "No. WeHavePhones is an independent, unofficial project, and it includes no Blizzard game files. Blizzard does not officially support Wine or Android." }
+              }
+            ]
+          }
+        ]
+      }
+    </script>
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
     <header class="site-header shell">
-      <a class="brand" href="#" aria-label="WeHavePhones home">
+      <a class="brand" href="/" aria-label="WeHavePhones home">
         <img src="assets/icon.png" alt="" width="40" height="40">
         <span>We<span class="brand-accent">Have</span>Phones</span>
       </a>
@@ -37,20 +155,24 @@
       <section class="hero shell" aria-labelledby="hero-title">
         <div class="hero-copy">
           <div class="hero-heading">
-            <p class="eyebrow">World of Warcraft on Android</p>
+            <p class="eyebrow" aria-hidden="true">World of Warcraft on Android</p>
             <span class="alpha-stamp">Alpha build</span>
           </div>
-          <h1 id="hero-title">Azeroth, on your phone.</h1>
-          <p class="hero-description">We do have phones. And also Wine.<br>Play WoW on Android, with controllers and your favorite addons.</p>
+          <h1 id="hero-title"><span class="visually-hidden">World of Warcraft on Android: </span>Azeroth, on your phone.</h1>
+          <p class="hero-description">We do have phones. And also Wine.<br>Play WoW on Android, no streaming, with controllers and your favorite addons.</p>
           <div class="hero-actions">
-            <a class="button" data-apk-download href="https://github.com/ashmerra/wehavephones/releases/download/v0.0.3/WeHavePhones-0.0.3.apk">Download APK <span aria-hidden="true">↓</span></a>
+            <a class="button" data-apk-download href="https://github.com/ashmerra/wehavephones/releases/download/v0.0.4/WeHavePhones-0.0.4.apk">Download APK <span aria-hidden="true">↓</span></a>
             <a class="text-link" href="https://github.com/ashmerra/wehavephones">Open Source <span aria-hidden="true">↗</span></a>
           </div>
           <p class="alpha-note">Early build. Expect bugs and rough edges.</p>
         </div>
         <figure class="demo">
           <a class="demo-image" href="https://www.youtube.com/watch?v=4wet8as_QfA" aria-label="Watch the WeHavePhones gameplay demo on YouTube">
-            <img src="assets/gameplay-60s.jpg" alt="World of Warcraft running on an Android phone, with touch controls in Teldrassil" width="1920" height="1080" fetchpriority="high">
+            <picture>
+              <source type="image/avif" sizes="(max-width: 767px) calc(100vw - 40px), (max-width: 1100px) 52vw, 660px" srcset="assets/gameplay-60s-640.avif 640w, assets/gameplay-60s-960.avif 960w, assets/gameplay-60s-1280.avif 1280w, assets/gameplay-60s-1920.avif 1920w">
+              <source type="image/webp" sizes="(max-width: 767px) calc(100vw - 40px), (max-width: 1100px) 52vw, 660px" srcset="assets/gameplay-60s-640.webp 640w, assets/gameplay-60s-960.webp 960w, assets/gameplay-60s-1280.webp 1280w, assets/gameplay-60s-1920.webp 1920w">
+              <img src="assets/gameplay-60s.jpg" alt="World of Warcraft running on an Android phone, with touch controls in Teldrassil" width="1920" height="1080" fetchpriority="high">
+            </picture>
           </a>
           <figcaption>
             <span>Yes, that's WoW. On a phone. No streaming.</span>
@@ -68,7 +190,7 @@
         <div class="feature-list">
           <article>
             <h3>Bring your controller</h3>
-            <p>WoW Forever has built-in controller support. For older versions, we provide <a href="https://www.curseforge.com/wow/addons/console-port">ConsolePort</a> out of the box.</p>
+            <p>World of Warcraft: Forever has built-in controller support. For Retail and Classic, we provide <a href="https://www.curseforge.com/wow/addons/console-port">ConsolePort</a> out of the box.</p>
           </article>
           <article>
             <h3>Keep your favorite addons</h3>
@@ -94,8 +216,20 @@
             <p>A 64-bit ARM phone running Android 8.0 or newer, enough storage for the game, and your own Blizzard account and game license. Performance varies by device.</p>
           </details>
           <details>
+            <summary>Is this streaming or cloud gaming?</summary>
+            <p>No. WeHavePhones runs the Windows version of World of Warcraft on the phone itself, using Wine. Nothing is streamed from a PC or the cloud, so you don't need Steam Link, Moonlight or GeForce Now.</p>
+          </details>
+          <details>
             <summary>How do I install it?</summary>
             <p>Download the latest APK from GitHub Releases and allow your browser or file manager to install it. Open WeHavePhones and follow Setup to prepare the container, install Battle.net, and download or import WoW.</p>
+          </details>
+          <details>
+            <summary>Is the APK safe to install?</summary>
+            <p>Download it only from the project's <a href="https://github.com/ashmerra/wehavephones/releases">GitHub Releases</a>. The <a href="https://github.com/ashmerra/wehavephones">source code</a> is public under the MIT license, and each release lists SHA-256 checksums for its files. Official builds are signed with the certificate whose SHA-256 fingerprint is <code class="fingerprint">72:79:47:E7:30:A7:F2:37:13:BC:6D:2B:89:EF:33:AD:1C:C1:11:8B:D8:67:DA:A8:CB:C9:81:25:0A:07:48:95</code>. Android refuses updates signed with any other key.</p>
+          </details>
+          <details>
+            <summary>Is it free?</summary>
+            <p>Yes. WeHavePhones is free and open source. You still need your own Blizzard account and a WoW license, including a subscription for the versions that require one.</p>
           </details>
           <details>
             <summary>Is this an official Blizzard app?</summary>
@@ -107,7 +241,7 @@
 
     <footer class="site-footer shell">
       <div class="footer-top">
-        <a class="brand" href="#"><img src="assets/icon.png" alt="" width="32" height="32"><span>WeHavePhones</span></a>
+        <a class="brand" href="/"><img src="assets/icon.png" alt="" width="32" height="32"><span>WeHavePhones</span></a>
         <nav aria-label="Project links">
           <a href="https://github.com/ashmerra/wehavephones">Source code</a>
           <a href="https://github.com/ashmerra/wehavephones/issues">Report an issue</a>
