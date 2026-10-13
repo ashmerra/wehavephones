@@ -13,17 +13,18 @@ Built-in addon manager.
 
 ## Tested on
 
-| Phone | Chip / GPU | Android | Classic Era | Burning Crusade Anniversary | Mists of Pandaria Classic | Retail | Forever (beta) |
-|---|---|---|---|---|---|---|---|
-| Samsung Galaxy S23+ | Snapdragon 8 Gen 2 / Adreno 740 | 16 | Playable in world | Playable in world | Playable in world | Playable in world | Launches to login screen* |
-| Google Pixel 8a | Tensor G3 / Mali-G715 | 17 | Playable in world | Not tested | Not tested | Not tested | Not tested |
+WeHavePhones offers a graphics driver selector on supported devices, with driver options matched to your device.
 
-\* Not tested past the login screen because I don't have beta access.
+| Device | WoW version | Working driver |
+|---|---|---|
+| Samsung Galaxy S23+ | Classic Era, BC Anniversary, MOP Classic, Retail, Forever* | Turnip 26.3.0-devel |
+| Google Pixel 8a | Classic Era | System driver |
+| OnePlus 15 | Retail | System driver or Qualcomm 842.6 |
+| Lenovo TB390FU | Classic Era | Qualcomm 863.1 |
 
-Other games and versions have not been tested. Other phones are matched to a graphics setup by device rules; if yours misbehaves, use Report a problem in Diagnostics.
+\* Forever tested to the login screen only.
 
-See the [device, WoW edition and driver chart](docs/TESTED_DEVICES.md) for sourced
-community confirmations, project tests and reports with missing details.
+See the [full device and driver chart](docs/TESTED_DEVICES.md) for details and community reports.
 
 ## Install
 
