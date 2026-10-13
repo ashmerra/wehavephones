@@ -20,7 +20,7 @@ WeHavePhones offers a graphics driver selector on supported devices, with driver
 | Samsung Galaxy S23+ | Classic Era, BC Anniversary, MOP Classic, Retail, Forever* | Turnip 26.3.0-devel |
 | Google Pixel 8a | Classic Era | System driver |
 | OnePlus 15 | Retail | System driver or Qualcomm 842.6 |
-| Lenovo TB390FU | Classic Era | Qualcomm 863.1 |
+| Lenovo Idea Tab Pro Gen 2 | Classic Era | Qualcomm 863.1 |
 
 \* Forever tested to the login screen only.
 
