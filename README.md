@@ -22,6 +22,9 @@ Built-in addon manager.
 
 Other games and versions have not been tested. Other phones are matched to a graphics setup by device rules; if yours misbehaves, use Report a problem in Diagnostics.
 
+See the [device, WoW edition and driver chart](docs/TESTED_DEVICES.md) for sourced
+community confirmations, project tests and reports with missing details.
+
 ## Install
 
 1. Download the latest APK from [Releases](https://github.com/ashmerra/wehavephones/releases).
@@ -61,6 +64,7 @@ The APK is written to `app/build/outputs/apk/wehavephones/debug/app-wehavephones
 - [Addon manager](docs/WEHAVEPHONES_ADDONS.md)
 - [Device profiles](docs/DEVICE_PROFILES.md)
 - [Device reports](docs/DEVICE_REPORTS.md)
+- [Tested devices and graphics drivers](docs/TESTED_DEVICES.md)
 - [Build assets](docs/BUILD_ASSETS.md)
 
 ## Credits
