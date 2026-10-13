@@ -66,6 +66,7 @@ import com.wehavephones.inputcontrols.ControlsProfile;
 import com.wehavephones.inputcontrols.ExternalController;
 import com.wehavephones.inputcontrols.FakeGamepadWriter;
 import com.wehavephones.inputcontrols.InputControlsManager;
+import com.wehavephones.inputcontrols.GamepadState;
 import com.wehavephones.math.Mathf;
 import com.wehavephones.renderer.GLRenderer;
 import com.wehavephones.widget.FrameRating;
@@ -367,7 +368,8 @@ import java.util.concurrent.Executors;
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == MainActivity.EDIT_INPUT_CONTROLS_REQUEST_CODE && resultCode == Activity.RESULT_OK) {
+        // The controls editor saves each edit, including when Android Back cancels the activity.
+        if (requestCode == MainActivity.EDIT_INPUT_CONTROLS_REQUEST_CODE) {
             if (editInputControlsCallback != null) {
                 editInputControlsCallback.run();
                 editInputControlsCallback = null;
@@ -1210,7 +1212,8 @@ import java.util.concurrent.Executors;
             profileItems.add("-- "+getString(R.string.disabled)+" --");
             for (int i = 0; i < profiles.size(); i++) {
                 ControlsProfile profile = profiles.get(i);
-                if (profile == inputControlsView.getProfile()) selectedPosition = i + 1;
+                ControlsProfile activeProfile = inputControlsView.getProfile();
+                if (activeProfile != null && profile.id == activeProfile.id) selectedPosition = i + 1;
                 profileItems.add(profile.getName());
             }
 
@@ -1230,12 +1233,27 @@ import java.util.concurrent.Executors;
 
         dialog.findViewById(R.id.BTSettings).setOnClickListener((v) -> {
             int position = sProfile.getSelectedItemPosition();
+            ControlsProfile activeProfile = inputControlsView.getProfile();
+            final int activeProfileId = activeProfile != null ? activeProfile.id : 0;
+            final boolean showTouchscreenControls = inputControlsView.isShowTouchscreenControls();
             Intent intent = new Intent(this, MainActivity.class);
             intent.putExtra("edit_input_controls", true);
             intent.putExtra("selected_profile_id", position > 0 ? inputControlsManager.getProfiles().get(position - 1).id : 0);
             editInputControlsCallback = () -> {
+                // Release the old state before replacing its elements and bindings.
+                if (activeProfile != null && activeProfile.isVirtualGamepad()) {
+                    activeProfile.getGamepadState().copy(new GamepadState());
+                    winHandler.onVirtualGamepadInput(activeProfile.getGamepadState());
+                }
                 hideInputControls();
                 inputControlsManager.loadProfiles(true);
+                ControlsProfile updatedProfile = inputControlsManager.getProfile(activeProfileId);
+                if (updatedProfile != null) {
+                    inputControlsView.setShowTouchscreenControls(showTouchscreenControls);
+                    showInputControls(updatedProfile);
+                }
+                inputControlsView.setOverlayOpacity(preferences.getFloat("overlay_opacity", InputControlsView.DEFAULT_OVERLAY_OPACITY));
+                SessionInputExtras.onSessionResumed(this);
                 loadProfileSpinner.run();
             };
             startActivityForResult(intent, MainActivity.EDIT_INPUT_CONTROLS_REQUEST_CODE);

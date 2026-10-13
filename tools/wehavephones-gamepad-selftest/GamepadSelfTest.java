@@ -124,6 +124,23 @@ public class GamepadSelfTest {
             controller.refresh();
             check(activity.view.profile == virtual, "resume catches missed controller disconnect");
 
+            ControlsProfile edited = new ControlsProfile(virtual.id, "Virtual Gamepad");
+            activity.profiles.profiles.set(0, edited);
+            activity.showInputControls(edited); // Returning from the editor applies the saved profile.
+            int showsAfterEdit = activity.shows;
+            controller.refresh();
+            controller.refresh();
+            check(activity.view.profile == edited && activity.shows == showsAfterEdit,
+                    "polling preserves the reloaded profile instead of restoring pre-edit controls");
+            edited.getGamepadState().setPressed(3, true);
+            requestState(win, guestId);
+            drain(win);
+            check(buffer(socket.last).getInt(2) == guestId && buffer(socket.last).getShort(6) == 8,
+                    "edited controls supply live guest input with the same controller id");
+            WeHavePhonesConfig.setVirtualGamepadDisabled(activity, true);
+            WeHavePhonesConfig.setVirtualGamepadDisabled(activity, false);
+            check(activity.view.profile == edited, "disable and re-enable keep the edited profile");
+
             controller.stop();
             check(activity.inputManager.listener == null && PreferenceManager.listeners.isEmpty(),
                     "session teardown unregisters device and preference listeners");

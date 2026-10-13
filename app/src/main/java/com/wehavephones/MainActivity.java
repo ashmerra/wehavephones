@@ -107,6 +107,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     @Override
     public void onBackPressed() {
+        if (editInputControls) {
+            setResult(RESULT_OK);
+            finish();
+            return;
+        }
         FragmentManager fragmentManager = getSupportFragmentManager();
         List<Fragment> fragments = fragmentManager.getFragments();
         for (Fragment fragment : fragments) {

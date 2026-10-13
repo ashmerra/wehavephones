@@ -73,6 +73,10 @@ public final class VirtualGamepadController implements InputManager.InputDeviceL
                 && ExternalController.getController(0) == null;
         ControlsProfile current = view.getProfile();
         if (show) {
+            // The editor reloads the manager's profiles. Drop our pre-edit object as well.
+            if (virtualProfile != null) {
+                virtualProfile = activity.getInputControlsManager().getProfile(virtualProfile.id);
+            }
             if (virtualProfile == null) virtualProfile = findVirtualProfile();
             if (virtualProfile != null && (current != virtualProfile
                     || view.getVisibility() != View.VISIBLE || !view.isShowTouchscreenControls())) {
