@@ -7,6 +7,8 @@ Winlator fork for running World of Warcraft (ARM64 Windows version) and Battle.n
 Controller support.\
 Built-in addon manager.
 
+> **Alpha build:** WeHavePhones is still in development. Expect bugs, rough edges, and compatibility differences between phones. Report problems through Diagnostics in the app.
+
 [![WeHavePhones demo video](website/assets/gameplay-60s.jpg)](https://www.youtube.com/watch?v=4wet8as_QfA)
 
 ## Tested on

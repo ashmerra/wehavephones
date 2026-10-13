@@ -69,6 +69,10 @@ nav a { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; }
 .theme-toggle:hover { color: var(--text); background: var(--surface); }
 .hero { display: grid; grid-template-columns: 0.9fr 1.15fr; align-items: center; gap: 48px; padding-block: 74px 100px; }
 .eyebrow { color: var(--accent); font-size: 12px; font-weight: 650; letter-spacing: .11em; text-transform: uppercase; margin: 0 0 24px; }
+.hero-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 16px; margin-bottom: 24px; }
+.hero-heading .eyebrow { margin: 0; }
+.alpha-stamp { display: inline-flex; align-items: center; border: 1px solid var(--accent); border-radius: var(--radius); padding: 8px 11px; color: var(--accent); font-size: 10px; font-weight: 750; letter-spacing: .1em; line-height: 1.2; text-transform: uppercase; white-space: nowrap; }
+.alpha-note { color: var(--muted); font-size: 12px; line-height: 1.5; margin: 14px 0 0; }
 h1 { font-size: clamp(42px, 5.3vw, 72px); line-height: 1.05; letter-spacing: -.065em; font-weight: 720; margin: 0; max-width: 470px; text-wrap: balance; }
 .hero-description { color: var(--muted); line-height: 1.65; font-size: 17px; margin: 24px 0 30px; max-width: 390px; }
 .hero-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 23px; }
@@ -138,6 +142,7 @@ details p a, .feature-list p a { text-decoration: underline; text-underline-offs
   .hero { grid-template-columns: 1fr; gap: 38px; padding-block: 34px 52px; }
   h1 { font-size: clamp(44px, 9.3vw, 65px); max-width: 480px; }
   .eyebrow { font-size: 10px; margin-bottom: 20px; }
+  .hero-heading { gap: 10px 12px; margin-bottom: 20px; }
   .hero-description { font-size: 16px; margin-block: 21px 23px; }
   .hero-actions { gap: 20px; }
   figcaption { gap: 10px; padding-top: 8px; font-size: 11px; }
