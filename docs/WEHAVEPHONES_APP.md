@@ -381,7 +381,12 @@ saved or entered password into it; that path is gone.)
      Battle.net starts with `--game=<uid>` so it opens on the game's page (a
      client that was already running gets one in-session `Battle.net.exe
      --game=<uid>` through `WinHandler.exec("C:\windows\wcrun.exe
-     C:\wclaunch.bat")`; re-sending it reloads the page). When it is ready,
+     C:\wclaunch.bat")`; re-sending it reloads the page). Once it is ready,
+     Escape is sent before each Play attempt to the focused Battle.net window
+     to dismiss its **What's New** dialog (including when its content fails to
+     render). This runs only after sign-in and the update gate; cancellation or
+     an existing WoW process stops the input. The dialog is drawn inside the
+     main window, so it cannot be distinguished by a separate X window title.
      Play is clicked in the main Battle.net window, `playButton` (155, 108) X
      pixels from its bottom-left corner (`wehavephones-launch-products.json`),
      every 10 s until the launcher logs `Launched … pid: N` or a WoW process

@@ -7,6 +7,7 @@ import com.wehavephones.winhandler.WinHandler;
 import com.wehavephones.xserver.Pointer;
 import com.wehavephones.xserver.Window;
 import com.wehavephones.xserver.WindowManager;
+import com.wehavephones.xserver.XKeycode;
 import com.wehavephones.xserver.XServer;
 
 import java.util.ArrayList;
@@ -30,6 +31,13 @@ final class SessionInput {
         });
         sleep(80);
         runOnMainAndWait(() -> xServer.injectPointerButtonRelease(Pointer.Button.BUTTON_LEFT));
+    }
+
+    /** Press and release a key in the focused Wine window. */
+    static void key(final XServer xServer, final XKeycode key) {
+        runOnMainAndWait(() -> xServer.injectKeyPress(key));
+        sleep(80);
+        runOnMainAndWait(() -> xServer.injectKeyRelease(key));
     }
 
     /**

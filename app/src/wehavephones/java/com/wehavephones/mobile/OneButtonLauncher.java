@@ -15,6 +15,7 @@ import com.wehavephones.core.FileUtils;
 import com.wehavephones.mobile.devices.DeviceProfileSelector;
 import com.wehavephones.winhandler.WinHandler;
 import com.wehavephones.xserver.Window;
+import com.wehavephones.xserver.XKeycode;
 import com.wehavephones.xserver.XLock;
 import com.wehavephones.xserver.XServer;
 
@@ -456,9 +457,12 @@ public final class OneButtonLauncher {
      * Click Play in Battle.net's main window (the largest mapped Battle.net
      * window; the sign-in window is narrower), at {@code playButton} from
      * its bottom-left corner. Input only reaches Wine while the session is in
-     * front, so it is brought there first.
+     * front, so it is brought there first. Escape dismisses Battle.net's
+     * in-window What's New dialog before Play; it has no separate X window.
      */
     private boolean clickPlay() {
+        if (!running) return false;
+        if (ProcessScanner.findWowProcess() != null) return true;
         XServerDisplayActivity session = liveSession();
         if (session == null || session.getXServer() == null) return false;
         if (!session.getLifecycle().getCurrentState().isAtLeast(Lifecycle.State.RESUMED)) bringSessionToFront();
@@ -496,6 +500,17 @@ public final class OneButtonLauncher {
             return false;
         }
         sleep(300);
+        if (!running) return false;
+        if (ProcessScanner.findWowProcess() != null) return true;
+        // Only reached after sign-in and the update gate. On the S23 the
+        // patch-notes modal swallowed Play clicks, even when its content failed
+        // to render. Escape closes it and is harmless on the normal game page.
+        // Repeat on retries: the modal may render after the first Play attempt.
+        SessionInput.key(xServer, XKeycode.KEY_ESC);
+        event("sent Escape to Battle.net before Play (dismiss What's New)");
+        sleep(500);
+        if (!running) return false;
+        if (ProcessScanner.findWowProcess() != null) return true;
         SessionInput.click(xServer, target[0], target[1]);
         event("clicked Play at X " + target[0] + "," + target[1] + " (Battle.net window " + found[0] + ")");
         return true;
