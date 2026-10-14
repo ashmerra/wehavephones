@@ -237,17 +237,6 @@ public class ControlsEditorActivity extends AppCompatActivity implements View.On
         final Spinner sBindingType = view.findViewById(R.id.SBindingType);
         final Spinner sBinding = view.findViewById(R.id.SBinding);
 
-        Binding selectedBinding = element.getBindingAt(index);
-        if (selectedBinding.isKeyboard()) {
-            sBindingType.setSelection(0, false);
-        }
-        else if (selectedBinding.isMouse()) {
-            sBindingType.setSelection(1, false);
-        }
-        else if (selectedBinding.isGamepad()) {
-            sBindingType.setSelection(2, false);
-        }
-
         Runnable update = () -> {
             String[] bindingEntries = null;
             switch (sBindingType.getSelectedItemPosition()) {
@@ -266,10 +255,6 @@ public class ControlsEditorActivity extends AppCompatActivity implements View.On
             AppUtils.setSpinnerSelectionFromValue(sBinding, element.getBindingAt(index).toString());
         };
 
-        // Populate the binding list before attaching its listener: replacing the adapter
-        // must not treat the first item in the new list as an intentional edit.
-        update.run();
-        AppUtils.setSpinnerSelectionFromValue(sBinding, selectedBinding.toString());
         sBindingType.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
@@ -280,7 +265,17 @@ public class ControlsEditorActivity extends AppCompatActivity implements View.On
             public void onNothingSelected(AdapterView<?> parent) {}
         });
 
-        container.addView(view);
+        Binding selectedBinding = element.getBindingAt(index);
+        if (selectedBinding.isKeyboard()) {
+            sBindingType.setSelection(0, false);
+        }
+        else if (selectedBinding.isMouse()) {
+            sBindingType.setSelection(1, false);
+        }
+        else if (selectedBinding.isGamepad()) {
+            sBindingType.setSelection(2, false);
+        }
+
         sBinding.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
@@ -307,6 +302,9 @@ public class ControlsEditorActivity extends AppCompatActivity implements View.On
             @Override
             public void onNothingSelected(AdapterView<?> parent) {}
         });
+
+        update.run();
+        container.addView(view);
     }
 
     private void loadRangeSpinner(final ControlElement element, Spinner spinner) {
