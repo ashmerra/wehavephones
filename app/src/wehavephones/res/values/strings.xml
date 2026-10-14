@@ -372,8 +372,8 @@ World of Warcraft, Warcraft, Battle.net and Blizzard Entertainment are trademark
     <string name="wehavephones_update_dev">App updates are available in the official release build. WeHavePhones Dev is a separate app and stays on its development build.</string>
     <string name="wehavephones_update_card_hint">Updates from GitHub keep your games and settings.</string>
     <string name="wehavephones_update_card_dev">The Dev app does not update itself.</string>
-    <string name="wehavephones_update_automatic">Check daily when the app opens</string>
-    <string name="wehavephones_update_check">Check for updates</string>
+    <string name="wehavephones_update_automatic">Check automatically</string>
+    <string name="wehavephones_update_check">Check for update</string>
     <string name="wehavephones_update_checking">Checking GitHub for app updates…</string>
     <string name="wehavephones_update_current">You have the latest available app version.</string>
     <string name="wehavephones_update_available">WeHavePhones %1$s is available (%2$d MB). Download when you have a suitable connection. Installing keeps your games and settings.</string>
@@ -381,11 +381,11 @@ World of Warcraft, Warcraft, Battle.net and Blizzard Entertainment are trademark
     <string name="wehavephones_update_later">Later</string>
     <string name="wehavephones_update_install">Install update</string>
     <string name="wehavephones_update_downloading">Downloading app update</string>
-    <string name="wehavephones_update_download_hint">Keep the app open for the download. If interrupted, check for updates to retry. A completed download is reused after verification.</string>
+    <string name="wehavephones_update_download_hint">Keep the app open for the download. If interrupted, tap Check for update to retry. A completed download is reused after verification.</string>
     <string name="wehavephones_update_preparing">Verifying and preparing the app update…</string>
     <string name="wehavephones_update_permission">Allow WeHavePhones to install app updates on the next Android settings screen, then return here. Android will still ask you to confirm the update.</string>
     <string name="wehavephones_update_allow">Open settings</string>
-    <string name="wehavephones_update_busy">Close the game or Battle.net session and wait for any file import to finish, then check for updates again.</string>
-    <string name="wehavephones_update_error">Could not update the app: %1$s\n\nYour installed app and game data have been kept. Check for updates to retry.</string>
+    <string name="wehavephones_update_busy">Close the game or Battle.net session and wait for any file import to finish, then tap Check for update again.</string>
+    <string name="wehavephones_update_error">Could not update the app: %1$s\n\nYour installed app and game data have been kept. Tap Check for update to retry.</string>
     <string name="wehavephones_disclaimer">Unofficial. Not affiliated with Blizzard Entertainment, Inc.</string>
 </resources>
