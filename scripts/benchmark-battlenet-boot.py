@@ -52,7 +52,7 @@ def private(serial, command, data=None):
 
 
 def processes(serial):
-    out = private(serial, 'ps -o PID,PPID,NAME,ARGS -u "$(id -u)"')
+    out = private(serial, 'ps -o PID,PPID,COMM,ARGS -u "$(id -u)"')
     return [line for line in out.splitlines()[1:] if line.strip()]
 
 
@@ -121,9 +121,11 @@ def tap_open(serial):
         for node in ET.fromstring(xml).iter('node'):
             if node.get('resource-id', '').endswith(':id/BTOpenBattleNet') and node.get('enabled') == 'true':
                 x1, y1, x2, y2 = map(int, re.findall(r'\d+', node.get('bounds')))
-                before = float(shell(serial, 'cat /proc/uptime').split()[0])
+                clock = shell(serial, 'cat /proc/uptime; date +%s').splitlines()
+                before = float(clock[0].split()[0])
+                epoch = int(clock[1])
                 shell(serial, 'input tap %d %d' % ((x1 + x2) // 2, (y1 + y2) // 2))
-                return before
+                return before, epoch
         shell(serial, 'input keyevent KEYCODE_BACK')
         time.sleep(1)
     raise RuntimeError('Open Battle.net button unavailable; no Play button was tapped')
@@ -160,17 +162,32 @@ def play_label_pixels(image, region):
     return sum(min(pixel) > 215 for pixel in label.getdata())
 
 
-def sanitized_evidence(serial, target):
+def fresh_log(file, tap_epoch):
+    match = re.search(r'(?:battle.net|libcef)-(\d{8}T\d{6})\.(\d+)\.log$', file)
+    if not match:
+        return False
+    started = datetime.datetime.strptime(match[1], '%Y%m%dT%H%M%S').replace(tzinfo=datetime.timezone.utc).timestamp()
+    return started + float('0.' + match[2]) >= tap_epoch - 2
+
+
+def sanitized_evidence(serial, target, container, tap_epoch):
     # Retain diagnostics, not arbitrary launcher logs or account/token records.
-    out = shell(serial, 'logcat -d -v brief -t 5000')
+    app_pids = [line.split()[0] for line in processes(serial)
+                if len(line.split(None, 3)) == 4 and line.split(None, 3)[3] == PKG]
+    out = shell(serial, 'logcat -d -v brief --pid=' + app_pids[0]) if app_pids else ''
     logs = shell(serial, 'ls -t /sdcard/Download/WeHavePhones/wine-*.log 2>/dev/null || true').splitlines()
     if logs:
         out += shell(serial, 'tail -n 6000 ' + shlex.quote(logs[0]))
+    directory = 'files/imagefs/home/xuser-%d/.wine/drive_c/users/xuser/AppData/Local/Battle.net/Logs' % container
+    cef = private(serial, 'ls -t ' + shlex.quote(directory) + '/libcef-*.log 2>/dev/null || true').splitlines()
+    cef = [file for file in cef if fresh_log(file, tap_epoch)]
+    if cef:
+        out += private(serial, 'cat ' + shlex.quote(cef[0]))
     keep = []
     for line in out.splitlines():
         if ('Guest env (arm64ec):' in line or 'Launching guest command:' in line
-                or re.search(r'(?:err:|warn:|Unhandled exception|FEX-|FEX:|SIGSEGV|SIGABRT|fdsan:)', line)):
-            if re.search(r'(?i)(password|token|authorization|account|email|ticket|credential)', line):
+                or re.search(r'(?:err:|warn:|ERROR:|FATAL:|Unhandled exception|FEX-|FEX:|SIGSEGV|SIGABRT|fdsan:)', line)):
+            if re.search(r'(?i)(password|token|authorization|account|email|ticket|credential|https?://)', line):
                 continue
             keep.append(re.sub(r'[^\s<>]+@[^\s<>]+', '[redacted]', line))
     (target / 'diagnostics.log').write_text('\n'.join(keep) + '\n')
@@ -181,10 +198,12 @@ def sanitized_evidence(serial, target):
     (target / 'android-crashes.log').write_text(crash + '\n')
 
 
-def launcher_state(serial, container):
+def launcher_state(serial, container, tap_epoch=None):
     directory = 'files/imagefs/home/xuser-%d/.wine/drive_c/users/xuser/AppData/Local/Battle.net/Logs' % container
     files = private(serial, 'ls -t ' + shlex.quote(directory) + '/battle.net-*.log 2>/dev/null || true').splitlines()
     for file in files[:4]:
+        if tap_epoch is not None and not fresh_log(file, tap_epoch):
+            continue
         text = private(serial, 'cat ' + shlex.quote(file))
         if not re.search(r'Opening IPC shared memory\..*mode=server', text):
             continue
@@ -207,6 +226,9 @@ def launcher_state(serial, container):
                 events.append({'event': 'product-state', 'uid': uid, 'after_log_start_s': elapsed, **fields})
             elif re.search(r'(?i)(mojo|renderer).*(?:timed out|crash|failed)', line):
                 events.append({'event': 'renderer-error', 'after_log_start_s': elapsed})
+            elif 'Scope:Root for Browser' in line:
+                events.append({'event': 'browser-observer-destroyed' if 'Destroying' in line else 'browser-observer-created',
+                               'after_log_start_s': elapsed})
         return {'file': pathlib.PurePosixPath(file).name, 'events': events}
     return {'events': []}
 
@@ -235,7 +257,7 @@ def run_attempt(args, serial, name, shortcut, original, label):
     shell(serial, 'input keyevent KEYCODE_WAKEUP; cmd statusbar collapse')
     temp_start = temperature(serial)
     OWN_SESSION = True
-    tap = tap_open(serial)
+    tap, tap_epoch = tap_open(serial)
     print(name + ': started', flush=True)
     t0 = None
     previous = False
@@ -243,6 +265,7 @@ def run_attempt(args, serial, name, shortcut, original, label):
     pids = set()
     result = {'name': name, 'configuration': label, 'override': CANDIDATES[label],
               'tap_uptime': tap, 'temperature_start_c': temp_start,
+              'tap_epoch': tap_epoch,
               'cooldown_s': round(time.monotonic() - cooldown_start, 1),
               'outcome': 'no-play-within-window', 'window_s': args.window}
     next_report = time.monotonic() + 30
@@ -301,10 +324,11 @@ def run_attempt(args, serial, name, shortcut, original, label):
     for key, value in CANDIDATES[label].items():
         if result['effective_fex_env'].get(key) != value:
             raise RuntimeError('Candidate was not present in effective session environment: ' + key)
-    sanitized_evidence(serial, target)
-    result['launcher_state'] = launcher_state(serial, args.container)
+    sanitized_evidence(serial, target, args.container, tap_epoch)
+    result['launcher_state'] = launcher_state(serial, args.container, tap_epoch)
     (target / 'result.json').write_text(json.dumps(result, indent=2) + '\n')
-    print(json.dumps(result), flush=True)
+    print(json.dumps({key: result[key] for key in ('name', 'outcome', 'temperature_start_c', 'temperature_end_c')}
+                     | {'boot_to_play_s': result.get('boot_to_play_s')}), flush=True)
     stop_owned_session(serial)
     return result
 

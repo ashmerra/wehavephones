@@ -3,6 +3,7 @@
 import importlib.util
 import pathlib
 from unittest.mock import patch
+import datetime
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 spec = importlib.util.spec_from_file_location('boot', ROOT / 'scripts/benchmark-battlenet-boot.py')
@@ -31,6 +32,16 @@ assert boot.play_label_pixels(placeholder, (0, 0, 300, 50)) == 0
 boot.ImageDraw.Draw(placeholder).rectangle((130, 20, 170, 30), fill='white')
 assert boot.play_label_pixels(placeholder, (0, 0, 300, 50)) > 100
 assert all(len(values) <= 1 for values in boot.CANDIDATES.values())
+epoch = datetime.datetime(2026, 10, 14, 6, 18, 14, tzinfo=datetime.timezone.utc).timestamp()
+assert boot.fresh_log('battle.net-20261014T061819.123456.log', epoch)
+assert not boot.fresh_log('battle.net-20261014T061500.123456.log', epoch)
+assert not boot.fresh_log('unrelated.log', epoch)
+with patch.object(boot, 'shell', side_effect=['', 'KeyguardStateMonitor\n mIsShowing=true']):
+    try:
+        boot.ensure_unlocked('test-phone')
+        raise AssertionError('Secure keyguard must stop the benchmark')
+    except RuntimeError as error:
+        assert 'keyguard' in str(error)
 boot.OWN_SESSION = True
 with patch.object(boot.dev, 'stop_runtime') as stop, patch.object(boot, 'processes',
         side_effect=[['1 0 wineserver wineserver'], []]), patch.object(boot.time, 'sleep') as sleep:
