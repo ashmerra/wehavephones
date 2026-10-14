@@ -4,9 +4,12 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.wehavephones.mobile.addons.required.ConsolePortUpdater;
+import com.wehavephones.BuildConfig;
 import com.wehavephones.R;
 import com.wehavephones.XServerDisplayActivity;
 import com.wehavephones.container.Container;
+import com.wehavephones.container.Shortcut;
+import com.wehavephones.core.EnvVars;
 import com.wehavephones.core.FileUtils;
 import com.wehavephones.winhandler.WinHandler;
 
@@ -183,7 +186,11 @@ public final class WeHavePhonesPlayController {
             final Container container = result.container;
             WeHavePhonesStatus status = WeHavePhonesStatus.load(activity.getApplicationContext());
             BattleNetGames.Game selected = BattleNetGames.pick(status.games, WeHavePhonesConfig.getProductDir(activity));
-            String flags = WeHavePhonesLaunchPlan.openFlags(selected != null ? selected.bnetGameId() : null);
+            final File shortcut = WeHavePhonesShortcuts.ensureBnetShortcut(container);
+            String javascriptMode = BuildConfig.DEBUG && shortcut != null
+                    ? new EnvVars(new Shortcut(container, shortcut).getExtra("envVars")).get("WHP_BNET_V8_MODE") : "";
+            String flags = WeHavePhonesLaunchPlan.openFlags(selected != null ? selected.bnetGameId() : null,
+                    javascriptMode, BuildConfig.DEBUG);
             if (!flags.isEmpty()) {
                 File batch = WeHavePhonesPaths.bnetBat(container);
                 String content = FileUtils.readString(batch);
@@ -198,7 +205,6 @@ public final class WeHavePhonesPlayController {
             String exitStatus = WeHavePhonesBnetConfig.applyExitOnGameLaunch(WeHavePhonesPaths.bnetRoamingDir(container),
                     WeHavePhonesPaths.wehavephonesDir(activity));
             Log.i(OneButtonLauncher.TAG, "game launch: " + exitStatus);
-            final File shortcut = WeHavePhonesShortcuts.ensureBnetShortcut(container);
             activity.runOnUiThread(() -> {
                 if (WeHavePhonesSessionLauncher.launch(activity, container, shortcut)) {
                     activity.updateStageStatus(activity.getString(R.string.wehavephones_bnet_launching), false);

@@ -391,6 +391,15 @@ public final class WeHavePhonesLaunchPlan {
         return isProductId(gameId) ? "--game=" + gameId : "";
     }
 
+    /** Allow fixed browser diagnostics in Dev builds without accepting shell arguments. */
+    public static String openFlags(String gameId, String javascriptMode, boolean diagnosticsEnabled) {
+        String flags = openFlags(gameId);
+        if (!diagnosticsEnabled) return flags;
+        String browser = "jitless".equals(javascriptMode) ? "--js-flags=--jitless"
+                : "no-opt".equals(javascriptMode) ? "--js-flags=--no-opt" : "";
+        return browser.isEmpty() ? flags : flags + (flags.isEmpty() ? "" : " ") + browser;
+    }
+
     public static String startFlags(Options options, Product product) {
         StringBuilder flags = new StringBuilder();
         if (options.minimized) flags.append("--autostarted");

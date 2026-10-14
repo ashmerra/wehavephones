@@ -49,6 +49,12 @@ assert boot.trial_configurations(configurations, 1, True) == configurations
 assert boot.trial_configurations(configurations, 2, True) == configurations[::-1]
 assert boot.trial_configurations(configurations, 2, False) == configurations
 assert configurations == ['baseline', 'small-blocks', 'reduced-x87']
+assert boot.battlenet_versions([
+    '1 0 wine Battle.net.exe --user-agent-product=Battle.net/2.53.5.17932 (retail)',
+    '2 0 wine Battle.net.exe --user-agent-product=Battle.net/2.53.5.17932 (retail)',
+    '3 0 wine Battle.net.exe --game=wow',
+]) == {'2.53.5.17932'}
+assert boot.battlenet_versions(['1 0 wine Battle.net.exe']) == set()
 epoch = datetime.datetime(2026, 10, 14, 6, 18, 14, tzinfo=datetime.timezone.utc).timestamp()
 assert boot.fresh_log('battle.net-20261014T061819.123456.log', epoch)
 assert not boot.fresh_log('battle.net-20261014T061500.123456.log', epoch)

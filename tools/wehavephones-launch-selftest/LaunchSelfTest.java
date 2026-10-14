@@ -293,6 +293,16 @@ public final class LaunchSelfTest {
         check("open only selects the game page", "--game=wow_classic_era", WeHavePhonesLaunchPlan.openFlags("wow_classic_era"));
         check("open without a selection keeps the home page", "", WeHavePhonesLaunchPlan.openFlags(null));
         check("open rejects shell arguments", "", WeHavePhonesLaunchPlan.openFlags("wow & start Wow.exe"));
+        check("Dev browser diagnostic keeps the game selection", "--game=wow_classic_era --js-flags=--jitless",
+                WeHavePhonesLaunchPlan.openFlags("wow_classic_era", "jitless", true));
+        check("Dev browser diagnostic can isolate the optimizing compiler", "--game=wow --js-flags=--no-opt",
+                WeHavePhonesLaunchPlan.openFlags("wow", "no-opt", true));
+        check("release ignores browser diagnostics", "--game=wow",
+                WeHavePhonesLaunchPlan.openFlags("wow", "jitless", false));
+        check("browser diagnostic rejects shell arguments", "--game=wow",
+                WeHavePhonesLaunchPlan.openFlags("wow", "jitless & start Wow.exe", true));
+        check("browser diagnostic without selection never requests a game launch", "--js-flags=--jitless",
+                WeHavePhonesLaunchPlan.openFlags(null, "jitless", true));
         check("start bat CRLF", true, start.endsWith("\r\n") && !start.replace("\r\n", "").contains("\n"));
         check("append flags without Battle.net line", "@echo off\r\n", WeHavePhonesLaunchPlan.appendBnetFlags("@echo off\r\n", "--x"));
     }

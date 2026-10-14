@@ -35,6 +35,8 @@ CANDIDATES = {
     'no-vector-tso': {'FEX_VECTORTSOENABLED': '0'},
     'no-memcpy-tso': {'FEX_MEMCPYSETTSOENABLED': '0'},
     'reduced-x87': {'FEX_X87REDUCEDPRECISION': '1'},
+    'v8-jitless': {'WHP_BNET_V8_MODE': 'jitless'},
+    'v8-no-opt': {'WHP_BNET_V8_MODE': 'no-opt'},
     'small-blocks': {'FEX_MAXINST': '500'},
     'multiblock': {'FEX_MULTIBLOCK': '1'},
 }
@@ -43,6 +45,10 @@ OWN_SESSION = False
 
 def trial_configurations(configurations, attempt, alternate_order):
     return list(reversed(configurations)) if alternate_order and attempt % 2 == 0 else list(configurations)
+
+
+def battlenet_versions(process_lines):
+    return set(re.findall(r'--user-agent-product=Battle\.net/([0-9.]+)', '\n'.join(process_lines)))
 
 
 def shell(serial, command, timeout=30):
@@ -280,6 +286,9 @@ def run_attempt(args, serial, name, shortcut, original, label):
     previous = False
     rows = []
     pids = set()
+    versions = set()
+    browser_flag_roles = set()
+    browser_mode = CANDIDATES[label].get('WHP_BNET_V8_MODE')
     result = {'name': name, 'configuration': label, 'override': CANDIDATES[label],
               'tap_uptime': tap, 'temperature_start_c': temp_start,
               'tap_epoch': tap_epoch,
@@ -294,6 +303,12 @@ def run_attempt(args, serial, name, shortcut, original, label):
             raise RuntimeError('A game appeared; preserving the live session and stopping the benchmark')
         now = float(shell(serial, 'cat /proc/uptime').split()[0])
         clients = [line for line in procs if 'Battle.net.exe' in line]
+        versions.update(battlenet_versions(clients))
+        if browser_mode:
+            for line in clients:
+                if '--js-flags=--' + browser_mode in line:
+                    role = re.search(r'--type=([a-z-]+)', line)
+                    browser_flag_roles.add(role[1] if role else 'main')
         if clients and t0 is None:
             t0 = now
             result['process_uptime'] = t0
@@ -329,7 +344,8 @@ def run_attempt(args, serial, name, shortcut, original, label):
             next_report += 30
         time.sleep(args.interval)
     result.update(temperature_end_c=temperature(serial), main_client_pids=sorted(pids),
-                  main_replacements=max(0, len(pids) - 1) if pids else None, samples=len(rows))
+                  main_replacements=max(0, len(pids) - 1) if pids else None, samples=len(rows),
+                  battlenet_versions=sorted(versions), browser_flag_roles=sorted(browser_flag_roles))
     if last_image is not None:
         last_image.crop((300, 200, 780, 850)).save(target / 'final-panel.png')
     (target / 'samples.json').write_text(json.dumps(rows, indent=2) + '\n')
@@ -338,9 +354,19 @@ def run_attempt(args, serial, name, shortcut, original, label):
     env_lines = [line for line in env_lines.splitlines() if 'Guest env (arm64ec):' in line]
     latest_env = env_lines[-1] if env_lines else ''
     result['effective_fex_env'] = dict(re.findall(r'\b(FEX_[A-Z0-9_]+)=([^\s]+)', latest_env))
+    effective_overrides = {}
     for key, value in CANDIDATES[label].items():
-        if result['effective_fex_env'].get(key) != value:
+        match = re.search(r'\b' + re.escape(key) + r'=([^\s]+)', latest_env)
+        effective_overrides[key] = match[1] if match else None
+        if effective_overrides[key] != value:
             raise RuntimeError('Candidate was not present in effective session environment: ' + key)
+    result['effective_overrides'] = effective_overrides
+    if label in ('v8-jitless', 'v8-no-opt'):
+        expected = '--js-flags=--' + CANDIDATES[label]['WHP_BNET_V8_MODE']
+        batch = private(serial, 'cat files/imagefs/home/xuser-%d/.wine/drive_c/bnet.bat' % args.container)
+        if expected not in batch:
+            raise RuntimeError('Installed app did not apply the requested browser diagnostic')
+        result['verified_browser_flag'] = expected
     sanitized_evidence(serial, target, args.container, tap_epoch)
     result['launcher_state'] = launcher_state(serial, args.container, tap_epoch)
     (target / 'result.json').write_text(json.dumps(result, indent=2) + '\n')
@@ -389,6 +415,7 @@ def main():
         'definition': 'First observed Battle.net.exe to second consecutive blue Play frame with white label glyphs; upper screenshot timestamp',
         'game_launch_validation': 'Excluded by user: Battle.net boot only'}, indent=2) + '\n')
     results = []
+    expected_versions = None
     try:
         # Interleave conditions to reduce thermal/time/network drift.
         for attempt in range(1, args.runs + 1):
@@ -396,6 +423,11 @@ def main():
                 result = run_attempt(args, serial, '%s-%02d' % (label, attempt), shortcut, original, label)
                 results.append(result)
                 (args.output / 'results.json').write_text(json.dumps(results, indent=2) + '\n')
+                versions = result['battlenet_versions']
+                if versions:
+                    if expected_versions is not None and versions != expected_versions:
+                        raise RuntimeError('Battle.net version changed between trials. Re-establish the baseline.')
+                    expected_versions = versions
     finally:
         # Never close a game started by the owner while the benchmark was running.
         if OWN_SESSION and not game_running(processes(serial)):
