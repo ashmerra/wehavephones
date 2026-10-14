@@ -14,6 +14,13 @@ android {
             // Ludashi/vanilla-aligned native stack (adrenotools, etc.) is arm64-only.
             abiFilters 'arm64-v8a'
         }
+
+        externalNativeBuild {
+            cmake {
+                arguments "-DWEHAVEPHONES_OPTIMIZE_DEBUG_C=" +
+                        (project.findProperty('wehavephonesOptimizeDebugC') ?: 'OFF')
+            }
+        }
     }
 
     buildTypes {

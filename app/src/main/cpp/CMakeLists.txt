@@ -3,6 +3,13 @@ cmake_minimum_required(VERSION 3.22.1)
 Project(WeHavePhones)
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2 -Wno-unused-function -Wimplicit-function-declaration")
+# Keep the original flags until the opt-in experiment has device measurements.
+option(WEHAVEPHONES_OPTIMIZE_DEBUG_C "Optimize native C hot paths in Dev builds" OFF)
+if(WEHAVEPHONES_OPTIMIZE_DEBUG_C)
+    # NDK Debug flags append -O0 after CMAKE_C_FLAGS. Apply the intended -O2
+    # after those flags while preserving debug symbols and assertions.
+    add_compile_options("$<$<AND:$<CONFIG:Debug>,$<COMPILE_LANGUAGE:C>>:-O2>")
+endif()
 # Align LOAD segments for 16 KB page-size devices. NDK 22 defaults to 4 KB, and
 # Android warns about unaligned libraries in debuggable builds.
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-z,max-page-size=16384")
