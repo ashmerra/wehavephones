@@ -85,7 +85,7 @@ public final class RuntimeStageController {
                 return;
             }
 
-            post("Starting Battle.net; sign in and press Play for World of Warcraft", false);
+            post("Starting Battle.net. Sign in and press Play for World of Warcraft", false);
             if (!launchOnMain(container, bnetShortcut)) {
                 post("Could not start the Battle.net session", true);
                 return;
@@ -94,11 +94,11 @@ public final class RuntimeStageController {
             post("Waiting for Wow-ARM64.exe / Wow.exe to spawn", false);
             ProcessScanner.Entry wowProcess = waitForWowProcess();
             if (wowProcess == null) {
-                post("Timed out waiting for the WoW process; press Play in Battle.net and retry", true);
+                post("Timed out waiting for the WoW process. Press Play in Battle.net and retry", true);
                 return;
             }
 
-            post("WoW process " + wowProcess.pid + " detected; switching to the WoW runtime", false);
+            post("WoW process " + wowProcess.pid + " detected. Switching to the WoW runtime", false);
             stopSession();
 
             WeHavePhonesRuntimeApplier.Result wowApply = WeHavePhonesRuntimeApplier.apply(appContext, WeHavePhonesRuntimeApplier.Stage.WOW);

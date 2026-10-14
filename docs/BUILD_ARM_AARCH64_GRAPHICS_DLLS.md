@@ -19,7 +19,7 @@ Default versions:
 - VKD3D-Proton: `v2.8`
 
 The container matches the host architecture (x86_64 or arm64) and uses the
-matching llvm-mingw host build; both cross-compile to aarch64 Windows.
+matching llvm-mingw host build. Both cross-compile to aarch64 Windows.
 
 Output:
 
@@ -77,4 +77,4 @@ WINEDEBUG=+loaddll,+dxgi,+d3d11,+d3d12,+vulkan
 ## Notes
 
 - Container restart may overwrite injected files from packaged assets. Copy the DLLs again after a restart.
-- This is a focused ARM64-game path workflow; x86/x64/FEX paths are intentionally unchanged.
+- This is a focused ARM64-game path workflow. The x86/x64/FEX paths are intentionally unchanged.

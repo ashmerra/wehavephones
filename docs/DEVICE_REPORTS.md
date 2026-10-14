@@ -8,8 +8,8 @@ files reports from other sites should include.
 
 1. **In the app.** Diagnostics has a Copy button and a Report a problem button. Both use the same
    text block, `== WeHavePhones device report ==` (model, GPU, rule, profile, driver, the driver
-   picked in Diagnostics and probe results; no account names, emails or serial numbers). Report a problem opens a prefilled
-   issue form in the browser (see below); Copy lets the user paste the block into any issue.
+   picked in Diagnostics and probe results. No account names, emails or serial numbers). Report a problem opens a prefilled
+   issue form in the browser (see below). Copy lets the user paste the block into any issue.
 2. **Issue form.** `.github/ISSUE_TEMPLATE/bug_report.yml` asks for version, phone, chipset,
    Android version, game, a free-text description and an optional `Device report` field.
 3. **External reports.** A separate bot files issues for problems people post elsewhere (Reddit and
@@ -27,8 +27,8 @@ files reports from other sites should include.
 
    Device data is taken from the device report block first, then the issue-form fields, then phone
    names and model codes found in the title or body, looked up in `scripts/device-catalog.json`
-   (phone to SoC and GPU; low-confidence entries are marked and are reported as such). Issues with
-   no device information are listed under "unmatched issues needing device info"; issues that do
+   (phone to SoC and GPU, with low-confidence entries marked and reported as such). Issues with
+   no device information are listed under "unmatched issues needing device info". Issues that do
    not look like problem reports are skipped unless `--all` is given.
 
 ## Prefilled issue URL (for the Report a problem button)
@@ -117,7 +117,7 @@ Omit headings you have no data for rather than writing placeholders. Plain prose
 phone name in the title or body still work (the script looks the name up in the catalog), but
 structured headings are more reliable.
 
-Suggested labels (not created; only suggestions for later): `source:external`, `source:in-app`,
+Suggested labels (not created, only suggestions for later): `source:external`, `source:in-app`,
 `device:adreno-7xx`, `device:adreno-83x`, `device:adreno-84x`, `device:mali`, `device:xclipse`,
 `device:powervr`, `needs-device-info`. The script treats any `device:*` or `source:*` label as a
 sign that an issue is a problem report.

@@ -2,7 +2,7 @@
 
 Phones differ in GPU and Vulkan driver, so the graphics setup is chosen per device from a table of
 rules instead of one fixed driver. The table is bundled in the APK and can be updated without a new
-release. Only the `wehavephones` flavor uses it; the `runtime` flavor keeps the built-in setup.
+release. Only the `wehavephones` flavor uses it. The `runtime` flavor keeps the built-in setup.
 
 ## What the rules do
 
@@ -14,7 +14,7 @@ compat layer is installed, and optionally the WoW graphics API flag.
 - Pixel 8a and other Mali phones: the phone's own Vulkan driver with the BCn compat layer, as before.
 - Adreno 840 and newer (Snapdragon 8 Elite Gen 5): WoW in D3D11 with the system driver. On a OnePlus 15
   every offered Turnip build drew glitches in WoW Retail, while the Qualcomm drivers played in-world
-  (issue #13); the Turnip builds stay in the driver picker. The profile also disables `d3d12.dll`
+  (issue #13). The Turnip builds stay in the driver picker. The profile also disables `d3d12.dll`
   (`WINEDLLOVERRIDES=d3d12,d3d12core=d`): Battle.net's Play starts WoW without `-d3d11` and WoW keeps
   the API saved in `Config.wtf`, but without D3D12 it falls back to D3D11.
 - Other Adreno 8xx (800-839, such as the 825 in the Snapdragon 8s Gen 4 and the 830 in the Snapdragon
@@ -52,9 +52,9 @@ show how much a setup has been run on real hardware.
 }
 ```
 
-- Rules are checked in file order; the first rule whose keys all match wins. The last rule must be
+- Rules are checked in file order. The first rule whose keys all match wins. The last rule must be
   a catch-all with `"match": {}`.
-- `match` keys are all optional and AND-ed; list values are OR-ed: `gpuVendor` (`adreno`, `mali`,
+- `match` keys are all optional and AND-ed. List values are OR-ed: `gpuVendor` (`adreno`, `mali`,
   `xclipse`, `powervr`, `other`), `adrenoSeries` (`[8]`), `adrenoModel` (`"840"` or `"840-849"`),
   `chipId` (`"0x44050AFF"`, where a byte `FF` is a wildcard), `socModel`, `manufacturer`, `minSdk`,
   `maxSdk`. A chip id the phone does not report never matches.
@@ -65,11 +65,11 @@ show how much a setup has been run on real hardware.
   them, and a choice may not repeat a driver from `drivers`. Apps older than the picker ignore it.
 - `env` is applied only for keys the container does not already set. The default
   `TU_DEBUG` logic still runs afterwards (`noconform`, always plus `sysmem`).
-- `wowApiArg: null` keeps `-d3d12` in `wow.bat` and the direct launch; a profile may set `-d3d11`.
+- `wowApiArg: null` keeps `-d3d12` in `wow.bat` and the direct launch. A profile may set `-d3d11`.
   Battle.net's Play button starts the game without our command line, so before each launch the app
   also writes `-d3d11`/`-d3d12` as `SET GxApi` in the game's `Config.wtf`. A null flag leaves the
   saved `GxApi` alone, so a profile that drops `-d3d11` keeps D3D11 until the player changes it.
-- Unknown keys are ignored; a newer `schema` than the app supports is rejected.
+- Unknown keys are ignored. A newer `schema` than the app supports is rejected.
 
 ## Selection
 
@@ -87,7 +87,7 @@ does not change the profile's environment, compat layer or WoW API flag.
 
 Probe results are cached per driver, driver hash, `Build.FINGERPRINT` and app version code, so the
 test runs once per driver and again after a system or app update. Before each probe the app records
-that it is running; if the process dies inside the driver, the next start sees the record, marks
+that it is running. If the process dies inside the driver, the next start sees the record, marks
 that driver as failed ("crashed during probe") and moves on to the next one. Decisions are logged
 under the `WeHavePhonesDevices` logcat tag.
 
@@ -96,10 +96,10 @@ under the `WeHavePhonesDevices` logcat tag.
 The Play screen has a "Graphics driver" section below the Play button on phones whose profile
 offers more than one driver (not on Mali): a small dropdown next to the heading and, below it, a
 note to try another driver after graphical glitches or crashes. The dropdown lists Automatic, then the profile's `drivers`, then its
-`choices`. The closed dropdown says only "Automatic" when nothing is picked;
-the open list marks the driver Automatic uses next ("Used by Automatic"): the first of the
+`choices`. The closed dropdown says only "Automatic" when nothing is picked.
+The open list marks the driver Automatic uses next ("Used by Automatic"): the first of the
 profile's `drivers` whose cached test load has not failed. Picking a driver that is not on the
-phone downloads and verifies it right away; the pick is saved only after that works, and it
+phone downloads and verifies it right away. The pick is saved only after that works, and it
 applies from the next game start. Picking a driver again forgets its cached probe result, so a
 driver that failed to load once is tried again.
 
@@ -121,7 +121,7 @@ downloaded in the background for this phone's profile only.
 1. A new driver: add the archive as `app/src/main/assets/graphics_driver/adrenotools-<id>.tzst` and a
    manifest under `graphics/`, or give the driver entry a `url` with `sha256` and `librarySha256`.
    Record the source in `source` and in `THIRD_PARTY_NOTICES.md`. Drivers with only a `url` reach
-   phones through a rules update; drivers that ship as assets need a new APK.
+   phones through a rules update. Drivers that ship as assets need a new APK.
 2. Add or edit the profile and a rule that matches the phone (prefer GPU keys over `socModel`).
 3. Bump `rulesVersion` (and `updatedAt`). `minAppVersionCode` should name the first app build that
    can use everything in the file.
@@ -129,14 +129,14 @@ downloaded in the background for this phone's profile only.
    It refuses to sign changed rules without a higher `rulesVersion`.
 5. `scripts/test-wehavephones-devices.sh` checks the rules, bundled driver hashes, the signature,
    selection, fallback, and that the S23 and Pixel 8a still get the same driver and environment.
-6. Commit `device-rules.json` and `device-rules.json.sig` together and push `main`; phones pick
+6. Commit `device-rules.json` and `device-rules.json.sig` together and push `main`. Phones pick
    them up on their next check. Test the profile on the phone first when possible and keep the
    status `community` or `untested` until it has been.
 
 ## Reports
 
 Diagnostics has a Device section and a "Report a problem" button that opens a prefilled GitHub
-issue with the device report block (phone model, GPU, rule, profile, driver and probe results; no
+issue with the device report block (phone model, GPU, rule, profile, driver and probe results but no
 accounts or serial numbers). [DEVICE_REPORTS.md](DEVICE_REPORTS.md) describes the block, how
 `scripts/device-reports.py` groups issues by GPU family, and what the issue-filing bot should
 include. Several reports for one GPU family are the signal to add or change a profile.

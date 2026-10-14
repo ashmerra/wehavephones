@@ -10,7 +10,7 @@ game version may need a larger download.
 
 Finish WeHavePhones' initial setup: **Install container**, then **Install
 Battle.net**. You do not need to start downloading WoW. In **Setup**, note the
-active container; use that same container throughout these steps. Close any
+active container. Use that same container throughout these steps. Close any
 running Battle.net or WoW session before copying files: swipe in from the left
 edge of its screen and tap **Exit**.
 
@@ -54,7 +54,7 @@ the screen. Tap **Cancel** in Setup or the import notification to stop it.
 Import preserves the Downloads copy and refuses to replace an existing WoW
 folder in the container, including one under `C:\Program Files`. Use another
 container for a separate installation, or manage an existing installation
-manually. Close any running session before importing; game launches and
+manually. Close any running session before importing. Game launches and
 container switching are blocked until the import finishes or is cancelled.
 
 After a failed or cancelled copy, try **Import WoW files** again. An interrupted
@@ -75,10 +75,10 @@ In WeHavePhones, open **Containers**, then the active container's three-dot menu
 4. Swipe in from the left edge and tap **Exit** to return to WeHavePhones.
 
 Use this `C:` location for the final installation. WeHavePhones' **Play** and
-**Add-ons** screens scan it; leaving the game only on `D:` or choosing a custom
+**Add-ons** screens scan it. Leaving the game only on `D:` or choosing a custom
 Battle.net install path will not make those screens detect it. The app also
 recognizes `C:\Program Files\World of Warcraft` when the `(x86)` location is
-absent. `C:` belongs to the container's private app storage; it is not a folder
+absent. `C:` belongs to the container's private app storage. It is not a folder
 you can browse through the phone's ordinary USB file-transfer view.
 
 ## 4. Locate the installation in Battle.net
@@ -91,8 +91,8 @@ you can browse through the phone's ordinary USB file-transfer view.
    `Data` and the version folders. If it already shows **Play** or **Update**,
    it has found the installation.
 4. Let Battle.net check the files and finish any required downloads. It may
-   need Windows ARM64 client files or other files missing from the PC copy;
-   copying the data does not guarantee a download-free setup.
+   need Windows ARM64 client files or other files missing from the PC copy.
+   Copying the data does not guarantee a download-free setup.
 5. When Battle.net is ready, swipe in from the left edge and tap **Exit**. Back
    in WeHavePhones, tap the game title to choose the copied version, then **Play**.
 
@@ -101,7 +101,7 @@ Blizzard documents the **Locate the game** option in
 
 Once the game works from `C:`, you can delete the staging copy in the phone's
 Downloads folder to recover space. WeHavePhones and WeHavePhones Dev have
-separate containers and game files; a copy into one app is not visible in the other.
+separate containers and game files. A copy into one app is not visible in the other.
 
 ## If the game is not detected
 

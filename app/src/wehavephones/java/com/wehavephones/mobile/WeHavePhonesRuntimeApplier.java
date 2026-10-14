@@ -80,7 +80,7 @@ public final class WeHavePhonesRuntimeApplier {
 
         Container container = WeHavePhonesContainers.resolve(context);
         if (container == null) {
-            result.fail("No Wine container found; run first-run setup first");
+            result.fail("No Wine container found. Run first-run setup first");
             return result;
         }
         result.container = container;

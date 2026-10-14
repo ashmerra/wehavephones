@@ -2,7 +2,7 @@
 
 Images of the blue flip-phone mark and the WeHavePhones wordmark. They are
 rendered from the shared vector
-[`docs/design/brand/flip-phone.svg`](../design/brand/flip-phone.svg); the design
+[`docs/design/brand/flip-phone.svg`](../design/brand/flip-phone.svg). The design
 direction and the rendering requirements are in
 [the production brand](../design/brand/README.md).
 
@@ -24,5 +24,5 @@ scripts/render-app-icon.sh   # the app's launcher icons, container icon and Wine
 GitHub has no API for the social preview: upload `social-preview.png` under
 the repository's Settings > General > Social preview.
 
-World of Warcraft is a Blizzard Entertainment trademark; these images contain
+World of Warcraft is a Blizzard Entertainment trademark. These images contain
 no game art.

@@ -134,8 +134,8 @@ public final class UpdateChecker {
 
     private static String describe(ProviderException e) {
         switch (e.kind) {
-            case AUTH: return "Authentication failed; check the provider key";
-            case RATE_LIMIT: return "Rate limited; try again later";
+            case AUTH: return "Authentication failed. Check the provider key";
+            case RATE_LIMIT: return "Rate limited. Try again later";
             case NETWORK: return e.getMessage() != null ? e.getMessage() : "Network error";
             default: return e.getMessage() != null ? e.getMessage() : "Update check failed";
         }

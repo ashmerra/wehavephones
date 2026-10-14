@@ -1,7 +1,7 @@
 # WeHavePhones — addon manager
 
 This document describes how the addon manager is implemented and where. The app
-architecture is in `docs/WEHAVEPHONES_APP.md`; what still needs on-device
+architecture is in `docs/WEHAVEPHONES_APP.md`. What still needs on-device
 validation is listed in section 7.
 
 All code is in the `wehavephones` flavor source set:
@@ -11,16 +11,16 @@ All code is in the `wehavephones` flavor source set:
 
 | Provider | Key | Endpoints used | Notes / caveats |
 |---|---|---|---|
-| CurseForge | user API key (required) | `api.curseforge.com/v1/mods/search`, `/v1/mods/{id}`, `/v1/mods/{id}/files`, `/files/{fileId}/download-url`, `/files/{fileId}/changelog`, `/v1/games/1` (test key) | `x-api-key` is sent only to `api.curseforge.com` and `*.forgecdn.net`. SHA-1 from `hashes[]` is verified after download. `downloadUrl` null (author-restricted files) falls back to the `download-url` endpoint. The key was never tested live (no key available); the 403 auth gate was confirmed live. |
-| GitHub releases | optional PAT (raises the 60/hr anonymous limit) | `/repos/{owner}/{repo}/releases/latest`, `/releases`, `/repos/{owner}/{repo}` (metadata), `/search/repositories` (search), `/rate_limit` (test) | External id is `owner/repo`. Asset selection follows the BigWigs packager rules, including `release.json` flavor→asset mapping; `browser_download_url` is preferred over the API asset `url`. The PAT is sent only to `api.github.com`. Live shapes for DBM were checked on 2026-09-25. |
+| CurseForge | user API key (required) | `api.curseforge.com/v1/mods/search`, `/v1/mods/{id}`, `/v1/mods/{id}/files`, `/files/{fileId}/download-url`, `/files/{fileId}/changelog`, `/v1/games/1` (test key) | `x-api-key` is sent only to `api.curseforge.com` and `*.forgecdn.net`. SHA-1 from `hashes[]` is verified after download. `downloadUrl` null (author-restricted files) falls back to the `download-url` endpoint. The key was never tested live (no key available). The 403 auth gate was confirmed live. |
+| GitHub releases | optional PAT (raises the 60/hr anonymous limit) | `/repos/{owner}/{repo}/releases/latest`, `/releases`, `/repos/{owner}/{repo}` (metadata), `/search/repositories` (search), `/rate_limit` (test) | External id is `owner/repo`. Asset selection follows the BigWigs packager rules, including `release.json` flavor→asset mapping. `browser_download_url` is preferred over the API asset `url`. The PAT is sent only to `api.github.com`. Live shapes for DBM were checked on 2026-09-25. |
 | Tukui | none | `/v1/addons` (5 min cache), `/v1/addon/{slug}`, `/v1/changelog/{slug}` | Only ElvUI/Tukui exist. The download token in `addon.url` is refreshed with a detail call before download. |
-| Wago | Bearer token (optional, paid tier) | `addons.wago.io/api/external/addons/_search`, `/addons/popular`, `/addons/{id}`, `/addons/_recents` (batch), `/api/data/game` (no auth; not used at runtime yet) | Best-effort: the external read API is semi-private. Download link gets `?token=`, which is stripped automatically if a redirect leaves `*.wago.io`. Unsupported flavors fail with a typed `UNSUPPORTED` error. |
-| Local ZIP | n/a | `ACTION_OPEN_DOCUMENT` | Safe extraction + discovery only; never searched. TOC `X-…-ID` values are stored so a later update check can use the binding. |
+| Wago | Bearer token (optional, paid tier) | `addons.wago.io/api/external/addons/_search`, `/addons/popular`, `/addons/{id}`, `/addons/_recents` (batch), `/api/data/game` (no auth, not used at runtime yet) | Best-effort: the external read API is semi-private. Download link gets `?token=`, which is stripped automatically if a redirect leaves `*.wago.io`. Unsupported flavors fail with a typed `UNSUPPORTED` error. |
+| Local ZIP | n/a | `ACTION_OPEN_DOCUMENT` | Safe extraction + discovery only. Never searched. TOC `X-…-ID` values are stored so a later update check can use the binding. |
 
 Only GitHub releases and Local ZIP are offered in the app for now
 (`ProviderType.offered`). CurseForge, Tukui and Wago stay in the code but are
 not registered, searchable, configurable or used for update checks until they
-are tested live; addons whose TOC names one of them show as local.
+are tested live. Addons whose TOC names one of them show as local.
 
 The registry (`ProviderRegistry`) rebuilds from the Android Keystore-backed key
 store (`AddonSecrets` → `SecretStore` generic secret methods). Keys
@@ -63,7 +63,7 @@ addons/
 ### Install / update (atomic)
 1. `GameGuard` blocks the operation while a WoW process is running.
 2. Download to `files/wehavephones/addons-tmp/<uuid>.zip` with a 512 MiB cap.
-3. Verify provider SHA-1 when published (CurseForge); always compute SHA-256.
+3. Verify provider SHA-1 when published (CurseForge). Always compute SHA-256.
 4. Extract to `<AddOns>/.wehavephones-staging-<uuid>/` after the security checks.
 5. Discover addon roots (folder with a matching TOC), then `AddonInstaller`:
    backs up existing folders (including `.disabled` variants) to
@@ -139,26 +139,26 @@ Exit code is non-zero on any failure. No Gradle test dependency was added.
 - `AddOns` paths inside the real Wine container (symlinked `home/xuser`,
   `Program Files (x86)` case) and that the game sees the same tree.
 - Live provider calls with a real CurseForge key (search/download/`x-api-key`
-  on `*.forgecdn.net`) and a Wago token; endpoint shapes may drift.
+  on `*.forgecdn.net`) and a Wago token. Endpoint shapes may drift.
 - ZIP import through `ACTION_OPEN_DOCUMENT` on the device (content resolver
   read, file size, dialog flow).
-- Enable/disable renames while the game is genuinely closed; verify the guard
+- Enable/disable renames while the game is genuinely closed. Verify the guard
   against a running `Wow*.exe`.
 - Install/update of a real addon (e.g. DBM from GitHub, ElvUI from Tukui) and
   rollback behaviour under a mid-install failure (e.g. disk full).
 - Auto-check on open, update-all with many addons, and cancellation when the
   activity is destroyed mid-download.
 - Root override: `AddonIndex.wowRootOverride` is persisted but has no UI field
-  yet; the manager supports it. Interface numbers use `.build.info` first and
+  yet. The manager supports it. Interface numbers use `.build.info` first and
   the static table as fallback.
 
 ## 8. Known limitations
 
-- No CurseForge key was available to test live; the API calls are built from the
+- No CurseForge key was available to test live. The API calls are built from the
   documented schema and the live 403 auth gate.
-- Wago remains best-effort (paid key, semi-private API); the batch `_recents`
+- Wago remains best-effort (paid key, semi-private API). The batch `_recents`
   shape is implemented defensively but untested.
-- Fingerprint matching (`X-…-ID` absent) is not implemented; unidentified
+- Fingerprint matching (`X-…-ID` absent) is not implemented. Unidentified
   addons are `LOCAL_ONLY`/`UNKNOWN` and are never silently rebound.
 - No download resume, no Wi-Fi-only setting, no background service (installs
   run in a visible activity-scoped executor), no SavedVariables cleanup
@@ -171,7 +171,7 @@ Exit code is non-zero on any failure. No Gradle test dependency was added.
 ConsolePort (`seblindfors/ConsolePort`, Artistic-2.0, notice in
 `docs/licenses/ConsolePort-Artistic-2.0.txt`) is kept installed in every WoW
 product except the Forever family, which has native controller support
-(`ConsolePort.requiredFor`; a Forever client is detected by its 1.60+ version
+(`ConsolePort.requiredFor`. A Forever client is detected by its 1.60+ version
 whatever its directory is called). One release zip serves every flavor.
 
 - **Bundled release:** `app/src/wehavephones/assets/wehavephones/addons/consoleport.json`
@@ -193,7 +193,7 @@ whatever its directory is called). One release zip serves every flavor.
   it falls back to downloading once.
 - **Addon manager:** the scanner binds the suite to GitHub instead of the TOC's
   CurseForge project (no API key needed), so the normal Update button works.
-  Delete is hidden or blocked for required installs; Disable still works.
+  Delete is hidden or blocked for required installs. Disable still works.
   Writes to the AddOns directory from the manager and the updater are
   serialized by `AddonInstaller.LOCK`.
 - **First-run layout:** `WeHavePhonesControllerSetup`
@@ -214,5 +214,5 @@ whatever its directory is called). One release zip serves every flavor.
   touched. The folder name must not start with `ConsolePort_`, because
   suite updates delete such folders.
 - **Host self-test:** `testConsolePort` in the addon self-test also installs
-  the real bundled archive when it is present; `testControllerSetupAddon`
+  the real bundled archive when it is present. `testControllerSetupAddon`
   covers the companion sync.

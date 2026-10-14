@@ -54,7 +54,7 @@ phone from a computer, for manual tests.
 
 ### Graphics default
 
-The graphics setup is chosen per device by the [device rules](DEVICE_PROFILES.md); the rules
+The graphics setup is chosen per device by the [device rules](DEVICE_PROFILES.md). The rules
 bundled with the app reproduce the earlier defaults for the phones that were tested.
 
 Adreno 6xx and 7xx (and an unknown GPU) use **Mesa Turnip 26.3.0-devel (git-1b51639c20)**,
@@ -62,11 +62,11 @@ under the immutable driver ID `turnip26.3.0-devel-1b51639c20`. This is the exact
 binary tested with Classic Era on a Galaxy S23+, rather than a stable Mesa 26.3
 release or a moving nightly. The
 [driver manifest](../app/src/wehavephones/assets/wehavephones/graphics/turnip.json)
-pins both the archive and library SHA-256; the build helper and runtime checks
+pins both the archive and library SHA-256. The build helper and runtime checks
 verify the archive before packaging. Adreno 800-839 phones try Turnip V32-RP6sched and
 **Gen 8 Turnip**
 ([manifest](../app/src/wehavephones/assets/wehavephones/graphics/turnip-gen8-stevenmxz-v37.json))
-first; if a driver fails its test load, the next one in the profile (finally the system driver) is
+first. If a driver fails its test load, the next one in the profile (finally the system driver) is
 used. Adreno 840 phones use the system driver, because every Turnip build drew glitches in WoW on a
 OnePlus 15. Non-Adreno devices
 retain the wrapper's system Vulkan path with the BCn compat layer.
@@ -80,7 +80,7 @@ available for an explicit rollback trial.
 ## Behavior notes
 
 - **Battle.net flags.** CEF 108's separate network utility process crashed
-  during a fresh-container check; running it in the client process
+  during a fresh-container check. Running it in the client process
   (`--enable-features=NetworkServiceInProcess2`) allowed sign-in and the game
   install confirmation to render. The feature name comes from
   [Chromium 108's feature definition](https://chromium.googlesource.com/chromium/src/+/refs/tags/108.0.5359.125/content/public/common/content_features.cc).
@@ -90,7 +90,7 @@ available for an explicit rollback trial.
   `FEX-2601-116-g1268a39` ([source revision](https://github.com/FEX-Emu/FEX/tree/1268a3910cae02ceb1f3854b647a2397a24f7df7)).
   Use that revision when checking supported controls. In particular, code
   modification checks use `FEX_SMCCHECKS` (`mtrack` by default, or `full`),
-  rather than `FEX_SMC_CHECKS`; `FEX_PARANOIDTSO` no longer exists in this build.
+  rather than `FEX_SMC_CHECKS`. `FEX_PARANOIDTSO` no longer exists in this build.
   The standalone Battle.net and installer shortcuts use the Stability preset:
   scalar, vector and memcpy TSO enabled, half-barrier TSO enabled, reduced x87
   precision disabled. The one-button Play shortcut uses the container's preset.
@@ -98,7 +98,7 @@ available for an explicit rollback trial.
   and apply to the Wine session and its children. They are not isolated to
   Battle.net if a game is subsequently started in the same session.
   An overnight boot screen on the S23+
-  found no speed gain from strict split locks or multiblock; `FEX_SMCCHECKS=full`
+  found no speed gain from strict split locks or multiblock. `FEX_SMCCHECKS=full`
   stalled before rendering in all five clean trials. Retain `mtrack` on this
   setup. That screen did not reproduce the baseline's intermittent hang and
   did not include WoW validation.
@@ -133,13 +133,13 @@ available for an explicit rollback trial.
   shim before Wine also covers failures before sign-in. The Android 17 default
   remains available without an explicit profile setting. The setting changes
   only the guest process's sanitizer level, not the Android app or device
-  setting. It avoids the fatal check; it does not repair Wine's underlying
+  setting. It avoids the fatal check. It does not repair Wine's underlying
   descriptor ownership bug.
 - **Battle.net cold starts.** A cold start sometimes stalls in an empty dark
   window and never paints its page. The one-button launcher restarts Battle.net
   in the same session when that happens (see the Play flow in
   [WEHAVEPHONES_APP.md](WEHAVEPHONES_APP.md)).
-- **Sign-in.** WeHavePhones reads, types and stores no Battle.net credentials;
+- **Sign-in.** WeHavePhones reads, types and stores no Battle.net credentials.
   Battle.net signs in with the login it saved itself.
 - **Wine identifier pattern.** The app only accepts Wine directory names that
   match `WineInfo.pattern` (for example `proton-10.0-34-arm64ec`). Any other name
@@ -155,7 +155,7 @@ Measured on a Galaxy S23+ with an earlier host harness:
 
 - Battle.net cold start to rendered signed-in home: 85 to 155 s. The first
   ~60 s can be black or show an empty window even when the start will succeed.
-- WoW login screen after Play: ~15 to 30 s; under memory pressure it can take
+- WoW login screen after Play: ~15 to 30 s. Under memory pressure it can take
   ~75 s or more.
 - Battle.net takes `MemAvailable` from ~2.6 GB to ~1.0 to 1.5 GB, with
   `SwapFree` at ~7 to 10 GB.
@@ -167,8 +167,8 @@ Measured on a Galaxy S23+ with an earlier host harness:
 - It makes Wine's ARM64 syscall stubs self-contained, as they are on Windows.
   Each stub loads the syscall dispatcher from TEB+0x308 instead of from an
   `ntdll` data literal, so code that copies the stubs keeps working
-  (`include/wine/asm.h`; the dispatcher is initialised in
-  `dlls/ntdll/unix/signal_arm64.c`).
+  (`include/wine/asm.h`. The dispatcher is initialised in
+  `dlls/ntdll/unix/signal_arm64.c`.).
 - It adds a 100 ms grace in `RtlExitUserThread` (`dlls/ntdll/thread.c`).
 
 The grace alone was not enough: WoW still stalled with `gx.log` frozen after
@@ -188,7 +188,7 @@ WoW starts and Battle.net still renders.
   `--without-fontconfig`, `--without-pulse`, `--without-gstreamer`,
   `--without-vulkan`, `--without-sdl`, `--without-gnutls`, `--without-alsa`,
   `--without-opengl`) because the aarch64 sysroot used for the build also
-  contained x86-64 libraries; the GUI drivers come from the GE layer. The host
+  contained x86-64 libraries. The GUI drivers come from the GE layer. The host
   `wine-tools` build needed `--without-freetype`, and a stray x86-64
   `libunwind.a` had to be moved out of the way.
 - The resulting `ntdll.dll` and `ntdll.so` are the two files pinned by SHA-256 in

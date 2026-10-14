@@ -521,7 +521,7 @@ public final class AddonManager {
                 if (record == null) throw new IOException("No addon selected");
                 if (isRequired(record)) {
                     throw new IOException(record.displayName()
-                            + " is required for controller play and is reinstalled automatically; disable it instead");
+                            + " is required for controller play and is reinstalled automatically. Disable it instead");
                 }
                 requireGameClosed();
                 File backup = AddonInstaller.removeToBackup(ensureAddonsDir(), record.folderNames);

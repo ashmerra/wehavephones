@@ -14,7 +14,7 @@ pinned in `consoleport.json`).
 
 The fetcher takes each asset from the first place whose bytes match:
 
-1. **The local file.** A file that does not match stops the build;
+1. **The local file.** A file that does not match stops the build.
    `--replace` moves it aside (`<name>.mismatched-<sha>`) and fetches the pinned
    copy.
 2. **Our release** (`release.repo` and `release.tag` in the manifest), for the
@@ -32,8 +32,8 @@ The fetcher takes each asset from the first place whose bytes match:
 | `imagefs_patches.tzst` | apk | FrontMage `imagefs-v1` (that bundle's own `imagefs.txz` is a different build we do not use) |
 | `dxwrapper/dxvk-2.4.1.tzst`, `dxwrapper/vkd3d-2.12.tzst` | apk | FrontMage `dx-wrapper-v1` |
 | `graphics_driver/turnip-24.1.0.tzst`, `virgl-23.1.9.tzst`, `zink-22.2.5.tzst` | apk | FrontMage `drivers-v1` |
-| `wincomponents/direct3d.tzst` (Microsoft) | apk | FrontMage `wincomponents-v1`; identical to the copy upstream Winlator commits |
-| `preinstall/proton-10-arm64ec.wcp.xz` | runtime | StevenMXZ/Winlator-Contents release `1.0`; `runtime` flavor only |
+| `wincomponents/direct3d.tzst` (Microsoft) | apk | FrontMage `wincomponents-v1`. Identical to the copy upstream Winlator commits |
+| `preinstall/proton-10-arm64ec.wcp.xz` | runtime | StevenMXZ/Winlator-Contents release `1.0`. `runtime` flavor only |
 
 The default DXVK's aarch64 DLLs (its `system32/`) were built with per-frame
 `SWAPTRACE` debug logging. The app extracts
@@ -103,6 +103,6 @@ and would stop building. Instead:
 `scripts/build-wehavephones.sh --release` builds the signed `com.wehavephones`
 APK. It needs `WEHAVEPHONES_KEYSTORE`, `WEHAVEPHONES_KEYSTORE_PASS`,
 `WEHAVEPHONES_KEY_ALIAS` and `WEHAVEPHONES_KEY_PASS` in the environment or in
-`~/.config/wehavephones/signing.env` (`KEY=value` lines; `WEHAVEPHONES_SIGNING_ENV`
-names another file), and writes `out/release/WeHavePhones-<version>.apk` plus
+`~/.config/wehavephones/signing.env` (`KEY=value` lines, or another file named by
+`WEHAVEPHONES_SIGNING_ENV`), and writes `out/release/WeHavePhones-<version>.apk` plus
 `SHA256SUMS`. Keep the keystore and that file outside the repository.

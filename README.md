@@ -56,7 +56,7 @@ scripts/setup-dev.sh           # JDK 17 + Android SDK/NDK in .tools/ (~5 GB)
 scripts/build-wehavephones.sh  # fetches pinned assets, builds the APK
 ```
 
-The APK is written to `app/build/outputs/apk/wehavephones/debug/app-wehavephones-debug.apk`. A debug build installs as a separate app, WeHavePhones Dev (`com.wehavephones.dev`), next to an official release. `scripts/deploy-wehavephones.sh` builds it, installs it and launches it over adb; set `ANDROID_DEVICE` in a gitignored `local.env` or pass `--serial`. Large prebuilt assets are pinned by SHA-256; see [docs/BUILD_ASSETS.md](docs/BUILD_ASSETS.md).
+The APK is written to `app/build/outputs/apk/wehavephones/debug/app-wehavephones-debug.apk`. A debug build installs as a separate app, WeHavePhones Dev (`com.wehavephones.dev`), next to an official release. `scripts/deploy-wehavephones.sh` builds it, installs it and launches it over adb. Set `ANDROID_DEVICE` in a gitignored `local.env` or pass `--serial`. Large prebuilt assets are pinned by SHA-256. See [docs/BUILD_ASSETS.md](docs/BUILD_ASSETS.md).
 
 ## Documentation
 
@@ -86,7 +86,7 @@ Lindfors, which WeHavePhones downloads and installs as a WoW addon.
 
 ## License
 
-The code in this fork is MIT-licensed; the original copyright and license are
+The code in this fork is MIT-licensed. The original copyright and license are
 retained in [LICENSE](LICENSE). Bundled components keep their own licenses,
 listed with their sources in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
@@ -95,14 +95,14 @@ listed with their sources in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 WeHavePhones is an independent, unofficial project. It is not affiliated with,
 endorsed, sponsored, or approved by Blizzard Entertainment, Inc., Microsoft,
 or the Winlator projects. WeHavePhones includes no Blizzard game files or
-assets; users need their own Blizzard account and game license and install the
+assets. Users need their own Blizzard account and game license and install the
 game themselves through Battle.net.
 
 Blizzard does not officially support running its games through Wine or on
 Android and offers no technical support for these setups. As with any account,
 Blizzard can suspend or close accounts at its discretion under its terms of
 service. Use WeHavePhones at your own risk.
-WeHavePhones never asks for, stores or types your Battle.net credentials; you
+WeHavePhones never asks for, stores or types your Battle.net credentials. You
 sign in inside Battle.net itself.
 
 World of Warcraft, Warcraft, Battle.net and Blizzard Entertainment are

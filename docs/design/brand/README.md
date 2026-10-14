@@ -4,8 +4,8 @@ The blue flip-phone logo and landscape menus were approved on 2026-10-03.
 [flip-phone.svg](flip-phone.svg) is the production vector of that direction.
 
 The app uses a navy shell, silver LCD bezels, green display surfaces, raised
-blue primary keys, and silver secondary keys. Pixel headings use Tiny5;
-body text and controls use Android sans-serif. Status is expressed with words
+blue primary keys, and silver secondary keys. Pixel headings use Tiny5.
+Body text and controls use Android sans-serif. Status is expressed with words
 and icons as well as color. Long menus scroll, including with larger text.
 The decorative mock battery, Wi-Fi, and clock indicators are omitted because
 the app does not provide that device-status strip.
@@ -31,6 +31,6 @@ after the deployment helper succeeds. Its runner is in the `wehavephonesDebug`
 source set and is excluded from release builds. It renders actual launcher,
 add-on and runtime screens and captures the launch-overlay resource without
 launching Wine. It never marks first-time setup complete or populates game/
-account fixtures. Screenshots are local, gitignored `out/phone-ui/` artifacts;
-review them for clipping and contrast. The host refuses to run over a live
+account fixtures. Screenshots are local, gitignored `out/phone-ui/` artifacts.
+Review them for clipping and contrast. The host refuses to run over a live
 Wine/game session.

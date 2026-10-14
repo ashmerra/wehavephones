@@ -2,7 +2,7 @@
 
 A single-page, buildless site for GitHub Pages or another static host. All
 assets and the Geist font are served locally. Project and download links point
-to GitHub; the gameplay demo links to the video from the project README.
+to GitHub. The gameplay demo links to the video from the project README.
 
 The public site is https://wehavephones.com/ (the GitHub Pages address
 redirects there).
@@ -28,10 +28,10 @@ GitHub's API is unavailable. Update that fallback when publishing a new release.
 
 - `index.html` carries the canonical URL, Open Graph and Twitter card tags, and
   JSON-LD (`SoftwareApplication`, `VideoObject`, `FAQPage`, `WebSite`). The
-  `FAQPage` answers must match the visible FAQ text; edit both together.
+  `FAQPage` answers must match the visible FAQ text. Edit both together.
 - The FAQ and `llms.txt` repeat facts from the project README. Update them when
   the requirements or the release signing certificate change.
-- `robots.txt` points to `sitemap.xml`; bump its `lastmod` when page content
+- `robots.txt` points to `sitemap.xml`. Bump its `lastmod` when page content
   changes. `404.html` is GitHub Pages' not-found page and uses root-relative
   paths.
 - `1016b5c9fd1ab99d8004bb7666047ff2.txt` is the public IndexNow key, which lets
@@ -47,7 +47,7 @@ The website follows the local taste skill with `DESIGN_VARIANCE: 6`,
 simple static hosting, self-hosted Geist, the existing blue brand, real gameplay
 imagery, and a single radius scale. Light and dark themes follow the system
 preference until the visitor chooses a theme. Entry motion establishes the
-reading order; hover motion provides feedback. Reduced motion disables both.
+reading order. Hover motion provides feedback. Reduced motion disables both.
 
 `assets/gameplay-60s.jpg` is a frame at 1:00 from the project's own YouTube demo,
 chosen to show the whole screen without a hand covering the gameplay.

@@ -22,7 +22,7 @@
     <string name="wehavephones_import_existing">This container already has a World of Warcraft folder. Import will not replace it. Use another container to import a separate installation.</string>
     <string name="wehavephones_import_source_changed">The source files changed during import. Close Battle.net on your PC, finish the transfer to Downloads, then try again.</string>
     <string name="wehavephones_import_cancelled">Import cancelled. Your files in Downloads are unchanged.</string>
-    <string name="wehavephones_import_no_space">Import needs %1$s of free space; %2$s is available. Free some space and try again.</string>
+    <string name="wehavephones_import_no_space">Import needs %1$s of free space and %2$s is available. Free some space and try again.</string>
     <string name="wehavephones_import_copy_failed">Could not finish importing. Check storage access and free space, then try again. Your files in Downloads are unchanged.</string>
     <string name="wehavephones_import_wait">Wait for the WoW import to finish, or cancel it in Setup.</string>
     <string name="wehavephones_addons">Add-ons</string>
@@ -36,8 +36,8 @@
     <string name="wehavephones_game_not_installed_short">Not installed</string>
     <string name="wehavephones_install">Install</string>
     <string name="wehavephones_install_starting">Opening Battle.net to install %1$s\u2026</string>
-    <string name="wehavephones_install_sent">Battle.net is installing %1$s. Confirm the location in the Battle.net window; it then appears here as installed.</string>
-    <string name="wehavephones_install_unknown_id">Battle.net did not report an id for %1$s; install it from Battle.net\'s Game Version menu.</string>
+    <string name="wehavephones_install_sent">Battle.net is installing %1$s. Confirm the location in the Battle.net window. It then appears here as installed.</string>
+    <string name="wehavephones_install_unknown_id">Battle.net did not report an id for %1$s. Install it from Battle.net\'s Game Version menu.</string>
     <string name="wehavephones_products_empty">No World of Warcraft game detected yet. Install one through Battle.net (choose it in the Game Version menu), then come back.</string>
 
     <string name="wehavephones_finish_setup">Finish setup</string>
@@ -100,7 +100,7 @@
     <string name="wehavephones_setup_steps">Individual steps</string>
     <string name="wehavephones_setup_log_title">Progress</string>
     <string name="wehavephones_setup_system_files_ok">System files are already installed.</string>
-    <string name="wehavephones_setup_system_files_wait">System files installation started; wait for it to finish, then run setup again.</string>
+    <string name="wehavephones_setup_system_files_wait">System files installation started. Wait for it to finish, then run setup again.</string>
     <string name="wehavephones_setup_container_ok">Container reused: %1$s</string>
     <string name="wehavephones_setup_container_created">Container created: %1$s</string>
     <string name="wehavephones_setup_profile_ok">Runtime profile applied.</string>
@@ -110,7 +110,7 @@
     <string name="wehavephones_setup_bnet_launching">Launching the Battle.net installer.</string>
     <string name="wehavephones_setup_running">Running first-run setup...</string>
     <string name="wehavephones_setup_done">First-run setup finished.</string>
-    <string name="wehavephones_setup_wine_downloading">Downloading Wine %1$s (%2$s) and installing it; this takes a few minutes...</string>
+    <string name="wehavephones_setup_wine_downloading">Downloading Wine %1$s (%2$s) and installing it. This takes a few minutes...</string>
     <string name="wehavephones_setup_wine_installed">Wine %1$s installed.</string>
     <string name="wehavephones_error_prefix">ERROR: </string>
     <string name="wehavephones_setup_shortcuts_failed">Could not create launcher shortcuts</string>
@@ -125,7 +125,7 @@
     <string name="wehavephones_settings_resolution_hint">The game starts at 1024x576 to leave memory for WoW. Higher resolutions, up to the native one of this screen, look sharper but use more memory. Applies at the next Play.</string>
     <string name="wehavephones_settings_resolution_default">%1$s (default)</string>
     <string name="wehavephones_settings_resolution_native">%1$s (native)</string>
-    <string name="wehavephones_memory_launcher_closed">Closed Battle.net and helper processes (%1$d) to free memory; World of Warcraft keeps running.</string>
+    <string name="wehavephones_memory_launcher_closed">Closed Battle.net and helper processes (%1$d) to free memory. World of Warcraft keeps running.</string>
     <string name="wehavephones_settings_saved">Setting saved.</string>
     <string name="wehavephones_settings_container_title">Active container</string>
     <string name="wehavephones_settings_container_entry">%1$s (#%2$d)</string>
@@ -160,7 +160,7 @@
     <string name="wehavephones_driver_downloading">Downloading %1$s...</string>
     <string name="wehavephones_driver_saved">%1$s will be used the next time the game starts.</string>
     <string name="wehavephones_driver_failed">Could not download %1$s: %2$s</string>
-    <string name="wehavephones_diag_device_hint">The report holds your phone model, GPU and graphics driver; no accounts or serial numbers.</string>
+    <string name="wehavephones_diag_device_hint">The report holds your phone model, GPU and graphics driver but no accounts or serial numbers.</string>
     <string name="wehavephones_diag_memory_title">Memory panel</string>
     <string name="wehavephones_diag_memory_save">Save report</string>
     <string name="wehavephones_diag_memory_saved">Memory report saved: %1$s</string>
@@ -241,7 +241,7 @@
     <string name="wehavephones_addons_wago_token">Wago API token (optional, paid tier)</string>
     <string name="wehavephones_addons_github_pat">GitHub token (optional, raises rate limit)</string>
     <string name="wehavephones_addons_key_hint">Paste key</string>
-    <string name="wehavephones_addons_key_configured">Key configured; paste to replace</string>
+    <string name="wehavephones_addons_key_configured">Key configured. Paste to replace</string>
     <string name="wehavephones_addons_save_key">Save</string>
     <string name="wehavephones_addons_test_key">Test</string>
     <string name="wehavephones_addons_clear_key">Clear</string>
@@ -298,9 +298,9 @@
     <string name="wehavephones_launch_updating_progress">Updating World of Warcraft… %1$d%%</string>
     <string name="wehavephones_launch_launching">Launching World of Warcraft (%1$s)…</string>
     <string name="wehavephones_launch_running">World of Warcraft is running (%1$s).</string>
-    <string name="wehavephones_launch_restarting_bnet">Battle.net stopped responding; restarting it…</string>
-    <string name="wehavephones_launch_running_launcher_exited">World of Warcraft is running (%1$s); Battle.net closed itself.</string>
-    <string name="wehavephones_launch_running_reaped">World of Warcraft is running (%1$s); closed %2$d launcher process(es) to free memory.</string>
+    <string name="wehavephones_launch_restarting_bnet">Battle.net stopped responding. Restarting it…</string>
+    <string name="wehavephones_launch_running_launcher_exited">World of Warcraft is running (%1$s). Battle.net closed itself.</string>
+    <string name="wehavephones_launch_running_reaped">World of Warcraft is running (%1$s). Closed %2$d launcher process(es) to free memory.</string>
     <string name="wehavephones_launch_already_running">World of Warcraft is already running.</string>
     <string name="wehavephones_launch_in_progress">A launch is already in progress.</string>
     <string name="wehavephones_launch_no_plan">The bundled launch table could not be read.</string>
@@ -352,7 +352,7 @@
         <item>Lower game resolutions in Settings leave more memory for WoW.</item>
         <item>Diagnostics in the menu shows memory, the runtime and the Wine logs.</item>
     </string-array>
-    <string name="about_identity_html" translatable="false"><![CDATA[WeHavePhones: World of Warcraft on Android and Wine. Unofficial; not affiliated with Blizzard.<br />
+    <string name="about_identity_html" translatable="false"><![CDATA[WeHavePhones: World of Warcraft on Android and Wine. Unofficial. Not affiliated with Blizzard.<br />
 Source code and issues: <a href="https://github.com/ashmerra/wehavephones">github.com/ashmerra/wehavephones</a>]]></string>
     <string name="about_credits_html" translatable="false"><![CDATA[
 Based on <a href="https://github.com/FrontMage/winlator-llm">Winlator LLM by FrontMage</a>,<br />
@@ -364,7 +364,7 @@ Android: AndroidX, Material Components, zstd-jni, XZ for Java, Apache Commons Co
 Add-ons: <a href="https://github.com/seblindfors/ConsolePort">ConsolePort by seblindfors</a>.<br />
 Design: Tiny5, Android sans-serif, Phosphor icons.<br /><br />
 Thanks to all upstream contributors. Full recorded notices and license texts are available below.<br />
-WeHavePhones is an independent, unofficial project. It is not affiliated with, endorsed, sponsored, or approved by Blizzard Entertainment, Inc., Microsoft, the Winlator projects, or Qualcomm. It includes no Blizzard game files or assets; you need your own Blizzard account and game license.<br /><br />
+WeHavePhones is an independent, unofficial project. It is not affiliated with, endorsed, sponsored, or approved by Blizzard Entertainment, Inc., Microsoft, the Winlator projects, or Qualcomm. It includes no Blizzard game files or assets. You need your own Blizzard account and game license.<br /><br />
 World of Warcraft, Warcraft, Battle.net and Blizzard Entertainment are trademarks or registered trademarks of Blizzard Entertainment, Inc. in the U.S. and/or other countries. All other trademarks are the property of their respective owners.
     ]]></string>
     <string name="wehavephones_update_title">App update</string>
