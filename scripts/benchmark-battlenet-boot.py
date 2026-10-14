@@ -30,10 +30,19 @@ CANDIDATES = {
     'baseline': {},
     'split-locks': {'FEX_STRICTINPROCESSSPLITLOCKS': '1'},
     'full-smc': {'FEX_SMCCHECKS': 'full'},
+    'no-smc': {'FEX_SMCCHECKS': 'none'},
+    'no-tso': {'FEX_TSOENABLED': '0'},
+    'no-vector-tso': {'FEX_VECTORTSOENABLED': '0'},
+    'no-memcpy-tso': {'FEX_MEMCPYSETTSOENABLED': '0'},
+    'reduced-x87': {'FEX_X87REDUCEDPRECISION': '1'},
     'small-blocks': {'FEX_MAXINST': '500'},
     'multiblock': {'FEX_MULTIBLOCK': '1'},
 }
 OWN_SESSION = False
+
+
+def trial_configurations(configurations, attempt, alternate_order):
+    return list(reversed(configurations)) if alternate_order and attempt % 2 == 0 else list(configurations)
 
 
 def shell(serial, command, timeout=30):
@@ -52,8 +61,15 @@ def private(serial, command, data=None):
 
 
 def processes(serial):
-    out = private(serial, 'ps -o PID,PPID,COMM,ARGS -u "$(id -u)"')
-    return [line for line in out.splitlines()[1:] if line.strip()]
+    out = private(serial, 'ps -o PID,PPID,STAT,COMM,ARGS -u "$(id -u)"')
+    live = []
+    for line in out.splitlines()[1:]:
+        fields = line.split(None, 4)
+        # Android can retain reaped Wine service zombies under init. They have
+        # no running session to preserve and cannot be killed again.
+        if len(fields) >= 4 and not fields[2].startswith('Z'):
+            live.append(' '.join(fields[:2] + fields[3:]))
+    return live
 
 
 def game_running(lines):
@@ -247,6 +263,7 @@ def run_attempt(args, serial, name, shortcut, original, label):
     while temperature(serial) > args.max_temperature:
         if time.monotonic() >= cooling_deadline:
             raise RuntimeError('Phone did not cool to configured temperature; comparison stopped')
+        ensure_unlocked(serial)
         print(name + ': cooling', flush=True)
         time.sleep(30)
     if runtime_running(processes(serial)):
@@ -339,6 +356,8 @@ def main():
     parser.add_argument('--container', type=int, default=1)
     parser.add_argument('--runs', type=int, default=5)
     parser.add_argument('--configurations', nargs='+', choices=CANDIDATES, default=['baseline'])
+    parser.add_argument('--alternate-order', action='store_true',
+                        help='Reverse configuration order every second round to balance sequence effects')
     parser.add_argument('--output', type=pathlib.Path, required=True)
     parser.add_argument('--window', type=float, default=195)
     parser.add_argument('--interval', type=float, default=1)
@@ -366,13 +385,14 @@ def main():
         'app_commit': subprocess.check_output(['git', '-C', str(ROOT), 'rev-parse', 'HEAD'], text=True).strip(),
         'shortcut_sha256': hashlib.sha256(original).hexdigest(),
         'configurations': args.configurations, 'runs': args.runs,
+        'alternate_order': args.alternate_order,
         'definition': 'First observed Battle.net.exe to second consecutive blue Play frame with white label glyphs; upper screenshot timestamp',
         'game_launch_validation': 'Excluded by user: Battle.net boot only'}, indent=2) + '\n')
     results = []
     try:
         # Interleave conditions to reduce thermal/time/network drift.
         for attempt in range(1, args.runs + 1):
-            for label in args.configurations:
+            for label in trial_configurations(args.configurations, attempt, args.alternate_order):
                 result = run_attempt(args, serial, '%s-%02d' % (label, attempt), shortcut, original, label)
                 results.append(result)
                 (args.output / 'results.json').write_text(json.dumps(results, indent=2) + '\n')
