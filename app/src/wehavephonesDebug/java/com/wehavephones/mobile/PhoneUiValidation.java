@@ -61,7 +61,7 @@ public final class PhoneUiValidation extends Instrumentation {
             capture("settings");
             show(new DiagnosticsFragment()); capture("diagnostics");
             // Render the actual overlay resource without starting a game session.
-            runOnMainSync(() -> {
+            onMain(() -> {
                 FrameLayout host = launcher.findViewById(android.R.id.content);
                 FrameLayout overlay = new FrameLayout(launcher);
                 LayoutInflater.from(launcher).inflate(R.layout.wehavephones_launch_overlay, overlay, true);
@@ -75,7 +75,7 @@ public final class PhoneUiValidation extends Instrumentation {
                 host.addView(overlay, new FrameLayout.LayoutParams(-1, -1));
             });
             capture("launch-overlay");
-            runOnMainSync(() -> {
+            onMain(() -> {
                 FrameLayout host = launcher.findViewById(android.R.id.content);
                 host.removeView(host.findViewWithTag("validation-overlay"));
                 ContentDialog dialog = new ContentDialog(launcher);
@@ -90,27 +90,27 @@ public final class PhoneUiValidation extends Instrumentation {
             other = startActivitySync(new Intent(getTargetContext(), AddonsActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
             capture("addons");
             final AddonsActivity addons = (AddonsActivity)other;
-            runOnMainSync(() -> addons.getSupportFragmentManager().beginTransaction()
+            onMain(() -> addons.getSupportFragmentManager().beginTransaction()
                     .replace(R.id.FLAddonsScreen, new AddonBrowseFragment()).commitNow());
             capture("addons-browse");
-            runOnMainSync(() -> addons.getSupportFragmentManager().beginTransaction()
+            onMain(() -> addons.getSupportFragmentManager().beginTransaction()
                     .replace(R.id.FLAddonsScreen, new AddonSettingsFragment()).commitNow());
             capture("addon-providers");
-            runOnMainSync(other::finish); other = null;
+            onMain(other::finish); other = null;
             // edit_input_controls avoids MainActivity's automatic imagefs installer.
             other = startActivitySync(new Intent(getTargetContext(), MainActivity.class)
                     .putExtra("edit_input_controls", true).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
             capture("input-controls");
             final MainActivity runtime = (MainActivity)other;
-            runOnMainSync(() -> runtime.onNavigationItemSelected(((com.google.android.material.navigation.NavigationView)
+            onMain(() -> runtime.onNavigationItemSelected(((com.google.android.material.navigation.NavigationView)
                     runtime.findViewById(R.id.NavigationView)).getMenu().findItem(R.id.main_menu_containers)));
             capture("containers");
-            runOnMainSync(() -> ((androidx.drawerlayout.widget.DrawerLayout)runtime.findViewById(R.id.DrawerLayout))
+            onMain(() -> ((androidx.drawerlayout.widget.DrawerLayout)runtime.findViewById(R.id.DrawerLayout))
                     .openDrawer(androidx.core.view.GravityCompat.START, false));
             capture("runtime-drawer");
-            runOnMainSync(other::finish); other = null;
+            onMain(other::finish); other = null;
             // App-local font scale only; restore it in finally. Device settings are untouched.
-            runOnMainSync(() -> {
+            onMain(() -> {
                 Configuration large = new Configuration(original); large.fontScale = 1.3f;
                 launcher.getResources().updateConfiguration(large, launcher.getResources().getDisplayMetrics());
             });
@@ -121,13 +121,29 @@ public final class PhoneUiValidation extends Instrumentation {
             finish(Activity.RESULT_OK, result);
         } catch (Throwable failure) {
             result.putString("stream", "FAIL: " + android.util.Log.getStackTraceString(failure));
-            cleanup();
+            try { cleanup(); } catch (Throwable ignored) { /* Report the original failure. */ }
             finish(Activity.RESULT_CANCELED, result);
         }
     }
 
-    private void show(Fragment fragment) {
+    /** Runs on the main thread and rethrows failures here, so they reach onStart's
+     * catch as FAIL output instead of crashing the process. */
+    private void onMain(Runnable action) {
+        Throwable[] failure = new Throwable[1];
         runOnMainSync(() -> {
+            try { action.run(); } catch (Throwable thrown) { failure[0] = thrown; }
+        });
+        if (failure[0] instanceof RuntimeException) throw (RuntimeException)failure[0];
+        if (failure[0] instanceof Error) throw (Error)failure[0];
+    }
+
+    private String name(int id) {
+        try { return launcher.getResources().getResourceEntryName(id); }
+        catch (RuntimeException unknown) { return String.valueOf(id); }
+    }
+
+    private void show(Fragment fragment) {
+        onMain(() -> {
             launcher.findViewById(R.id.WeHavePhonesRail).setVisibility(View.VISIBLE);
             launcher.getSupportFragmentManager().beginTransaction().replace(R.id.FLWeHavePhonesScreen, fragment).commitNow();
         });
@@ -135,19 +151,19 @@ public final class PhoneUiValidation extends Instrumentation {
     }
 
     private void require(int id) {
-        runOnMainSync(() -> {
+        onMain(() -> {
             View control = launcher.findViewById(id);
-            if (control == null || control.getVisibility() != View.VISIBLE) throw new AssertionError("Missing native control " + id);
+            if (control == null || control.getVisibility() != View.VISIBLE) throw new AssertionError("Missing native control " + name(id));
         });
     }
 
     private void fullyVisible(int id) {
         waitForIdleSync(); SystemClock.sleep(300);
-        runOnMainSync(() -> {
+        onMain(() -> {
             View view = launcher.findViewById(id);
             android.graphics.Rect visible = new android.graphics.Rect();
             if (!view.getGlobalVisibleRect(visible) || visible.height() < view.getHeight())
-                throw new AssertionError("Main action below initial viewport: " + id);
+                throw new AssertionError("Main action below initial viewport: " + name(id));
         });
     }
 
@@ -162,7 +178,7 @@ public final class PhoneUiValidation extends Instrumentation {
     }
 
     private void cleanup() {
-        runOnMainSync(() -> {
+        onMain(() -> {
             if (other != null) other.finish();
             if (launcher != null) {
                 if (original != null) launcher.getResources().updateConfiguration(original, launcher.getResources().getDisplayMetrics());
