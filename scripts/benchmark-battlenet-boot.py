@@ -41,6 +41,7 @@ CANDIDATES = {
     'multiblock': {'FEX_MULTIBLOCK': '1'},
 }
 OWN_SESSION = False
+PRESERVE_FAILED_SESSION = False
 
 
 def trial_configurations(configurations, attempt, alternate_order):
@@ -74,7 +75,7 @@ def processes(serial):
         # Android can retain reaped Wine service zombies under init. They have
         # no running session to preserve and cannot be killed again.
         if len(fields) >= 4 and not fields[2].startswith('Z'):
-            live.append(' '.join(fields[:2] + fields[3:]))
+            live.append(' '.join(fields[:2] + [fields[3].strip('[]')] + fields[4:]))
     return live
 
 
@@ -90,8 +91,13 @@ def runtime_running(lines):
 def ensure_unlocked(serial):
     shell(serial, 'input keyevent KEYCODE_WAKEUP')
     policy = shell(serial, 'dumpsys window policy')
-    if re.search(r'\bmIsShowing=true', policy):
+    if re.search(r'\b(?:mIsShowing|showing|mShowingLockscreen)=true\b', policy):
         raise RuntimeError('Phone keyguard is showing; unlock the phone before testing')
+
+
+def touch_protection_visible(windows):
+    return any('IgniteTouchProtectionPresenter' in block and 'isVisible=true' in block
+               for block in re.split(r'(?m)^  Window #', windows))
 
 
 def temperature(serial):
@@ -113,6 +119,11 @@ def stop_owned_session(serial):
             return
         time.sleep(.25)
     raise RuntimeError('Previous test session has not exited; comparison stopped')
+
+
+def cleanup_owned_session(serial):
+    if OWN_SESSION and not PRESERVE_FAILED_SESSION and not game_running(processes(serial)):
+        stop_owned_session(serial)
 
 
 def set_override(original, values):
@@ -256,7 +267,7 @@ def launcher_state(serial, container, tap_epoch=None):
 
 
 def run_attempt(args, serial, name, shortcut, original, label):
-    global OWN_SESSION
+    global OWN_SESSION, PRESERVE_FAILED_SESSION
     target = args.output / name
     target.mkdir()
     if runtime_running(processes(serial)):
@@ -340,6 +351,9 @@ def run_attempt(args, serial, name, shortcut, original, label):
             break
         previous = painted
         if time.monotonic() >= next_report:
+            if touch_protection_visible(shell(serial, 'dumpsys window windows')):
+                result['outcome'] = 'screen-obstructed'
+                break
             print('%s: %.0fs, %d client processes' % (name, time.monotonic() - start, len(clients)), flush=True)
             next_report += 30
         time.sleep(args.interval)
@@ -372,7 +386,10 @@ def run_attempt(args, serial, name, shortcut, original, label):
     (target / 'result.json').write_text(json.dumps(result, indent=2) + '\n')
     print(json.dumps({key: result[key] for key in ('name', 'outcome', 'temperature_start_c', 'temperature_end_c')}
                      | {'boot_to_play_s': result.get('boot_to_play_s')}), flush=True)
-    stop_owned_session(serial)
+    if args.keep_failed_session and result['outcome'] != 'play-rendered':
+        PRESERVE_FAILED_SESSION = True
+    else:
+        stop_owned_session(serial)
     return result
 
 
@@ -384,6 +401,8 @@ def main():
     parser.add_argument('--configurations', nargs='+', choices=CANDIDATES, default=['baseline'])
     parser.add_argument('--alternate-order', action='store_true',
                         help='Reverse configuration order every second round to balance sequence effects')
+    parser.add_argument('--keep-failed-session', action='store_true',
+                        help='Stop the comparison and leave a timed-out test session open for diagnosis')
     parser.add_argument('--output', type=pathlib.Path, required=True)
     parser.add_argument('--window', type=float, default=195)
     parser.add_argument('--interval', type=float, default=1)
@@ -423,6 +442,8 @@ def main():
                 result = run_attempt(args, serial, '%s-%02d' % (label, attempt), shortcut, original, label)
                 results.append(result)
                 (args.output / 'results.json').write_text(json.dumps(results, indent=2) + '\n')
+                if PRESERVE_FAILED_SESSION:
+                    raise RuntimeError('Failed test session preserved for diagnostics. Original shortcut will be restored.')
                 versions = result['battlenet_versions']
                 if versions:
                     if expected_versions is not None and versions != expected_versions:
@@ -430,8 +451,7 @@ def main():
                     expected_versions = versions
     finally:
         # Never close a game started by the owner while the benchmark was running.
-        if OWN_SESSION and not game_running(processes(serial)):
-            stop_owned_session(serial)
+        cleanup_owned_session(serial)
         private(serial, 'cat > ' + shlex.quote(shortcut), original)
         restored = private(serial, 'cat ' + shlex.quote(shortcut)).encode()
         if restored != original:

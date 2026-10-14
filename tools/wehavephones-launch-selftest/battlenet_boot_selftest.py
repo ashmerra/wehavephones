@@ -27,7 +27,7 @@ assert not boot.runtime_running(['1 0 com.wehavephones.dev com.wehavephones.dev'
 with patch.object(boot, 'private', return_value=(
         'PID PPID STAT COMM ARGS\n'
         '10 1 Zs [winedevice.exe] [winedevice.exe]\n'
-        '11 1 Sl CrBrowserMain Battle.net.exe --game=wow\n')):
+        '11 1 Sl [CrBrowserMain] Battle.net.exe --game=wow\n')):
     live = boot.processes('test-phone')
     assert live == ['11 1 CrBrowserMain Battle.net.exe --game=wow']
     assert boot.runtime_running(live)
@@ -65,6 +65,15 @@ with patch.object(boot, 'shell', side_effect=['', 'KeyguardStateMonitor\n mIsSho
         raise AssertionError('Secure keyguard must stop the benchmark')
     except RuntimeError as error:
         assert 'keyguard' in str(error)
+with patch.object(boot, 'shell', side_effect=['', 'KeyguardServiceDelegate\n showing=true']):
+    try:
+        boot.ensure_unlocked('test-phone')
+        raise AssertionError('Android 16 keyguard must stop the benchmark')
+    except RuntimeError as error:
+        assert 'keyguard' in str(error)
+assert boot.touch_protection_visible('  Window #1 IgniteTouchProtectionPresenter\n isVisible=true\n')
+assert not boot.touch_protection_visible('  Window #1 IgniteTouchProtectionPresenter\n isVisible=false\n'
+                                         '  Window #2 XServerDisplayActivity\n isVisible=true\n')
 boot.OWN_SESSION = True
 with patch.object(boot.dev, 'stop_runtime') as stop, patch.object(boot, 'processes',
         side_effect=[['1 0 wineserver wineserver'], []]), patch.object(boot.time, 'sleep') as sleep:
@@ -72,4 +81,18 @@ with patch.object(boot.dev, 'stop_runtime') as stop, patch.object(boot, 'process
     stop.assert_called_once_with('test-phone')
     sleep.assert_called_once_with(.25)
     assert not boot.OWN_SESSION
+boot.OWN_SESSION = True
+boot.PRESERVE_FAILED_SESSION = True
+with patch.object(boot, 'stop_owned_session') as stop:
+    boot.cleanup_owned_session('test-phone')
+    stop.assert_not_called()
+boot.PRESERVE_FAILED_SESSION = False
+with patch.object(boot, 'stop_owned_session') as stop, patch.object(boot, 'processes',
+        return_value=['1 0 Wow-ARM64.exe Wow-ARM64.exe']):
+    boot.cleanup_owned_session('test-phone')
+    stop.assert_not_called()
+with patch.object(boot, 'stop_owned_session') as stop, patch.object(boot, 'processes', return_value=[]):
+    boot.cleanup_owned_session('test-phone')
+    stop.assert_called_once_with('test-phone')
+boot.OWN_SESSION = False
 print('BattleNetBootSelfTest PASS: reversible overrides, live-session guards, detector, single-variable trials')
