@@ -369,8 +369,9 @@ World of Warcraft, Warcraft, Battle.net and Blizzard Entertainment are trademark
     ]]></string>
     <string name="wehavephones_update_title">App update</string>
     <string name="wehavephones_update_version">WeHavePhones %1$s</string>
-    <string name="wehavephones_update_hint">Get app updates from GitHub. Android will ask before installing. Your games and settings stay in place.</string>
     <string name="wehavephones_update_dev">App updates are available in the official release build. WeHavePhones Dev is a separate app and stays on its development build.</string>
+    <string name="wehavephones_update_card_hint">Updates from GitHub keep your games and settings.</string>
+    <string name="wehavephones_update_card_dev">The Dev app does not update itself.</string>
     <string name="wehavephones_update_automatic">Check daily when the app opens</string>
     <string name="wehavephones_update_check">Check for updates</string>
     <string name="wehavephones_update_checking">Checking GitHub for app updates…</string>

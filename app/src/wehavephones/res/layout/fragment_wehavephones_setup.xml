@@ -19,49 +19,55 @@
             android:text="@string/wehavephones_setup_short"
             android:textColor="@color/wehavephones_text_title"
             android:textSize="26sp" />
+        <!-- One slim row so Import WoW files stays visible when Setup opens. -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:orientation="vertical"
+            android:orientation="horizontal"
+            android:baselineAligned="false"
+            android:gravity="center_vertical"
             android:background="@drawable/wehavephones_card_background"
-            android:padding="12dp">
-            <TextView
-                android:id="@+id/TVAppUpdateVersion"
-                style="@style/WeHavePhonesSectionLabel"
-                android:layout_marginTop="0dp" />
-            <TextView
-                android:id="@+id/TVAppUpdateHint"
-                style="@style/WeHavePhonesHint" />
+            android:paddingLeft="12dp"
+            android:paddingRight="12dp"
+            android:paddingTop="6dp"
+            android:paddingBottom="6dp">
             <LinearLayout
-                android:layout_width="match_parent"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:baselineAligned="false"
-                android:gravity="center_vertical">
-                <CheckBox
-                    android:id="@+id/CBAutomaticAppUpdates"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/wehavephones_update_automatic" />
-                <Button
-                    android:id="@+id/BTCheckAppUpdates"
-                    style="@style/WeHavePhonesButtonOutline"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+                <TextView
+                    android:id="@+id/TVAppUpdateVersion"
+                    style="@style/WeHavePhonesSectionLabel"
                     android:layout_marginTop="0dp"
-                    android:layout_marginStart="12dp"
-                    android:minWidth="0dp"
-                    android:minHeight="48dp"
-                    android:paddingLeft="16dp"
-                    android:paddingRight="16dp"
-                    android:paddingTop="0dp"
-                    android:paddingBottom="0dp"
-                    android:gravity="center"
-                    android:singleLine="true"
-                    android:text="@string/wehavephones_update_check" />
+                    android:layout_marginBottom="2dp" />
+                <TextView
+                    android:id="@+id/TVAppUpdateHint"
+                    style="@style/WeHavePhonesHint" />
             </LinearLayout>
+            <CheckBox
+                android:id="@+id/CBAutomaticAppUpdates"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:text="@string/wehavephones_update_automatic" />
+            <Button
+                android:id="@+id/BTCheckAppUpdates"
+                style="@style/WeHavePhonesButtonOutline"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="0dp"
+                android:layout_marginStart="12dp"
+                android:minWidth="0dp"
+                android:minHeight="48dp"
+                android:paddingLeft="16dp"
+                android:paddingRight="16dp"
+                android:paddingTop="0dp"
+                android:paddingBottom="0dp"
+                android:gravity="center"
+                android:singleLine="true"
+                android:text="@string/wehavephones_update_check" />
         </LinearLayout>
         <LinearLayout
             android:layout_width="match_parent"

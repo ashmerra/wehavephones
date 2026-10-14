@@ -62,7 +62,7 @@ public class SetupFragment extends Fragment {
         AppUpdates updates = AppUpdates.get(activity);
         ((TextView)view.findViewById(R.id.TVAppUpdateVersion)).setText(getString(R.string.wehavephones_update_version, BuildConfig.VERSION_NAME));
         ((TextView)view.findViewById(R.id.TVAppUpdateHint)).setText(updates.isSupported()
-                ? R.string.wehavephones_update_hint : R.string.wehavephones_update_dev);
+                ? R.string.wehavephones_update_card_hint : R.string.wehavephones_update_card_dev);
         CheckBox automaticUpdates = view.findViewById(R.id.CBAutomaticAppUpdates);
         automaticUpdates.setChecked(updates.isSupported() && updates.isAutomatic());
         automaticUpdates.setEnabled(updates.isSupported());
