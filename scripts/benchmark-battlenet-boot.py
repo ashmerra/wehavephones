@@ -250,6 +250,12 @@ def launcher_state(serial, container, tap_epoch=None):
             elapsed = (datetime.datetime.fromisoformat(stamp[1]) - start).total_seconds()
             if 'Logged into Battle.net successfully.' in line:
                 events.append({'event': 'signed-in', 'after_log_start_s': elapsed})
+            elif 'UAuth: tassadar Login URL is empty!' in line:
+                events.append({'event': 'auth-url-missing', 'after_log_start_s': elapsed})
+            elif 'UAuth: browser error:' in line:
+                match = re.search(r'errorCode=(\d+)', line)
+                events.append({'event': 'auth-browser-error', 'after_log_start_s': elapsed,
+                               'code': int(match[1]) if match else None})
             elif 'InstallState (' in line:
                 match = re.search(r'InstallState \(([^)]+)\)', line)
                 if not match:

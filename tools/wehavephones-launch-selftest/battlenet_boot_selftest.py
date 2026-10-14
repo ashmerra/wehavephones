@@ -59,6 +59,18 @@ epoch = datetime.datetime(2026, 10, 14, 6, 18, 14, tzinfo=datetime.timezone.utc)
 assert boot.fresh_log('battle.net-20261014T061819.123456.log', epoch)
 assert not boot.fresh_log('battle.net-20261014T061500.123456.log', epoch)
 assert not boot.fresh_log('unrelated.log', epoch)
+with patch.object(boot, 'private', side_effect=[
+        'battle.net-20261014T061819.123456.log\n',
+        'I 2026-10-14 06:18:19.000000 [Main] Opening IPC shared memory. mode=server\n'
+        'E 2026-10-14 06:18:20.000000 [UnifiedAuth] UAuth: tassadar Login URL is empty!\n'
+        'E 2026-10-14 06:18:21.000000 [UnifiedAuth] UAuth: browser error: errorCode=1015\n'
+        'I 2026-10-14 06:18:22.000000 [Main] Logged into Battle.net successfully.\n']):
+    state = boot.launcher_state('test-phone', 1, epoch)
+    assert state['events'] == [
+        {'event': 'auth-url-missing', 'after_log_start_s': 1.0},
+        {'event': 'auth-browser-error', 'after_log_start_s': 2.0, 'code': 1015},
+        {'event': 'signed-in', 'after_log_start_s': 3.0},
+    ]
 with patch.object(boot, 'shell', side_effect=['', 'KeyguardStateMonitor\n mIsShowing=true']):
     try:
         boot.ensure_unlocked('test-phone')
