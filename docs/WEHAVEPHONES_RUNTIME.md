@@ -97,6 +97,11 @@ available for an explicit rollback trial.
   Shortcut environment overrides win over container values and preset defaults,
   and apply to the Wine session and its children. They are not isolated to
   Battle.net if a game is subsequently started in the same session.
+  An overnight boot screen on the S23+
+  found no speed gain from strict split locks or multiblock; `FEX_SMCCHECKS=full`
+  stalled before rendering in all five clean trials. Retain `mtrack` on this
+  setup. That screen did not reproduce the baseline's intermittent hang and
+  did not include WoW validation.
 - **Hidden batch runner.** The 32-bit hidden batch runner (`tools/wcrun`) must
   start native `cmd.exe` through `C:\windows\Sysnative` under WOW64. Otherwise
   the batch's `System32` copies land in `SysWOW64`, leaving ARM64 WoW without
