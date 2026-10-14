@@ -47,7 +47,7 @@ public class EnvVarsView extends FrameLayout {
         {"FEX_MAXINST", "NUMBER"},
         {"FEX_HOSTFEATURES", "SELECT", "enablesve", "disablesve", "enableavx", "disableavx", "off"},
         {"FEX_SMALLTSCSCALE", "CHECKBOX", "0", "1"},
-        {"FEX_SMC_CHECKS", "SELECT", "none", "mtrack", "full"},
+        {"FEX_SMCCHECKS", "SELECT", "none", "mtrack", "full"},
         {"FEX_VOLATILEMETADATA", "CHECKBOX", "0", "1"},
         {"FEX_MONOHACKS", "CHECKBOX", "0", "1"},
         {"FEX_HIDEHYPERVISORBIT", "CHECKBOX", "0", "1"},

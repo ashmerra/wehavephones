@@ -48,7 +48,7 @@ License texts: [GPL-2.0](docs/licenses/GPL-2.0.txt),
 | Component | Shipped as | License | Source |
 |---|---|---|---|
 | Box64 / WowBox64 0.3.7 | `assets/wowbox64/` | MIT, [text](docs/licenses/Box64-MIT.txt) | https://github.com/ptitSeb/box64 |
-| FEX (FEXCore 2508) | `assets/fexcore/` | MIT, [text](docs/licenses/FEX-MIT.txt) | https://github.com/FEX-Emu/FEX (tag `FEX-2508`) |
+| FEX (`FEX-2601-116-g1268a39`, asset ID `2508`) | `assets/fexcore/` | MIT, [text](docs/licenses/FEX-MIT.txt) | [FEX-Emu/FEX, revision 1268a391](https://github.com/FEX-Emu/FEX/tree/1268a3910cae02ceb1f3854b647a2397a24f7df7) |
 | DXVK 2.4.1, 2.3.1 (gplasync, arm64ec) | `assets/dxwrapper/dxvk-*.tzst` | zlib, [text](docs/licenses/DXVK-Zlib.txt) | https://github.com/doitsujin/dxvk, https://gitlab.com/Ph42oN/dxvk-gplasync |
 | DXVK 2.3.1 aarch64 DLLs (built by WeHavePhones; extracted over the default DXVK's `system32/`) | `assets/dxwrapper/aarch64/dxvk-2.3.1.tzst` | zlib, [text](docs/licenses/DXVK-Zlib.txt) | https://github.com/doitsujin/dxvk (tag `v2.3.1`, unmodified), built with [`scripts/build-arm-graphics-dlls-docker.sh`](scripts/build-arm-graphics-dlls-docker.sh) `--skip-vkd3d --package-dxvk` |
 | D8VK 1.0 | `assets/dxwrapper/d8vk-1.0.tzst` | zlib, [text](docs/licenses/D8VK-Zlib.txt) | https://github.com/AlpyneDreams/d8vk |

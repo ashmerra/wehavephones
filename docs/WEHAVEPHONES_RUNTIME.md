@@ -86,6 +86,17 @@ available for an explicit rollback trial.
   [Chromium 108's feature definition](https://chromium.googlesource.com/chromium/src/+/refs/tags/108.0.5359.125/content/public/common/content_features.cc).
 - **FEX.** The profile sets `FEX_MULTIBLOCK=0` itself: a fresh container's FEX
   preset would otherwise enable multiblock.
+  The archive's asset ID is `2508`, but both bundled bridges identify as
+  `FEX-2601-116-g1268a39` ([source revision](https://github.com/FEX-Emu/FEX/tree/1268a3910cae02ceb1f3854b647a2397a24f7df7)).
+  Use that revision when checking supported controls. In particular, code
+  modification checks use `FEX_SMCCHECKS` (`mtrack` by default, or `full`),
+  rather than `FEX_SMC_CHECKS`; `FEX_PARANOIDTSO` no longer exists in this build.
+  The standalone Battle.net and installer shortcuts use the Stability preset:
+  scalar, vector and memcpy TSO enabled, half-barrier TSO enabled, reduced x87
+  precision disabled. The one-button Play shortcut uses the container's preset.
+  Shortcut environment overrides win over container values and preset defaults,
+  and apply to the Wine session and its children. They are not isolated to
+  Battle.net if a game is subsequently started in the same session.
 - **Hidden batch runner.** The 32-bit hidden batch runner (`tools/wcrun`) must
   start native `cmd.exe` through `C:\windows\Sysnative` under WOW64. Otherwise
   the batch's `System32` copies land in `SysWOW64`, leaving ARM64 WoW without

@@ -330,7 +330,7 @@ public class GuestProgramLauncherComponent extends EnvironmentComponent {
 
         // ARM64EC/WoW64 defaults:
         // Keep compatibility with vanilla by not forcing FEX SMC policy by default.
-        // If needed, users can set FEX_SMC_CHECKS explicitly via container env vars.
+        // If needed, users can set FEX_SMCCHECKS explicitly via container env vars.
 
         // Vanilla alignment: do not force extra FEX_* defaults here.
         // Preset env vars are provided by FEXCorePresetManager and can be overridden per container.
