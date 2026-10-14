@@ -2,6 +2,7 @@ package com.wehavephones.mobile;
 
 import android.app.AlertDialog;
 import android.os.Bundle;
+import android.os.Environment;
 import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -48,6 +49,17 @@ public class WeHavePhonesSettingsFragment extends Fragment {
         keepRunning.setOnCheckedChangeListener((button, checked) -> {
             WeHavePhonesConfig.setKeepRunningInBackground(activity, checked);
             activity.updateStageStatus(getString(R.string.wehavephones_settings_saved), false);
+        });
+
+        CheckBox startInputBridge = view.findViewById(R.id.CBStartInputBridge);
+        startInputBridge.setChecked(WeHavePhonesConfig.isStartInputBridge(activity));
+        startInputBridge.setOnCheckedChangeListener((button, checked) -> {
+            WeHavePhonesConfig.setStartInputBridge(activity, checked);
+            boolean found = InputBridgeCompanion.hostExe(
+                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)).isFile();
+            activity.updateStageStatus(getString(checked && !found
+                    ? R.string.wehavephones_settings_input_bridge_missing
+                    : R.string.wehavephones_settings_saved), false);
         });
 
         CheckBox performanceOverlay = view.findViewById(R.id.CBPerformanceOverlay);

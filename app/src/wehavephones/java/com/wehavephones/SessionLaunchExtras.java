@@ -1,9 +1,12 @@
 package com.wehavephones;
 
+import android.os.Environment;
 import android.util.Log;
 
 import android.view.ViewGroup;
 
+import com.wehavephones.container.Container;
+import com.wehavephones.mobile.InputBridgeCompanion;
 import com.wehavephones.mobile.LaunchOverlayController;
 import com.wehavephones.mobile.WeHavePhonesConfig;
 import com.wehavephones.mobile.WeHavePhonesLaunchPlan;
@@ -20,7 +23,8 @@ import java.io.File;
  * Battle.net or WoW opens. Also decides whether the performance overlay
  * (Settings > Diagnostics) is shown, whether the game keeps running when the
  * user switches apps, and puts Play's launch overlay over the session in place
- * of the "Starting up" dialog.
+ * of the "Starting up" dialog. Optionally starts the user's own Input Bridge
+ * helper (Settings > Start Input Bridge).
  */
 public final class SessionLaunchExtras {
     private static final String ASSET = "wehavephones/wcrun.exe";
@@ -52,6 +56,21 @@ public final class SessionLaunchExtras {
             Log.w("WeHavePhones", "Failed to install " + WeHavePhonesLaunchPlan.HIDDEN_RUNNER_NAME, e);
             return null;
         }
+    }
+
+    /**
+     * Settings > Start Input Bridge: guest path of the ib.exe that
+     * the user copied with the Input Bridge app, or null to start nothing.
+     */
+    public static String companionProgram(XServerDisplayActivity activity) {
+        if (!WeHavePhonesConfig.isStartInputBridge(activity)) return null;
+        File exe = InputBridgeCompanion.hostExe(
+                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS));
+        Container container = activity.getContainer();
+        String guest = exe.isFile() && container != null
+                ? InputBridgeCompanion.guestPath(exe, container.drivesIterator()) : null;
+        if (guest == null) Log.i("WeHavePhones", "Input Bridge not started: " + exe + " is missing or not on a drive");
+        return guest;
     }
 
     /** Settings > Diagnostics: FPS, frame time and memory over the game. */

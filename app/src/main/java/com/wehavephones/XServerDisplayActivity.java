@@ -857,6 +857,8 @@ import java.util.concurrent.Executors;
             winHandler.setFakeGamepad(FakeGamepadWriter.create(new File(imageFs.getRootDir(), "dev/input")));
         }
         winHandler.start();
+        String companionProgram = SessionLaunchExtras.companionProgram(this);
+        if (companionProgram != null) winHandler.exec(companionProgram);
         if (wineRequestHandler == null) wineRequestHandler = new WineRequestHandler(this);
         wineRequestHandler.start();
         queueWinHandlerLiteStart();

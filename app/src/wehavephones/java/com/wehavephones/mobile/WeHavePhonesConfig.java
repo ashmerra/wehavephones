@@ -19,6 +19,7 @@ public final class WeHavePhonesConfig {
     public static final String KEY_PERFORMANCE_OVERLAY = "wehavephones_performance_overlay";
     public static final String KEY_DISABLE_VIRTUAL_GAMEPAD = "wehavephones_disable_virtual_gamepad";
     public static final String KEY_KEEP_RUNNING_IN_BACKGROUND = "wehavephones_keep_running_in_background";
+    public static final String KEY_START_INPUT_BRIDGE = "wehavephones_start_input_bridge";
 
     private WeHavePhonesConfig() {}
 
@@ -136,5 +137,14 @@ public final class WeHavePhonesConfig {
 
     public static void setKeepRunningInBackground(Context context, boolean enabled) {
         prefs(context).edit().putBoolean(KEY_KEEP_RUNNING_IN_BACKGROUND, enabled).apply();
+    }
+
+    /** Start the user's own Input Bridge helper (InputBridgeCompanion) with each session (default off). */
+    public static boolean isStartInputBridge(Context context) {
+        return prefs(context).getBoolean(KEY_START_INPUT_BRIDGE, false);
+    }
+
+    public static void setStartInputBridge(Context context, boolean enabled) {
+        prefs(context).edit().putBoolean(KEY_START_INPUT_BRIDGE, enabled).apply();
     }
 }

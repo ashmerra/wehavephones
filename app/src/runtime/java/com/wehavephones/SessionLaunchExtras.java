@@ -20,6 +20,11 @@ public final class SessionLaunchExtras {
         return null;
     }
 
+    /** Guest program started with the session, or null; this flavor starts none. */
+    public static String companionProgram(XServerDisplayActivity activity) {
+        return null;
+    }
+
     /** Show the performance overlay regardless of the container's Show FPS flag. */
     public static boolean isPerformanceOverlayEnabled(XServerDisplayActivity activity) {
         return false;

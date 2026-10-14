@@ -15,6 +15,8 @@
 #      and the Logs/ marker the launch overlay waits for.
 #   1d/1e. Java (GlueInputBridgeSelfTest, WowExitDetectorSelfTest): the
 #      pre-game controller bridge and the return to the menu when WoW closes.
+#   1i. Java (InputBridgeCompanionSelfTest): guest path of the user's own
+#      Input Bridge ib.exe through the container drive mappings.
 #   2. Python (tools/wehavephones-launch-selftest/reconnect_selftest.py): the
 #      reconnect/detached-run helper scripts/wehavephones-device.py against a fake
 #      adb shim (backoff, give-up deadline, USB preference, drop + resume, the
@@ -212,6 +214,20 @@ if [[ -n "$JAVAC" && -n "$JAVA" ]]; then
     "$JAVA" -cp "$WORK_DIR" com.wehavephones.mobile.WowFileImporterSelfTest || fail "WowFileImporterSelfTest"
   else
     fail "javac failed for WowFileImporterSelfTest"
+  fi
+  rm -rf "$WORK_DIR"
+fi
+
+echo
+echo "[test-wehavephones-launch] == 1i. Input Bridge helper path (user-supplied ib.exe) =="
+if [[ -n "$JAVAC" && -n "$JAVA" ]]; then
+  rm -rf "$WORK_DIR"
+  mkdir -p "$WORK_DIR"
+  if "$JAVAC" -encoding UTF-8 -d "$WORK_DIR" "$SRC_DIR/InputBridgeCompanion.java" \
+      "$SELF_TEST_DIR/InputBridgeCompanionSelfTest.java"; then
+    "$JAVA" -cp "$WORK_DIR" com.wehavephones.mobile.InputBridgeCompanionSelfTest || fail "InputBridgeCompanionSelfTest"
+  else
+    fail "javac failed for InputBridgeCompanionSelfTest"
   fi
   rm -rf "$WORK_DIR"
 fi

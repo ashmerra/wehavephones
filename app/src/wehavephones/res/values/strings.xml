@@ -321,6 +321,9 @@
     <string name="wehavephones_settings_diagnostics_title">Diagnostics</string>
     <string name="wehavephones_settings_performance_overlay">Show performance overlay</string>
     <string name="wehavephones_settings_performance_overlay_hint">Takes effect the next time the game starts.</string>
+    <string name="wehavephones_settings_input_bridge">Start Input Bridge</string>
+    <string name="wehavephones_settings_input_bridge_hint">If installed on this device</string>
+    <string name="wehavephones_settings_input_bridge_missing">Saved, but ib.exe is not in Download/InputBridge/Installer yet. Copy the installer from the Input Bridge app first.</string>
     <string name="wehavephones_exit_returning">World of Warcraft closed. Returning to the menu...</string>
 
     <!-- Launch overlay over the game session (LaunchOverlayView). -->
