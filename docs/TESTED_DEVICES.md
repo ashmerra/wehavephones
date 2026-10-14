@@ -16,6 +16,7 @@ drivers are not filled in from today's defaults.
 | OnePlus 15 (CPH2747, Adreno 840, Android 16) | Retail | **System / phone's own driver** | In-world gameplay; reporter's preferred driver. 40 FPS cap, native container resolution, 50% render scale; frame drops remain. Exact successful app/game build not stated. | XMCaster: [in-world report](https://github.com/ashmerra/wehavephones/issues/13#issuecomment-6122955964), [explicit system-driver clarification](https://github.com/ashmerra/wehavephones/issues/13#issuecomment-6134066972), Oct 12 |
 | OnePlus 15 (CPH2747, Adreno 840, Android 16) | Retail | **Qualcomm 842.6** (`qualcomm-842.6`) | Playable in-world; some frame drops even at lowest settings. Exact successful app/game build not stated. | XMCaster: [driver test and screenshot](https://github.com/ashmerra/wehavephones/issues/13#issuecomment-6120055501), Oct 12 |
 | Lenovo TB390FU (Adreno 825, Android 16) | Classic Era | **Qualcomm 863.1** (`qualcomm-863.1`) | Reporter confirms Classic works. Successful app version and exact game build not stated; original failing report used app 0.0.2. SD-card installation remains a separate problem. | ondrejfriedel: [success confirmation](https://github.com/ashmerra/wehavephones/issues/17#issuecomment-6140277261), [device identity and edition](https://github.com/ashmerra/wehavephones/issues/17), Oct 13 |
+| Xiaomi Pad 8 Pro (model code, GPU and Android version not stated) | Retail | **System / phone's own driver** | Running at 1920×1080, 59–60 FPS; reporter says the system driver is the only one that works. App version, game build and gameplay stage not stated. | NyXXXoR: [r/winlator comment](https://www.reddit.com/r/winlator/comments/1x23l4p/comment/pgq6tgf/), Oct 14 |
 
 The OnePlus 15 profile uses the system driver and D3D11 by default starting in
 WeHavePhones 0.0.4. That release is the maintainer's follow-up, not a version
@@ -91,7 +92,7 @@ availability of that driver does not establish the same result in WeHavePhones.
 
 Reviewed all 19 public GitHub issues (open and closed) and their comments, the
 linked r/wow and r/classicwow announcement discussions, the r/EmulationOnAndroid
-announcement, and the project's existing device/runtime records. Reddit search
+announcement, a later r/winlator report (Oct 14), and the project's existing device/runtime records. Reddit search
 results exposed newer replies than the cached page view; this is a snapshot of
 accessible evidence, not an exhaustive compatibility guarantee.
 

@@ -21,6 +21,7 @@ WeHavePhones offers a graphics driver selector on supported devices, with driver
 | Google Pixel 8a | Classic Era | System driver |
 | OnePlus 15 | Retail | System driver or Qualcomm 842.6 |
 | Lenovo Idea Tab Pro Gen 2 | Classic Era | Qualcomm 863.1 |
+| Xiaomi Pad 8 Pro | Retail | System driver |
 
 \* Forever tested to the login screen only.
 
