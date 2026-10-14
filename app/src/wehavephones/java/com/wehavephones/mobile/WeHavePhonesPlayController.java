@@ -181,6 +181,19 @@ public final class WeHavePhonesPlayController {
                 return;
             }
             final Container container = result.container;
+            WeHavePhonesStatus status = WeHavePhonesStatus.load(activity.getApplicationContext());
+            BattleNetGames.Game selected = BattleNetGames.pick(status.games, WeHavePhonesConfig.getProductDir(activity));
+            String flags = WeHavePhonesLaunchPlan.openFlags(selected != null ? selected.bnetGameId() : null);
+            if (!flags.isEmpty()) {
+                File batch = WeHavePhonesPaths.bnetBat(container);
+                String content = FileUtils.readString(batch);
+                if (content == null || !FileUtils.write(batch,
+                        WeHavePhonesLaunchPlan.appendBnetFlags(content, flags).getBytes(StandardCharsets.UTF_8))) {
+                    activity.runOnUiThread(() -> listener.onStageUpdate(
+                            activity.getString(R.string.wehavephones_launch_write_failed, "bnet.bat"), true));
+                    return;
+                }
+            }
             // Pressing Play in Battle.net then also closes Battle.net, as Play's launch does.
             String exitStatus = WeHavePhonesBnetConfig.applyExitOnGameLaunch(WeHavePhonesPaths.bnetRoamingDir(container),
                     WeHavePhonesPaths.wehavephonesDir(activity));

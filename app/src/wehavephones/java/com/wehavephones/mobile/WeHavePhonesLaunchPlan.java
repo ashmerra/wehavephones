@@ -386,6 +386,11 @@ public final class WeHavePhonesLaunchPlan {
         return builder.toString();
     }
 
+    /** Select a page without requesting installation or launching the game. */
+    public static String openFlags(String gameId) {
+        return isProductId(gameId) ? "--game=" + gameId : "";
+    }
+
     public static String startFlags(Options options, Product product) {
         StringBuilder flags = new StringBuilder();
         if (options.minimized) flags.append("--autostarted");

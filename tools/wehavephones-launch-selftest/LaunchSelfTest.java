@@ -290,6 +290,9 @@ public final class LaunchSelfTest {
         String start = WeHavePhonesLaunchPlan.appendBnetFlags(bnetBat, WeHavePhonesLaunchPlan.startFlags(options, retail));
         check("start bat keeps dll copies", true, start.contains("copy /Y \"C:\\arm64-vkd3d.dll\""));
         check("start bat keeps the CEF network workaround and launch request", "Battle.net.exe --disable-gpu --enable-features=NetworkServiceInProcess2 --autostarted --exec=\"launch WoW\"", lastLine(start));
+        check("open only selects the game page", "--game=wow_classic_era", WeHavePhonesLaunchPlan.openFlags("wow_classic_era"));
+        check("open without a selection keeps the home page", "", WeHavePhonesLaunchPlan.openFlags(null));
+        check("open rejects shell arguments", "", WeHavePhonesLaunchPlan.openFlags("wow & start Wow.exe"));
         check("start bat CRLF", true, start.endsWith("\r\n") && !start.replace("\r\n", "").contains("\n"));
         check("append flags without Battle.net line", "@echo off\r\n", WeHavePhonesLaunchPlan.appendBnetFlags("@echo off\r\n", "--x"));
     }
