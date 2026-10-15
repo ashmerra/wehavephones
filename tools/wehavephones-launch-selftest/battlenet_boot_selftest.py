@@ -24,6 +24,20 @@ assert not boot.game_running(['1 0 Battle.net.exe Battle.net.exe --game=wow'])
 assert boot.runtime_running(['1 0 wineserver wineserver'])
 assert boot.runtime_running(['1 0 CrBrowserMain Battle.net.exe'])
 assert not boot.runtime_running(['1 0 com.wehavephones.dev com.wehavephones.dev'])
+assert boot.app_pid(['12 1 com.wehavephones.dev com.wehavephones.dev',
+                     '13 12 wine Battle.net.exe']) == '12'
+assert boot.app_pid(['13 1 wine Battle.net.exe']) is None
+exit_history = '''ApplicationExitInfo #0:
+ timestamp=2026-10-14 23:49:03.609 pid=15977 realUid=10056
+ process=com.wehavephones.dev reason=3 (LOW_MEMORY) subreason=0 (UNKNOWN)
+ApplicationExitInfo #1:
+ timestamp=2026-10-14 23:41:26.307 pid=11617 realUid=10056
+ process=com.wehavephones.dev reason=10 (USER REQUESTED) subreason=21 (FORCE STOP)
+'''
+assert boot.app_exit_reason(exit_history, '15977') == {
+    'pid': 15977, 'reason_code': 3, 'reason': 'LOW_MEMORY'}
+assert boot.app_exit_reason(exit_history, '11617')['reason'] == 'USER REQUESTED'
+assert boot.app_exit_reason(exit_history, '99999') is None
 with patch.object(boot, 'private', return_value=(
         'PID PPID STAT COMM ARGS\n'
         '10 1 Zs [winedevice.exe] [winedevice.exe]\n'
@@ -38,12 +52,30 @@ placeholder = boot.Image.new('RGB', (300, 50), (24, 125, 223))
 assert boot.play_label_pixels(placeholder, (0, 0, 300, 50)) == 0
 boot.ImageDraw.Draw(placeholder).rectangle((130, 20, 170, 30), fill='white')
 assert boot.play_label_pixels(placeholder, (0, 0, 300, 50)) > 100
+assert boot.validate_geometry((2400, 1080), (410, 695, 300, 50))
+assert not boot.validate_geometry((2400, 1080), (2300, 695, 300, 50))
+assert not boot.validate_geometry((2400, 1080), (-1, 0, 300, 50))
+assert not boot.validate_geometry((2400, 1080), (0, 0, 0, 50))
+assert not boot.validate_geometry((0, 1080), (0, 0, 300, 50))
+assert boot.ready_outcome('Play') == 'play-rendered'
+assert boot.ready_outcome('Install') == 'install-rendered'
+assert boot.region_box((330, 200, 480, 650)) == (330, 200, 810, 850)
+frame = boot.Image.new('RGB', (2400, 1080), 'white')
+safe = boot.redact_ready(frame, (330, 200, 480, 650))
+assert safe.size == frame.size
+assert safe.getpixel((330, 200)) == (255, 255, 255)
+assert safe.getpixel((809, 849)) == (255, 255, 255)
+assert safe.getpixel((810, 850)) == (0, 0, 0)
+assert safe.getpixel((1600, 60)) == (0, 0, 0)
+assert frame.getpixel((1600, 60)) == (255, 255, 255)
 assert all(len(values) <= 1 for values in boot.CANDIDATES.values())
 assert boot.CANDIDATES['no-smc'] == {'FEX_SMCCHECKS': 'none'}
 assert boot.CANDIDATES['no-tso'] == {'FEX_TSOENABLED': '0'}
 assert boot.CANDIDATES['no-vector-tso'] == {'FEX_VECTORTSOENABLED': '0'}
 assert boot.CANDIDATES['no-memcpy-tso'] == {'FEX_MEMCPYSETTSOENABLED': '0'}
 assert boot.CANDIDATES['reduced-x87'] == {'FEX_X87REDUCEDPRECISION': '1'}
+assert boot.CANDIDATES['dynamic-l1'] == {'FEX_DYNAMICL1CACHE': '1'}
+assert boot.CANDIDATES['no-l2'] == {'FEX_DISABLEL2CACHE': '1'}
 configurations = ['baseline', 'small-blocks', 'reduced-x87']
 assert boot.trial_configurations(configurations, 1, True) == configurations
 assert boot.trial_configurations(configurations, 2, True) == configurations[::-1]

@@ -39,6 +39,8 @@ CANDIDATES = {
     'v8-no-opt': {'WHP_BNET_V8_MODE': 'no-opt'},
     'small-blocks': {'FEX_MAXINST': '500'},
     'multiblock': {'FEX_MULTIBLOCK': '1'},
+    'dynamic-l1': {'FEX_DYNAMICL1CACHE': '1'},
+    'no-l2': {'FEX_DISABLEL2CACHE': '1'},
 }
 OWN_SESSION = False
 PRESERVE_FAILED_SESSION = False
@@ -86,6 +88,23 @@ def game_running(lines):
 def runtime_running(lines):
     return any(dev.is_wine_process(line.split()[2]) or line.split()[2].startswith('Cr')
                for line in lines if len(line.split()) >= 3)
+
+
+def app_pid(lines):
+    for line in lines:
+        fields = line.split(None, 3)
+        if len(fields) == 4 and fields[3] == PKG:
+            return fields[0]
+    return None
+
+
+def app_exit_reason(text, pid):
+    for block in re.split(r'ApplicationExitInfo #\d+:', text)[1:]:
+        identity = re.search(r'\bpid=(\d+)\b', block)
+        reason = re.search(r'\breason=(\d+) \(([^)]+)\)', block)
+        if identity and identity[1] == str(pid) and reason:
+            return {'pid': int(pid), 'reason_code': int(reason[1]), 'reason': reason[2]}
+    return None
 
 
 def ensure_unlocked(serial):
@@ -195,6 +214,29 @@ def play_label_pixels(image, region):
     return sum(min(pixel) > 215 for pixel in label.getdata())
 
 
+def region_box(region):
+    x, y, w, h = region
+    return (x, y, x + w, y + h)
+
+
+def validate_geometry(size, region):
+    x, y, w, h = region
+    return (min(size) > 0 and x >= 0 and y >= 0 and w > 0 and h > 0
+            and x + w <= size[0] and y + h <= size[1])
+
+
+def ready_outcome(label):
+    return label.lower() + '-rendered'
+
+
+def redact_ready(image, panel_region):
+    # Keep only the calibrated game panel, regardless of account header layout.
+    redacted = Image.new('RGB', image.size, 'black')
+    box = region_box(panel_region)
+    redacted.paste(image.crop(box), box[:2])
+    return redacted
+
+
 def fresh_log(file, tap_epoch):
     match = re.search(r'(?:battle.net|libcef)-(\d{8}T\d{6})\.(\d+)\.log$', file)
     if not match:
@@ -298,6 +340,7 @@ def run_attempt(args, serial, name, shortcut, original, label):
     temp_start = temperature(serial)
     OWN_SESSION = True
     tap, tap_epoch = tap_open(serial)
+    initial_app_pid = app_pid(processes(serial))
     print(name + ': started', flush=True)
     t0 = None
     previous = False
@@ -307,10 +350,12 @@ def run_attempt(args, serial, name, shortcut, original, label):
     browser_flag_roles = set()
     browser_mode = CANDIDATES[label].get('WHP_BNET_V8_MODE')
     result = {'name': name, 'configuration': label, 'override': CANDIDATES[label],
+              'ready_label': args.ready_label,
+              'app_pid': initial_app_pid,
               'tap_uptime': tap, 'temperature_start_c': temp_start,
               'tap_epoch': tap_epoch,
               'cooldown_s': round(time.monotonic() - cooldown_start, 1),
-              'outcome': 'no-play-within-window', 'window_s': args.window}
+              'outcome': 'no-%s-within-window' % args.ready_label.lower(), 'window_s': args.window}
     next_report = time.monotonic() + 30
     start = time.monotonic()
     last_image = None
@@ -318,6 +363,11 @@ def run_attempt(args, serial, name, shortcut, original, label):
         procs = processes(serial)
         if game_running(procs):
             raise RuntimeError('A game appeared; preserving the live session and stopping the benchmark')
+        if initial_app_pid is None or app_pid(procs) != initial_app_pid:
+            result['outcome'] = 'host-app-exited'
+            history = shell(serial, 'dumpsys activity exit-info ' + PKG)
+            result['app_exit_reason'] = app_exit_reason(history, initial_app_pid)
+            break
         now = float(shell(serial, 'cat /proc/uptime').split()[0])
         clients = [line for line in procs if 'Battle.net.exe' in line]
         versions.update(battlenet_versions(clients))
@@ -337,23 +387,27 @@ def run_attempt(args, serial, name, shortcut, original, label):
             if len(fields) >= 3 and fields[2] == 'CrBrowserMain':
                 pids.add(fields[0])
         before, after, img = capture(serial)
-        if img.size != (2340, 1080):
-            raise RuntimeError('Detector expects 2340x1080; calibrate regions for this device')
+        if img.size != tuple(args.capture_size):
+            raise RuntimeError('Capture size changed. Recalibrate regions for this device')
         rgb = mean(img, args.play_region)
         label_pixels = play_label_pixels(img, args.play_region)
         painted = is_play(rgb) and label_pixels >= 100 and t0 is not None
+        memory = shell(serial, 'cat /proc/meminfo')
         rows.append({'before_uptime': before, 'after_uptime': after, 'play_rgb': rgb, 'label_white_pixels': label_pixels,
-                     'client_count': len(clients), 'mem_available_kb':
-                     int(re.search(r'MemAvailable:\s*(\d+)', shell(serial, 'cat /proc/meminfo'))[1])})
+                     'client_count': len(clients),
+                     'mem_available_kb': int(re.search(r'MemAvailable:\s*(\d+)', memory)[1]),
+                     'swap_free_kb': int(re.search(r'SwapFree:\s*(\d+)', memory)[1])})
         # Only retain the left game panel (no account header, chats or credentials).
-        img.crop((300, 200, 780, 850)).save(target / ('panel-%04d.png' % len(rows)))
+        img.crop(region_box(args.panel_region)).save(target / ('panel-%04d.png' % len(rows)))
         last_image = img
         if painted and previous:
-            result.update(outcome='play-rendered', play_uptime=after,
-                          boot_to_play_s=round(after - t0, 2), tap_to_play_s=round(after - tap, 2))
-            # Save a full success frame with account and social panel removed.
-            ImageDraw.Draw(img).rectangle((1250, 35, 1700, 850), fill='black')
-            img.save(target / 'ready-redacted.png')
+            elapsed = round(after - t0, 2)
+            result.update(outcome=ready_outcome(args.ready_label), ready_uptime=after,
+                          boot_to_ready_s=elapsed, tap_to_ready_s=round(after - tap, 2))
+            if args.ready_label == 'Play':
+                result.update(play_uptime=after, boot_to_play_s=elapsed,
+                              tap_to_play_s=result['tap_to_ready_s'])
+            redact_ready(img, args.panel_region).save(target / 'ready-redacted.png')
             break
         previous = painted
         if time.monotonic() >= next_report:
@@ -367,7 +421,7 @@ def run_attempt(args, serial, name, shortcut, original, label):
                   main_replacements=max(0, len(pids) - 1) if pids else None, samples=len(rows),
                   battlenet_versions=sorted(versions), browser_flag_roles=sorted(browser_flag_roles))
     if last_image is not None:
-        last_image.crop((300, 200, 780, 850)).save(target / 'final-panel.png')
+        last_image.crop(region_box(args.panel_region)).save(target / 'final-panel.png')
     (target / 'samples.json').write_text(json.dumps(rows, indent=2) + '\n')
     # Verify actual session environment rather than trusting persisted JSON alone.
     env_lines = shell(serial, 'logcat -d -v brief -s GuestLauncher:I')
@@ -391,8 +445,9 @@ def run_attempt(args, serial, name, shortcut, original, label):
     result['launcher_state'] = launcher_state(serial, args.container, tap_epoch)
     (target / 'result.json').write_text(json.dumps(result, indent=2) + '\n')
     print(json.dumps({key: result[key] for key in ('name', 'outcome', 'temperature_start_c', 'temperature_end_c')}
-                     | {'boot_to_play_s': result.get('boot_to_play_s')}), flush=True)
-    if args.keep_failed_session and result['outcome'] != 'play-rendered':
+                     | {'boot_to_ready_s': result.get('boot_to_ready_s'),
+                        'boot_to_play_s': result.get('boot_to_play_s')}), flush=True)
+    if args.keep_failed_session and result['outcome'] != ready_outcome(args.ready_label):
         PRESERVE_FAILED_SESSION = True
     else:
         stop_owned_session(serial)
@@ -414,10 +469,19 @@ def main():
     parser.add_argument('--interval', type=float, default=1)
     parser.add_argument('--cooldown', type=float, default=30)
     parser.add_argument('--max-temperature', type=float, default=39.5)
-    parser.add_argument('--play-region', type=int, nargs=4, default=(380, 695, 300, 50))
+    parser.add_argument('--capture-size', type=int, nargs=2, default=(2340, 1080),
+                        metavar=('WIDTH', 'HEIGHT'), help='Expected screenshot size. Calibrate regions before changing')
+    parser.add_argument('--panel-region', type=int, nargs=4, default=(300, 200, 480, 650),
+                        metavar=('X', 'Y', 'WIDTH', 'HEIGHT'), help='Safe game-panel crop without account details')
+    parser.add_argument('--ready-label', choices=['Play', 'Install'], default='Play',
+                        help='Visually verified ready button. Install is for containers without a game')
+    parser.add_argument('--button-region', '--play-region', dest='play_region', type=int, nargs=4,
+                        default=(380, 695, 300, 50), metavar=('X', 'Y', 'WIDTH', 'HEIGHT'))
     args = parser.parse_args()
     if args.runs < 1 or args.container < 1 or args.window <= 0 or args.interval < 0 or args.cooldown < 0:
         parser.error('Run count/container/window must be positive; interval/cooldown nonnegative')
+    if not all(validate_geometry(args.capture_size, region) for region in [args.panel_region, args.play_region]):
+        parser.error('Panel and button regions must fit within the positive capture size')
     serial = dev.resolve_serial(args.serial, '--serial')
     dev.require(serial)
     identity = shell(serial, 'getprop ro.product.model; getprop ro.serialno; getprop ro.build.version.release')
@@ -437,7 +501,9 @@ def main():
         'shortcut_sha256': hashlib.sha256(original).hexdigest(),
         'configurations': args.configurations, 'runs': args.runs,
         'alternate_order': args.alternate_order,
-        'definition': 'First observed Battle.net.exe to second consecutive blue Play frame with white label glyphs; upper screenshot timestamp',
+        'capture_size': args.capture_size, 'panel_region': args.panel_region,
+        'button_region': args.play_region, 'ready_label': args.ready_label,
+        'definition': 'First observed Battle.net.exe to second consecutive blue %s frame with white label glyphs. Upper screenshot timestamp' % args.ready_label,
         'game_launch_validation': 'Excluded by user: Battle.net boot only'}, indent=2) + '\n')
     results = []
     expected_versions = None
