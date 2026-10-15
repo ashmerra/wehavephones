@@ -12,7 +12,7 @@ public class Client {
     private Object tag;
     protected Thread pollThread;
     protected int shutdownFd;
-    protected boolean connected;
+    protected volatile boolean connected;
 
     public Client(XConnectorEpoll connector, ClientSocket clientSocket) {
         this.connector = connector;

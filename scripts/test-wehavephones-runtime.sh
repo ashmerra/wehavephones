@@ -196,6 +196,10 @@ echo
 echo "[test-wehavephones-runtime] == 10. automatic virtual gamepad and controller handoff =="
 "$ROOT_DIR/scripts/test-wehavephones-gamepad.sh" || fail "GamepadSelfTest"
 
+echo
+echo "[test-wehavephones-runtime] == 11. concurrent native connector isolation =="
+"$ROOT_DIR/scripts/test-wehavephones-xconnector.sh" || fail "XConnectorIsolationSelfTest"
+
 if [[ $FAILURES -ne 0 ]]; then
   echo "[test-wehavephones-runtime] FAIL ($FAILURES failing checks)"
   exit 1

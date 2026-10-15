@@ -15,8 +15,6 @@
 #define MAX_EVENTS 10
 #define MAX_FDS 32
 
-struct epoll_event events[MAX_EVENTS];
-
 JNIEXPORT jint JNICALL
 Java_com_wehavephones_xconnector_XConnectorEpoll_createAFUnixSocket(JNIEnv *env, jobject obj,
                                                                 jstring path) {
@@ -62,6 +60,9 @@ Java_com_wehavephones_xconnector_XConnectorEpoll_doEpollIndefinitely(JNIEnv *env
     jmethodID handleNewConnection = (*env)->GetMethodID(env, cls, "handleNewConnection", "(I)V");
     jmethodID handleExistingConnection = (*env)->GetMethodID(env, cls, "handleExistingConnection", "(I)V");
 
+    // Independent connectors can wait and dispatch Java callbacks concurrently.
+    // Keep each event batch private until all of its callbacks have returned.
+    struct epoll_event events[MAX_EVENTS];
     int numFds = epoll_wait(epollFd, events, MAX_EVENTS, -1);
     for (int i = 0; i < numFds; i++) {
         if (events[i].data.fd == serverFd) {

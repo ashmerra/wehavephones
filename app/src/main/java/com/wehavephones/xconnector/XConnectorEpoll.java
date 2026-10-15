@@ -1,11 +1,10 @@
 package com.wehavephones.xconnector;
 
-import android.util.SparseArray;
-
 import androidx.annotation.Keep;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class XConnectorEpoll implements Runnable {
     private final ConnectionHandler connectionHandler;
@@ -14,12 +13,12 @@ public class XConnectorEpoll implements Runnable {
     private final int serverFd;
     private final int shutdownFd;
     private Thread epollThread;
-    private boolean running = false;
+    private volatile boolean running = false;
     private boolean multithreadedClients = false;
     private boolean canReceiveAncillaryMessages = false;
     private int initialInputBufferCapacity = 4096;
     private int initialOutputBufferCapacity = 4096;
-    private final SparseArray<Client> connectedClients = new SparseArray<>();
+    private final ConcurrentHashMap<Integer, Client> connectedClients = new ConcurrentHashMap<>();
 
     static {
         System.loadLibrary("wehavephones");
@@ -81,16 +80,15 @@ public class XConnectorEpoll implements Runnable {
     private void handleNewConnection(int fd) {
         final Client client = new Client(this, new ClientSocket(fd));
         client.connected = true;
+        connectionHandler.handleNewConnection(client);
         if (multithreadedClients) {
             client.shutdownFd = createEventFd();
             client.pollThread = new Thread(() -> {
-                connectionHandler.handleNewConnection(client);
                 while (client.connected && waitForSocketRead(client.clientSocket.fd, client.shutdownFd));
             });
-            client.pollThread.start();
         }
-        else connectionHandler.handleNewConnection(client);
         connectedClients.put(fd, client);
+        if (multithreadedClients) client.pollThread.start();
     }
 
     @Keep
@@ -120,7 +118,10 @@ public class XConnectorEpoll implements Runnable {
     }
 
     public void killConnection(Client client) {
-        client.connected = false;
+        synchronized (client) {
+            if (!client.connected) return;
+            client.connected = false;
+        }
         connectionHandler.handleConnectionShutdown(client);
         if (multithreadedClients) {
             if (Thread.currentThread() != client.pollThread) {
@@ -139,14 +140,11 @@ public class XConnectorEpoll implements Runnable {
         }
         else removeFdFromEpoll(epollFd, client.clientSocket.fd);
         closeFd(client.clientSocket.fd);
-        connectedClients.remove(client.clientSocket.fd);
+        connectedClients.remove(client.clientSocket.fd, client);
     }
 
     private void shutdown() {
-        while (connectedClients.size() > 0) {
-            Client client = connectedClients.valueAt(connectedClients.size()-1);
-            killConnection(client);
-        }
+        for (Client client : connectedClients.values()) killConnection(client);
 
         removeFdFromEpoll(epollFd, serverFd);
         removeFdFromEpoll(epollFd, shutdownFd);
