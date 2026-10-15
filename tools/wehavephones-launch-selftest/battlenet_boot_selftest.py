@@ -4,6 +4,7 @@ import importlib.util
 import pathlib
 from unittest.mock import patch
 import datetime
+import json
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 spec = importlib.util.spec_from_file_location('boot', ROOT / 'scripts/benchmark-battlenet-boot.py')
@@ -103,6 +104,18 @@ with patch.object(boot, 'private', side_effect=[
         {'event': 'auth-browser-error', 'after_log_start_s': 2.0, 'code': 1015},
         {'event': 'signed-in', 'after_log_start_s': 3.0},
     ]
+    assert state['client_error_codes'] == []
+with patch.object(boot, 'private', side_effect=[
+        'battle.net-20261014T061819.123456.log\n',
+        'I 2026-10-14 06:18:19.000000 [Main] Opening IPC shared memory. mode=server\n'
+        'E 2026-10-14 06:18:20.000000 [Auth] Login failed for private@example.invalid token=private-fixture\n'
+        'E 2026-10-14 06:18:21.000000 [Auth] BLZBNTBGS80000023 private@example.invalid\n'
+        'E 2026-10-14 06:18:22.000000 [Auth] BLZBNTBGS80000023\n']):
+    state = boot.launcher_state('test-phone', 1, epoch)
+    assert state['events'] == [{'event': 'auth-login-failed', 'after_log_start_s': 1.0}]
+    assert state['client_error_codes'] == ['BLZBNTBGS80000023']
+    assert 'private@example.invalid' not in json.dumps(state)
+    assert 'private-fixture' not in json.dumps(state)
 with patch.object(boot, 'shell', side_effect=['', 'KeyguardStateMonitor\n mIsShowing=true']):
     try:
         boot.ensure_unlocked('test-phone')

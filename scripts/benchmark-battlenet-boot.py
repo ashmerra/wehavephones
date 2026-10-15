@@ -292,6 +292,8 @@ def launcher_state(serial, container, tap_epoch=None):
             elapsed = (datetime.datetime.fromisoformat(stamp[1]) - start).total_seconds()
             if 'Logged into Battle.net successfully.' in line:
                 events.append({'event': 'signed-in', 'after_log_start_s': elapsed})
+            elif 'login failed' in line.lower():
+                events.append({'event': 'auth-login-failed', 'after_log_start_s': elapsed})
             elif 'UAuth: tassadar Login URL is empty!' in line:
                 events.append({'event': 'auth-url-missing', 'after_log_start_s': elapsed})
             elif 'UAuth: browser error:' in line:
@@ -310,7 +312,8 @@ def launcher_state(serial, container, tap_epoch=None):
             elif 'Scope:Root for Browser' in line:
                 events.append({'event': 'browser-observer-destroyed' if 'Destroying' in line else 'browser-observer-created',
                                'after_log_start_s': elapsed})
-        return {'file': pathlib.PurePosixPath(file).name, 'events': events}
+        codes = sorted(set(re.findall(r'\bBLZ[A-Z0-9]{5,}\b', text)))
+        return {'file': pathlib.PurePosixPath(file).name, 'events': events, 'client_error_codes': codes}
     return {'events': []}
 
 
