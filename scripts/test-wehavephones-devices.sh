@@ -51,6 +51,7 @@ find_jar() {
 
 echo "[test-wehavephones-devices] == 1. device-rules.json, driver assets, signature =="
 "$PYTHON" -I "$SELF_TEST_DIR/device_rules_selftest.py" || fail "device_rules_selftest.py"
+"$PYTHON" -I "$SELF_TEST_DIR/optional_turnip_selftest.py" || fail "optional_turnip_selftest.py"
 
 echo
 echo "[test-wehavephones-devices] == 2. rules, selection and driver store host test =="
@@ -90,7 +91,8 @@ else
     while IFS= read -r stub; do SOURCES+=("$stub"); done < <(find "$SELF_TEST_DIR/stubs" -name '*.java' | sort)
     if "$JAVAC" -encoding UTF-8 -Xlint:-options -d "$WORK_DIR" -cp "$CLASSPATH_JARS" "${SOURCES[@]}"; then
       set +e
-      "$JAVA" -cp "$WORK_DIR:$CLASSPATH_JARS" com.wehavephones.mobile.devices.DeviceRulesSelfTest "$RULES_JSON"
+      "$JAVA" -cp "$WORK_DIR:$CLASSPATH_JARS" com.wehavephones.mobile.devices.DeviceRulesSelfTest "$RULES_JSON" \
+        "$SELF_TEST_DIR/fixtures/device-rules-v6.json"
       STATUS=$?
       set -e
       if [[ $STATUS -ne 0 ]]; then

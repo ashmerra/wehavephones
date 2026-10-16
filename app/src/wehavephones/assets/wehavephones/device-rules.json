@@ -1,8 +1,8 @@
 {
   "schema": 1,
-  "rulesVersion": 6,
+  "rulesVersion": 7,
   "minAppVersionCode": 1,
-  "updatedAt": "2026-10-12",
+  "updatedAt": "2026-10-16",
   "drivers": {
     "system": {
       "type": "system",
@@ -142,6 +142,76 @@
       "libraryName": "vulkan.ad07xx.so",
       "librarySha256": "752ea27689d57be898e33f92ebea9a81ec1b94dce7c82c5b58ba21fecede3f7e",
       "source": "Qualcomm Adreno driver v842.6, extracted from a Snapdragon 8 Elite Gen 5 device (github.com/K11MCH1/AdrenoToolsDrivers release v842.6, 2025-09-30)."
+    },
+    "turnip-gamesir-rutabaga-v3": {
+      "type": "adrenotools",
+      "description": "Experimental. Compatibility and WoW Retail unverified. Android 9+. A840 0x44050A31 only in the inspected table. No A825 or A812 entry found.",
+      "asset": null,
+      "url": "https://github.com/StevenMXZ/Adreno-Tools-Drivers/releases/download/gamesir/Turnip-Rutabaga-v3.zip",
+      "sha256": "45b92cecfd9a862dd035b784bec94fe87799ef2869018fdeca62f8f7c8798205",
+      "libraryName": "libvulkan_freedreno.so",
+      "librarySha256": "90c056d7919a1da8ef0fd3131403729b81b05fe3c7373e772e3ceaa522ad397e",
+      "source": "Gamesir Rutabaga v3, extracted from GameHub and published by StevenMXZ on 2026-10-14. Package calls itself Rutabaga-26.10.10, Mesa b00479181d, built 2026-10-10. Upstream claims A6xx/A7xx/A8xx. Chip-table inspection finds A810, A829, A830 and A840 0xffff44050A31, but no A825, A812 or A840 0x44050A21 entry. Exact source changes are unpublished. Verified archive, metadata and library on 2026-10-16. See graphics/turnip-optional-20261016.json and docs/TURNIP_OPTIONAL_2026_10_16.md."
+    },
+    "turnip-banner-26.3.0-20261015-r4-a8xx": {
+      "type": "adrenotools",
+      "description": "Experimental. Compatibility and WoW Retail unverified. Android 9+.",
+      "asset": null,
+      "url": "https://github.com/The412Banner/Banners-Turnip/releases/download/v26.3.0-20261015-r4/Turnip-v26.3.0-20261015-r4-A8xx.zip",
+      "sha256": "057cb09f0c4ae74e5addda813808fc1a22678eceb08e2df43d158a2123d6597d",
+      "libraryName": "libvulkan_freedreno.so",
+      "librarySha256": "a39295cd4f9bde13a20ebb5491bc982620f21e6ddcd41dbecdaf500e30aa999f",
+      "source": "The412Banner Android KGSL A8xx v26.3.0-20261015-r4. Mesa ae2dbaf0da4495a8210edaa091cc758c8861c6ed. whitebelyash Gen8 stack plus WinNative patches 0001-0005. Upstream lists A810/A812/A825/A829/A830/A840 experimental support. No demonstrated WoW Retail or OnePlus 15 improvement. Verified archive, metadata and library on 2026-10-16. See graphics/turnip-optional-20261016.json and docs/TURNIP_OPTIONAL_2026_10_16.md."
+    },
+    "turnip-banner-26.3.0-20261015-r5-a8xx": {
+      "type": "adrenotools",
+      "description": "Experimental. Compatibility and WoW Retail unverified. Android 9+.",
+      "asset": null,
+      "url": "https://github.com/The412Banner/Banners-Turnip/releases/download/v26.3.0-20261015-r5/Turnip-v26.3.0-20261015-r5-A8xx.zip",
+      "sha256": "923f77a6f3eaebaa7d0c7ce7a3f8d1fbf2c3fb0b5b5bee61af557693185fea0d",
+      "libraryName": "libvulkan_freedreno.so",
+      "librarySha256": "b4f990018bb0884448ba0d287d9e6f795d279ddcd87336d4a9d4f1e27258a840",
+      "source": "The412Banner Android KGSL A8xx v26.3.0-20261015-r5. Mesa cf98950a3f548751301091ae4a224b8c8f59d988. whitebelyash Gen8 stack plus WinNative patches 0001-0005. Upstream lists A810/A812/A825/A829/A830/A840 experimental support. No demonstrated WoW Retail or OnePlus 15 improvement. Verified archive, metadata and library on 2026-10-16. See graphics/turnip-optional-20261016.json and docs/TURNIP_OPTIONAL_2026_10_16.md."
+    },
+    "turnip-banner-26.3.0-20261015-r6-a8xx": {
+      "type": "adrenotools",
+      "description": "Experimental. Compatibility and WoW Retail unverified. Android 9+.",
+      "asset": null,
+      "url": "https://github.com/The412Banner/Banners-Turnip/releases/download/v26.3.0-20261015-r6/Turnip-v26.3.0-20261015-r6-A8xx.zip",
+      "sha256": "05657133953df970aa0006545ce226843dede7bce1989268380e60b6ff94cdfb",
+      "libraryName": "libvulkan_freedreno.so",
+      "librarySha256": "1c3102289d38d3dc1e0c30b233f493676783aeb916deaed5cabf99f25a6319d9",
+      "source": "The412Banner Android KGSL A8xx v26.3.0-20261015-r6. Mesa bf76a9d67385dcdccb9758e104edd2283aa0847c. whitebelyash Gen8 stack plus WinNative patches 0001-0005. Upstream lists A810/A812/A825/A829/A830/A840 experimental support. No demonstrated WoW Retail or OnePlus 15 improvement. Verified archive, metadata and library on 2026-10-16. See graphics/turnip-optional-20261016.json and docs/TURNIP_OPTIONAL_2026_10_16.md."
+    },
+    "turnip-banner-26.3.0-20261015-r7-a8xx": {
+      "type": "adrenotools",
+      "description": "Experimental. Compatibility and WoW Retail unverified. Android 9+.",
+      "asset": null,
+      "url": "https://github.com/The412Banner/Banners-Turnip/releases/download/v26.3.0-20261015-r7/Turnip-v26.3.0-20261015-r7-A8xx.zip",
+      "sha256": "9853f4f7175477e2320ec36be3376e71910bb0eeb3fc2bd62817a511c66a031c",
+      "libraryName": "libvulkan_freedreno.so",
+      "librarySha256": "9368380ab0965bc47c845c85ea1dfeca50756e2a3fa80a292cb807f6629d3a09",
+      "source": "The412Banner Android KGSL A8xx v26.3.0-20261015-r7. Mesa 827d538ed9eb53e0a3c23f01ba68f858cdfdbcb3. whitebelyash Gen8 stack plus WinNative patches 0001-0005. Upstream lists A810/A812/A825/A829/A830/A840 experimental support. No demonstrated WoW Retail or OnePlus 15 improvement. Verified archive, metadata and library on 2026-10-16. See graphics/turnip-optional-20261016.json and docs/TURNIP_OPTIONAL_2026_10_16.md."
+    },
+    "turnip-banner-27.0.0-20261016-r3-a8xx": {
+      "type": "adrenotools",
+      "description": "Experimental. Compatibility and WoW Retail unverified. Android 9+.",
+      "asset": null,
+      "url": "https://github.com/The412Banner/Banners-Turnip/releases/download/v27.0.0-20261016-r3/Turnip-v27.0.0-20261016-r3-A8xx.zip",
+      "sha256": "2bc9bd59033f5bc7edac411eb1565a10a717439d460b12a11b183d0f9f6c9dc7",
+      "libraryName": "libvulkan_freedreno.so",
+      "librarySha256": "24a1665a1f65f33d17e2428fd57ba5f9ce2f8e48f01a329a3cfe7b95f6db4a56",
+      "source": "The412Banner Android KGSL A8xx v27.0.0-20261016-r3. Mesa 3923c34547dc1fe0d46ed01fe6234833b40c56b7. whitebelyash Gen8 stack plus WinNative patches 0001-0005. Upstream lists A810/A812/A825/A829/A830/A840 experimental support. No demonstrated WoW Retail or OnePlus 15 improvement. Verified archive, metadata and library on 2026-10-16. See graphics/turnip-optional-20261016.json and docs/TURNIP_OPTIONAL_2026_10_16.md."
+    },
+    "turnip-banner-27.0.0-20261016-r4-a8xx": {
+      "type": "adrenotools",
+      "description": "Experimental. Compatibility and WoW Retail unverified. Android 9+.",
+      "asset": null,
+      "url": "https://github.com/The412Banner/Banners-Turnip/releases/download/v27.0.0-20261016-r4/Turnip-v27.0.0-20261016-r4-A8xx.zip",
+      "sha256": "e15c494e292f1455fed21f2e0a0f0f3b9fca8c849a29cc99c9f0e0936c593838",
+      "libraryName": "libvulkan_freedreno.so",
+      "librarySha256": "9bc7224a61b2f1102118d602668a55d90c2626df8f397dda40d9d0d48300f080",
+      "source": "The412Banner Android KGSL A8xx v27.0.0-20261016-r4. Mesa 3923c34547dc1fe0d46ed01fe6234833b40c56b7. whitebelyash Gen8 stack plus WinNative patches 0001-0005. Upstream lists A810/A812/A825/A829/A830/A840 experimental support. No demonstrated WoW Retail or OnePlus 15 improvement. Verified archive, metadata and library on 2026-10-16. See graphics/turnip-optional-20261016.json and docs/TURNIP_OPTIONAL_2026_10_16.md."
     }
   },
   "profiles": {
@@ -154,7 +224,10 @@
       "env": {},
       "vulkanCompatLayer": false,
       "wowApiArg": null,
-      "notes": "Adreno 7xx (Galaxy S23, Adreno 740): the pinned Turnip, the long-standing default."
+      "notes": "Adreno 7xx (Galaxy S23, Adreno 740): the pinned Turnip, the long-standing default.",
+      "choices": [
+        "turnip-gamesir-rutabaga-v3"
+      ]
     },
     "adreno-6xx": {
       "status": "untested",
@@ -165,7 +238,10 @@
       "env": {},
       "vulkanCompatLayer": false,
       "wowApiArg": null,
-      "notes": "Adreno 6xx: same driver choice as before device rules existed; no 6xx phone has been tested."
+      "notes": "Adreno 6xx: same driver choice as before device rules existed; no 6xx phone has been tested.",
+      "choices": [
+        "turnip-gamesir-rutabaga-v3"
+      ]
     },
     "adreno-8xx": {
       "status": "community",
@@ -185,7 +261,14 @@
         "turnip-gamehub-v26.0.0-r8-b12",
         "qualcomm-891.7",
         "qualcomm-863.1",
-        "qualcomm-842.6"
+        "qualcomm-842.6",
+        "turnip-gamesir-rutabaga-v3",
+        "turnip-banner-26.3.0-20261015-r4-a8xx",
+        "turnip-banner-26.3.0-20261015-r5-a8xx",
+        "turnip-banner-26.3.0-20261015-r6-a8xx",
+        "turnip-banner-26.3.0-20261015-r7-a8xx",
+        "turnip-banner-27.0.0-20261016-r3-a8xx",
+        "turnip-banner-27.0.0-20261016-r4-a8xx"
       ],
       "env": {
         "TU_DEBUG": "noconform,sysmem",
@@ -215,7 +298,14 @@
         "qualcomm-891.7",
         "qualcomm-863.1",
         "qualcomm-849",
-        "qualcomm-842.6"
+        "qualcomm-842.6",
+        "turnip-gamesir-rutabaga-v3",
+        "turnip-banner-26.3.0-20261015-r4-a8xx",
+        "turnip-banner-26.3.0-20261015-r5-a8xx",
+        "turnip-banner-26.3.0-20261015-r6-a8xx",
+        "turnip-banner-26.3.0-20261015-r7-a8xx",
+        "turnip-banner-27.0.0-20261016-r3-a8xx",
+        "turnip-banner-27.0.0-20261016-r4-a8xx"
       ],
       "env": {
         "WINEDLLOVERRIDES": "d3d12,d3d12core=d"

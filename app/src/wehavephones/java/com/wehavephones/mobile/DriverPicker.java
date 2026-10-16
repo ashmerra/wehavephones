@@ -73,6 +73,7 @@ final class DriverPicker {
             String meta = driver == automatic
                     ? host.getString(R.string.wehavephones_driver_row_used_by_automatic, host.getString(source))
                     : host.getString(source);
+            if (!driver.isSystem() && !driver.description.isEmpty()) meta = driver.description + " " + meta;
             rows.add(new DriverChoiceAdapter.Row(driver, driver.id, meta, driver == picked, driver == automatic));
         }
         return rows;

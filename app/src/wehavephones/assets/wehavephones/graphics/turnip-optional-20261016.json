@@ -1,0 +1,485 @@
+{
+  "verifiedAt": "2026-10-16",
+  "provenance": "Unmodified upstream Android AdrenoTools ZIPs. Optional choices only. Package metadata and chip-table byte evidence do not establish successful probing or WoW compatibility.",
+  "drivers": {
+    "turnip-gamesir-rutabaga-v3": {
+      "releaseUrl": "https://github.com/StevenMXZ/Adreno-Tools-Drivers/releases/tag/gamesir",
+      "publishedAt": "2026-10-14T12:16:05Z",
+      "url": "https://github.com/StevenMXZ/Adreno-Tools-Drivers/releases/download/gamesir/Turnip-Rutabaga-v3.zip",
+      "sha256": "45b92cecfd9a862dd035b784bec94fe87799ef2869018fdeca62f8f7c8798205",
+      "libraryName": "libvulkan_freedreno.so",
+      "librarySha256": "90c056d7919a1da8ef0fd3131403729b81b05fe3c7373e772e3ceaa522ad397e",
+      "upstreamMeta": {
+        "schemaVersion": 1,
+        "name": "Rutabaga-26.10.10",
+        "description": "Turnip (Mesa freedreno) Vulkan driver for Adreno, GameHub rutabaga-26.10.10 build. Mesa 26.3.0-devel (git-b00479181d), built 2026-10-10.",
+        "author": "GameHub",
+        "packageVersion": "1",
+        "vendor": "Mesa",
+        "driverVersion": "26.3.0-devel-b00479181d",
+        "minApi": 28,
+        "libraryName": "libvulkan_freedreno.so"
+      },
+      "mesaRevision": "b00479181d",
+      "chipTableEvidence": [
+        {
+          "chipId": "0xFFFF44010000",
+          "fileOffset": 13982648
+        },
+        {
+          "chipId": "0xFFFF44050000",
+          "fileOffset": 13982680
+        },
+        {
+          "chipId": "0xFFFF44050001",
+          "fileOffset": 13982712
+        },
+        {
+          "chipId": "0x44050001",
+          "fileOffset": 13982744
+        },
+        {
+          "chipId": "0x44030A20",
+          "fileOffset": 13982776
+        },
+        {
+          "chipId": "0xFFFF44050A31",
+          "fileOffset": 13982808
+        }
+      ],
+      "elfBuildId": "f2660cd1a22183b909486c5a88da298507f06a36",
+      "profiles": [
+        "adreno-6xx",
+        "adreno-7xx",
+        "adreno-8xx",
+        "adreno-84x"
+      ]
+    },
+    "turnip-banner-26.3.0-20261015-r4-a8xx": {
+      "releaseUrl": "https://github.com/The412Banner/Banners-Turnip/releases/tag/v26.3.0-20261015-r4",
+      "publishedAt": "2026-10-15T16:34:44Z",
+      "url": "https://github.com/The412Banner/Banners-Turnip/releases/download/v26.3.0-20261015-r4/Turnip-v26.3.0-20261015-r4-A8xx.zip",
+      "sha256": "057cb09f0c4ae74e5addda813808fc1a22678eceb08e2df43d158a2123d6597d",
+      "libraryName": "libvulkan_freedreno.so",
+      "librarySha256": "a39295cd4f9bde13a20ebb5491bc982620f21e6ddcd41dbecdaf500e30aa999f",
+      "upstreamMeta": {
+        "schemaVersion": 1,
+        "name": "Mesa Turnip v26.3.0-20261015-r4-A8xx",
+        "description": "A8xx experimental Turnip driver for Snapdragon 8 Elite (A840/A830/A829/A825/A812/A810). whitebelyash turnip/gen8 A8xx stack on top of Mesa main (matches tu_v29 / StevenMXZ v33). KGSL build.",
+        "author": "The412Banner",
+        "packageVersion": "4",
+        "vendor": "Mesa",
+        "driverVersion": "Vulkan 1.4.363",
+        "minApi": 28,
+        "libraryName": "libvulkan_freedreno.so"
+      },
+      "mesaRevision": "ae2dbaf0da4495a8210edaa091cc758c8861c6ed",
+      "chipTableEvidence": [
+        {
+          "chipId": "0xFFFF44010000",
+          "fileOffset": 13861416
+        },
+        {
+          "chipId": "0xFFFF44010200",
+          "fileOffset": 13861448
+        },
+        {
+          "chipId": "0x44010000",
+          "fileOffset": 13861480
+        },
+        {
+          "chipId": "0x44010200",
+          "fileOffset": 13861512
+        },
+        {
+          "chipId": "0xFFFF44050000",
+          "fileOffset": 13861544
+        },
+        {
+          "chipId": "0xFFFF44050001",
+          "fileOffset": 13861576
+        },
+        {
+          "chipId": "0x44050001",
+          "fileOffset": 13861608
+        },
+        {
+          "chipId": "0x44030000",
+          "fileOffset": 13861640
+        },
+        {
+          "chipId": "0x44030A20",
+          "fileOffset": 13861672
+        },
+        {
+          "chipId": "0xFFFF44050A31",
+          "fileOffset": 13861704
+        },
+        {
+          "chipId": "0xFFFF44050A21",
+          "fileOffset": 13861736
+        }
+      ],
+      "elfBuildId": "5298c2b8f313e775e5ba19324629e659276fb0d7",
+      "profiles": [
+        "adreno-8xx",
+        "adreno-84x"
+      ]
+    },
+    "turnip-banner-26.3.0-20261015-r5-a8xx": {
+      "releaseUrl": "https://github.com/The412Banner/Banners-Turnip/releases/tag/v26.3.0-20261015-r5",
+      "publishedAt": "2026-10-15T17:32:03Z",
+      "url": "https://github.com/The412Banner/Banners-Turnip/releases/download/v26.3.0-20261015-r5/Turnip-v26.3.0-20261015-r5-A8xx.zip",
+      "sha256": "923f77a6f3eaebaa7d0c7ce7a3f8d1fbf2c3fb0b5b5bee61af557693185fea0d",
+      "libraryName": "libvulkan_freedreno.so",
+      "librarySha256": "b4f990018bb0884448ba0d287d9e6f795d279ddcd87336d4a9d4f1e27258a840",
+      "upstreamMeta": {
+        "schemaVersion": 1,
+        "name": "Mesa Turnip v26.3.0-20261015-r5-A8xx",
+        "description": "A8xx experimental Turnip driver for Snapdragon 8 Elite (A840/A830/A829/A825/A812/A810). whitebelyash turnip/gen8 A8xx stack on top of Mesa main (matches tu_v29 / StevenMXZ v33). KGSL build.",
+        "author": "The412Banner",
+        "packageVersion": "5",
+        "vendor": "Mesa",
+        "driverVersion": "Vulkan 1.4.363",
+        "minApi": 28,
+        "libraryName": "libvulkan_freedreno.so"
+      },
+      "mesaRevision": "cf98950a3f548751301091ae4a224b8c8f59d988",
+      "chipTableEvidence": [
+        {
+          "chipId": "0xFFFF44010000",
+          "fileOffset": 13860760
+        },
+        {
+          "chipId": "0xFFFF44010200",
+          "fileOffset": 13860792
+        },
+        {
+          "chipId": "0x44010000",
+          "fileOffset": 13860824
+        },
+        {
+          "chipId": "0x44010200",
+          "fileOffset": 13860856
+        },
+        {
+          "chipId": "0xFFFF44050000",
+          "fileOffset": 13860888
+        },
+        {
+          "chipId": "0xFFFF44050001",
+          "fileOffset": 13860920
+        },
+        {
+          "chipId": "0x44050001",
+          "fileOffset": 13860952
+        },
+        {
+          "chipId": "0x44030000",
+          "fileOffset": 13860984
+        },
+        {
+          "chipId": "0x44030A20",
+          "fileOffset": 13861016
+        },
+        {
+          "chipId": "0xFFFF44050A31",
+          "fileOffset": 13861048
+        },
+        {
+          "chipId": "0xFFFF44050A21",
+          "fileOffset": 13861080
+        }
+      ],
+      "elfBuildId": "40106455bc9ccc0468530fac05bf4c1cc78164d4",
+      "profiles": [
+        "adreno-8xx",
+        "adreno-84x"
+      ]
+    },
+    "turnip-banner-26.3.0-20261015-r6-a8xx": {
+      "releaseUrl": "https://github.com/The412Banner/Banners-Turnip/releases/tag/v26.3.0-20261015-r6",
+      "publishedAt": "2026-10-15T20:42:27Z",
+      "url": "https://github.com/The412Banner/Banners-Turnip/releases/download/v26.3.0-20261015-r6/Turnip-v26.3.0-20261015-r6-A8xx.zip",
+      "sha256": "05657133953df970aa0006545ce226843dede7bce1989268380e60b6ff94cdfb",
+      "libraryName": "libvulkan_freedreno.so",
+      "librarySha256": "1c3102289d38d3dc1e0c30b233f493676783aeb916deaed5cabf99f25a6319d9",
+      "upstreamMeta": {
+        "schemaVersion": 1,
+        "name": "Mesa Turnip v26.3.0-20261015-r6-A8xx",
+        "description": "A8xx experimental Turnip driver for Snapdragon 8 Elite (A840/A830/A829/A825/A812/A810). whitebelyash turnip/gen8 A8xx stack on top of Mesa main (matches tu_v29 / StevenMXZ v33). KGSL build.",
+        "author": "The412Banner",
+        "packageVersion": "6",
+        "vendor": "Mesa",
+        "driverVersion": "Vulkan 1.4.363",
+        "minApi": 28,
+        "libraryName": "libvulkan_freedreno.so"
+      },
+      "mesaRevision": "bf76a9d67385dcdccb9758e104edd2283aa0847c",
+      "chipTableEvidence": [
+        {
+          "chipId": "0xFFFF44010000",
+          "fileOffset": 13861416
+        },
+        {
+          "chipId": "0xFFFF44010200",
+          "fileOffset": 13861448
+        },
+        {
+          "chipId": "0x44010000",
+          "fileOffset": 13861480
+        },
+        {
+          "chipId": "0x44010200",
+          "fileOffset": 13861512
+        },
+        {
+          "chipId": "0xFFFF44050000",
+          "fileOffset": 13861544
+        },
+        {
+          "chipId": "0xFFFF44050001",
+          "fileOffset": 13861576
+        },
+        {
+          "chipId": "0x44050001",
+          "fileOffset": 13861608
+        },
+        {
+          "chipId": "0x44030000",
+          "fileOffset": 13861640
+        },
+        {
+          "chipId": "0x44030A20",
+          "fileOffset": 13861672
+        },
+        {
+          "chipId": "0xFFFF44050A31",
+          "fileOffset": 13861704
+        },
+        {
+          "chipId": "0xFFFF44050A21",
+          "fileOffset": 13861736
+        }
+      ],
+      "elfBuildId": "bb5371fcdb0d3c349789904670ba3b255d95798a",
+      "profiles": [
+        "adreno-8xx",
+        "adreno-84x"
+      ]
+    },
+    "turnip-banner-26.3.0-20261015-r7-a8xx": {
+      "releaseUrl": "https://github.com/The412Banner/Banners-Turnip/releases/tag/v26.3.0-20261015-r7",
+      "publishedAt": "2026-10-15T23:27:48Z",
+      "url": "https://github.com/The412Banner/Banners-Turnip/releases/download/v26.3.0-20261015-r7/Turnip-v26.3.0-20261015-r7-A8xx.zip",
+      "sha256": "9853f4f7175477e2320ec36be3376e71910bb0eeb3fc2bd62817a511c66a031c",
+      "libraryName": "libvulkan_freedreno.so",
+      "librarySha256": "9368380ab0965bc47c845c85ea1dfeca50756e2a3fa80a292cb807f6629d3a09",
+      "upstreamMeta": {
+        "schemaVersion": 1,
+        "name": "Mesa Turnip v26.3.0-20261015-r7-A8xx",
+        "description": "A8xx experimental Turnip driver for Snapdragon 8 Elite (A840/A830/A829/A825/A812/A810). whitebelyash turnip/gen8 A8xx stack on top of Mesa main (matches tu_v29 / StevenMXZ v33). KGSL build.",
+        "author": "The412Banner",
+        "packageVersion": "7",
+        "vendor": "Mesa",
+        "driverVersion": "Vulkan 1.4.363",
+        "minApi": 28,
+        "libraryName": "libvulkan_freedreno.so"
+      },
+      "mesaRevision": "827d538ed9eb53e0a3c23f01ba68f858cdfdbcb3",
+      "chipTableEvidence": [
+        {
+          "chipId": "0xFFFF44010000",
+          "fileOffset": 13860760
+        },
+        {
+          "chipId": "0xFFFF44010200",
+          "fileOffset": 13860792
+        },
+        {
+          "chipId": "0x44010000",
+          "fileOffset": 13860824
+        },
+        {
+          "chipId": "0x44010200",
+          "fileOffset": 13860856
+        },
+        {
+          "chipId": "0xFFFF44050000",
+          "fileOffset": 13860888
+        },
+        {
+          "chipId": "0xFFFF44050001",
+          "fileOffset": 13860920
+        },
+        {
+          "chipId": "0x44050001",
+          "fileOffset": 13860952
+        },
+        {
+          "chipId": "0x44030000",
+          "fileOffset": 13860984
+        },
+        {
+          "chipId": "0x44030A20",
+          "fileOffset": 13861016
+        },
+        {
+          "chipId": "0xFFFF44050A31",
+          "fileOffset": 13861048
+        },
+        {
+          "chipId": "0xFFFF44050A21",
+          "fileOffset": 13861080
+        }
+      ],
+      "elfBuildId": "8d03fa614dc43aa2c66883ba813da3cfda0e6596",
+      "profiles": [
+        "adreno-8xx",
+        "adreno-84x"
+      ]
+    },
+    "turnip-banner-27.0.0-20261016-r3-a8xx": {
+      "releaseUrl": "https://github.com/The412Banner/Banners-Turnip/releases/tag/v27.0.0-20261016-r3",
+      "publishedAt": "2026-10-16T12:05:42Z",
+      "url": "https://github.com/The412Banner/Banners-Turnip/releases/download/v27.0.0-20261016-r3/Turnip-v27.0.0-20261016-r3-A8xx.zip",
+      "sha256": "2bc9bd59033f5bc7edac411eb1565a10a717439d460b12a11b183d0f9f6c9dc7",
+      "libraryName": "libvulkan_freedreno.so",
+      "librarySha256": "24a1665a1f65f33d17e2428fd57ba5f9ce2f8e48f01a329a3cfe7b95f6db4a56",
+      "upstreamMeta": {
+        "schemaVersion": 1,
+        "name": "Mesa Turnip v27.0.0-20261016-r3-A8xx",
+        "description": "A8xx experimental Turnip driver for Snapdragon 8 Elite (A840/A830/A829/A825/A812/A810). whitebelyash turnip/gen8 A8xx stack on top of Mesa main (matches tu_v29 / StevenMXZ v33). KGSL build.",
+        "author": "The412Banner",
+        "packageVersion": "3",
+        "vendor": "Mesa",
+        "driverVersion": "Vulkan 1.4.363",
+        "minApi": 28,
+        "libraryName": "libvulkan_freedreno.so"
+      },
+      "mesaRevision": "3923c34547dc1fe0d46ed01fe6234833b40c56b7",
+      "chipTableEvidence": [
+        {
+          "chipId": "0xFFFF44010000",
+          "fileOffset": 13427288
+        },
+        {
+          "chipId": "0xFFFF44010200",
+          "fileOffset": 13427320
+        },
+        {
+          "chipId": "0x44010000",
+          "fileOffset": 13427352
+        },
+        {
+          "chipId": "0x44010200",
+          "fileOffset": 13427384
+        },
+        {
+          "chipId": "0xFFFF44050000",
+          "fileOffset": 13427416
+        },
+        {
+          "chipId": "0xFFFF44050001",
+          "fileOffset": 13427448
+        },
+        {
+          "chipId": "0x44050001",
+          "fileOffset": 13427480
+        },
+        {
+          "chipId": "0x44030000",
+          "fileOffset": 13427512
+        },
+        {
+          "chipId": "0x44030A20",
+          "fileOffset": 13427544
+        },
+        {
+          "chipId": "0xFFFF44050A31",
+          "fileOffset": 13427576
+        },
+        {
+          "chipId": "0xFFFF44050A21",
+          "fileOffset": 13427608
+        }
+      ],
+      "elfBuildId": "d7d36c01e92c334dec29bdc2a52c441c5a6399d1",
+      "profiles": [
+        "adreno-8xx",
+        "adreno-84x"
+      ]
+    },
+    "turnip-banner-27.0.0-20261016-r4-a8xx": {
+      "releaseUrl": "https://github.com/The412Banner/Banners-Turnip/releases/tag/v27.0.0-20261016-r4",
+      "publishedAt": "2026-10-16T12:16:15Z",
+      "url": "https://github.com/The412Banner/Banners-Turnip/releases/download/v27.0.0-20261016-r4/Turnip-v27.0.0-20261016-r4-A8xx.zip",
+      "sha256": "e15c494e292f1455fed21f2e0a0f0f3b9fca8c849a29cc99c9f0e0936c593838",
+      "libraryName": "libvulkan_freedreno.so",
+      "librarySha256": "9bc7224a61b2f1102118d602668a55d90c2626df8f397dda40d9d0d48300f080",
+      "upstreamMeta": {
+        "schemaVersion": 1,
+        "name": "Mesa Turnip v27.0.0-20261016-r4-A8xx",
+        "description": "A8xx experimental Turnip driver for Snapdragon 8 Elite (A840/A830/A829/A825/A812/A810). whitebelyash turnip/gen8 A8xx stack on top of Mesa main (matches tu_v29 / StevenMXZ v33). KGSL build.",
+        "author": "The412Banner",
+        "packageVersion": "4",
+        "vendor": "Mesa",
+        "driverVersion": "Vulkan 1.4.363",
+        "minApi": 28,
+        "libraryName": "libvulkan_freedreno.so"
+      },
+      "mesaRevision": "3923c34547dc1fe0d46ed01fe6234833b40c56b7",
+      "chipTableEvidence": [
+        {
+          "chipId": "0xFFFF44010000",
+          "fileOffset": 13427352
+        },
+        {
+          "chipId": "0xFFFF44010200",
+          "fileOffset": 13427384
+        },
+        {
+          "chipId": "0x44010000",
+          "fileOffset": 13427416
+        },
+        {
+          "chipId": "0x44010200",
+          "fileOffset": 13427448
+        },
+        {
+          "chipId": "0xFFFF44050000",
+          "fileOffset": 13427480
+        },
+        {
+          "chipId": "0xFFFF44050001",
+          "fileOffset": 13427512
+        },
+        {
+          "chipId": "0x44050001",
+          "fileOffset": 13427544
+        },
+        {
+          "chipId": "0x44030000",
+          "fileOffset": 13427576
+        },
+        {
+          "chipId": "0x44030A20",
+          "fileOffset": 13427608
+        },
+        {
+          "chipId": "0xFFFF44050A31",
+          "fileOffset": 13427640
+        },
+        {
+          "chipId": "0xFFFF44050A21",
+          "fileOffset": 13427672
+        }
+      ],
+      "elfBuildId": "07d0856052972d9391ce24804793d19b5b859514",
+      "profiles": [
+        "adreno-8xx",
+        "adreno-84x"
+      ]
+    }
+  }
+}

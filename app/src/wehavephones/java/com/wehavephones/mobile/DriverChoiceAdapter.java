@@ -56,6 +56,9 @@ final class DriverChoiceAdapter extends ArrayAdapter<DriverChoiceAdapter.Row> {
 
         TextView name = view.findViewById(R.id.TVGameName);
         TextView meta = view.findViewById(R.id.TVGameMeta);
+        boolean described = row.driver != null && !row.driver.isSystem() && !row.driver.description.isEmpty();
+        name.setMaxLines(described ? 2 : 1);
+        meta.setMaxLines(described ? 5 : 1);
         name.setText(row.name);
         name.setTextColor(context.getColor(row.selected ? R.color.wehavephones_accent : R.color.wehavephones_text));
         meta.setText(row.meta);

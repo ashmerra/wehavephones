@@ -1,0 +1,372 @@
+{
+  "schema": 1,
+  "rulesVersion": 6,
+  "minAppVersionCode": 1,
+  "updatedAt": "2026-10-12",
+  "drivers": {
+    "system": {
+      "type": "system",
+      "description": "The phone's own Vulkan driver via the wrapper"
+    },
+    "turnip26.3.0-devel-1b51639c20": {
+      "type": "adrenotools",
+      "asset": "graphics_driver/adrenotools-turnip26.3.0-devel-1b51639c20.tzst",
+      "url": null,
+      "sha256": "43c2f87e105594d3f5bf5ad317c551efa8b552a6b407d9790d0e38b0cc095207",
+      "libraryName": "vulkan.ad07xx.so",
+      "librarySha256": "6d924960369bddf190cd09365a8624a3aa04907f6622a22d520eb50adc043792",
+      "source": "Mesa 26.3.0-devel 1b51639c20 Turnip; validated on the Galaxy S23 (Adreno 740) on 2026-10-03; see graphics/turnip.json"
+    },
+    "turnip-gen8-stevenmxz-v37": {
+      "type": "adrenotools",
+      "asset": "graphics_driver/adrenotools-turnip-gen8-stevenmxz-v37.tzst",
+      "url": null,
+      "sha256": "73019a2b9167754c2ad40f0be99b90abf58ddaf89e37cf604845d73636140711",
+      "libraryName": "libvulkan_freedreno.so",
+      "librarySha256": "b6d445f512d15bb94be3d46bb2e2d27f604f161bf7400f32ed6008de59844c7f",
+      "source": "Turnip Gen8 V37 by StevenMXZ (Mesa a995eaeda4 plus the turnip/gen8 branch), 2026-09-30; knows A840 as 0x44050A21 and A830 as 0x44050001; see graphics/turnip-gen8-stevenmxz-v37.json"
+    },
+    "turnip-v32-rp6sched": {
+      "type": "adrenotools",
+      "asset": null,
+      "url": "https://raw.githubusercontent.com/arusiasotto/wow-forever-a840/f9312100803afb1fd59dc5555d34429935c2828d/driver/turnip-V32-RP6sched.zip",
+      "sha256": "05434d3c102563a4577f514410cc713494bcf900f52c2b935391adf87a76b77a",
+      "libraryName": "libvulkan_freedreno.so",
+      "librarySha256": "5eb018451354d531f8db1f0417337d026ec9d8495916560a50d5cdd8c0e335d9",
+      "source": "Turnip-V32-RP6sched by arusiasotto (github.com/arusiasotto/wow-forever-a840), 2026-09-26: whitebelyash/mesa-unified turnip/gen8 9c7e022 plus the RP6 ir3 barycentric scheduler patch and vk_icd exports (Mesa 26.3.0-devel-9c7e022+rp6sched); the driver of the only reported in-world WoW run on an Adreno 840 (RedMagic 11 Pro, D3D11). Knows A840 as 0xffff44050A31 and A825 as 0x44030000. Downloaded on first use; the download and install were verified on the Galaxy S23 on 2026-10-11, where WoW renders broken in-world, so keep it to Adreno 8xx profiles."
+    },
+    "turnip-whitebelyash-v32": {
+      "type": "adrenotools",
+      "asset": null,
+      "url": "https://github.com/whitebelyash/freedreno_turnip-CI/releases/download/tu_v32/mainline-turnip-V32.zip",
+      "sha256": "a40b086926916e3960c832fce3014c26ec946b956c46681a726d927e2700ad10",
+      "libraryName": "libvulkan_freedreno.so",
+      "librarySha256": "ff613390914110de958132b62c021beea967994d89258676490e8a1ed379be4e",
+      "source": "Mainline Turnip V32 by whitebelyash (github.com/whitebelyash/freedreno_turnip-CI release tu_v32, 2026-09-19): Mesa 26.3.0-devel from whitebelyash/mesa-unified turnip/gen8; lists the Adreno 840 and 830. The base of Turnip-V32-RP6sched without its scheduler patch."
+    },
+    "turnip-whitebelyash-stable-v2": {
+      "type": "adrenotools",
+      "asset": null,
+      "url": "https://github.com/whitebelyash/freedreno_turnip-CI/releases/download/stu_v2/stable-turnip-V2.zip",
+      "sha256": "426846964f9b9c3f182b9298a805e85c1f062a590f622cf4ddc9b0b5934a581e",
+      "libraryName": "libvulkan_freedreno.so",
+      "librarySha256": "c2dc3ff00a1016bfc96e1513a7b0e21b92ea79d33fc8076b34e5fa70b0af8e9e",
+      "source": "Stable Turnip V2 by whitebelyash (github.com/whitebelyash/freedreno_turnip-CI release stu_v2, 2026-09-19): Mesa 26.2.3 from whitebelyash/mesa-unified turnip/26.2; lists the Adreno 840."
+    },
+    "turnip-whitebelyash-a8xx-v29": {
+      "type": "adrenotools",
+      "asset": null,
+      "url": "https://github.com/whitebelyash/freedreno_turnip-CI/releases/download/tu_v29/a8xx-turnip-gen8-V29.zip",
+      "sha256": "d0b70db415f58d4ff94b9ded883c3c5ffb90fa3e8f653b9582c7ea6dec262efc",
+      "libraryName": "libvulkan_freedreno.so",
+      "librarySha256": "20524e9ddf377d261e4061d30351237b92ec0cdda95d0ffa50ec51ea1074756f",
+      "source": "A8XX Turnip V29 by whitebelyash (github.com/whitebelyash/freedreno_turnip-CI release tu_v29, 2026-06-15): Mesa 26.2.0-devel from whitebelyash/mesa-unified turnip/gen8; lists the Adreno 840, 830, 829, 825 and 810."
+    },
+    "turnip-gen8-stevenmxz-v33": {
+      "type": "adrenotools",
+      "asset": null,
+      "url": "https://github.com/StevenMXZ/freedreno_turnip-CI/releases/download/v33/Turnip_Gen8_V33.zip",
+      "sha256": "b8b67b04c1ba1e5243faa693eaed813da24f3203c2b11b52664dec00c5e66f43",
+      "libraryName": "libvulkan_freedreno.so",
+      "librarySha256": "d2f6ab15232ff92bae4d78cd04fe57795fa9a1810eee3e0e4028612a79c9c3a2",
+      "source": "Turnip Gen8 V33 by StevenMXZ (github.com/StevenMXZ/freedreno_turnip-CI release v33, 2026-07-14): Mesa 26.2.0-devel with the whitebelyash turnip/gen8 changes. GameHub lists it as turnip_v26.2.0_b8."
+    },
+    "turnip-gen8-stevenmxz-v30": {
+      "type": "adrenotools",
+      "asset": null,
+      "url": "https://github.com/StevenMXZ/freedreno_turnip-CI/releases/download/gen_8_v30/Turnip_Gen8_V30.zip",
+      "sha256": "0f57b8400bec62fdd9140e2d6fd3caa603ed56b6e532a0708c871647d85320ca",
+      "libraryName": "libvulkan_freedreno.so",
+      "librarySha256": "71f31c40b29aea3b81a561ba77f9e20c431cfb36078ed5f00f611a5900aa5f8c",
+      "source": "Turnip Gen8 V30 by StevenMXZ (github.com/StevenMXZ/freedreno_turnip-CI release gen_8_v30, 2026-05-01): Mesa 26.2.0-devel with the whitebelyash turnip/gen8 changes. GameHub lists it as turnip_v26.2.0_b1."
+    },
+    "turnip-mrpurple-t30": {
+      "type": "adrenotools",
+      "asset": null,
+      "url": "https://github.com/MrPurple666/purple-turnip/releases/download/vturnip_mrpurple_T30-toasted.adpkg/turnip_mrpurple_T30-toasted.adpkg.zip",
+      "sha256": "f65b2d3353fd4aa7190bb5426b94468e99ffea7a58a830bc0c4651db89353227",
+      "libraryName": "vulkan.purple.so",
+      "librarySha256": "1d80dfa019659b008e4669311db5b1e4a02af59ff1d5458a98e2f5fe18ed013b",
+      "source": "Turnip Driver Unified T30 by Mr_Purple_666 (github.com/MrPurple666/purple-turnip, 2026-08-17): Mesa 26.3.0-devel for Adreno 6xx, 7xx and 8xx."
+    },
+    "turnip-mrpurple-t26": {
+      "type": "adrenotools",
+      "asset": null,
+      "url": "https://github.com/MrPurple666/purple-turnip/releases/download/vturnip_mrpurple_T26-toasted.adpkg/turnip_mrpurple_T26-toasted.adpkg.zip",
+      "sha256": "318c41e96d828674f7936a7c0b562614fb0a7db66d33d5f41ffb8376c2f9b486",
+      "libraryName": "vulkan.purple.so",
+      "librarySha256": "77488fa487b6cf79f6ebcf0a9638243e615fb6f7113b7579720dce9ba737f8bf",
+      "source": "Turnip Driver Unified T26 by Mr_Purple_666 (github.com/MrPurple666/purple-turnip, 2026-03-07): Mesa 26.1.0-devel with whitebelyash 8xx changes; GameNative's default for Adreno 84x."
+    },
+    "turnip-gamehub-v26.0.0-r8-b12": {
+      "type": "adrenotools",
+      "asset": null,
+      "url": "https://downloads.gamenative.app/drivers/turnip_v26.0.0_R8_b12.zip",
+      "sha256": "d9784136bc4eed0a549c303fbe4183481248e6a726bb955100df50fac34019b3",
+      "libraryName": "libvulkan_freedreno.so",
+      "librarySha256": "aa0726d190be9027c33ab690b1dc84e074fe077d9dd8aa9108a5d9e11550e2ef",
+      "source": "GameHub's own Turnip build turnip_v26.0.0_R8_b12 (Mesa 26.0.0-devel), listed in GameHub as turnip_v26.0.0_R8_b4; this copy is GameNative's mirror. The builder and source commit are not published."
+    },
+    "qualcomm-891.7": {
+      "type": "adrenotools",
+      "asset": null,
+      "url": "https://github.com/StevenMXZ/freedreno_turnip-CI/releases/download/v891.7/v891.7.zip",
+      "sha256": "2ddf93b839db165db82a76a440564f73694c6f6e3c84097e56abb95075d469e7",
+      "libraryName": "vulkan.ad891.so",
+      "librarySha256": "b2c6e92a05d4e6388250f5ec6f94408f2e693cb7fd26274382913ddcb6586108",
+      "source": "Qualcomm Adreno driver v891.7 for Adreno 8xx, extracted from Honor firmware (github.com/StevenMXZ/freedreno_turnip-CI release v891.7, 2026-10-05)."
+    },
+    "qualcomm-863.1": {
+      "type": "adrenotools",
+      "asset": null,
+      "url": "https://github.com/StevenMXZ/freedreno_turnip-CI/releases/download/v863.1/v863.1.zip",
+      "sha256": "99267d762347b0be90db54cae8948a2c71725b35c9370ae348a149793ff7b900",
+      "libraryName": "vulkan.adreno.so",
+      "librarySha256": "1fa926afd585d1f5c21cd6349d2497bfe5172561e8b7ca76b558a3a48748edc1",
+      "source": "Qualcomm Adreno driver v863.1 for Adreno 8xx (github.com/StevenMXZ/freedreno_turnip-CI release v863.1, 2026-03-07)."
+    },
+    "qualcomm-849": {
+      "type": "adrenotools",
+      "asset": null,
+      "url": "https://github.com/K11MCH1/AdrenoToolsDrivers/releases/download/v849/Qualcomm_849_adpkg.zip",
+      "sha256": "3e193ed6b271a519429ef34af2209f1009c9e5892b3c8be19cea03d91f829c9c",
+      "libraryName": "vulkan.ad07xx.so",
+      "librarySha256": "a038f4874067453dac23cba6811ce43e133dbfaee606e0083c2e2e6b1254ccd1",
+      "source": "Qualcomm Adreno driver v849, extracted from an iQOO 15 (Snapdragon 8 Elite Gen 5) (github.com/K11MCH1/AdrenoToolsDrivers release v849, 2025-10-26)."
+    },
+    "qualcomm-842.6": {
+      "type": "adrenotools",
+      "asset": null,
+      "url": "https://github.com/K11MCH1/AdrenoToolsDrivers/releases/download/v842.6/8Elite2-842.6.zip",
+      "sha256": "1c18001cc568724ea7d7424f3ade0cd659ba695bb51170cf87f578677af78a56",
+      "libraryName": "vulkan.ad07xx.so",
+      "librarySha256": "752ea27689d57be898e33f92ebea9a81ec1b94dce7c82c5b58ba21fecede3f7e",
+      "source": "Qualcomm Adreno driver v842.6, extracted from a Snapdragon 8 Elite Gen 5 device (github.com/K11MCH1/AdrenoToolsDrivers release v842.6, 2025-09-30)."
+    }
+  },
+  "profiles": {
+    "adreno-7xx": {
+      "status": "tested",
+      "drivers": [
+        "turnip26.3.0-devel-1b51639c20",
+        "system"
+      ],
+      "env": {},
+      "vulkanCompatLayer": false,
+      "wowApiArg": null,
+      "notes": "Adreno 7xx (Galaxy S23, Adreno 740): the pinned Turnip, the long-standing default."
+    },
+    "adreno-6xx": {
+      "status": "untested",
+      "drivers": [
+        "turnip26.3.0-devel-1b51639c20",
+        "system"
+      ],
+      "env": {},
+      "vulkanCompatLayer": false,
+      "wowApiArg": null,
+      "notes": "Adreno 6xx: same driver choice as before device rules existed; no 6xx phone has been tested."
+    },
+    "adreno-8xx": {
+      "status": "community",
+      "drivers": [
+        "turnip-v32-rp6sched",
+        "turnip-gen8-stevenmxz-v37",
+        "turnip26.3.0-devel-1b51639c20",
+        "system"
+      ],
+      "choices": [
+        "turnip-whitebelyash-v32",
+        "turnip-whitebelyash-a8xx-v29",
+        "turnip-gen8-stevenmxz-v33",
+        "turnip-gen8-stevenmxz-v30",
+        "turnip-mrpurple-t30",
+        "turnip-mrpurple-t26",
+        "turnip-gamehub-v26.0.0-r8-b12",
+        "qualcomm-891.7",
+        "qualcomm-863.1",
+        "qualcomm-842.6"
+      ],
+      "env": {
+        "TU_DEBUG": "noconform,sysmem",
+        "WINEDLLOVERRIDES": "d3d12,d3d12core=d"
+      },
+      "vulkanCompatLayer": false,
+      "wowApiArg": "-d3d11",
+      "notes": "Adreno 800-839 (Gen 8 below the 840: 810, 825, 829, 830; Snapdragon 8 Elite, 8s Gen 4): the Adreno 840 setup (V32-RP6sched, then Gen 8 V37, with D3D11), then the pinned Turnip and the system driver. D3D12 is disabled because Battle.net's Play starts WoW without -d3d11 and WoW keeps its saved GxApi; without d3d12.dll it falls back to D3D11. A Lenovo tablet with an Adreno 825 drew incorrectly on the pinned Turnip with D3D12 (issue #17). Not yet run on an Adreno 8xx phone."
+    },
+    "adreno-84x": {
+      "status": "community",
+      "drivers": [
+        "system"
+      ],
+      "choices": [
+        "turnip-v32-rp6sched",
+        "turnip-gen8-stevenmxz-v37",
+        "turnip-whitebelyash-v32",
+        "turnip-whitebelyash-stable-v2",
+        "turnip-whitebelyash-a8xx-v29",
+        "turnip-gen8-stevenmxz-v33",
+        "turnip-gen8-stevenmxz-v30",
+        "turnip-mrpurple-t30",
+        "turnip-mrpurple-t26",
+        "turnip-gamehub-v26.0.0-r8-b12",
+        "turnip26.3.0-devel-1b51639c20",
+        "qualcomm-891.7",
+        "qualcomm-863.1",
+        "qualcomm-849",
+        "qualcomm-842.6"
+      ],
+      "env": {
+        "WINEDLLOVERRIDES": "d3d12,d3d12core=d"
+      },
+      "vulkanCompatLayer": false,
+      "wowApiArg": "-d3d11",
+      "notes": "Adreno 840 (Snapdragon 8 Elite Gen 5): the system driver with D3D11. On a OnePlus 15 (issue #13, chip 0x44050A31) every offered Turnip build drew glitches in WoW Retail, also with D3D11 (turnip-gamehub-v26.0.0-r8-b12 crashed at character select instead), while qualcomm-842.6 played in-world with some frame drops and the reporter called the system driver the best way to play. The Turnip builds stay in the picker: V32-RP6sched with D3D11 is the setup of the only other reported in-world run on an 840 (WoW Forever on a RedMagic 11 Pro). D3D12 is disabled because Battle.net's Play starts WoW without -d3d11 and WoW keeps its saved GxApi; without d3d12.dll it falls back to D3D11 (verified on the Galaxy S23)."
+    },
+    "adreno-other": {
+      "status": "untested",
+      "drivers": [
+        "turnip26.3.0-devel-1b51639c20",
+        "system"
+      ],
+      "env": {},
+      "vulkanCompatLayer": false,
+      "wowApiArg": null,
+      "notes": "Any other Adreno: same driver choice as before device rules existed."
+    },
+    "mali": {
+      "status": "tested",
+      "drivers": [
+        "system"
+      ],
+      "env": {},
+      "vulkanCompatLayer": true,
+      "wowApiArg": null,
+      "notes": "Mali and Immortalis (Pixel 8a, Mali-G715): the system driver with the BCn compat layer."
+    },
+    "non-adreno-other": {
+      "status": "untested",
+      "drivers": [
+        "system"
+      ],
+      "env": {},
+      "vulkanCompatLayer": true,
+      "wowApiArg": null,
+      "notes": "Xclipse, PowerVR and other non-Adreno GPUs: the system driver with the BCn compat layer, as before device rules existed."
+    },
+    "unknown-gpu": {
+      "status": "untested",
+      "drivers": [
+        "turnip26.3.0-devel-1b51639c20",
+        "system"
+      ],
+      "env": {},
+      "vulkanCompatLayer": false,
+      "wowApiArg": null,
+      "notes": "No GL renderer string: treated as a possible Adreno like before device rules existed."
+    }
+  },
+  "rules": [
+    {
+      "id": "adreno-84x",
+      "match": {
+        "gpuVendor": [
+          "adreno"
+        ],
+        "adrenoModel": [
+          "840-859"
+        ]
+      },
+      "profile": "adreno-84x",
+      "source": "GL renderer reports an Adreno 840-859"
+    },
+    {
+      "id": "adreno-84x-chip",
+      "match": {
+        "chipId": [
+          "0x44050AFF"
+        ]
+      },
+      "profile": "adreno-84x",
+      "source": "KGSL chip id 0x44050Axx (the OnePlus 15 and Galaxy S26 Ultra report 0x44050A31; 0x44050A21 was seen on a POCO F9 Pro); works when the renderer string has no model"
+    },
+    {
+      "id": "adreno-8xx",
+      "match": {
+        "gpuVendor": [
+          "adreno"
+        ],
+        "adrenoModel": [
+          "800-839"
+        ]
+      },
+      "profile": "adreno-8xx",
+      "source": "GL renderer reports an Adreno 800-839 (Gen 8 below the 840)"
+    },
+    {
+      "id": "adreno-7xx",
+      "match": {
+        "gpuVendor": [
+          "adreno"
+        ],
+        "adrenoModel": [
+          "700-799"
+        ]
+      },
+      "profile": "adreno-7xx",
+      "source": "Galaxy S23+ (Adreno 740) test device"
+    },
+    {
+      "id": "adreno-6xx",
+      "match": {
+        "gpuVendor": [
+          "adreno"
+        ],
+        "adrenoModel": [
+          "600-699"
+        ]
+      },
+      "profile": "adreno-6xx",
+      "source": "GL renderer reports an Adreno 600-699"
+    },
+    {
+      "id": "adreno-other",
+      "match": {
+        "gpuVendor": [
+          "adreno"
+        ]
+      },
+      "profile": "adreno-other",
+      "source": "Adreno without a recognised model"
+    },
+    {
+      "id": "mali",
+      "match": {
+        "gpuVendor": [
+          "mali"
+        ]
+      },
+      "profile": "mali",
+      "source": "Pixel 8a (Mali-G715) test device"
+    },
+    {
+      "id": "non-adreno-other",
+      "match": {
+        "gpuVendor": [
+          "xclipse",
+          "powervr",
+          "other"
+        ]
+      },
+      "profile": "non-adreno-other",
+      "source": "Known non-Adreno renderer"
+    },
+    {
+      "id": "catch-all",
+      "match": {},
+      "profile": "unknown-gpu",
+      "source": "Empty or unreadable renderer string"
+    }
+  ]
+}

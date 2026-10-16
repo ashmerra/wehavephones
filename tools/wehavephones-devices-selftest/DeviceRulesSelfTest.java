@@ -46,9 +46,15 @@ public final class DeviceRulesSelfTest {
     private static final String TURNIP = "turnip26.3.0-devel-1b51639c20";
     private static final String GEN8 = "turnip-gen8-stevenmxz-v37";
     private static final String V32 = "turnip-v32-rp6sched";
+    private static final String RUTABAGA = "turnip-gamesir-rutabaga-v3";
+    private static final String[] BANNERS = {
+        "turnip-banner-26.3.0-20261015-r4-a8xx", "turnip-banner-26.3.0-20261015-r5-a8xx",
+        "turnip-banner-26.3.0-20261015-r6-a8xx", "turnip-banner-26.3.0-20261015-r7-a8xx",
+        "turnip-banner-27.0.0-20261016-r3-a8xx", "turnip-banner-27.0.0-20261016-r4-a8xx"
+    };
 
     public static void main(String[] args) throws Exception {
-        if (args.length < 1) throw new IllegalArgumentException("usage: DeviceRulesSelfTest <device-rules.json>");
+        if (args.length < 2) throw new IllegalArgumentException("usage: DeviceRulesSelfTest <device-rules.json> <v6-baseline.json>");
         bundledJson = new String(Files.readAllBytes(new File(args[0]).toPath()), StandardCharsets.UTF_8);
         bundledVersion = new JSONObject(bundledJson).getInt("rulesVersion");
         workRoot = Files.createTempDirectory("device-rules-selftest").toFile();
@@ -56,6 +62,7 @@ public final class DeviceRulesSelfTest {
             testIdentity();
             testParseValidation();
             testBundledMatching();
+            testOptionalTurnipUpdate(new String(Files.readAllBytes(new File(args[1]).toPath()), StandardCharsets.UTF_8));
             testCriteriaSemantics();
             testRemoteAcceptance();
             testCachedRulesRevalidated();
@@ -246,6 +253,150 @@ public final class DeviceRulesSelfTest {
         ArrayList<String> list = new ArrayList<>();
         for (DeviceRules.Driver driver : drivers) list.add(driver.id);
         return list;
+    }
+
+    // The exact committed v6 catalog freezes every pre-existing default, rule and saved driver id.
+    private static void testOptionalTurnipUpdate(String baselineJson) throws Exception {
+        JSONObject before = new JSONObject(baselineJson);
+        JSONObject after = new JSONObject(bundledJson);
+        DeviceRules oldRules = DeviceRules.parse(baselineJson);
+        DeviceRules newRules = parseBundled();
+        eq(6, before.getInt("rulesVersion"), "baseline is the pre-update v6 catalog");
+        check(after.getInt("rulesVersion") > 6, "optional update bumps rulesVersion");
+        JSONObject oldHeader = new JSONObject(baselineJson);
+        JSONObject newHeader = new JSONObject(bundledJson);
+        for (String key : new String[] {"rulesVersion", "updatedAt", "drivers", "profiles"}) {
+            oldHeader.remove(key);
+            newHeader.remove(key);
+        }
+        check(oldHeader.similar(newHeader), "all rule matching, schema and app-version requirements unchanged");
+        JSONObject oldDrivers = before.getJSONObject("drivers");
+        JSONObject newDrivers = after.getJSONObject("drivers");
+        for (String id : oldDrivers.keySet()) {
+            check(oldDrivers.getJSONObject(id).similar(newDrivers.getJSONObject(id)), "existing driver unchanged: " + id);
+        }
+        eq(oldDrivers.length() + 7, newDrivers.length(), "exactly seven requested releases added");
+        JSONObject oldProfiles = before.getJSONObject("profiles");
+        JSONObject newProfiles = after.getJSONObject("profiles");
+        eq(oldProfiles.keySet(), newProfiles.keySet(), "no profiles added or removed");
+
+        // Exercise the real matcher over all numeric Adreno models, plus every other vendor below.
+        for (int model = 0; model < 1000; model++) {
+            DeviceIdentity id = identity("Adreno (TM) " + model, -1);
+            eq(oldRules.match(id).rule.id, newRules.match(id).rule.id, "unchanged rule for model " + model);
+            eq(oldRules.match(id).profile.name, newRules.match(id).profile.name, "unchanged profile for model " + model);
+        }
+        Map<String, DeviceIdentity> identities = new HashMap<>();
+        identities.put("adreno-6xx", identity("Adreno (TM) 650", -1));
+        identities.put("adreno-7xx", identity("Adreno (TM) 740", -1));
+        identities.put("adreno-8xx", identity("Adreno (TM) 830", -1));
+        identities.put("adreno-84x", identity("Adreno (TM) 840", 0x44050A31L));
+        identities.put("adreno-other", identity("Adreno (TM)", -1));
+        identities.put("mali", identity("Mali-G715", -1));
+        identities.put("non-adreno-other", identity("Samsung Xclipse 940", -1));
+        identities.put("unknown-gpu", identity("", -1));
+        eq(oldProfiles.keySet(), identities.keySet(), "regression exercises every existing profile");
+        for (String name : oldProfiles.keySet()) {
+            JSONObject oldProfile = new JSONObject(oldProfiles.getJSONObject(name).toString());
+            JSONObject newProfile = new JSONObject(newProfiles.getJSONObject(name).toString());
+            oldProfile.remove("choices");
+            newProfile.remove("choices");
+            check(oldProfile.similar(newProfile), "every profile default and ordered automatic list unchanged: " + name);
+            DeviceRules.Profile oldP = oldRules.getProfile(name);
+            DeviceRules.Profile newP = newRules.getProfile(name);
+            ArrayList<String> expected = new ArrayList<>(ids(oldP.pickerDrivers()));
+            boolean a8xx = name.equals("adreno-8xx") || name.equals("adreno-84x");
+            if (a8xx || name.equals("adreno-6xx") || name.equals("adreno-7xx")) expected.add(RUTABAGA);
+            if (a8xx) java.util.Collections.addAll(expected, BANNERS);
+            eq(expected, ids(newP.pickerDrivers()), "exact optional applicability and old picker order: " + name);
+            DeviceIdentity id = identities.get(name);
+            eq(name, newRules.match(id).profile.name, "representative matches " + name);
+            eq(DeviceProfileSelector.automaticDriver(newContext(), oldP).id,
+                DeviceProfileSelector.automaticDriver(newContext(), newP).id, "picker Automatic unchanged: " + name);
+
+            // Fail each prefix to cover every fallback position, with all optional choices available.
+            for (int prefix = 0; prefix <= oldP.drivers.size(); prefix++) {
+                FakeProber oldProbe = new FakeProber();
+                FakeProber newProbe = new FakeProber();
+                for (int i = 0; i < prefix; i++) {
+                    oldProbe.outcomes.put(oldP.drivers.get(i), false);
+                    newProbe.outcomes.put(oldP.drivers.get(i), false);
+                }
+                GraphicsPlan oldPlan = DeviceProfileSelector.select(newContext(), id,
+                    new DeviceRulesStore.Loaded(oldRules, "bundled"), oldProbe, available());
+                GraphicsPlan newPlan = DeviceProfileSelector.select(newContext(), id,
+                    new DeviceRulesStore.Loaded(newRules, "bundled"), newProbe, available());
+                samePlan(oldPlan, newPlan, name + " fallback " + prefix);
+                eq(oldProbe.calls, newProbe.calls, "no optional probes in Automatic: " + name + " fallback " + prefix);
+            }
+            FakeProber missingProbe = new FakeProber();
+            GraphicsPlan missing = DeviceProfileSelector.select(newContext(), id,
+                new DeviceRulesStore.Loaded(newRules, "bundled"), missingProbe,
+                available(oldP.drivers.toArray(new String[0])));
+            eq("system", missing.driverId, "missing defaults never auto-select an optional driver: " + name);
+            check(missingProbe.calls.isEmpty(), "missing defaults never probe optional choices: " + name);
+
+            // Save using the old catalog, then resolve using the new catalog without re-saving.
+            for (DeviceRules.Driver driver : oldP.pickerDrivers()) {
+                Context ctx = newContext();
+                DeviceProfileSelector.setDriverChoice(ctx, driver);
+                GraphicsPlan plan = DeviceProfileSelector.select(ctx, id,
+                    new DeviceRulesStore.Loaded(newRules, "bundled"), new FakeProber(), available());
+                eq(driver.id, plan.driverId, "existing saved pick still used: " + name + "/" + driver.id);
+                eq(driver.id, DeviceProfileSelector.driverChoice(ctx), "saved preference preserved: " + name + "/" + driver.id);
+                eq(oldP.env, plan.env, "saved pick preserves environment: " + name);
+                eq(oldP.wowApiArg, plan.wowApiArg, "saved pick preserves graphics API: " + name);
+                eq(oldP.vulkanCompatLayer, plan.vulkanCompatLayer, "saved pick preserves compat layer: " + name);
+            }
+            for (DeviceRules.Driver driver : newP.choiceEntries) {
+                if (oldDrivers.has(driver.id)) continue;
+                check(driver.description.contains("Experimental") && driver.description.contains("unverified"),
+                    "experimental compatibility warning: " + driver.id);
+                Context ctx = newContext();
+                DeviceProfileSelector.setDriverChoice(ctx, driver);
+                GraphicsPlan plan = DeviceProfileSelector.select(ctx, id,
+                    new DeviceRulesStore.Loaded(newRules, "bundled"), new FakeProber(), available());
+                eq(driver.id, plan.driverId, "new explicit pick works: " + name + "/" + driver.id);
+                eq(oldP.env, plan.env, "new pick preserves environment: " + name);
+                eq(oldP.wowApiArg, plan.wowApiArg, "new pick preserves graphics API: " + name);
+                eq(oldP.vulkanCompatLayer, plan.vulkanCompatLayer, "new pick preserves compat layer: " + name);
+                Context failed = newContext();
+                DeviceProfileSelector.setDriverChoice(failed, driver);
+                FakeProber failureProbe = new FakeProber();
+                failureProbe.outcomes.put(driver.id, false);
+                GraphicsPlan fallback = DeviceProfileSelector.select(failed, id,
+                    new DeviceRulesStore.Loaded(newRules, "bundled"), failureProbe, available());
+                GraphicsPlan baseline = DeviceProfileSelector.select(newContext(), id,
+                    new DeviceRulesStore.Loaded(oldRules, "bundled"), new FakeProber(), available());
+                baseline.driverChoice = driver.id;
+                samePlan(baseline, fallback, "failed new choice returns to unchanged defaults: " + name + "/" + driver.id);
+                eq(driver.id, DeviceProfileSelector.driverChoice(failed), "failed choice does not rewrite the saved pick");
+            }
+        }
+        // Optional entries never participate in startup prefetch.
+        DeviceDriverStore.Downloader savedDownloader = DeviceDriverStore.downloader;
+        try {
+            DeviceDriverStore.downloader = (url, target, max) -> {
+                for (String id : newDrivers.keySet()) {
+                    if (!oldDrivers.has(id)) check(!url.equals(newRules.getDriver(id).url), "no optional prefetch: " + id);
+                }
+                throw new IOException("offline regression fixture");
+            };
+            for (String name : oldProfiles.keySet()) DeviceDriverStore.prefetchNow(newContext(), newRules.getProfile(name));
+        }
+        finally {
+            DeviceDriverStore.downloader = savedDownloader;
+        }
+    }
+
+    private static void samePlan(GraphicsPlan before, GraphicsPlan after, String message) throws Exception {
+        JSONObject oldPlan = new JSONObject(before.toJson());
+        JSONObject newPlan = new JSONObject(after.toJson());
+        for (String key : new String[] {"rulesVersion", "log"}) {
+            oldPlan.remove(key);
+            newPlan.remove(key);
+        }
+        check(oldPlan.similar(newPlan), "all graphics plan defaults unchanged: " + message);
     }
 
     // ---- matching ----
