@@ -57,6 +57,12 @@
                 android:lineSpacingExtra="2dp"
                 android:textColor="@color/wehavephones_text_dim"
                 android:textSize="11sp" />
+            <Button
+                android:id="@+id/BTAddonsCurseForge"
+                style="@style/WeHavePhonesButtonSmall"
+                android:layout_width="match_parent"
+                android:layout_marginTop="6dp"
+                android:text="@string/wehavephones_curseforge_open" />
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

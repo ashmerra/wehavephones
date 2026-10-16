@@ -17,6 +17,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 
+import com.wehavephones.mobile.CurseForgeLauncher;
 import com.wehavephones.mobile.WowProduct;
 import com.wehavephones.mobile.addons.install.DiscoveredAddon;
 import com.wehavephones.mobile.addons.model.AddonRecord;
@@ -77,6 +78,9 @@ public class AddonsActivity extends AppCompatActivity {
         findViewById(R.id.BTAddonsUpdateAll).setOnClickListener((v) -> updateAll());
         findViewById(R.id.BTAddonsBrowse).setOnClickListener((v) -> showScreen(new AddonBrowseFragment()));
         findViewById(R.id.BTAddonsImport).setOnClickListener((v) -> launchImportPicker());
+        // CurseForge's own app changes AddOns, and the list rescans when shown again.
+        findViewById(R.id.BTAddonsCurseForge).setOnClickListener((v) ->
+                CurseForgeLauncher.open(this, (message, error) -> showStatus(message)));
 
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction()

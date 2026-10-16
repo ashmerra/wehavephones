@@ -216,3 +216,53 @@ whatever its directory is called). One release zip serves every flavor.
 - **Host self-test:** `testConsolePort` in the addon self-test also installs
   the real bundled archive when it is present. `testControllerSetupAddon`
   covers the companion sync.
+
+## 10. CurseForge's own app (no API key)
+
+Add-ons → **Open CurseForge** runs the standalone CurseForge Windows app in
+the game's container. It finds the WoW installs and installs, updates and
+removes addons from the whole CurseForge catalog itself, so the app needs no
+CurseForge API key. Players can continue as a guest. Code:
+`CurseForgeLauncher` (Android side) and `CurseForgeSetup` (feed, batch file
+and settings, covered by the launch self-test).
+
+- **Download:** the official web installer is a .NET bootstrapper that needs
+  Wine Mono and WebView2, so it exits at once in the container. The launcher
+  reads the app's own update feed (electron-updater `latest.yml` on
+  `electron-updates.overwolf.com`), downloads the full `setup.exe` (about
+  126 MB) over HTTPS from `*.overwolf.com`, and checks its size and SHA-512
+  against the feed. Nothing is bundled.
+- **Install:** `wehavephones-curseforge.bat` runs the installer with `/S`
+  (per user, `%LOCALAPPDATA%\Programs\CurseForge`). The installer asks
+  PowerShell whether CurseForge is running, and Wine's PowerShell stub always
+  answers yes, so the batch file moves both `powershell.exe` stubs aside for
+  the install and restores them (also at the start of the next run if a
+  session was interrupted). The installed version goes to
+  `C:\windows\wehavephones-curseforge\installed-version.txt`. A newer feed
+  version is installed on the next open, but only over a release this app
+  installed.
+- **Start:** the container's `dxgi.dll`/`d3d11.dll` are ARM64-only builds for
+  the native ARM64 game, which the x64 app cannot load (status `c000007b`),
+  and Chromium aborts without `CreateDXGIFactory1`. Wine's own ARM64X builds
+  are staged and copied next to `CurseForge.exe` before each start.
+  Chromium runs with `--no-sandbox --disable-gpu`. The .NET mods agent
+  (`Curse.Agent.Host.exe`) crashes with `ExecutionEngineException` under
+  emulation unless `DOTNET_EnableWriteXorExecute=0` is set.
+- **Settings:** before each start the launcher sets CurseForge to exit when
+  closed and not to start with Windows (`storage.json` →
+  `general-settings`), and the batch file removes its `Run` entry. Hidden in
+  the background it would keep using memory and changing AddOns after the
+  player goes back to play.
+- **Session:** it refuses while WoW runs. A running session gets the batch
+  file through WinHandler. Otherwise a new session starts with the Battle.net
+  runtime, the stability FEX preset and a 1280x800 desktop. Free memory on
+  the S23 dropped from about 2.5 GB to 0.6 to 1 GB while it ran.
+- **Validated** on the S23 (2026-10-15): fresh download and install, guest
+  sign-in, Classic Era detected with its addons, search and install of an
+  addon into `_classic_era_/Interface/AddOns`, exit on close. Not yet
+  validated: the in-session WinHandler path, an update to a newer feed
+  version, and other phones.
+- **Limits:** the empty Wine desktop stays after CurseForge closes (use the
+  session menu's Exit, as after Battle.net). CurseForge's own updater cannot
+  install updates in the container for the same PowerShell reason, so updates
+  come from the launcher.

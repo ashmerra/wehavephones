@@ -38,6 +38,9 @@ public final class LaunchSelfTest {
         bnetConfig();
         firstLoginConfig();
         loginForm();
+        curseForgeFeed();
+        curseForgeBat();
+        curseForgeSettings();
 
         System.out.println("[launch-selftest] " + checks + " checks, " + failures + " failure(s)");
         System.exit(failures == 0 ? 0 : 1);
@@ -593,6 +596,76 @@ public final class LaunchSelfTest {
         ArrayList<String> names = new ArrayList<>();
         for (WeHavePhonesLaunchPlan.Attempt attempt : attempts) names.add(attempt.describe());
         return String.join(" -> ", names);
+    }
+
+    // ---- CurseForge app in the container -------------------------------------------------
+
+    private static final String CF_SHA = "+5P7TW9HwQICBl4QioxDkIQKrd8A3j5+DLAV8WrhGQ/izH9Q6Nr+0v59Wu2KVcGnkvykNsDTbX+Y1bTl3+i7ig==";
+
+    private static String cfFeed(String url, String sha, String size) {
+        return "releaseName: CurseForge Windows\nstagingPercentage: 10\nfiles:\n"
+                + "  - url: " + url + "\n    sha512: " + sha + "\n    size: " + size + "\n"
+                + "    blockMapSize: 133116\n    IsAdminRightsRequired: false\n"
+                + "  - url: https://appsdl.overwolf.com/prod/apps/other/setup2.exe\n    sha512: x\n    size: 1\n"
+                + "version: 1.324.0-41180\nreleaseDate: 2026-10-15T07:36:11.167Z\n"
+                + "releaseNotes: >\n  - url: https://evil.example/notes\n  size: 5\n";
+    }
+
+    private static void curseForgeFeed() {
+        String url = "https://appsdl.overwolf.com/prod/apps/cfiahnpaolfnlgaihhmobmnjdafknjnjdpdabpcm/1.324.0-41180/setup.exe";
+        CurseForgeSetup.Release release = CurseForgeSetup.parseFeed(cfFeed(url, CF_SHA, "126470712"));
+        check("cf feed parsed", true, release != null);
+        if (release != null) {
+            check("cf feed version", "1.324.0-41180", release.version);
+            check("cf feed first file url", url, release.url);
+            check("cf feed sha512", CF_SHA, release.sha512);
+            check("cf feed size", 126470712L, release.size);
+        }
+        check("cf feed rejects http", null, CurseForgeSetup.parseFeed(cfFeed(url.replace("https:", "http:"), CF_SHA, "1")));
+        check("cf feed rejects other host", null,
+                CurseForgeSetup.parseFeed(cfFeed("https://appsdl.overwolf.com.evil.example/setup.exe", CF_SHA, "1")));
+        check("cf feed rejects bad sha", null, CurseForgeSetup.parseFeed(cfFeed(url, "abc", "1")));
+        check("cf feed rejects bad size", null, CurseForgeSetup.parseFeed(cfFeed(url, CF_SHA, "big")));
+        check("cf feed rejects empty", null, CurseForgeSetup.parseFeed(""));
+        check("cf update skips unknown install", false, CurseForgeSetup.needsUpdate(null, release));
+        check("cf update skips same version", false, CurseForgeSetup.needsUpdate("1.324.0-41180\r\n", release));
+        check("cf update on new version", true, CurseForgeSetup.needsUpdate("1.323.0-1", release));
+    }
+
+    private static void curseForgeBat() {
+        String launch = CurseForgeSetup.bat(null);
+        String install = CurseForgeSetup.bat("1.324.0-41180");
+        check("cf launch restores PowerShell first", true,
+                launch.indexOf("if exist \"%PS64%.wehavephones\"") < launch.indexOf(":launch"));
+        check("cf launch runs the app", "\"%APP%\\CurseForge.exe\" --no-sandbox --disable-gpu", lastLine(launch));
+        check("cf launch disables W^X for the agent", true, launch.contains("set DOTNET_EnableWriteXorExecute=0\r\n"));
+        check("cf launch copies hybrid dxgi", true,
+                launch.contains("copy /y \"%STAGE%\\dxgi.dll\" \"%APP%\\dxgi.dll\""));
+        check("cf launch writes no version", false, launch.contains("installed-version.txt"));
+        check("cf install hides PowerShell around setup", true,
+                install.indexOf("move /y \"%PS64%\" \"%PS64%.wehavephones\"") < install.indexOf("CurseForge-Setup.exe\" /S")
+                && install.indexOf("CurseForge-Setup.exe\" /S") < install.lastIndexOf("move /y \"%PS64%.wehavephones\" \"%PS64%\""));
+        check("cf install stops on failure", true, install.contains("if not \"%RESULT%\"==\"0\" exit /b %RESULT%"));
+        check("cf install records version", true,
+                install.contains(">\"%STAGE%\\installed-version.txt\" echo 1.324.0-41180\r\n"));
+        check("cf bat uses CRLF only", false, install.replace("\r\n", "").contains("\n"));
+    }
+
+    private static void curseForgeSettings() {
+        String existing = "{\"session-counter\":3,\"general-settings\":"
+                + "\"{\\\"runOnStartup\\\":true,\\\"closeCurseForgeAction\\\":0,\\\"dateFormat\\\":null}\"}";
+        JSONObject root = new JSONObject(CurseForgeSetup.configureSettings(existing));
+        JSONObject general = new JSONObject(root.getString("general-settings"));
+        check("cf settings exit on close", 1, general.getInt("closeCurseForgeAction"));
+        check("cf settings no startup", false, general.getBoolean("runOnStartup"));
+        check("cf settings keep other general keys", true, general.has("dateFormat"));
+        check("cf settings keep other sections", 3, root.getInt("session-counter"));
+        JSONObject fresh = new JSONObject(new JSONObject(CurseForgeSetup.configureSettings(null)).getString("general-settings"));
+        check("cf settings fresh exit on close", 1, fresh.getInt("closeCurseForgeAction"));
+        JSONObject broken = new JSONObject(new JSONObject(CurseForgeSetup.configureSettings("{not json")).getString("general-settings"));
+        check("cf settings replace unreadable", false, broken.getBoolean("runOnStartup"));
+        check("cf bat removes startup entry", true, CurseForgeSetup.bat(null).contains(
+                "reg.exe delete \"HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\" /v com.overwolf.curseforge /f"));
     }
 
     private static String lastLine(String bat) {

@@ -70,6 +70,7 @@ else
       "$SRC_DIR/BattleNetLauncherLog.java"
       "$SRC_DIR/WeHavePhonesLaunchPlan.java"
       "$SRC_DIR/WeHavePhonesBnetConfig.java"
+      "$SRC_DIR/CurseForgeSetup.java"
       "$SELF_TEST_DIR/LaunchSelfTest.java"
     )
     if "$JAVAC" -encoding UTF-8 -d "$WORK_DIR" -cp "$JSON_JAR" "${SOURCES[@]}"; then
