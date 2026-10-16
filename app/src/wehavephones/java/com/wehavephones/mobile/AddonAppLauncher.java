@@ -24,97 +24,99 @@ import java.security.MessageDigest;
 import java.util.concurrent.Executors;
 
 /**
- * Runs CurseForge's own Windows app in the game's container. It manages
- * addons for the WoW install itself, so no CurseForge API key is needed.
- * The app is downloaded from CurseForge's update server on first use and is
- * never bundled. See {@link CurseForgeSetup} for what the container needs.
+ * Runs an addon manager's own Windows app (CurseForge or WowUp) in the game's
+ * container. It manages addons for the WoW installs itself, so no API key is
+ * needed. The app is downloaded from its publisher on first use and is never
+ * bundled. See {@link AddonApp} for what the container needs.
  */
-public final class CurseForgeLauncher {
-    public static final String BAT_NAME = "wehavephones-curseforge.bat";
-    public static final String BAT_GUEST = "C:\\" + BAT_NAME;
-    public static final String SHORTCUT_NAME = "CurseForge";
-    /** A desktop app needs more room than the low game default. */
-    public static final String SCREEN_SIZE = WeHavePhonesConfig.BNET_SETUP_SCREEN_SIZE;
+public final class AddonAppLauncher {
     private static final int FEED_MAX_BYTES = 64 * 1024;
 
     public interface Listener {
         void onStatus(String message, boolean error);
     }
 
-    private CurseForgeLauncher() {}
+    private AddonAppLauncher() {}
 
-    public static File stageDir(Container container) {
-        return new File(WeHavePhonesPaths.driveC(container), CurseForgeSetup.STAGE_DIR);
+    public static File stageDir(Container container, AddonApp app) {
+        return new File(WeHavePhonesPaths.driveC(container), app.stageDir());
     }
 
     /** The installed app in the first prefix user that has it. */
-    public static File findApp(Container container) {
+    public static File findApp(Container container, AddonApp app) {
         File[] users = new File(WeHavePhonesPaths.driveC(container), "users").listFiles();
         if (users == null) return null;
         for (File user : users) {
-            File candidate = new File(user, "AppData/Local/" + CurseForgeSetup.APP_DIR + "/" + CurseForgeSetup.APP_EXE);
+            File candidate = new File(user, "AppData/Local/" + app.appDir() + "/" + app.exe);
             if (candidate.isFile()) return candidate;
         }
         return null;
     }
 
-    public static void open(final Activity activity, final Listener listener) {
+    public static void open(final Activity activity, final AddonApp app, final Listener listener) {
+        final String name = app.displayName;
         if (WowImportService.isRunning()) {
             listener.onStatus(activity.getString(R.string.wehavephones_import_wait), true);
             return;
         }
         if (ProcessScanner.findWowProcess() != null) {
-            listener.onStatus(activity.getString(R.string.wehavephones_curseforge_close_game), true);
+            listener.onStatus(activity.getString(R.string.wehavephones_addon_app_close_game, name), true);
             return;
         }
         if (OneButtonLauncher.isRunning() || RuntimeStageController.isRunning()) {
             listener.onStatus(activity.getString(R.string.wehavephones_launch_in_progress), true);
             return;
         }
-        listener.onStatus(activity.getString(R.string.wehavephones_curseforge_starting), false);
+        listener.onStatus(activity.getString(R.string.wehavephones_addon_app_starting, name), false);
         Executors.newSingleThreadExecutor().execute(() -> {
             Container container = WeHavePhonesContainers.resolve(activity);
             if (container == null) {
                 post(activity, listener, activity.getString(R.string.wehavephones_stage_setup_required), true);
                 return;
             }
-            File stage = stageDir(container);
-            if (!stageHybridDlls(activity, container, stage)) {
-                post(activity, listener, activity.getString(R.string.wehavephones_curseforge_dlls_failed), true);
+            File stage = stageDir(container, app);
+            if (!stageHybridDlls(activity, container, stage) || !stagePatchScript(app, stage)) {
+                post(activity, listener, activity.getString(R.string.wehavephones_addon_app_dlls_failed, name), true);
                 return;
             }
-            boolean installed = findApp(container) != null;
-            CurseForgeSetup.Release latest = fetchLatest();
-            File versionFile = new File(stage, CurseForgeSetup.VERSION_FILE);
+            boolean installed = findApp(container, app) != null;
+            AddonApp.Release latest = fetchLatest(app);
+            File versionFile = new File(stage, AddonApp.VERSION_FILE);
             String installedVersion = versionFile.isFile() ? FileUtils.readString(versionFile) : null;
-            if (installed && !CurseForgeSetup.needsUpdate(installedVersion, latest)) {
-                start(activity, container, null, listener);
+            if (installed && !AddonApp.needsUpdate(installedVersion, latest)) {
+                start(activity, container, app, null, listener);
                 return;
             }
             if (latest == null) {
                 // An installed app still opens when the update server is unreachable.
-                if (installed) start(activity, container, null, listener);
-                else post(activity, listener, activity.getString(R.string.wehavephones_curseforge_feed_failed), true);
+                if (installed) start(activity, container, app, null, listener);
+                else post(activity, listener, activity.getString(R.string.wehavephones_addon_app_feed_failed, name), true);
                 return;
             }
-            File installer = new File(stage, CurseForgeSetup.INSTALLER_NAME);
+            File installer = new File(stage, app.installerName());
             if (installer.isFile() && matches(installer, latest)) {
-                start(activity, container, latest.version, listener);
+                start(activity, container, app, latest.version, listener);
                 return;
             }
             installer.delete();
-            post(activity, listener, activity.getString(installed ? R.string.wehavephones_curseforge_updating
-                    : R.string.wehavephones_curseforge_downloading, latest.version, latest.size / (1024 * 1024)), false);
+            post(activity, listener, activity.getString(installed ? R.string.wehavephones_addon_app_updating
+                    : R.string.wehavephones_addon_app_downloading, name, latest.version, latest.size / (1024 * 1024)), false);
             activity.runOnUiThread(() -> HttpUtils.download(activity, latest.url, installer, (success) ->
                     Executors.newSingleThreadExecutor().execute(() -> {
                         if (!success || !matches(installer, latest)) {
                             installer.delete();
-                            post(activity, listener, activity.getString(R.string.wehavephones_curseforge_download_failed), true);
+                            post(activity, listener, activity.getString(R.string.wehavephones_addon_app_download_failed, name), true);
                             return;
                         }
-                        start(activity, container, latest.version, listener);
+                        start(activity, container, app, latest.version, listener);
                     })));
         });
+    }
+
+    private static boolean stagePatchScript(AddonApp app, File stage) {
+        if (app.patchScript == null) return true;
+        byte[] script = AddonApp.WOWUP_CONTAINER_FIXES_JS.getBytes(StandardCharsets.UTF_8);
+        return FileUtils.write(new File(stage, app.patchScript), script);
     }
 
     /** Copies Wine's ARM64X DirectX DLLs where the batch file picks them up. */
@@ -128,7 +130,7 @@ public final class CurseForgeLauncher {
         if (wine.path == null) return false;
         File source = new File(wine.path, "lib/wine/" + (wine.isArm64EC() ? "aarch64-windows" : "x86_64-windows"));
         if (!stage.isDirectory() && !stage.mkdirs()) return false;
-        for (String dll : CurseForgeSetup.HYBRID_DLLS) {
+        for (String dll : AddonApp.HYBRID_DLLS) {
             File from = new File(source, dll);
             File to = new File(stage, dll);
             if (!from.isFile()) return false;
@@ -138,27 +140,27 @@ public final class CurseForgeLauncher {
         return true;
     }
 
-    /** Presets CurseForge to exit when closed, for every prefix user. */
-    private static void configureSettings(Container container) {
+    /** Presets the app to exit when closed, for every prefix user. */
+    private static void configureSettings(Container container, AddonApp app) {
         File[] users = new File(WeHavePhonesPaths.driveC(container), "users").listFiles();
         if (users == null) return;
         for (File user : users) {
             if (!new File(user, "AppData").isDirectory() || user.getName().equalsIgnoreCase("Public")) continue;
-            File settings = new File(user, "AppData/Roaming/" + CurseForgeSetup.SETTINGS_FILE);
+            File settings = new File(user, "AppData/Roaming/" + app.settingsFile);
             File directory = settings.getParentFile();
             if (directory != null && !directory.isDirectory() && !directory.mkdirs()) continue;
             String current = settings.isFile() ? FileUtils.readString(settings) : null;
-            String updated = CurseForgeSetup.configureSettings(current);
+            String updated = app.configureSettings(current);
             if (updated != null && !updated.equals(current)) {
                 FileUtils.write(settings, updated.getBytes(StandardCharsets.UTF_8));
             }
         }
     }
 
-    private static CurseForgeSetup.Release fetchLatest() {
+    private static AddonApp.Release fetchLatest(AddonApp app) {
         HttpURLConnection connection = null;
         try {
-            connection = (HttpURLConnection)new URL(CurseForgeSetup.FEED_URL).openConnection();
+            connection = (HttpURLConnection)new URL(app.feedUrl).openConnection();
             connection.setConnectTimeout(15000);
             connection.setReadTimeout(15000);
             if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) return null;
@@ -169,7 +171,7 @@ public final class CurseForgeLauncher {
                 while (total < buffer.length && (read = in.read(buffer, total, buffer.length - total)) != -1) {
                     total += read;
                 }
-                return CurseForgeSetup.parseFeed(new String(buffer, 0, total, StandardCharsets.UTF_8));
+                return app.parseFeed(new String(buffer, 0, total, StandardCharsets.UTF_8));
             }
         }
         catch (Exception e) {
@@ -181,7 +183,7 @@ public final class CurseForgeLauncher {
     }
 
     /** Size and SHA-512 from the feed, the same check the app's own updater makes. */
-    private static boolean matches(File file, CurseForgeSetup.Release release) {
+    private static boolean matches(File file, AddonApp.Release release) {
         if (file.length() != release.size) return false;
         try (InputStream in = new FileInputStream(file)) {
             MessageDigest digest = MessageDigest.getInstance("SHA-512");
@@ -195,21 +197,23 @@ public final class CurseForgeLauncher {
         }
     }
 
-    private static void start(Activity activity, Container container, String installVersion, Listener listener) {
-        configureSettings(container);
-        if (!FileUtils.write(new File(WeHavePhonesPaths.driveC(container), BAT_NAME),
-                CurseForgeSetup.bat(installVersion).getBytes(StandardCharsets.UTF_8))) {
-            post(activity, listener, activity.getString(R.string.wehavephones_launch_write_failed, BAT_NAME), true);
+    private static void start(Activity activity, Container container, AddonApp app, String installVersion,
+            Listener listener) {
+        configureSettings(container, app);
+        String batGuest = "C:\\" + app.batName();
+        if (!FileUtils.write(new File(WeHavePhonesPaths.driveC(container), app.batName()),
+                app.bat(installVersion).getBytes(StandardCharsets.UTF_8))) {
+            post(activity, listener, activity.getString(R.string.wehavephones_launch_write_failed, app.batName()), true);
             return;
         }
         String started = activity.getString(installVersion != null
-                ? R.string.wehavephones_curseforge_installing : R.string.wehavephones_curseforge_opened);
+                ? R.string.wehavephones_addon_app_installing : R.string.wehavephones_addon_app_opened, app.displayName);
 
         // A running session (Battle.net, for example) gets the app in-session.
         XServerDisplayActivity session = XServerDisplayActivity.getActiveInstance();
         WinHandler winHandler = session != null && session.isSessionActive() ? session.getWinHandler() : null;
         if (winHandler != null) {
-            winHandler.exec(WeHavePhonesLaunchPlan.winHandlerCommand(BAT_GUEST));
+            winHandler.exec(WeHavePhonesLaunchPlan.winHandlerCommand(batGuest));
             activity.runOnUiThread(() -> {
                 WeHavePhonesSessionLauncher.launch(activity, container, null);
                 listener.onStatus(started, false);
@@ -223,7 +227,7 @@ public final class CurseForgeLauncher {
             post(activity, listener, activity.getString(R.string.wehavephones_stage_apply_failed) + ": " + result.errors, true);
             return;
         }
-        File shortcut = ensureShortcut(container);
+        File shortcut = ensureShortcut(container, app, batGuest);
         activity.runOnUiThread(() -> {
             if (shortcut != null && WeHavePhonesSessionLauncher.launch(activity, container, shortcut)) {
                 listener.onStatus(started, false);
@@ -235,13 +239,13 @@ public final class CurseForgeLauncher {
     }
 
     /** Its own shortcut keeps the app's screen size apart from the game's. */
-    private static File ensureShortcut(Container container) {
-        File file = WeHavePhonesShortcuts.ensureShortcut(container, SHORTCUT_NAME, BAT_GUEST);
+    private static File ensureShortcut(Container container, AddonApp app, String batGuest) {
+        File file = WeHavePhonesShortcuts.ensureShortcut(container, app.displayName, batGuest);
         if (file == null) return null;
         Shortcut shortcut = new Shortcut(container, file);
-        // The x64 mods agent and Chromium need the stricter memory ordering preset.
+        // x64 Chromium and CurseForge's agent need the stricter memory ordering preset.
         shortcut.putExtra("fexcorePreset", FEXCorePreset.STABILITY);
-        shortcut.putExtra("screenSize", SCREEN_SIZE);
+        shortcut.putExtra("screenSize", AddonApp.DESKTOP_SIZE);
         shortcut.saveData();
         return file;
     }

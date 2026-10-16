@@ -41,6 +41,7 @@ public final class LaunchSelfTest {
         curseForgeFeed();
         curseForgeBat();
         curseForgeSettings();
+        wowUp();
 
         System.out.println("[launch-selftest] " + checks + " checks, " + failures + " failure(s)");
         System.exit(failures == 0 ? 0 : 1);
@@ -613,7 +614,7 @@ public final class LaunchSelfTest {
 
     private static void curseForgeFeed() {
         String url = "https://appsdl.overwolf.com/prod/apps/cfiahnpaolfnlgaihhmobmnjdafknjnjdpdabpcm/1.324.0-41180/setup.exe";
-        CurseForgeSetup.Release release = CurseForgeSetup.parseFeed(cfFeed(url, CF_SHA, "126470712"));
+        AddonApp.Release release = AddonApp.CURSEFORGE.parseFeed(cfFeed(url, CF_SHA, "126470712"));
         check("cf feed parsed", true, release != null);
         if (release != null) {
             check("cf feed version", "1.324.0-41180", release.version);
@@ -621,20 +622,20 @@ public final class LaunchSelfTest {
             check("cf feed sha512", CF_SHA, release.sha512);
             check("cf feed size", 126470712L, release.size);
         }
-        check("cf feed rejects http", null, CurseForgeSetup.parseFeed(cfFeed(url.replace("https:", "http:"), CF_SHA, "1")));
+        check("cf feed rejects http", null, AddonApp.CURSEFORGE.parseFeed(cfFeed(url.replace("https:", "http:"), CF_SHA, "1")));
         check("cf feed rejects other host", null,
-                CurseForgeSetup.parseFeed(cfFeed("https://appsdl.overwolf.com.evil.example/setup.exe", CF_SHA, "1")));
-        check("cf feed rejects bad sha", null, CurseForgeSetup.parseFeed(cfFeed(url, "abc", "1")));
-        check("cf feed rejects bad size", null, CurseForgeSetup.parseFeed(cfFeed(url, CF_SHA, "big")));
-        check("cf feed rejects empty", null, CurseForgeSetup.parseFeed(""));
-        check("cf update skips unknown install", false, CurseForgeSetup.needsUpdate(null, release));
-        check("cf update skips same version", false, CurseForgeSetup.needsUpdate("1.324.0-41180\r\n", release));
-        check("cf update on new version", true, CurseForgeSetup.needsUpdate("1.323.0-1", release));
+                AddonApp.CURSEFORGE.parseFeed(cfFeed("https://appsdl.overwolf.com.evil.example/setup.exe", CF_SHA, "1")));
+        check("cf feed rejects bad sha", null, AddonApp.CURSEFORGE.parseFeed(cfFeed(url, "abc", "1")));
+        check("cf feed rejects bad size", null, AddonApp.CURSEFORGE.parseFeed(cfFeed(url, CF_SHA, "big")));
+        check("cf feed rejects empty", null, AddonApp.CURSEFORGE.parseFeed(""));
+        check("cf update skips unknown install", false, AddonApp.needsUpdate(null, release));
+        check("cf update skips same version", false, AddonApp.needsUpdate("1.324.0-41180\r\n", release));
+        check("cf update on new version", true, AddonApp.needsUpdate("1.323.0-1", release));
     }
 
     private static void curseForgeBat() {
-        String launch = CurseForgeSetup.bat(null);
-        String install = CurseForgeSetup.bat("1.324.0-41180");
+        String launch = AddonApp.CURSEFORGE.bat(null);
+        String install = AddonApp.CURSEFORGE.bat("1.324.0-41180");
         check("cf launch restores PowerShell first", true,
                 launch.indexOf("if exist \"%PS64%.wehavephones\"") < launch.indexOf(":launch"));
         check("cf launch runs the app", "\"%APP%\\CurseForge.exe\" --no-sandbox --disable-gpu", lastLine(launch));
@@ -654,18 +655,64 @@ public final class LaunchSelfTest {
     private static void curseForgeSettings() {
         String existing = "{\"session-counter\":3,\"general-settings\":"
                 + "\"{\\\"runOnStartup\\\":true,\\\"closeCurseForgeAction\\\":0,\\\"dateFormat\\\":null}\"}";
-        JSONObject root = new JSONObject(CurseForgeSetup.configureSettings(existing));
+        JSONObject root = new JSONObject(AddonApp.CURSEFORGE.configureSettings(existing));
         JSONObject general = new JSONObject(root.getString("general-settings"));
         check("cf settings exit on close", 1, general.getInt("closeCurseForgeAction"));
         check("cf settings no startup", false, general.getBoolean("runOnStartup"));
         check("cf settings keep other general keys", true, general.has("dateFormat"));
         check("cf settings keep other sections", 3, root.getInt("session-counter"));
-        JSONObject fresh = new JSONObject(new JSONObject(CurseForgeSetup.configureSettings(null)).getString("general-settings"));
+        JSONObject fresh = new JSONObject(new JSONObject(AddonApp.CURSEFORGE.configureSettings(null)).getString("general-settings"));
         check("cf settings fresh exit on close", 1, fresh.getInt("closeCurseForgeAction"));
-        JSONObject broken = new JSONObject(new JSONObject(CurseForgeSetup.configureSettings("{not json")).getString("general-settings"));
+        JSONObject broken = new JSONObject(new JSONObject(AddonApp.CURSEFORGE.configureSettings("{not json")).getString("general-settings"));
         check("cf settings replace unreadable", false, broken.getBoolean("runOnStartup"));
-        check("cf bat removes startup entry", true, CurseForgeSetup.bat(null).contains(
+        check("cf bat removes startup entry", true, AddonApp.CURSEFORGE.bat(null).contains(
                 "reg.exe delete \"HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\" /v com.overwolf.curseforge /f"));
+    }
+
+    private static void wowUp() {
+        String sha = "ZJARrxK5H5kk/OFFdYzr09mLqJyKtGj2lGlVR2I03VuE5nA+Eja+1j3rfenShi0f/t984CFlx6C5v8Oh4CrgtQ==";
+        String feed = "version: 2.24.0\nfiles:\n  - url: WowUp-Setup-2.24.0.exe\n    sha512: " + sha
+                + "\n    size: 117996928\npath: WowUp-Setup-2.24.0.exe\nsha512: " + sha
+                + "\nreleaseDate: '2026-10-10T20:55:53.843Z'\n";
+        AddonApp.Release release = AddonApp.WOWUP.parseFeed(feed);
+        check("wowup feed parsed", true, release != null);
+        if (release != null) {
+            check("wowup asset pinned to its tag",
+                    "https://github.com/WowUp/WowUp/releases/download/v2.24.0/WowUp-Setup-2.24.0.exe", release.url);
+            check("wowup size", 117996928L, release.size);
+        }
+        check("wowup rejects path in asset name", null,
+                AddonApp.WOWUP.parseFeed(feed.replace("url: WowUp-Setup", "url: ../WowUp-Setup")));
+        check("wowup rejects absolute other host", null,
+                AddonApp.WOWUP.parseFeed(feed.replace("url: WowUp-Setup-2.24.0.exe", "url: https://evil.example/a.exe")));
+        check("curseforge rejects relative asset", null,
+                AddonApp.CURSEFORGE.parseFeed(feed));
+        String bat = AddonApp.WOWUP.bat("2.24.0");
+        check("wowup installs its own setup", true, bat.contains("\"%STAGE%\\WowUp-Setup.exe\" /S\r\n"));
+        check("wowup stage dir", true, bat.contains("set \"STAGE=C:\\windows\\wehavephones-wowup\""));
+        check("wowup app dir", true, bat.contains("set \"APP=%LOCALAPPDATA%\\Programs\\wowup\""));
+        check("wowup runs the app", "\"%APP%\\WowUp.exe\" --no-sandbox --disable-gpu", lastLine(bat));
+        String patch = "set ELECTRON_RUN_AS_NODE=1\r\n\"%APP%\\WowUp.exe\" \"%STAGE%\\container-fixes.js\" \"%APP%\\resources\\app.asar\"\r\n"
+                + "set ELECTRON_RUN_AS_NODE=\r\n";
+        check("wowup removes its tray before starting", true,
+                bat.contains(patch) && bat.indexOf(patch) < bat.lastIndexOf("--no-sandbox"));
+        check("wowup patch runs after install", true, bat.indexOf(patch) > bat.indexOf(":launch"));
+        String fixes = AddonApp.WOWUP_CONTAINER_FIXES_JS;
+        check("wowup fixes script is Node", true, fixes.startsWith("process.noAsar = true;\n"));
+        check("wowup fixes cover tray, ARM64 names and drive C", true,
+                fixes.contains("function createTray(window, config) {") && fixes.contains("class WarcraftPlatformWin {")
+                && fixes.contains("getBlizzardAgentPath() {"));
+        check("curseforge has no patch", false, AddonApp.CURSEFORGE.bat(null).contains("ELECTRON_RUN_AS_NODE"));
+        check("wowup skips the .NET setting", false, bat.contains("DOTNET_"));
+        check("wowup skips the startup entry", false, bat.contains("CurrentVersion\\Run"));
+        check("wowup bat name", "wehavephones-wowup.bat", AddonApp.WOWUP.batName());
+        JSONObject prefs = new JSONObject(AddonApp.WOWUP.configureSettings(
+                "{\"collapse_to_tray\":\"true\",\"current_theme\":\"default-theme\"}"));
+        check("wowup exits on close", "false", prefs.getString("collapse_to_tray"));
+        check("wowup software rendering", "false", prefs.getString("use_hardware_acceleration"));
+        check("wowup keeps other prefs", "default-theme", prefs.getString("current_theme"));
+        check("curseforge names unchanged", "wehavephones-curseforge.bat CurseForge-Setup.exe Programs/CurseForge",
+                AddonApp.CURSEFORGE.batName() + " " + AddonApp.CURSEFORGE.installerName() + " " + AddonApp.CURSEFORGE.appDir());
     }
 
     private static String lastLine(String bat) {

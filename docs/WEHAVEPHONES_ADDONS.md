@@ -217,52 +217,70 @@ whatever its directory is called). One release zip serves every flavor.
   the real bundled archive when it is present. `testControllerSetupAddon`
   covers the companion sync.
 
-## 10. CurseForge's own app (no API key)
+## 10. Addon managers' own apps (no API key)
 
-Add-ons → **Open CurseForge** runs the standalone CurseForge Windows app in
-the game's container. It finds the WoW installs and installs, updates and
-removes addons from the whole CurseForge catalog itself, so the app needs no
-CurseForge API key. Players can continue as a guest. Code:
-`CurseForgeLauncher` (Android side) and `CurseForgeSetup` (feed, batch file
-and settings, covered by the launch self-test).
+Add-ons → **Open CurseForge** and **Open WowUp** run those addon managers'
+own Windows apps in the game's container. They find the WoW installs and
+install, update and remove addons themselves, so the app needs no API key.
+CurseForge covers its whole catalog (guest use works). WowUp's Wago edition
+adds Wago (through its ad-supported partnership), WoWInterface, Tukui and
+GitHub. Code: `AddonApp` (feeds, batch file, settings and patches, covered by
+the launch self-test) and `AddonAppLauncher` (Android side).
 
-- **Download:** the official web installer is a .NET bootstrapper that needs
-  Wine Mono and WebView2, so it exits at once in the container. The launcher
-  reads the app's own update feed (electron-updater `latest.yml` on
-  `electron-updates.overwolf.com`), downloads the full `setup.exe` (about
-  126 MB) over HTTPS from `*.overwolf.com`, and checks its size and SHA-512
-  against the feed. Nothing is bundled.
-- **Install:** `wehavephones-curseforge.bat` runs the installer with `/S`
-  (per user, `%LOCALAPPDATA%\Programs\CurseForge`). The installer asks
-  PowerShell whether CurseForge is running, and Wine's PowerShell stub always
+Both are x64 Electron apps packaged by electron-builder, so they share one
+install and start path:
+
+- **Download:** each app's electron-updater `latest.yml` feed gives the
+  version, size and SHA-512 of the full installer. CurseForge's comes from
+  `electron-updates.overwolf.com` (its official web installer is a .NET
+  bootstrapper that needs Wine Mono and WebView2). WowUp's is the
+  `WowUp/WowUp` GitHub release, pinned to the release tag. Downloads must be
+  HTTPS from the app's own host, and nothing is bundled.
+- **Install:** `wehavephones-<app>.bat` runs the installer with `/S` (per
+  user, `%LOCALAPPDATA%\Programs\CurseForge` or `\wowup`). The installer asks
+  PowerShell whether the app is running, and Wine's PowerShell stub always
   answers yes, so the batch file moves both `powershell.exe` stubs aside for
   the install and restores them (also at the start of the next run if a
   session was interrupted). The installed version goes to
-  `C:\windows\wehavephones-curseforge\installed-version.txt`. A newer feed
-  version is installed on the next open, but only over a release this app
-  installed.
+  `C:\windows\wehavephones-<app>\installed-version.txt`. A newer feed version
+  is installed on the next open, but only over a release this app installed.
 - **Start:** the container's `dxgi.dll`/`d3d11.dll` are ARM64-only builds for
-  the native ARM64 game, which the x64 app cannot load (status `c000007b`),
-  and Chromium aborts without `CreateDXGIFactory1`. Wine's own ARM64X builds
-  are staged and copied next to `CurseForge.exe` before each start.
-  Chromium runs with `--no-sandbox --disable-gpu`. The .NET mods agent
+  the native ARM64 game, which x64 apps cannot load (status `c000007b`), and
+  Chromium aborts without `CreateDXGIFactory1`. Wine's own ARM64X builds are
+  staged and copied next to the app before each start. Chromium runs with
+  `--no-sandbox --disable-gpu`. CurseForge's .NET mods agent
   (`Curse.Agent.Host.exe`) crashes with `ExecutionEngineException` under
   emulation unless `DOTNET_EnableWriteXorExecute=0` is set.
-- **Settings:** before each start the launcher sets CurseForge to exit when
-  closed and not to start with Windows (`storage.json` →
-  `general-settings`), and the batch file removes its `Run` entry. Hidden in
-  the background it would keep using memory and changing AddOns after the
-  player goes back to play.
+- **WowUp patches:** before each start the batch file runs
+  `container-fixes.js` with WowUp's own Electron as Node (its RunAsNode fuse
+  is on, asar integrity checking is off). It makes three same-length edits to
+  `app.asar`: no tray icon (updating it hangs this Wine build's taskbar
+  inside explorer's `WM_COPYDATA` handler, so the window never appeared), the
+  ARM64 game executable names (the x64 app only looks for `WowClassic.exe`
+  and similar), and drive C for Battle.net's `product.db` (its disk listing
+  finds no drives under Wine). The edits are idempotent and reapplied after
+  updates. WowUp is GPL-3.0, and the changes stay on the device.
+- **Settings:** before each start the launcher sets the app to exit when
+  closed instead of hiding in the tray (CurseForge `storage.json` →
+  `general-settings`, WowUp `preferences.json` → `collapse_to_tray`), turns
+  off CurseForge's start with Windows and removes its `Run` entry, and turns
+  off WowUp's hardware acceleration. Hidden in the background an app would
+  keep using memory and changing AddOns after the player goes back to play.
+- **Game detection:** `WowUp.exe` matches the `Wow*.exe` game pattern, so
+  `WowFlavor.isGameExecutable` excludes it. Without that, a running WowUp
+  counted as the game (virtual gamepad, add-on manager and launch guards).
 - **Session:** it refuses while WoW runs. A running session gets the batch
   file through WinHandler. Otherwise a new session starts with the Battle.net
   runtime, the stability FEX preset and a 1280x800 desktop. Free memory on
-  the S23 dropped from about 2.5 GB to 0.6 to 1 GB while it ran.
-- **Validated** on the S23 (2026-10-15): fresh download and install, guest
-  sign-in, Classic Era detected with its addons, search and install of an
-  addon into `_classic_era_/Interface/AddOns`, exit on close. Not yet
-  validated: the in-session WinHandler path, an update to a newer feed
-  version, and other phones.
-- **Limits:** the empty Wine desktop stays after CurseForge closes (use the
-  session menu's Exit, as after Battle.net). CurseForge's own updater cannot
+  the S23 dropped from about 2.5 GB to 0.6 to 1 GB while an app ran.
+- **Validated** on the S23 (2026-10-15). CurseForge: fresh download and
+  install, guest use, Classic Era detected with its addons, search and
+  install of an addon, exit on close. WowUp: fresh download and install,
+  start past the tray, all installed games found through `product.db`, Wago
+  token received. Not yet validated: an addon install through WowUp, the
+  in-session WinHandler path, an update to a newer feed version, and other
+  phones.
+- **Limits:** the empty Wine desktop stays after an app closes (use the
+  session menu's Exit, as after Battle.net). The apps' own updaters cannot
   install updates in the container for the same PowerShell reason, so updates
   come from the launcher.

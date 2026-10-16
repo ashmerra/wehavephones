@@ -57,12 +57,25 @@
                 android:lineSpacingExtra="2dp"
                 android:textColor="@color/wehavephones_text_dim"
                 android:textSize="11sp" />
-            <Button
-                android:id="@+id/BTAddonsCurseForge"
-                style="@style/WeHavePhonesButtonSmall"
+            <LinearLayout
                 android:layout_width="match_parent"
+                android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
-                android:text="@string/wehavephones_curseforge_open" />
+                android:orientation="horizontal">
+                <Button
+                    android:id="@+id/BTAddonsCurseForge"
+                    style="@style/WeHavePhonesButtonSmall"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:text="@string/wehavephones_curseforge_open" />
+                <Button
+                    android:id="@+id/BTAddonsWowUp"
+                    style="@style/WeHavePhonesButtonSmall"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_marginStart="6dp"
+                    android:text="@string/wehavephones_wowup_open" />
+            </LinearLayout>
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
