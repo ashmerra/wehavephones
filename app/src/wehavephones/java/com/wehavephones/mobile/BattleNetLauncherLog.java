@@ -80,6 +80,8 @@ public final class BattleNetLauncherLog {
     private static final Pattern UAUTH_BEGIN = Pattern.compile("UAuth: begin loading: (\\S+)");
     private static final Pattern UAUTH_FINISHED = Pattern.compile("UAuth: finished loading\\. statusCode=(\\d+) state=(\\w+)");
     private static final Pattern UAUTH_STATE = Pattern.compile("UAuth: browser state changed: (\\w+)");
+    private static final Pattern AUTH_BROWSER_ERROR = Pattern.compile("UAuth: browser error:.*?errorCode=(-?\\d{1,8})\\b");
+    private static final Pattern CLIENT_ERROR_CODE = Pattern.compile("\\bBLZ[A-Z0-9]{5,32}\\b");
     private static final String LOGIN_CREDENTIAL = "LoginCredential";
     private static final String WEB_LOGIN_COMPLETE = "UAuth: web login complete";
     private static final String LOGIN_FAILED = "[BNLogin] {Main} Login failed.";
@@ -100,10 +102,12 @@ public final class BattleNetLauncherLog {
     private boolean loginFormShown;
     private boolean webLoginComplete;
     private int loginFormLoads;
+    private final ArrayList<String> authenticationEvents = new ArrayList<>();
 
     public void feed(String line) {
         if (line == null) return;
         lineCount++;
+        recordAuthentication(line);
         if (line.contains(LOGGED_IN)) {
             if (!loggedIn) {
                 loggedInAt = timestamp(line);
@@ -207,6 +211,67 @@ public final class BattleNetLauncherLog {
 
     public boolean isLoggedIn() {
         return loggedIn;
+    }
+
+    /** Bounded, allowlisted diagnostics. Never returns URLs, account data or arbitrary log text. */
+    public String authenticationSummary() {
+        StringBuilder result = new StringBuilder("Signed in: ").append(loggedIn ? "yes" : "no")
+                .append("\nCredential form: ").append(loginForm()).append('\n');
+        for (String event : authenticationEvents) result.append(event).append('\n');
+        return result.toString();
+    }
+
+    private void recordAuthentication(String line) {
+        String event = null;
+        if (line.contains(LOGGED_IN)) event = "signed-in";
+        else if (line.contains(LOGIN_FAILED)) event = "login-failed";
+        else if (line.endsWith(LOGGED_OUT)) event = "logged-out";
+        else if (line.contains(WEB_LOGIN_COMPLETE)) event = "web-login-complete";
+        else if (line.contains("UAuth: tassadar Login URL is empty!")) event = "login-url-missing";
+        else if (line.contains("UAuth: ")) {
+            Matcher state = UAUTH_STATE.matcher(line);
+            Matcher loaded = UAUTH_FINISHED.matcher(line);
+            Matcher error = AUTH_BROWSER_ERROR.matcher(line);
+            Matcher begin = UAUTH_BEGIN.matcher(line);
+            if (state.find()) event = "browser-state=" + safeAuthState(state.group(1));
+            else if (loaded.find()) event = "page-loaded status=" + loaded.group(1)
+                    + " state=" + safeAuthState(loaded.group(2));
+            else if (error.find()) event = "browser-error=" + error.group(1);
+            else if (begin.find()) {
+                String category = "other";
+                try {
+                    String path = URI.create(begin.group(1)).getPath();
+                    if (path != null && path.contains("/challenge")) category = "challenge";
+                    else if (path != null && path.endsWith("/password")) category = "password";
+                    else if (path != null && path.matches("/login/[A-Za-z_-]+/(?:login\\.app)?")) category = "account-login";
+                }
+                catch (IllegalArgumentException ignored) {}
+                event = "page=" + category;
+            }
+        }
+        if (event != null) appendAuthenticationEvent(line, event);
+        Matcher code = CLIENT_ERROR_CODE.matcher(line);
+        while (code.find()) appendAuthenticationEvent(line, "client-error=" + code.group());
+        String lower = line.toLowerCase(Locale.ROOT);
+        if ((lower.contains("renderer") || lower.contains("mojo"))
+                && (lower.contains("timed out") || lower.contains("crashed"))) {
+            appendAuthenticationEvent(line, "renderer-failure");
+        }
+    }
+
+    private static String safeAuthState(String state) {
+        switch (state) {
+            case "Login": case "LoginCredential": case "Challenge": case "Done": case "None":
+                return state;
+            default: return "other";
+        }
+    }
+
+    private void appendAuthenticationEvent(String line, String event) {
+        String entry = timestamp(line) + " " + event;
+        if (!authenticationEvents.isEmpty() && authenticationEvents.get(authenticationEvents.size() - 1).equals(entry)) return;
+        if (authenticationEvents.size() == 32) authenticationEvents.remove(0);
+        authenticationEvents.add(entry);
     }
 
     /**

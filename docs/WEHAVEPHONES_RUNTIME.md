@@ -141,6 +141,13 @@ available for an explicit rollback trial.
   [WEHAVEPHONES_APP.md](WEHAVEPHONES_APP.md)).
 - **Sign-in.** WeHavePhones reads, types and stores no Battle.net credentials.
   Battle.net signs in with the login it saved itself.
+  The Diagnostics screen includes a bounded authentication summary from the
+  client's latest main log. It reports page categories, browser states, HTTP
+  status and fixed error codes, without URLs, challenge identifiers, account
+  details or arbitrary log text. Dev builds also update
+  `Download/WeHavePhones/battle-net-auth.txt` during a session so a blank window
+  can be investigated without remote ADB. A loaded `Challenge` page does not
+  establish that its contents painted or that sign-in succeeded.
 - **Wine identifier pattern.** The app only accepts Wine directory names that
   match `WineInfo.pattern` (for example `proton-10.0-34-arm64ec`). Any other name
   makes `XServerDisplayActivity` rewrite `container.wineVersion` to the first

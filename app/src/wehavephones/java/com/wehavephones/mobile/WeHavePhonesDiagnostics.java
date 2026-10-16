@@ -102,6 +102,17 @@ public final class WeHavePhonesDiagnostics {
         File guestLog = new File(logDir, "guest.log");
         builder.append("guest.log: ").append(guestLog.isFile() ? guestLog.getPath() + " (" + guestLog.length() + " bytes)" : "missing").append('\n');
 
+        builder.append("\n-- Battle.net authentication --\n");
+        File mainLog = status.container != null
+                ? BattleNetLauncherLog.findMainLog(WeHavePhonesPaths.bnetLogsDir(status.container), "") : null;
+        if (mainLog != null) {
+            BattleNetLauncherLog.Tail tail = new BattleNetLauncherLog.Tail(mainLog);
+            tail.readAll(4);
+            builder.append("Log: ").append(mainLog.getName()).append('\n');
+            builder.append(tail.log.authenticationSummary());
+        }
+        else builder.append("No main-client log found\n");
+
         builder.append("\n-- Last one-button launch --\n");
         builder.append(OneButtonLauncher.lastRunSummary(context));
 

@@ -1,11 +1,15 @@
 package com.wehavephones.mobile;
 
 import android.util.Log;
+import android.os.Environment;
 
+import com.wehavephones.BuildConfig;
 import com.wehavephones.XServerDisplayActivity;
 import com.wehavephones.container.Container;
+import com.wehavephones.core.FileUtils;
 
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
 /**
@@ -39,6 +43,7 @@ public final class BattleNetSignInWatcher {
         boolean shown = false;
         int loads = 0;
         long goneSince = -1;
+        String lastAuthenticationReport = "";
         try {
             while (!Thread.currentThread().isInterrupted() && XServerDisplayActivity.getActiveInstance() == activity
                     && !activity.isFinishing() && !activity.isDestroyed()) {
@@ -58,6 +63,17 @@ public final class BattleNetSignInWatcher {
                     loads = 0;
                 }
                 tail.poll();
+                if (BuildConfig.DEBUG) {
+                    String report = "Battle.net authentication diagnostics\n" + main.getName() + "\n"
+                            + tail.log.authenticationSummary();
+                    if (!report.equals(lastAuthenticationReport)) {
+                        File directory = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "WeHavePhones");
+                        if ((directory.isDirectory() || directory.mkdirs())
+                                && FileUtils.write(new File(directory, "battle-net-auth.txt"), report.getBytes(StandardCharsets.UTF_8))) {
+                            lastAuthenticationReport = report;
+                        }
+                    }
+                }
 
                 boolean form = tail.log.loginForm() != BattleNetLauncherLog.LoginForm.NONE;
                 int formLoads = tail.log.getLoginFormLoads();

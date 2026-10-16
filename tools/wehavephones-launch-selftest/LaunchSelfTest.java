@@ -38,6 +38,7 @@ public final class LaunchSelfTest {
         bnetConfig();
         firstLoginConfig();
         loginForm();
+        authenticationDiagnostics();
         curseForgeFeed();
         curseForgeBat();
         curseForgeSettings();
@@ -498,6 +499,30 @@ public final class LaunchSelfTest {
         roaming.delete();
         backups.delete();
         dir.delete();
+    }
+
+    private static void authenticationDiagnostics() {
+        BattleNetLauncherLog log = new BattleNetLauncherLog();
+        log.feed("I 2026-10-16 01:02:03.000000 [UnifiedAuth] UAuth: begin loading: https://account.battle.net/login/en/challenge/private-ticket?token=secret-value&email=private@example.invalid");
+        log.feed("UAuth: browser state changed: Challenge");
+        log.feed("UAuth: finished loading. statusCode=403 state=Challenge");
+        log.feed("UAuth: browser error: errorCode=-101 private-ticket");
+        log.feed("[BNLogin] {Main} Login failed. BLZBNTBGS80000023 private@example.invalid");
+        log.feed("UAuth: browser state changed: PrivateAccountName");
+        log.feed("Command line arguments: --token secret-value");
+        String summary = log.authenticationSummary();
+        check("auth diagnostics: categorizes checkpoint", true, summary.contains("page=challenge"));
+        check("auth diagnostics: preserves HTTP failure", true, summary.contains("status=403 state=Challenge"));
+        check("auth diagnostics: preserves numeric browser error", true, summary.contains("browser-error=-101"));
+        check("auth diagnostics: preserves login failure code", true, summary.contains("login-failed") && summary.contains("BLZBNTBGS80000023"));
+        check("auth diagnostics: unknown state is allowlisted", true, summary.contains("browser-state=other"));
+        for (String secret : new String[]{"https://", "private-ticket", "secret-value", "private@example.invalid", "PrivateAccountName"}) {
+            check("auth diagnostics: excludes private input " + secret, false, summary.contains(secret));
+        }
+        log.feed("Logged into Battle.net successfully.");
+        check("auth diagnostics: successful recovery", true, log.authenticationSummary().contains("Signed in: yes"));
+        for (int i = 0; i < 100; i++) log.feed("UAuth: browser error: errorCode=" + i);
+        check("auth diagnostics: bounded event history", 34, log.authenticationSummary().split("\n").length);
     }
 
     // ---- Battle.net login form -------------------------------------------------------------
