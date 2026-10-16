@@ -37,7 +37,8 @@ All seven actual ZIPs were downloaded and checked against GitHub's release-asset
 Each contains only `meta.json` and `libvulkan_freedreno.so`. All libraries are little-endian
 AArch64 ELF64 Android HAL drivers with an exported `HMI`, Android `libc.so` dependencies and
 metadata requiring Android API 28 or newer. These are package compatibility checks, not
-successful Vulkan probe or game tests. The picker displays experimental and unverified warnings.
+successful Vulkan probe or game tests. The catalog descriptions retain the experimental and
+unverified status. Picker rows show the driver name and download status.
 
 Rutabaga's metadata calls it `Rutabaga-26.10.10`, package version `1`, built October 10 from
 Mesa `b00479181d`. Keep the requested v3 release identity rather than rewriting upstream metadata.
