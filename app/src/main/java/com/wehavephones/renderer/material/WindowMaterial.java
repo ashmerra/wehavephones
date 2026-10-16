@@ -2,7 +2,7 @@ package com.wehavephones.renderer.material;
 
 public class WindowMaterial extends ShaderMaterial {
     public WindowMaterial() {
-        setUniformNames("xform", "viewSize", "texture");
+        setUniformNames("xform", "viewSize", "texture", "useAlpha");
     }
 
     @Override
@@ -27,10 +27,12 @@ public class WindowMaterial extends ShaderMaterial {
             "precision mediump float;\n" +
 
             "uniform sampler2D texture;\n" +
+            "uniform bool useAlpha;\n" +
             "varying vec2 vUV;\n" +
 
             "void main() {\n" +
-                "gl_FragColor = vec4(texture2D(texture, vUV).rgb, 1.0);\n" +
+                "vec4 color = texture2D(texture, vUV);\n" +
+                "gl_FragColor = vec4(color.rgb, useAlpha ? color.a : 1.0);\n" +
             "}"
         ;
     }

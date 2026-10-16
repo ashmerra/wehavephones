@@ -113,6 +113,12 @@ public class Window extends XResource {
     public void removeProperty(int id) {
         properties.remove(id);
         sendEvent(Event.PROPERTY_CHANGE, new PropertyNotify(this, id, true));
+        if (originClient != null) originClient.xServer.windowManager.triggerOnDeleteWindowProperty(this, id);
+    }
+
+    public boolean isLayered() {
+        Property property = getProperty(Atom.getId("_WINE_HWND_EXSTYLE"));
+        return property != null && WineWindowStyle.isLayered(property.data, property.format.value);
     }
 
     public Property modifyProperty(int atom, int type, Property.Format format, Property.Mode mode, byte[] data) {

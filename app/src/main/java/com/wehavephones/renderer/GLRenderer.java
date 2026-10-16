@@ -16,9 +16,11 @@ import com.wehavephones.renderer.material.ShaderMaterial;
 import com.wehavephones.renderer.material.WindowMaterial;
 import com.wehavephones.widget.XServerView;
 import com.wehavephones.xserver.Bitmask;
+import com.wehavephones.xserver.Atom;
 import com.wehavephones.xserver.Cursor;
 import com.wehavephones.xserver.Drawable;
 import com.wehavephones.xserver.Pointer;
+import com.wehavephones.xserver.Property;
 import com.wehavephones.xserver.Window;
 import com.wehavephones.xserver.WindowAttributes;
 import com.wehavephones.xserver.WindowManager;
@@ -239,6 +241,23 @@ public class GLRenderer implements GLSurfaceView.Renderer, WindowManager.OnWindo
     }
 
     @Override
+    public void onModifyWindowProperty(Window window, Property property) {
+        refreshWindowStyle(property.name);
+    }
+
+    @Override
+    public void onDeleteWindowProperty(Window window, int atom) {
+        refreshWindowStyle(atom);
+    }
+
+    private void refreshWindowStyle(int atom) {
+        if (atom == Atom.getId("_WINE_HWND_EXSTYLE")) {
+            xServerView.queueEvent(this::updateScene);
+            xServerView.requestRender();
+        }
+    }
+
+    @Override
     public void onPointerMove(short x, short y) {
         xServerView.requestRender();
     }
@@ -267,12 +286,17 @@ public class GLRenderer implements GLSurfaceView.Renderer, WindowManager.OnWindo
         windowMaterial.use();
         GLES20.glUniform2f(windowMaterial.getUniformLocation("viewSize"), xServer.screenInfo.width, xServer.screenInfo.height);
         quadVertices.bind(windowMaterial.programId);
+        // Wine's layered surfaces contain premultiplied BGRA pixels.
+        GLES20.glBlendFunc(GLES20.GL_ONE, GLES20.GL_ONE_MINUS_SRC_ALPHA);
 
         try (XLock lock = xServer.lock(XServer.Lockable.DRAWABLE_MANAGER)) {
             for (RenderableWindow window : renderableWindows) {
+                GLES20.glUniform1i(windowMaterial.getUniformLocation("useAlpha"), window.layered ? 1 : 0);
                 renderDrawable(window.content, window.rootX, window.rootY, windowMaterial);
             }
         }
+
+        GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA);
 
         quadVertices.disable();
 
@@ -358,7 +382,7 @@ public class GLRenderer implements GLSurfaceView.Renderer, WindowManager.OnWindo
             }
 
             if (viewable)
-                renderableWindows.add(new RenderableWindow(window.getContent(), x, y));
+                renderableWindows.add(new RenderableWindow(window.getContent(), x, y, window.isLayered()));
         }
 
         for (Window child : window.getChildren()) {

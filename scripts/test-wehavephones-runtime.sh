@@ -153,6 +153,7 @@ if [[ -n "$JAVAC" && -n "$JAVA" ]]; then
   mkdir -p "$WORK_DIR"
   if "$JAVAC" -encoding UTF-8 -d "$WORK_DIR" \
       "$ROOT_DIR/app/src/main/java/com/wehavephones/xserver/GraphicsClip.java" \
+      "$ROOT_DIR/app/src/main/java/com/wehavephones/xserver/WineWindowStyle.java" \
       "$ROOT_DIR/app/src/main/java/com/wehavephones/xserver/ClientOpcodes.java" \
       "$ROOT_DIR/app/src/main/java/com/wehavephones/xserver/events/Event.java" \
       "$ROOT_DIR/app/src/main/java/com/wehavephones/xserver/events/RawEvent.java" \
@@ -164,9 +165,11 @@ if [[ -n "$JAVAC" && -n "$JAVA" ]]; then
       "$SELF_TEST_DIR/graphics-stubs/com/wehavephones/xserver/XServer.java" \
       "$SELF_TEST_DIR/graphics-stubs/com/wehavephones/xconnector/ClientSocket.java" \
       "$SELF_TEST_DIR/GraphicsClipSelfTest.java" \
+      "$SELF_TEST_DIR/WineWindowStyleSelfTest.java" \
       "$SELF_TEST_DIR/RawEventSelfTest.java" \
       "$SELF_TEST_DIR/CopyExposureSelfTest.java"; then
     "$JAVA" -cp "$WORK_DIR" com.wehavephones.xserver.GraphicsClipSelfTest || fail "GraphicsClipSelfTest"
+    "$JAVA" -cp "$WORK_DIR" com.wehavephones.xserver.WineWindowStyleSelfTest || fail "WineWindowStyleSelfTest"
     "$JAVA" -cp "$WORK_DIR" com.wehavephones.xserver.CopyExposureSelfTest || fail "CopyExposureSelfTest"
     "$JAVA" -cp "$WORK_DIR" com.wehavephones.xserver.RawEventSelfTest || fail "RawEventSelfTest"
   else
