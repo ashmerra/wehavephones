@@ -140,7 +140,7 @@ public enum WowFlavor {
 
     private static final Pattern GAME_PRODUCT_CODE = Pattern.compile("wow(t|xptr|_[a-z0-9_]+)?");
 
-    /** Any Wow*.exe game client, including builds not listed above; excludes the voice helper. */
+    /** Any Wow*.exe game client, including builds not listed above; excludes the voice helper and WowUp. */
     private static final Pattern GAME_EXECUTABLE = Pattern.compile("(?i)wow[a-z]*(-arm64)?\\.exe");
 
     public final String directoryName;
@@ -313,7 +313,9 @@ public enum WowFlavor {
     public static boolean isGameExecutable(String name) {
         if (name == null) return false;
         String lower = name.toLowerCase(Locale.US);
-        return GAME_EXECUTABLE.matcher(lower).matches() && !lower.startsWith("wowvoiceproxy");
+        // WowUp (an addon manager) matches the pattern but is not the game.
+        return GAME_EXECUTABLE.matcher(lower).matches() && !lower.startsWith("wowvoiceproxy")
+                && !lower.equals("wowup.exe");
     }
 
     /**

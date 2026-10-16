@@ -107,6 +107,8 @@ public final class AddonLogicSelfTest {
                 "unlisted exe found by pattern, ARM64 first");
         checkEquals("", WowFlavor.pickExecutable(Arrays.asList("WowVoiceProxy.exe", "Battle.net.exe")), "no game exe");
         check(!WowFlavor.isGameExecutable("WowVoiceProxy.exe"), "voice proxy is not the game");
+        check(!WowFlavor.isGameExecutable("WowUp.exe"), "WowUp is not the game");
+        check(WowFlavor.isGameExecutable("WowT.exe"), "test client is the game");
         check(WowFlavor.isGameExecutable("WOWCLASSIC-ARM64.EXE"), "exe match is case-insensitive");
 
         checkEquals("World of Warcraft", WowFlavor.gameTitle(WowFlavor.RETAIL, "_retail_"), "retail title");
