@@ -51,6 +51,7 @@ public final class AddonLogicSelfTest {
             testVersionComparator();
             testTocParsing();
             testProviderLabels();
+            testIdentityPreservation();
             testMultiTocSelection();
             testProviderUrls();
             testGitHubRepoAndAssets();
@@ -219,6 +220,42 @@ public final class AddonLogicSelfTest {
         AddonRecord emptyId = new AddonRecord();
         emptyId.providerId = ProviderType.CURSEFORGE.id;
         check(emptyId.shownProvider() == ProviderType.LOCAL, "provider id without an id stays Local ZIP");
+    }
+
+    private static void testIdentityPreservation() throws Exception {
+        // A manager-installed GitHub binding survives an external overwrite that
+        // adds a TOC catalog id, so the app keeps tracking the source it installed.
+        File addons = new File(workDir, "id-AddOns");
+        write(new File(addons, "Questie/Questie.toc"),
+                "## Version: 12.1.0\n## Title: Questie\n## X-Curse-Project-ID: 334372\n");
+        AddonRecord previous = new AddonRecord();
+        previous.flavorDir = "_classic_era_";
+        previous.providerId = ProviderType.GITHUB.id;
+        previous.externalId = "Questie/Questie";
+        previous.folderNames.add("Questie");
+        previous.latestVersion = "12.1.0";
+        previous.status = InstallStatus.UP_TO_DATE.id;
+        AddonRecord kept = AddonScanner.scan(addons, WowFlavor.CLASSIC_ERA, Arrays.asList(previous)).records.get(0);
+        check(kept.provider() == ProviderType.GITHUB && "Questie/Questie".equals(kept.externalId),
+                "GitHub binding survives an added TOC catalog id");
+
+        // A folder with no previous record adopts the catalog its TOC names.
+        File fresh = new File(workDir, "id-fresh/Interface/AddOns");
+        write(new File(fresh, "Questie/Questie.toc"),
+                "## Version: 12.1.0\n## Title: Questie\n## X-Curse-Project-ID: 334372\n");
+        AddonRecord adopted = AddonScanner.scan(fresh, WowFlavor.CLASSIC_ERA,
+                new ArrayList<AddonRecord>()).records.get(0);
+        check(adopted.provider() == ProviderType.CURSEFORGE && "334372".equals(adopted.externalId),
+                "a fresh folder adopts its TOC catalog id");
+
+        // A folder with no id and no previous record stays local.
+        File plain = new File(workDir, "id-plain/Interface/AddOns");
+        write(new File(plain, "QuestieDB/QuestieDB_Vanilla.toc"),
+                "## Version: 1.0.6\n## Title: QuestieDB\n");
+        AddonRecord local = AddonScanner.scan(plain, WowFlavor.CLASSIC_ERA,
+                new ArrayList<AddonRecord>()).records.get(0);
+        check(local.provider() == ProviderType.LOCAL && local.shownProvider() == ProviderType.LOCAL,
+                "a folder with no catalog id and no history stays Local ZIP");
     }
 
     private static void testMultiTocSelection() throws Exception {
