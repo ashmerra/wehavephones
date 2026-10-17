@@ -21,7 +21,10 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.util.EnumMap;
+import java.util.Map;
 import java.util.concurrent.Executors;
+import java.util.function.Consumer;
 
 /**
  * Runs an addon manager's own Windows app (CurseForge or WowUp) in the game's
@@ -31,9 +34,32 @@ import java.util.concurrent.Executors;
  */
 public final class AddonAppLauncher {
     private static final int FEED_MAX_BYTES = 64 * 1024;
+    private static final long FEED_CACHE_MS = 10 * 60 * 1000L;
+    private static final Map<AddonApp, AddonApp.Release> cachedReleases = new EnumMap<>(AddonApp.class);
+    private static final Map<AddonApp, Long> cachedAt = new EnumMap<>(AddonApp.class);
 
     public interface Listener {
         void onStatus(String message, boolean error);
+    }
+
+    /** What the Addon apps screen shows: whether the app is here, its version and the latest release. */
+    public static final class Status {
+        public final boolean installed;
+        /** The version this launcher installed, or null when unknown. */
+        public final String installedVersion;
+        /** The feed's release, or null until the feed answers or when it cannot be reached. */
+        public final AddonApp.Release latest;
+
+        Status(boolean installed, String installedVersion, AddonApp.Release latest) {
+            this.installed = installed;
+            this.installedVersion = installedVersion;
+            this.latest = latest;
+        }
+
+        /** Open installs this release first. */
+        public boolean updateReady() {
+            return installed && AddonApp.needsUpdate(installedVersion, latest);
+        }
     }
 
     private AddonAppLauncher() {}
@@ -51,6 +77,33 @@ public final class AddonAppLauncher {
             if (candidate.isFile()) return candidate;
         }
         return null;
+    }
+
+    /**
+     * Reports the app's local state at once, then again with the feed's release
+     * for the download size. A release seen in the last few minutes is reused.
+     */
+    public static void loadStatus(final Activity activity, final AddonApp app, final Consumer<Status> callback) {
+        Executors.newSingleThreadExecutor().execute(() -> {
+            Container container = WeHavePhonesContainers.resolve(activity);
+            boolean installed = container != null && findApp(container, app) != null;
+            File versionFile = container != null ? new File(stageDir(container, app), AddonApp.VERSION_FILE) : null;
+            String read = versionFile != null && versionFile.isFile() ? FileUtils.readString(versionFile) : null;
+            String version = read != null && !read.trim().isEmpty() ? read.trim() : null;
+            AddonApp.Release cached = cachedRelease(app);
+            activity.runOnUiThread(() -> callback.accept(new Status(installed, version, cached)));
+            if (cached != null) return;
+            AddonApp.Release latest = fetchLatest(app);
+            if (latest != null) activity.runOnUiThread(() -> callback.accept(new Status(installed, version, latest)));
+        });
+    }
+
+    private static AddonApp.Release cachedRelease(AddonApp app) {
+        synchronized (cachedReleases) {
+            Long at = cachedAt.get(app);
+            if (at == null || System.currentTimeMillis() - at > FEED_CACHE_MS) return null;
+            return cachedReleases.get(app);
+        }
     }
 
     public static void open(final Activity activity, final AddonApp app, final Listener listener) {
@@ -171,7 +224,14 @@ public final class AddonAppLauncher {
                 while (total < buffer.length && (read = in.read(buffer, total, buffer.length - total)) != -1) {
                     total += read;
                 }
-                return app.parseFeed(new String(buffer, 0, total, StandardCharsets.UTF_8));
+                AddonApp.Release release = app.parseFeed(new String(buffer, 0, total, StandardCharsets.UTF_8));
+                if (release != null) {
+                    synchronized (cachedReleases) {
+                        cachedReleases.put(app, release);
+                        cachedAt.put(app, System.currentTimeMillis());
+                    }
+                }
+                return release;
             }
         }
         catch (Exception e) {

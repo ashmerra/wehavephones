@@ -1,198 +1,134 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fillViewport="true"
-    android:scrollbars="vertical"
-    android:scrollbarStyle="insideInset">
+    android:orientation="vertical">
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:paddingBottom="16dp">
+        android:gravity="center_vertical"
+        android:minHeight="40dp"
+        android:orientation="horizontal">
         <TextView
-            android:id="@+id/TVSettingsStatus"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textColor="@color/wehavephones_text_dim"
-            android:textSize="12sp" />
-        <LinearLayout
-            android:id="@+id/LLCurseForgeKey"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
-            <TextView
-                style="@style/WeHavePhonesSectionLabel"
-                android:text="@string/wehavephones_addons_curseforge_key" />
-            <EditText
-                android:id="@+id/ETCurseForgeKey"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@drawable/wehavephones_field"
-                android:hint="@string/wehavephones_addons_key_hint"
-                android:importantForAutofill="no"
-                android:inputType="textPassword"
-                android:maxLines="1"
-                android:padding="10dp"
-                android:textColor="@color/wehavephones_text"
-                android:textColorHint="@color/wehavephones_text_dim" />
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
-                <Button
-                    android:id="@+id/BTCurseForgeSave"
-                    style="@style/WeHavePhonesButtonSmall"
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:text="@string/wehavephones_addons_save_key" />
-                <Button
-                    android:id="@+id/BTCurseForgeTest"
-                    style="@style/WeHavePhonesButtonSmall"
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_marginStart="4dp"
-                    android:text="@string/wehavephones_addons_test_key" />
-                <Button
-                    android:id="@+id/BTCurseForgeClear"
-                    style="@style/WeHavePhonesButtonSmall"
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_marginStart="4dp"
-                    android:text="@string/wehavephones_addons_clear_key" />
-            </LinearLayout>
-        </LinearLayout>
-        <LinearLayout
-            android:id="@+id/LLWagoKey"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
-            <TextView
-                style="@style/WeHavePhonesSectionLabel"
-                android:text="@string/wehavephones_addons_wago_token" />
-            <EditText
-                android:id="@+id/ETWagoToken"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@drawable/wehavephones_field"
-                android:hint="@string/wehavephones_addons_key_hint"
-                android:importantForAutofill="no"
-                android:inputType="textPassword"
-                android:maxLines="1"
-                android:padding="10dp"
-                android:textColor="@color/wehavephones_text"
-                android:textColorHint="@color/wehavephones_text_dim" />
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
-                <Button
-                    android:id="@+id/BTWagoSave"
-                    style="@style/WeHavePhonesButtonSmall"
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:text="@string/wehavephones_addons_save_key" />
-                <Button
-                    android:id="@+id/BTWagoTest"
-                    style="@style/WeHavePhonesButtonSmall"
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_marginStart="4dp"
-                    android:text="@string/wehavephones_addons_test_key" />
-                <Button
-                    android:id="@+id/BTWagoClear"
-                    style="@style/WeHavePhonesButtonSmall"
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_marginStart="4dp"
-                    android:text="@string/wehavephones_addons_clear_key" />
-            </LinearLayout>
-        </LinearLayout>
-        <TextView
-            style="@style/WeHavePhonesSectionLabel"
-            android:text="@string/wehavephones_addons_github_pat" />
-        <EditText
-            android:id="@+id/ETGitHubPat"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@drawable/wehavephones_field"
-            android:hint="@string/wehavephones_addons_key_hint"
-            android:importantForAutofill="no"
-            android:inputType="textPassword"
-            android:maxLines="1"
-            android:padding="10dp"
-            android:textColor="@color/wehavephones_text"
-            android:textColorHint="@color/wehavephones_text_dim" />
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
-            <Button
-                android:id="@+id/BTGitHubSave"
-                style="@style/WeHavePhonesButtonSmall"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:text="@string/wehavephones_addons_save_key" />
-            <Button
-                android:id="@+id/BTGitHubTest"
-                style="@style/WeHavePhonesButtonSmall"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_marginStart="4dp"
-                android:text="@string/wehavephones_addons_test_key" />
-            <Button
-                android:id="@+id/BTGitHubClear"
-                style="@style/WeHavePhonesButtonSmall"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_marginStart="4dp"
-                android:text="@string/wehavephones_addons_clear_key" />
-        </LinearLayout>
-        <TextView
-            style="@style/WeHavePhonesSectionLabel"
-            android:text="@string/wehavephones_addons_preferences" />
-        <CheckBox
-            android:id="@+id/CBPreferNolib"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/wehavephones_addons_prefer_nolib" />
-        <CheckBox
-            android:id="@+id/CBAutoCheck"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/wehavephones_addons_auto_check" />
-        <CheckBox
-            android:id="@+id/CBConfirmDelete"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/wehavephones_addons_confirm_delete" />
-        <Button
-            android:id="@+id/BTSettingsSave"
-            style="@style/WeHavePhonesButtonPrimary"
-            android:layout_marginTop="12dp"
-            android:text="@string/wehavephones_addons_save_settings" />
-        <TextView
-            style="@style/WeHavePhonesSectionLabel"
-            android:text="@string/wehavephones_addons_consoleport" />
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/wehavephones_addons_consoleport_info"
-            android:textColor="@color/wehavephones_text_dim"
-            android:textSize="12sp" />
-        <TextView
-            android:id="@+id/TVConsolePortStatus"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:textColor="@color/wehavephones_text"
-            android:textSize="12sp" />
-        <Button
-            android:id="@+id/BTConsolePortCheck"
-            style="@style/WeHavePhonesButtonSmall"
-            android:layout_width="match_parent"
-            android:layout_marginTop="4dp"
-            android:text="@string/wehavephones_addons_consoleport_check" />
+            style="@style/WeHavePhonesAddonsTitle"
+            android:text="@string/wehavephones_addons_settings" />
     </LinearLayout>
-</ScrollView>
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="6dp"
+        android:layout_weight="1"
+        android:scrollbarStyle="insideInset"
+        android:scrollbars="vertical">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:baselineAligned="false"
+            android:orientation="horizontal"
+            android:paddingBottom="8dp">
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+                <LinearLayout style="@style/WeHavePhonesAddonsBox">
+                    <TextView
+                        style="@style/WeHavePhonesAddonsGroup"
+                        android:text="@string/wehavephones_addons_preferences" />
+                    <CheckBox
+                        android:id="@+id/CBAutoCheck"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/wehavephones_addons_auto_check" />
+                    <CheckBox
+                        android:id="@+id/CBPreferNolib"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/wehavephones_addons_prefer_nolib" />
+                    <CheckBox
+                        android:id="@+id/CBConfirmDelete"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/wehavephones_addons_confirm_delete" />
+                </LinearLayout>
+                <LinearLayout
+                    style="@style/WeHavePhonesAddonsBox"
+                    android:layout_marginTop="8dp">
+                    <TextView
+                        style="@style/WeHavePhonesAddonsGroup"
+                        android:text="@string/wehavephones_addons_path" />
+                    <TextView
+                        android:id="@+id/TVSettingsInterface"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:textColor="@color/wehavephones_text"
+                        android:textSize="12sp" />
+                    <TextView
+                        android:id="@+id/TVSettingsPath"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:background="@drawable/wehavephones_chip"
+                        android:ellipsize="start"
+                        android:fontFamily="monospace"
+                        android:maxLines="2"
+                        android:padding="6dp"
+                        android:textColor="@color/wehavephones_text_dim"
+                        android:textIsSelectable="true"
+                        android:textSize="11sp" />
+                    <Button
+                        android:id="@+id/BTSettingsCopyPath"
+                        style="@style/WeHavePhonesButtonCompact"
+                        android:layout_marginTop="8dp"
+                        android:drawableStart="@drawable/wehavephones_ic_copy"
+                        android:text="@string/wehavephones_addons_copy_path" />
+                </LinearLayout>
+            </LinearLayout>
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
+                <LinearLayout style="@style/WeHavePhonesAddonsBox">
+                    <TextView
+                        style="@style/WeHavePhonesAddonsGroup"
+                        android:text="@string/wehavephones_addons_provider_keys" />
+                    <LinearLayout
+                        android:id="@+id/LLProviderKeys"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical" />
+                </LinearLayout>
+                <LinearLayout
+                    style="@style/WeHavePhonesAddonsBox"
+                    android:layout_marginTop="8dp">
+                    <TextView
+                        style="@style/WeHavePhonesAddonsGroup"
+                        android:text="@string/wehavephones_addons_consoleport" />
+                    <TextView
+                        android:id="@+id/TVConsolePortStatus"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:textColor="@color/wehavephones_text"
+                        android:textSize="12sp" />
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="@string/wehavephones_addons_consoleport_info"
+                        android:textColor="@color/wehavephones_text_dim"
+                        android:textSize="12sp" />
+                    <Button
+                        android:id="@+id/BTConsolePortCheck"
+                        style="@style/WeHavePhonesButtonCompact"
+                        android:layout_marginTop="8dp"
+                        android:text="@string/wehavephones_addons_consoleport_check" />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

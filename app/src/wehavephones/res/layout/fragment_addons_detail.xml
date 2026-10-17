@@ -1,72 +1,159 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fillViewport="true"
-    android:scrollbars="vertical"
-    android:scrollbarStyle="insideInset">
+    android:baselineAligned="false"
+    android:orientation="vertical">
+    <TextView
+        android:id="@+id/TVDetailBack"
+        android:layout_width="wrap_content"
+        android:layout_height="28dp"
+        android:background="?android:attr/selectableItemBackground"
+        android:drawableStart="@drawable/wehavephones_ic_caret_left"
+        android:drawablePadding="2dp"
+        android:drawableTint="@color/wehavephones_accent"
+        android:fontFamily="sans-serif-medium"
+        android:gravity="center_vertical"
+        android:paddingRight="8dp"
+        android:text="@string/wehavephones_addons_installed"
+        android:textColor="@color/wehavephones_accent"
+        android:textSize="12sp" />
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:paddingBottom="16dp">
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
         <TextView
             android:id="@+id/TVDetailName"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textColor="@color/wehavephones_accent"
-            android:textSize="19sp"
-            android:textStyle="bold" />
+            style="@style/WeHavePhonesAddonsTitle"
+            android:ellipsize="end" />
         <TextView
-            android:id="@+id/TVDetailStatus"
-            android:layout_width="match_parent"
+            android:id="@+id/TVDetailAuthor"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:textColor="@color/wehavephones_text_dim"
-            android:textSize="13sp" />
-        <TextView
-            android:id="@+id/TVDetailAuto"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:textColor="@color/wehavephones_accent"
-            android:textSize="12sp"
-            android:visibility="gone" />
-        <TextView
-            android:id="@+id/TVDetailMeta"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:background="@drawable/wehavephones_card_background"
-            android:lineSpacingExtra="3dp"
-            android:padding="12dp"
-            android:textColor="@color/wehavephones_text"
-            android:textSize="13sp" />
-        <TextView
-            style="@style/WeHavePhonesSectionLabel"
-            android:text="@string/wehavephones_addons_changelog" />
-        <TextView
-            android:id="@+id/TVDetailChangelog"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@drawable/wehavephones_card_background"
-            android:lineSpacingExtra="3dp"
-            android:padding="12dp"
+            android:layout_marginStart="10dp"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
             android:textColor="@color/wehavephones_text_dim"
             android:textSize="12sp" />
+    </LinearLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="8dp"
+        android:layout_weight="1"
+        android:baselineAligned="false"
+        android:orientation="horizontal">
+        <ScrollView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:scrollbars="none">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+                <TextView
+                    android:id="@+id/TVDetailMeta"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:lineSpacingExtra="3dp"
+                    android:textColor="@color/wehavephones_text"
+                    android:textSize="13sp" />
+                <LinearLayout
+                    android:id="@+id/LLDetailEnabled"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/wehavephones_addons_enabled_label"
+                        android:textColor="@color/wehavephones_text_dim"
+                        android:textSize="13sp" />
+                    <androidx.appcompat.widget.SwitchCompat
+                        android:id="@+id/SWDetailEnabled"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="6dp"
+                        android:contentDescription="@string/wehavephones_addons_enabled_label"
+                        android:minHeight="44dp" />
+                </LinearLayout>
+                <TextView
+                    android:id="@+id/TVDetailAuto"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:textColor="@color/wehavephones_accent"
+                    android:textSize="12sp"
+                    android:visibility="gone" />
+                <TextView
+                    android:id="@+id/TVDetailError"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:textColor="@color/wehavephones_error"
+                    android:textSize="12sp"
+                    android:visibility="gone" />
+            </LinearLayout>
+        </ScrollView>
+        <ScrollView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_marginStart="12dp"
+            android:layout_weight="1.25"
+            android:background="@drawable/wehavephones_card_background"
+            android:padding="10dp"
+            android:scrollbarStyle="insideInset"
+            android:scrollbars="vertical">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+                <TextView
+                    style="@style/WeHavePhonesAddonsGroup"
+                    android:text="@string/wehavephones_addons_changelog" />
+                <TextView
+                    android:id="@+id/TVDetailChangelog"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:lineSpacingExtra="3dp"
+                    android:textColor="@color/wehavephones_text"
+                    android:textSize="12sp" />
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
         <Button
             android:id="@+id/BTDetailUpdate"
-            style="@style/WeHavePhonesButtonPrimary"
-            android:layout_marginTop="12dp"
+            style="@style/WeHavePhonesButtonCompactPrimary"
+            android:layout_marginEnd="8dp"
+            android:drawableStart="@drawable/wehavephones_ic_download"
             android:text="@string/wehavephones_addons_update" />
         <Button
-            android:id="@+id/BTDetailToggle"
-            style="@style/WeHavePhonesButtonOutline"
-            android:text="@string/wehavephones_addons_disable" />
+            android:id="@+id/BTDetailWebsite"
+            style="@style/WeHavePhonesButtonCompact"
+            android:drawableStart="@drawable/wehavephones_ic_open_external"
+            android:text="@string/wehavephones_addons_website" />
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
         <Button
             android:id="@+id/BTDetailDelete"
-            style="@style/WeHavePhonesButtonOutline"
-            android:text="@string/wehavephones_addons_delete" />
+            style="@style/WeHavePhonesButtonCompact"
+            android:drawableStart="@drawable/wehavephones_ic_trash"
+            android:drawableTint="@color/wehavephones_error"
+            android:text="@string/wehavephones_addons_delete_ellipsis"
+            android:textColor="@color/wehavephones_error" />
     </LinearLayout>
-</ScrollView>
+</LinearLayout>

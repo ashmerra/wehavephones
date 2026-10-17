@@ -202,8 +202,9 @@ desktop wallpaper.
   `runtime` flavor looks exactly as before. `MainActivity` and
   `ExternalControllerBindingsActivity` are forced to `sensorLandscape` in this
   flavor's manifest.
-- **Add-ons** (`AddonsActivity`): addon manager for the selected game (its
-  product spinner shares the Home selection). See `docs/WEHAVEPHONES_ADDONS.md`.
+- **Add-ons** (`AddonsActivity`): addon manager for the selected game, with
+  its own rail (game picker shared with Home, then Installed, Browse, Addon
+  apps and Settings tabs). See `docs/WEHAVEPHONES_ADDONS.md`.
 
 ## 3a. Game catalog (every WoW game on Battle.net)
 

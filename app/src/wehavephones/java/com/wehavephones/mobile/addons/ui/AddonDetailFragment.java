@@ -9,11 +9,13 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.widget.SwitchCompat;
 import androidx.fragment.app.Fragment;
 
 import com.wehavephones.mobile.addons.AddonManager;
 import com.wehavephones.mobile.addons.AddonsActivity;
 import com.wehavephones.mobile.addons.model.AddonRecord;
+import com.wehavephones.mobile.addons.model.InstallStatus;
 import com.wehavephones.R;
 
 public class AddonDetailFragment extends Fragment {
@@ -49,40 +51,39 @@ public class AddonDetailFragment extends Fragment {
     }
 
     private void render(View view) {
+        view.findViewById(R.id.TVDetailBack).setOnClickListener((v) -> activity.closeScreen());
+        Button update = view.findViewById(R.id.BTDetailUpdate);
+        Button website = view.findViewById(R.id.BTDetailWebsite);
+        Button delete = view.findViewById(R.id.BTDetailDelete);
         if (record == null) {
             ((TextView)view.findViewById(R.id.TVDetailName)).setText(R.string.wehavephones_addons_empty);
-            view.findViewById(R.id.BTDetailUpdate).setVisibility(View.GONE);
-            view.findViewById(R.id.BTDetailToggle).setVisibility(View.GONE);
-            view.findViewById(R.id.BTDetailDelete).setVisibility(View.GONE);
+            update.setVisibility(View.GONE);
+            website.setVisibility(View.GONE);
+            delete.setVisibility(View.GONE);
+            view.findViewById(R.id.LLDetailEnabled).setVisibility(View.GONE);
             return;
         }
         ((TextView)view.findViewById(R.id.TVDetailName)).setText(record.displayName());
-        TextView status = view.findViewById(R.id.TVDetailStatus);
-        status.setText(AddonUi.statusLabel(requireContext(), record.installStatus()));
-        status.setTextColor(AddonUi.statusColor(requireContext(), record.installStatus()));
+        String author = record.toc != null ? record.toc.author : "";
+        ((TextView)view.findViewById(R.id.TVDetailAuthor)).setText(author.isEmpty() ? ""
+                : getString(R.string.wehavephones_addons_by_author, author));
         AddonUi.showNote(view.findViewById(R.id.TVDetailAuto),
                 AddonUi.autoInstallNote(requireContext(), manager, record));
 
         StringBuilder meta = new StringBuilder();
-        appendLine(meta, R.string.wehavephones_addons_detail_provider, record.shownProvider().displayName
-                + (!record.provider().offered || record.externalId.isEmpty()
-                        ? "" : " (" + record.externalId + ")"));
+        InstallStatus shown = AddonUi.rowStatus(record);
+        appendLine(meta, R.string.wehavephones_addons_detail_status, AddonUi.statusLabel(requireContext(), shown));
         appendLine(meta, R.string.wehavephones_addons_detail_installed,
                 record.installedVersion().isEmpty()
                         ? getString(R.string.wehavephones_addons_version_unknown) : record.installedVersion());
         if (!record.latestVersion.isEmpty()) {
             appendLine(meta, R.string.wehavephones_addons_detail_latest, record.latestVersion);
         }
-        if (record.toc != null) {
-            if (!record.toc.primaryInterface().isEmpty()) {
-                appendLine(meta, R.string.wehavephones_addons_detail_interface, record.toc.primaryInterface());
-            }
-            if (!record.toc.author.isEmpty()) {
-                appendLine(meta, R.string.wehavephones_addons_detail_author, record.toc.author);
-            }
-            if (!record.toc.website.isEmpty()) {
-                appendLine(meta, R.string.wehavephones_addons_detail_website, record.toc.website);
-            }
+        appendLine(meta, R.string.wehavephones_addons_detail_provider, AddonUi.sourceLabel(record)
+                + (!record.provider().offered || record.externalId.isEmpty()
+                        ? "" : " \u00b7 " + record.externalId));
+        if (record.toc != null && !record.toc.primaryInterface().isEmpty()) {
+            appendLine(meta, R.string.wehavephones_addons_detail_interface, record.toc.primaryInterface());
         }
         StringBuilder folders = new StringBuilder();
         for (String folder : record.folderNames) {
@@ -90,26 +91,43 @@ public class AddonDetailFragment extends Fragment {
             folders.append(folder);
         }
         appendLine(meta, R.string.wehavephones_addons_detail_folders, folders.toString());
-        if (!record.lastError.isEmpty()) {
-            appendLine(meta, R.string.wehavephones_addons_detail_error, record.lastError);
-        }
         ((TextView)view.findViewById(R.id.TVDetailMeta)).setText(meta.toString());
+
+        TextView error = view.findViewById(R.id.TVDetailError);
+        error.setVisibility(record.lastError.isEmpty() ? View.GONE : View.VISIBLE);
+        error.setText(getString(R.string.wehavephones_addons_row_error, record.lastError));
+
+        View enabledRow = view.findViewById(R.id.LLDetailEnabled);
+        enabledRow.setVisibility(record.unrecognized ? View.GONE : View.VISIBLE);
+        SwitchCompat enabled = view.findViewById(R.id.SWDetailEnabled);
+        enabled.setOnCheckedChangeListener(null);
+        enabled.setChecked(record.enabled);
+        enabled.setOnCheckedChangeListener((button, checked) -> {
+            if (checked != record.enabled) toggleRecord();
+        });
 
         TextView changelog = view.findViewById(R.id.TVDetailChangelog);
         changelog.setText(R.string.wehavephones_addons_loading);
 
-        Button update = view.findViewById(R.id.BTDetailUpdate);
-        update.setVisibility(record.hasOfferedBinding() ? View.VISIBLE : View.GONE);
-        update.setText(record.installedVersion().isEmpty()
-                ? R.string.wehavephones_addons_install : R.string.wehavephones_addons_update);
+        update.setVisibility(AddonUi.canUpdate(record) ? View.VISIBLE : View.GONE);
+        if (record.installedVersion().isEmpty()) {
+            update.setText(R.string.wehavephones_addons_install);
+        }
+        else if (record.installStatus() == InstallStatus.UPDATE && !record.latestVersion.isEmpty()) {
+            update.setText(getString(R.string.wehavephones_addons_update_to, record.latestVersion));
+        }
+        else {
+            update.setText(R.string.wehavephones_addons_update);
+        }
         update.setOnClickListener((v) -> updateRecord());
 
-        Button toggle = view.findViewById(R.id.BTDetailToggle);
-        toggle.setText(record.enabled ? R.string.wehavephones_addons_disable : R.string.wehavephones_addons_enable);
-        toggle.setOnClickListener((v) -> toggleRecord());
+        final String url = AddonUi.websiteUrl(record);
+        website.setVisibility(url.isEmpty() ? View.GONE : View.VISIBLE);
+        website.setOnClickListener((v) -> activity.openWebsite(url));
 
-        view.findViewById(R.id.BTDetailDelete).setVisibility(manager.isRequired(record) ? View.GONE : View.VISIBLE);
-        view.findViewById(R.id.BTDetailDelete).setOnClickListener((v) -> activity.confirmDelete(record));
+        // Required addons are reinstalled before every Play, so they offer Disable instead.
+        delete.setVisibility(manager.isRequired(record) ? View.GONE : View.VISIBLE);
+        delete.setOnClickListener((v) -> activity.confirmDelete(record));
 
         manager.loadChangelog(record, new AddonManager.Callback<String>() {
             @Override
@@ -139,6 +157,7 @@ public class AddonDetailFragment extends Fragment {
                 activity.showStatus(getString(R.string.wehavephones_addons_install_done, record.displayName()));
                 record = manager.findRecord(record.id);
                 render(requireView());
+                activity.refreshUpdateBadge();
             }
 
             @Override
@@ -157,7 +176,7 @@ public class AddonDetailFragment extends Fragment {
             public void onSuccess(String value) {
                 if (!isAdded()) return;
                 activity.setBusy(false, null);
-                activity.showStatus(record.enabled
+                activity.showStatus("enabled".equals(value)
                         ? getString(R.string.wehavephones_addons_enabled, record.displayName())
                         : getString(R.string.wehavephones_addons_disabled, record.displayName()));
                 record = manager.findRecord(record.id);
@@ -169,6 +188,7 @@ public class AddonDetailFragment extends Fragment {
                 if (!isAdded()) return;
                 activity.setBusy(false, null);
                 activity.showError(message);
+                render(requireView());
             }
         });
     }

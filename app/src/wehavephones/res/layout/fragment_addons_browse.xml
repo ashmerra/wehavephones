@@ -8,19 +8,17 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
+        android:minHeight="40dp"
         android:orientation="horizontal">
         <TextView
-            style="@style/WeHavePhonesSectionLabel"
-            android:layout_width="wrap_content"
-            android:layout_marginTop="0dp"
-            android:layout_marginBottom="0dp"
-            android:text="@string/wehavephones_addons_provider" />
-        <Spinner
-            android:id="@+id/SPBrowseProvider"
+            style="@style/WeHavePhonesAddonsTitle"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_weight="1" />
+            android:layout_weight="1"
+            android:text="@string/wehavephones_addons_browse" />
+        <Button
+            android:id="@+id/BTBrowseImport"
+            style="@style/WeHavePhonesButtonCompact"
+            android:text="@string/wehavephones_addons_import_ellipsis" />
     </LinearLayout>
     <LinearLayout
         android:layout_width="match_parent"
@@ -28,21 +26,36 @@
         android:layout_marginTop="6dp"
         android:gravity="center_vertical"
         android:orientation="horizontal">
+        <Spinner
+            android:id="@+id/SPBrowseProvider"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:layout_marginEnd="6dp"
+            android:background="@drawable/wehavephones_dropdown"
+            android:popupBackground="@drawable/wehavephones_card_background"
+            android:visibility="gone" />
         <EditText
             android:id="@+id/ETBrowseQuery"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="40dp"
             android:layout_weight="1"
+            android:background="@drawable/wehavephones_field"
+            android:drawableStart="@drawable/wehavephones_ic_search"
+            android:drawablePadding="8dp"
+            android:drawableTint="@color/wehavephones_text_dim"
             android:hint="@string/wehavephones_addons_search_hint"
-            android:imeOptions="actionSearch"
+            android:imeOptions="actionSearch|flagNoExtractUi"
             android:importantForAutofill="no"
             android:inputType="text"
             android:maxLines="1"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp"
             android:textColor="@color/wehavephones_text"
-            android:textColorHint="@color/wehavephones_text_dim" />
+            android:textColorHint="@color/wehavephones_text_dim"
+            android:textSize="14sp" />
         <Button
             android:id="@+id/BTBrowseSearch"
-            style="@style/WeHavePhonesButtonSmall"
+            style="@style/WeHavePhonesButtonCompactPrimary"
             android:layout_marginStart="6dp"
             android:text="@string/wehavephones_addons_search" />
     </LinearLayout>
@@ -57,15 +70,15 @@
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_marginTop="4dp"
+        android:layout_marginTop="2dp"
         android:layout_weight="1"
-        android:scrollbars="vertical"
-        android:scrollbarStyle="insideInset">
+        android:scrollbarStyle="insideInset"
+        android:scrollbars="vertical">
         <LinearLayout
             android:id="@+id/LLBrowseRows"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:paddingBottom="16dp" />
+            android:paddingBottom="8dp" />
     </ScrollView>
 </LinearLayout>

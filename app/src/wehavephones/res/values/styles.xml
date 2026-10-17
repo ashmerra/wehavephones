@@ -249,4 +249,53 @@
         <item name="android:paddingRight">14dp</item>
         <item name="android:stateListAnimator">@null</item>
     </style>
+    <!-- Add-ons screen: compact controls for dense lists in landscape. -->
+    <style name="WeHavePhonesButtonCompact" parent="WeHavePhonesButtonSmall">
+        <item name="android:layout_height">38dp</item>
+        <item name="android:layout_marginTop">0dp</item>
+        <item name="android:paddingLeft">12dp</item>
+        <item name="android:paddingRight">12dp</item>
+        <item name="android:drawablePadding">6dp</item>
+        <item name="android:drawableTint">@color/wehavephones_text</item>
+        <item name="android:maxLines">1</item>
+    </style>
+    <style name="WeHavePhonesButtonCompactPrimary" parent="WeHavePhonesButtonCompact">
+        <item name="android:background">@drawable/wehavephones_button_primary</item>
+        <item name="android:textColor">@color/wehavephones_key_text</item>
+        <item name="android:drawableTint">@color/wehavephones_key_text</item>
+    </style>
+    <style name="WeHavePhonesAddonsTitle" parent="WeHavePhonesHeader">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:textSize">20sp</item>
+        <item name="android:maxLines">1</item>
+    </style>
+    <style name="WeHavePhonesAddonsGroup">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:letterSpacing">0.07</item>
+        <item name="android:textColor">@color/wehavephones_text_faint</item>
+        <item name="android:textSize">11sp</item>
+    </style>
+    <style name="WeHavePhonesFilterChip">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">30dp</item>
+        <item name="android:background">@drawable/wehavephones_filter_chip</item>
+        <item name="android:gravity">center</item>
+        <item name="android:paddingLeft">12dp</item>
+        <item name="android:paddingRight">12dp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textColor">@color/wehavephones_filter_chip_text</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+    </style>
+    <style name="WeHavePhonesAddonsBox">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:background">@drawable/wehavephones_card_background</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:padding">10dp</item>
+    </style>
 </resources>

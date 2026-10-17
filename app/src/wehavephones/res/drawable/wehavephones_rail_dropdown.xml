@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The rail key with a caret, for the Add-ons game picker. -->
+<layer-list
+    xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:drawable="@drawable/wehavephones_rail_key" />
+    <item
+        android:width="14dp"
+        android:height="14dp"
+        android:gravity="end|center_vertical"
+        android:right="10dp"
+        android:drawable="@drawable/wehavephones_ic_caret_down" />
+</layer-list>

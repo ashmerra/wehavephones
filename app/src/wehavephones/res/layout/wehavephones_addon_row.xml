@@ -3,91 +3,68 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginTop="6dp"
+    android:layout_marginTop="4dp"
     android:background="@drawable/wehavephones_card_background"
-    android:orientation="vertical"
-    android:paddingLeft="12dp"
-    android:paddingRight="12dp"
-    android:paddingTop="10dp"
-    android:paddingBottom="8dp">
-    <LinearLayout
-        android:layout_width="match_parent"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?android:attr/selectableItemBackground"
+    android:gravity="center_vertical"
+    android:minHeight="50dp"
+    android:orientation="horizontal"
+    android:paddingLeft="4dp"
+    android:paddingRight="8dp">
+    <androidx.appcompat.widget.SwitchCompat
+        android:id="@+id/SWAddonEnabled"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
+        android:contentDescription="@string/wehavephones_addons_enabled_label"
+        android:minHeight="48dp" />
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:paddingTop="4dp"
+        android:paddingBottom="4dp">
         <TextView
             android:id="@+id/TVAddonName"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
             android:textColor="@color/wehavephones_text"
-            android:textSize="15sp"
+            android:textSize="14sp"
             android:textStyle="bold" />
         <TextView
-            android:id="@+id/TVAddonStatus"
-            android:layout_width="wrap_content"
+            android:id="@+id/TVAddonMeta"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@drawable/wehavephones_button_outline"
-            android:paddingLeft="8dp"
-            android:paddingRight="8dp"
-            android:paddingTop="2dp"
-            android:paddingBottom="2dp"
-            android:textColor="@color/wehavephones_accent"
-            android:textSize="11sp" />
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/wehavephones_text_dim"
+            android:textSize="12sp" />
     </LinearLayout>
-    <TextView
-        android:id="@+id/TVAddonMeta"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="3dp"
-        android:textColor="@color/wehavephones_text_dim"
-        android:textSize="12sp" />
-    <TextView
-        android:id="@+id/TVAddonFolders"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
-        android:textColor="@color/wehavephones_text_dim"
-        android:textSize="11sp" />
-    <TextView
-        android:id="@+id/TVAddonAuto"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
-        android:textColor="@color/wehavephones_accent"
-        android:textSize="11sp"
+    <Button
+        android:id="@+id/BTAddonUpdate"
+        style="@style/WeHavePhonesButtonCompactPrimary"
+        android:layout_height="34dp"
+        android:layout_marginStart="8dp"
+        android:text="@string/wehavephones_addons_update"
         android:visibility="gone" />
-    <LinearLayout
-        android:layout_width="match_parent"
+    <TextView
+        android:id="@+id/TVAddonStatus"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:orientation="horizontal">
-        <Button
-            android:id="@+id/BTAddonUpdate"
-            style="@style/WeHavePhonesButtonSmall"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:text="@string/wehavephones_addons_update" />
-        <Button
-            android:id="@+id/BTAddonToggle"
-            style="@style/WeHavePhonesButtonSmall"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_marginStart="4dp"
-            android:text="@string/wehavephones_addons_disable" />
-        <Button
-            android:id="@+id/BTAddonDetails"
-            style="@style/WeHavePhonesButtonSmall"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_marginStart="4dp"
-            android:text="@string/wehavephones_addons_details" />
-        <Button
-            android:id="@+id/BTAddonDelete"
-            style="@style/WeHavePhonesButtonSmall"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_marginStart="4dp"
-            android:text="@string/wehavephones_addons_delete" />
-    </LinearLayout>
+        android:layout_marginStart="8dp"
+        android:drawablePadding="4dp"
+        android:maxLines="1"
+        android:textSize="12sp" />
+    <ImageView
+        android:layout_width="14dp"
+        android:layout_height="14dp"
+        android:layout_marginStart="8dp"
+        android:importantForAccessibility="no"
+        android:src="@drawable/wehavephones_ic_caret_right"
+        android:tint="@color/wehavephones_text_faint" />
 </LinearLayout>

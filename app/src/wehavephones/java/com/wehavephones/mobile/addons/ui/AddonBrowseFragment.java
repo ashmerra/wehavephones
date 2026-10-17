@@ -20,6 +20,7 @@ import androidx.fragment.app.Fragment;
 import com.wehavephones.mobile.addons.AddonManager;
 import com.wehavephones.mobile.addons.AddonPrefs;
 import com.wehavephones.mobile.addons.AddonsActivity;
+import com.wehavephones.mobile.addons.model.AddonRecord;
 import com.wehavephones.mobile.addons.model.ProviderType;
 import com.wehavephones.mobile.addons.model.RemoteAddon;
 import com.wehavephones.mobile.addons.provider.AddonProvider;
@@ -64,15 +65,12 @@ public class AddonBrowseFragment extends Fragment {
                 R.layout.wehavephones_spinner_item, labels);
         adapter.setDropDownViewResource(R.layout.wehavephones_spinner_dropdown_item);
         providerSpinner.setAdapter(adapter);
+        // A picker only helps once more than one provider is offered.
+        providerSpinner.setVisibility(providerTypes.size() > 1 ? View.VISIBLE : View.GONE);
         providerSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View selectedView, int position, long id) {
-                if (selected() == ProviderType.WAGO) {
-                    statusView.setText(R.string.wehavephones_addons_wago_note);
-                }
-                else {
-                    statusView.setText("");
-                }
+                showHint();
             }
 
             @Override
@@ -87,6 +85,8 @@ public class AddonBrowseFragment extends Fragment {
             }
         }
 
+        showHint();
+        view.findViewById(R.id.BTBrowseImport).setOnClickListener((v) -> activity.launchImportPicker());
         view.findViewById(R.id.BTBrowseSearch).setOnClickListener((v) -> search());
         queryField.setOnEditorActionListener((v, actionId, event) -> {
             if (actionId == EditorInfo.IME_ACTION_SEARCH) {
@@ -95,6 +95,15 @@ public class AddonBrowseFragment extends Fragment {
             }
             return false;
         });
+    }
+
+    private void showHint() {
+        ProviderType provider = selected();
+        if (provider == ProviderType.WAGO) statusView.setText(R.string.wehavephones_addons_wago_note);
+        else if (provider == ProviderType.GITHUB && providerTypes.size() == 1) {
+            statusView.setText(R.string.wehavephones_addons_browse_hint_github);
+        }
+        else statusView.setText("");
     }
 
     private ProviderType selected() {
@@ -119,7 +128,7 @@ public class AddonBrowseFragment extends Fragment {
                     statusView.setText(R.string.wehavephones_addons_no_results);
                     return;
                 }
-                statusView.setText(getString(R.string.wehavephones_addons_scan_done, addons.size()));
+                statusView.setText(getString(R.string.wehavephones_addons_results, addons.size()));
                 LayoutInflater inflater = LayoutInflater.from(requireContext());
                 for (final RemoteAddon addon : addons) {
                     View row = inflater.inflate(R.layout.wehavephones_addon_search_row, rows, false);
@@ -150,15 +159,33 @@ public class AddonBrowseFragment extends Fragment {
             author.append("v").append(addon.latestVersion());
         }
         ((TextView)row.findViewById(R.id.TVSearchAuthor)).setText(author.toString());
-        ((TextView)row.findViewById(R.id.TVSearchSummary)).setText(addon.summary);
-        row.findViewById(R.id.BTSearchInstall).setOnClickListener((v) -> install(addon));
-        Button website = row.findViewById(R.id.BTSearchWebsite);
+        TextView summary = row.findViewById(R.id.TVSearchSummary);
+        summary.setText(addon.summary);
+        summary.setVisibility(addon.summary == null || addon.summary.isEmpty() ? View.GONE : View.VISIBLE);
+        Button install = row.findViewById(R.id.BTSearchInstall);
+        install.setOnClickListener((v) -> install(row, addon));
+        showInstalled(row, isInstalled(addon));
+        // The row opens the project page, the only detail a search result has.
         final String url = websiteUrl(addon);
-        website.setVisibility(url.isEmpty() ? View.GONE : View.VISIBLE);
-        website.setOnClickListener((v) -> activity.openWebsite(url));
+        row.setOnClickListener(url.isEmpty() ? null : (v) -> activity.openWebsite(url));
+        row.setClickable(!url.isEmpty());
     }
 
-    private void install(final RemoteAddon addon) {
+    private static void showInstalled(View row, boolean installed) {
+        row.findViewById(R.id.BTSearchInstall).setVisibility(installed ? View.GONE : View.VISIBLE);
+        row.findViewById(R.id.TVSearchInstalled).setVisibility(installed ? View.VISIBLE : View.GONE);
+    }
+
+    private boolean isInstalled(RemoteAddon addon) {
+        for (AddonRecord record : manager.recordsForCurrentFlavor()) {
+            if (record.providerId.equals(addon.provider.id) && record.externalId.equalsIgnoreCase(addon.externalId)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void install(final View row, final RemoteAddon addon) {
         activity.setBusy(true, getString(R.string.wehavephones_addons_updating, addon.name));
         manager.installAddon(addon, new AddonManager.Callback<String>() {
             @Override
@@ -166,7 +193,8 @@ public class AddonBrowseFragment extends Fragment {
                 if (!isAdded()) return;
                 activity.setBusy(false, null);
                 activity.showStatus(getString(R.string.wehavephones_addons_install_done, addon.name));
-                activity.showList();
+                showInstalled(row, true);
+                activity.refreshUpdateBadge();
             }
 
             @Override

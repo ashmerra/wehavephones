@@ -55,8 +55,25 @@ addons/
 ├── repo/                      AddonIndex + hand-rolled Json codec (host-testable) + AddonIndexStore (atomic file IO)
 ├── update/UpdateChecker.java  grouped batch update check (per provider+channel)
 ├── util/GameGuard.java        /proc-based WoW-running guard (ProcessScanner)
-└── ui/                        list / browse / detail / settings fragments + AddonUi labels
+└── ui/                        installed list / details / browse / addon apps / settings fragments + AddonUi labels
 ```
+
+The screen follows the main screen's pattern. A navy rail on the left holds
+the game picker, four tabs (**Installed**, **Browse**, **Addon apps**,
+**Settings**) and the shared status line. The Installed tab badge counts
+addons with an update. The LCD panel shows the tab:
+
+- **Installed:** one row per addon with an enable switch, version and source,
+  and one status or an Update button. Updates sort first. ConsolePort and its
+  setup addon sit in their own group without Delete. Update all appears when
+  there are updates. Check for updates, Rescan folder and Import ZIP are in the
+  ⋯ menu. Tapping a row opens **Details** (facts, changelog, Update, Website,
+  Delete).
+- **Browse:** search plus Import ZIP. The provider picker shows only once more
+  than one remote provider is offered. A result row opens the project page.
+- **Addon apps:** see section 10.
+- **Settings:** update preferences (saved on change), the AddOns folder with
+  Copy full path, one row per offered provider key, and ConsolePort.
 
 ## 3. Flows
 
@@ -219,7 +236,7 @@ whatever its directory is called). One release zip serves every flavor.
 
 ## 10. Addon managers' own apps (no API key)
 
-Add-ons → **Open CurseForge** and **Open WowUp** run those addon managers'
+Add-ons → **Addon apps** runs the CurseForge and WowUp addon managers'
 own Windows apps in the game's container. They find the WoW installs and
 install, update and remove addons themselves, so the app needs no API key.
 CurseForge covers its whole catalog (guest use works). WowUp's Wago edition
@@ -244,6 +261,10 @@ install and start path:
   session was interrupted). The installed version goes to
   `C:\windows\wehavephones-<app>\installed-version.txt`. A newer feed version
   is installed on the next open, but only over a release this app installed.
+- **Addon apps tab:** one row per app with its state and one button (Open,
+  Download and open, or Update and open). The tab reads the feed to show the
+  download size, and reuses a release seen in the last ten minutes. Open is
+  the only update path, so there is no separate update button.
 - **Start:** the container's `dxgi.dll`/`d3d11.dll` are ARM64-only builds for
   the native ARM64 game, which x64 apps cannot load (status `c000007b`), and
   Chromium aborts without `CreateDXGIFactory1`. Wine's own ARM64X builds are
