@@ -2,11 +2,13 @@
 # Host self-tests for the one-button launch (no adb, no device).
 #
 #   1. Java (tools/wehavephones-launch-selftest/LaunchSelfTest): compiles the real
-#      BattleNetLauncherLog, WeHavePhonesLaunchPlan and WeHavePhonesBnetConfig and checks
+#      BattleNetLauncherLog, BattleNetPlayButton, WeHavePhonesLaunchPlan and
+#      WeHavePhonesBnetConfig and checks
 #      product-code mapping + overrides, readiness/update parsing against
 #      sanitized device logs (fixtures/), main-log selection vs the --exec
 #      forwarder, launch/start bat generation, the 64-byte WinHandler EXEC
-#      packet limit, fallback ladder ordering and the Battle.net.config edit.
+#      packet limit, fallback ladder ordering, the greyed-out Play button
+#      classifier and the Battle.net.config edit.
 #   1a. Java (BattleNetGamesSelfTest): product.db protobuf decoding,
 #       .build.info/.flavor.info parsing and the merged Battle.net game list.
 #   1b. Java (ProcessScannerSelfTest): real /proc scan with fake WoW and
@@ -68,6 +70,7 @@ else
     mkdir -p "$WORK_DIR"
     SOURCES=(
       "$SRC_DIR/BattleNetLauncherLog.java"
+      "$SRC_DIR/BattleNetPlayButton.java"
       "$SRC_DIR/WeHavePhonesLaunchPlan.java"
       "$SRC_DIR/WeHavePhonesBnetConfig.java"
       "$SRC_DIR/AddonApp.java"

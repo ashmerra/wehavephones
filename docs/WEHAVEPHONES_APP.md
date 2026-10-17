@@ -400,7 +400,18 @@ saved or entered password into it. That path is gone.)
      pixels from its bottom-left corner (`wehavephones-launch-products.json`),
      every 10 s until the launcher logs `Launched … pid: N` or a WoW process
      appears: after sign-in the page can take tens of seconds to render on the
-     phone and drops clicks until then. About one start in four Battle.net
+     phone and drops clicks until then. Before each click the button's own
+     pixels are checked (`BattleNetPlayButton`): Battle.net paints Play in the
+     game's accent colour and dims it to about half when the game cannot
+     launch, and the settings gear beside it keeps the accent colour, so the
+     two fills are compared (a dialog dimming the page dims both). Two
+     readings about a second apart must agree, and a button that cannot be
+     read (the page is still painting) is never greyed out. A greyed-out Play
+     fails the run at once with *Play is not available*, instead of clicking
+     and restarting Battle.net for nothing: this is the state of a
+     pre-installed pre-release such as the Forever Stress Test, where
+     Battle.net itself shows *This game cannot be played yet* (S23,
+     2026-10-17). About one start in four Battle.net
      hangs before its page renders (spinner under 1 FPS, its log silent), so
      after six clicks it is closed and started again in the same session, up
      to twice (`playButton.restarts`). It signs in again from its own saved
@@ -425,7 +436,8 @@ saved or entered password into it. That path is gone.)
      started with `--exec="launch WoW"` used to be spared, kept ~650 MB and
      respawned the helpers the reap had closed.
   6. Every run is recorded in `files/wehavephones/launch-last.json` (path used,
-     attempts, timings, pids, reap and memory numbers) and
+     attempts, timings, pids, reap and memory numbers, Play button probe
+     verdict and fill colours) and
      `files/wehavephones/launch.log` (logcat tag `WeHavePhonesLaunch`). Diagnostics
      shows the last record.
   Testing knobs (no UI): `files/wehavephones/launch-overrides.json`, e.g.

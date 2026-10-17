@@ -2,14 +2,17 @@ package com.wehavephones.mobile;
 
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 
 import com.wehavephones.winhandler.WinHandler;
 import com.wehavephones.xserver.Pointer;
 import com.wehavephones.xserver.Window;
 import com.wehavephones.xserver.WindowManager;
 import com.wehavephones.xserver.XKeycode;
+import com.wehavephones.xserver.XLock;
 import com.wehavephones.xserver.XServer;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -60,6 +63,51 @@ final class SessionInput {
             out.add(child);
             collectMapped(child, out, depth + 1, maxDepth);
         }
+    }
+
+    /**
+     * Average RGB ({@code 0xRRGGBB}) of a small square around X root
+     * coordinates {@code (x, y)}, read from the topmost mapped window there
+     * (what the renderer paints), or -1 when no window's pixels are readable.
+     * Used to tell Battle.net's disabled Play button from its enabled one.
+     */
+    static int averagePixel(final XServer xServer, final int x, final int y, final int radius) {
+        final int[] result = {-1};
+        runOnMainAndWait(() -> {
+            try (XLock lock = xServer.lock(XServer.Lockable.WINDOW_MANAGER, XServer.Lockable.INPUT_DEVICE)) {
+                Window window = xServer.windowManager.rootWindow;
+                Window child;
+                while ((child = window.getChildByCoords((short) x, (short) y)) != null) window = child;
+                if (window == xServer.windowManager.rootWindow || window.getContent() == null) return;
+                ByteBuffer data = window.getContent().getData();
+                if (data == null) return;
+                short[] local = window.rootPointToLocal((short) x, (short) y);
+                int width = window.getWidth();
+                int height = window.getHeight();
+                long red = 0;
+                long green = 0;
+                long blue = 0;
+                int count = 0;
+                for (int py = local[1] - radius; py <= local[1] + radius; py++) {
+                    if (py < 0 || py >= height) continue;
+                    for (int px = local[0] - radius; px <= local[0] + radius; px++) {
+                        if (px < 0 || px >= width) continue;
+                        int offset = (py * width + px) * 4;
+                        if (offset + 2 >= data.capacity()) return;
+                        red += data.get(offset) & 0xFF;
+                        green += data.get(offset + 1) & 0xFF;
+                        blue += data.get(offset + 2) & 0xFF;
+                        count++;
+                    }
+                }
+                if (count == 0) return;
+                result[0] = (int)(red / count) << 16 | (int)(green / count) << 8 | (int)(blue / count);
+            }
+            catch (Exception e) {
+                Log.w("WeHavePhonesLaunch", "pixel probe failed", e);
+            }
+        });
+        return result[0];
     }
 
     static void runOnMainAndWait(final Runnable runnable) {

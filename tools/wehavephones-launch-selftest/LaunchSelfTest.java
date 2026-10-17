@@ -13,7 +13,8 @@ import java.util.List;
 
 /**
  * Host self-test for the one-button launch logic. Compiles against the real
- * BattleNetLauncherLog, WeHavePhonesLaunchPlan and WeHavePhonesBnetConfig sources.
+ * BattleNetLauncherLog, BattleNetPlayButton, WeHavePhonesLaunchPlan and
+ * WeHavePhonesBnetConfig sources.
  *
  * Usage: LaunchSelfTest <products.json> <runtime-profiles.json> <fixtures-dir>
  */
@@ -28,6 +29,7 @@ public final class LaunchSelfTest {
 
         productMapping(products);
         ladderOrdering(products);
+        playButtonProbe();
         readinessWarm(fixtures);
         readinessUpdate(fixtures);
         readinessAnniversary(products, fixtures);
@@ -120,6 +122,37 @@ public final class LaunchSelfTest {
         }
         WeHavePhonesLaunchPlan classicExec = WeHavePhonesLaunchPlan.parse(products, "{\"options\":{\"forcePath\":\"exec\"}}");
         check("forced exec classic", "exec:WoW_wow_classic -> exec:WoWC", describe(classicExec.ladder(classicExec.resolve("_classic_"))));
+    }
+
+    /**
+     * The Play button classifier, with the fills measured on the Galaxy S23
+     * on 2026-10-17: the enabled button and the settings gear beside it both
+     * {@code 0x0074E0}, the Forever Stress Test pre-install's disabled button
+     * {@code 0x003F7A} against the same gear.
+     */
+    private static void playButtonProbe() {
+        int enabled = 0x0074E0;
+        int disabled = 0x003F7A;
+        check("enabled Play reads enabled", BattleNetPlayButton.State.ENABLED,
+                BattleNetPlayButton.classify(enabled, enabled));
+        check("greyed-out Play reads disabled", BattleNetPlayButton.State.DISABLED,
+                BattleNetPlayButton.classify(disabled, enabled));
+        check("dimmed page keeps Play enabled", BattleNetPlayButton.State.ENABLED,
+                BattleNetPlayButton.classify(0x003A70, 0x003A70));
+        check("unreadable Play is unknown", BattleNetPlayButton.State.UNKNOWN,
+                BattleNetPlayButton.classify(-1, enabled));
+        check("unreadable gear is unknown", BattleNetPlayButton.State.UNKNOWN,
+                BattleNetPlayButton.classify(enabled, -1));
+        check("blank page is unknown", BattleNetPlayButton.State.UNKNOWN,
+                BattleNetPlayButton.classify(0x000000, 0x000000));
+        check("dark page background is unknown", BattleNetPlayButton.State.UNKNOWN,
+                BattleNetPlayButton.classify(0x1c1d27, 0x1c1d27));
+        check("grey accent dims the same way", BattleNetPlayButton.State.DISABLED,
+                BattleNetPlayButton.classify(0x555555, 0x9e9e9e));
+        check("bright grey accent stays enabled", BattleNetPlayButton.State.ENABLED,
+                BattleNetPlayButton.classify(0x9e9e9e, 0x9e9e9e));
+        check("probe hex", "#0074e0", BattleNetPlayButton.hex(enabled));
+        check("probe hex for unreadable", "none", BattleNetPlayButton.hex(-1));
     }
 
     // ---- launcher log -----------------------------------------------------------------

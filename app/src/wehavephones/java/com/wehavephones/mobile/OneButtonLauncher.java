@@ -38,9 +38,12 @@ import java.util.concurrent.TimeUnit;
 /**
  * One-button Play: start (or reuse) the signed-in Battle.net session on the
  * game's page ({@code --game=<uid>}), wait for sign-in and for the product to
- * be up to date, then click Battle.net's own Play button. Only a game
- * Battle.net launched gets its sign-in (a directly started game stops at its
- * password prompt), and Battle.net, set to exit on game launch
+ * be up to date, then click Battle.net's own Play button. A Play button
+ * Battle.net has greyed out (for example a pre-installed pre-release) fails
+ * the run with "Play is not available" instead of clicking and restarting
+ * Battle.net for nothing. Only a game Battle.net launched gets its sign-in
+ * (a directly started game stops at its password prompt), and Battle.net, set
+ * to exit on game launch
  * ({@code GameLaunchWindowBehavior}), then closes itself; one still running
  * after {@code launcherExitSeconds} is closed (the Wine+CEF+game peak
  * otherwise gets the phone's background apps killed). Progress goes to
@@ -63,6 +66,14 @@ public final class OneButtonLauncher {
 
     private static final long POLL_MS = 1000L;
     private static final long MAX_LOG_BYTES = 256 * 1024;
+    /**
+     * Probe offsets from the Play click point (the button spans about -116..+121
+     * across): Play's fill left of its label, and the settings gear beside it,
+     * whose fill keeps the accent colour when Play is dimmed.
+     */
+    private static final int PLAY_FILL_OFFSET = -95;
+    private static final int GEAR_FILL_OFFSET = 140;
+    private static final int PROBE_RADIUS = 2;
 
     private static volatile OneButtonLauncher active;
     private static final java.util.concurrent.atomic.AtomicInteger GENERATION = new java.util.concurrent.atomic.AtomicInteger();
@@ -84,6 +95,8 @@ public final class OneButtonLauncher {
     private final JSONArray attemptsJson = new JSONArray();
     private final long startedAt = SystemClock.elapsedRealtime();
     private long gameSeenAt;
+    /** Battle.net's Play button reads as greyed out: stop the ladder instead of retrying. */
+    private boolean playUnavailable;
 
     private OneButtonLauncher(Context context, Listener listener) {
         this.appContext = context.getApplicationContext();
@@ -299,6 +312,7 @@ public final class OneButtonLauncher {
                 return true;
             }
             event("attempt " + attempt.describe() + (sent ? " did not start the game" : " could not be sent"));
+            if (playUnavailable) return true;
         }
         return false;
     }
@@ -511,8 +525,44 @@ public final class OneButtonLauncher {
         sleep(500);
         if (!running) return false;
         if (ProcessScanner.findWowProcess() != null) return true;
+        if (probePlayButton(xServer, target[0], target[1])) {
+            // The Play button is greyed out (for example a pre-installed
+            // pre-release like the Forever Stress Test): clicking it does
+            // nothing, so the normal retries and Battle.net restarts would
+            // only delay the same outcome.
+            playUnavailable = true;
+            bringSessionToFront();
+            fail(appContext.getString(R.string.wehavephones_launch_play_unavailable));
+            return false;
+        }
+        if (!running) return false;
         SessionInput.click(xServer, target[0], target[1]);
         event("clicked Play at X " + target[0] + "," + target[1] + " (Battle.net window " + found[0] + ")");
+        return true;
+    }
+
+    /**
+     * True when the Play button reads as greyed out twice about a second
+     * apart. Battle.net paints the button in the game's accent colour and
+     * dims it when the game cannot launch; the settings gear keeps the accent
+     * (see {@link BattleNetPlayButton}). The second reading guards against a
+     * page that is still painting, and an unreadable button (page not
+     * rendered, no gear button) never counts as greyed out.
+     */
+    private boolean probePlayButton(XServer xServer, int playX, int playY) {
+        for (int attempt = 0; attempt < 2; attempt++) {
+            int playFill = SessionInput.averagePixel(xServer, playX + PLAY_FILL_OFFSET, playY, PROBE_RADIUS);
+            int gearFill = SessionInput.averagePixel(xServer, playX + GEAR_FILL_OFFSET, playY, PROBE_RADIUS);
+            BattleNetPlayButton.State state = BattleNetPlayButton.classify(playFill, gearFill);
+            put("playFill", BattleNetPlayButton.hex(playFill));
+            put("gearFill", BattleNetPlayButton.hex(gearFill));
+            put("playButton", state.name().toLowerCase(Locale.ROOT));
+            event("Play button probe: " + state + " (fill " + BattleNetPlayButton.hex(playFill)
+                    + ", gear " + BattleNetPlayButton.hex(gearFill) + ")");
+            if (state != BattleNetPlayButton.State.DISABLED) return false;
+            if (!running) return false;
+            if (attempt == 0) sleep(800);
+        }
         return true;
     }
 
