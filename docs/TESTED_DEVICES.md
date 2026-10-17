@@ -35,6 +35,7 @@ These are maintainer tests, rather than independent community confirmations.
 | Samsung Galaxy S23+ (same device) | Mists of Pandaria Classic — `5.5.4.70268` | Driver not recorded in this run | Entered world | [Issue #1 test record](https://github.com/ashmerra/wehavephones/issues/1#issuecomment-6103721746) |
 | Samsung Galaxy S23+ (same device) | Retail / Midnight — `12.1.0.69933` | Driver not recorded in this run | Owner confirmed world login. Disconnects occurred during testing | [Issue #1 test record](https://github.com/ashmerra/wehavephones/issues/1#issuecomment-6103721746) |
 | Google Pixel 8a (Tensor G3 / Mali-G715, Android 17) | Classic Era — build not recorded | System Vulkan driver + BCn compatibility layer, per project runtime record | Playable in-world | [README](../README.md#tested-on), [runtime](WEHAVEPHONES_RUNTIME.md), [profile](DEVICE_PROFILES.md) |
+| Samsung Galaxy S26 Ultra (SM-S948U, Android 16, One UI 8.5) | Not recorded. A Classic Era installation was started in the same session | Device's automatic system graphics driver. Exact version not recorded | Signed in and reached in-world gameplay. The account owner performed the in-world step | [Issue #18](https://github.com/ashmerra/wehavephones/issues/18), internal S26 test report, Oct 16 |
 
 The four S23+ edition tests were performed on Oct 10 with WeHavePhones
 `0.0.2-dev`, source commit `bc1eaee`. The issue records world access, not a
@@ -47,6 +48,14 @@ does not prove which driver was selected in each Oct 10 run.
 
 The README also records **S23+ / Forever beta / login screen only**. Beta
 access was unavailable. This is not a confirmed playable combination.
+
+The S26 Ultra test used a Dev build from the Security Check fix (`4acd2fd`),
+which is included in 0.0.6. The agent observed the complete Security Check page,
+signed-in state and the start of the Classic Era installation. The account owner
+then completed the remaining steps manually and confirmed in-world gameplay.
+Those manual steps were not observed by the agent and no edition, driver or
+performance detail was recorded, so the row above claims only the reported
+result.
 
 ## Reddit reports with missing details or limited progress
 
@@ -95,6 +104,10 @@ linked r/wow and r/classicwow announcement discussions, the r/EmulationOnAndroid
 announcement, a later r/winlator report (Oct 14), and the project's existing device/runtime records. Reddit search
 results exposed newer replies than the cached page view. This is a snapshot of
 accessible evidence, not an exhaustive compatibility guarantee.
+
+The S26 Ultra row was added on 2026-10-17 from the project's own rental-device
+test record and the account owner's confirmation, which fall outside the
+snapshot above.
 
 For a new row, record the device/model code, WoW edition and build, app version,
 driver picker ID (and system-driver version if available), graphics API,
