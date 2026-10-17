@@ -72,12 +72,6 @@ public class AddonAppsFragment extends Fragment {
 
         TextView state = row.findViewById(R.id.TVAppState);
         Button open = row.findViewById(R.id.BTAppOpen);
-        // CurseForge is the lighter and more reliable app on a phone, so it gets the primary button.
-        boolean primary = app == AddonApp.CURSEFORGE;
-        open.setBackgroundResource(primary ? R.drawable.wehavephones_button_primary
-                : R.drawable.wehavephones_button_outline);
-        int textColor = requireContext().getColor(primary ? R.color.wehavephones_key_text : R.color.wehavephones_text);
-        open.setTextColor(textColor);
         open.setOnClickListener((v) -> AddonAppLauncher.open(activity, app,
                 (message, error) -> activity.showStatus(message)));
 

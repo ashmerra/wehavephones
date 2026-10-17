@@ -45,6 +45,6 @@
     </LinearLayout>
     <Button
         android:id="@+id/BTAppOpen"
-        style="@style/WeHavePhonesButtonCompact"
+        style="@style/WeHavePhonesButtonCompactPrimary"
         android:layout_marginStart="8dp" />
 </LinearLayout>
