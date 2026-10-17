@@ -467,6 +467,19 @@ public final class AddonLogicSelfTest {
         check(new File(addons, "ToggleAddon").isDirectory(), "enable restores folder");
         check(!new File(addons, "ToggleAddon.disabled").exists(), "disabled folder gone after enable");
 
+        // The manager toggles a record using the physical folder names a scan
+        // reports, so a disabled addon arrives as "ToggleAddon.disabled".
+        AddonInstaller.setEnabled(addons, Arrays.asList("ToggleAddon"), false);
+        AddonScanner.ScanResult disabledScan = AddonScanner.scan(addons, WowFlavor.RETAIL, null);
+        checkEquals(1, disabledScan.records.size(), "one record after disable");
+        AddonRecord disabledRecord = disabledScan.records.get(0);
+        checkEquals("ToggleAddon.disabled", disabledRecord.folderNames.get(0),
+                "scan reports the physical disabled folder name");
+        AddonInstaller.setEnabled(addons, disabledRecord.folderNames, true);
+        check(new File(addons, "ToggleAddon").isDirectory(), "enable restores scanned disabled folder");
+        check(!new File(addons, "ToggleAddon.disabled").exists(),
+                "scanned disabled folder gone after enable");
+
         File backup = AddonInstaller.removeToBackup(addons, Arrays.asList("ToggleAddon"));
         check(!new File(addons, "ToggleAddon").exists(), "delete moves folder away");
         check(FileOps.isDeletedDir(backup.getName()), "delete backup directory created");

@@ -99,8 +99,10 @@ previous statuses and stores a per-record `lastError`. Auto-check on list open
 is throttled to 15 minutes and can be disabled in settings.
 
 ### Enable / disable
-Rename each folder to `<folder>.disabled` (and back). The game-closed guard
-applies. Disabled state is stored in the index and re-applied after updates.
+Rename each folder to `<folder>.disabled` (and back). Callers may pass either
+form of the name, since a scanned disabled record holds the physical
+`<folder>.disabled` name. The game-closed guard applies. Disabled state is
+stored in the index and re-applied after updates.
 
 ### Delete
 Folders are moved into `.wehavephones-deleted-<uuid>/` (not deleted) and the record

@@ -144,9 +144,15 @@ public final class AddonInstaller {
         if (result.stagingRoot != null) FileOps.deleteRecursively(result.stagingRoot);
     }
 
-    /** Renames folders to <name>.disabled (or back) for the enable/disable convention. */
+    /**
+     * Renames folders to <name>.disabled (or back) for the enable/disable convention.
+     * The given names may be either form: the scanner stores the physical folder
+     * name, so a disabled record arrives as "Addon.disabled".
+     */
     public static void setEnabled(File addonsDir, List<String> folders, boolean enabled) throws IOException {
-        for (String name : folders) {
+        for (String folder : folders) {
+            String name = activeName(folder);
+            if (name.isEmpty()) continue;
             if (enabled) {
                 if (FileOps.findCaseInsensitive(addonsDir, name) != null) {
                     File disabledVariant = FileOps.findCaseInsensitive(addonsDir, name + ".disabled");
@@ -174,6 +180,14 @@ public final class AddonInstaller {
                 }
             }
         }
+    }
+
+    /** The enabled folder name, whether the caller passed "Addon" or "Addon.disabled". */
+    private static String activeName(String folder) {
+        if (folder == null) return "";
+        String suffix = ".disabled";
+        return folder.toLowerCase(Locale.US).endsWith(suffix)
+                ? folder.substring(0, folder.length() - suffix.length()) : folder;
     }
 
     /**
