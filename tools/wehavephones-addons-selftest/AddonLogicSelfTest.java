@@ -510,6 +510,23 @@ public final class AddonLogicSelfTest {
         check(solo != null && !solo.enabled && InstallStatus.DISABLED.id.equals(solo.status),
                 "disabled folder detected");
         check(junk != null && junk.unrecognized, "unrecognized folder reported");
+
+        // A release tag the comparator cannot order keeps the update check's verdict.
+        File tagged = new File(workDir, "scan-tagged/Interface/AddOns");
+        write(new File(tagged, "Questie/Questie.toc"), "## Version: 12.1.0\n## Title: Questie\n");
+        AddonRecord checked = new AddonRecord();
+        checked.flavorDir = "_retail_";
+        checked.providerId = ProviderType.GITHUB.id;
+        checked.externalId = "Questie/Questie";
+        checked.folderNames.add("Questie");
+        checked.toc.version = "12.1.0";
+        checked.latestVersion = "bundle/v12.1.0+v1.0.6";
+        checked.status = InstallStatus.UP_TO_DATE.id;
+        AddonRecord kept = AddonScanner.scan(tagged, WowFlavor.RETAIL, Arrays.asList(checked)).records.get(0);
+        checkEquals(InstallStatus.UP_TO_DATE.id, kept.status, "unordered tag keeps the checked status");
+        write(new File(tagged, "Questie/Questie.toc"), "## Version: 12.2.0\n## Title: Questie\n");
+        AddonRecord changed = AddonScanner.scan(tagged, WowFlavor.RETAIL, Arrays.asList(checked)).records.get(0);
+        checkEquals(InstallStatus.UNKNOWN.id, changed.status, "a changed install drops the old verdict");
     }
 
     private static void testConsolePort() throws Exception {

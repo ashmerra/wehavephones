@@ -194,6 +194,11 @@ public final class AddonScanner {
         else if (VersionComparator.isSame(record.installedVersion(), record.latestVersion)) {
             record.setStatus(InstallStatus.UP_TO_DATE);
         }
+        else if (match != null && keepsCheckedStatus(match, record)) {
+            // The comparator cannot order these versions (a release tag against a TOC
+            // version, for example), so the last update check's verdict stands.
+            record.status = match.status;
+        }
         else {
             record.setStatus(InstallStatus.UNKNOWN);
         }
@@ -234,5 +239,13 @@ public final class AddonScanner {
         if (folderName.startsWith(".")) return true;
         String lower = folderName.toLowerCase(Locale.US);
         return lower.endsWith("-bak") || lower.endsWith(".wehavephones-tmp");
+    }
+
+    /** The update checker's verdict holds while the installed version is the one it judged. */
+    private static boolean keepsCheckedStatus(AddonRecord previous, AddonRecord current) {
+        InstallStatus checked = previous.installStatus();
+        return (checked == InstallStatus.UP_TO_DATE || checked == InstallStatus.UPDATE)
+                && !current.installedVersion().isEmpty()
+                && current.installedVersion().equals(previous.installedVersion());
     }
 }
