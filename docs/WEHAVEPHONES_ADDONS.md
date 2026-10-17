@@ -280,6 +280,41 @@ install and start path:
   token received. Not yet validated: an addon install through WowUp, the
   in-session WinHandler path, an update to a newer feed version, and other
   phones.
+- **Why WowUp is unreliable and heavy on the phone** (S23, 2026-10-16, WowUp
+  2.24.0). WowUp is an x64 Electron app, so every Chromium process runs
+  through FEX emulation inside the session. Measured cost while running:
+  6-9 processes (main, GPU, utility, network, plus the consent window and the
+  Wago ad view), about 1.6 GB summed RSS, MemAvailable falling from
+  1.7-2.0 GB to 0.7-0.9 GB, and the FEX overlay reporting 9-74 FPS with
+  frame times from 13.5 ms up to 252 ms. That is why it feels sluggish and
+  why it competes with the game for memory.
+  The session also ends on its own, after 25 s to 10 min in testing. The
+  cause is the memory pressure itself, not a WowUp crash: Android's
+  low-memory killer crosses its watermark and kills the app process while it
+  is the foreground app (`ActivityManager_kpm: calculateLmkdStatus currentProcess
+  Killed com.wehavephones.dev_0`, `WINDOW DIED ...XServerDisplayActivity`,
+  `lmkd: Reclaim ... reason: min2x watermark is breached`), which takes the
+  whole Wine session with it. The longer runs match the boot benchmarking
+  rule: the phone needs free memory for the session to survive.
+- **Why searching in WowUp misbehaves.** The search needs a Wago API token
+  that only the ad view hands over. The consent window
+  (`addons.wago.io/app-cmp.html`) must open and close first, then the ad page
+  (`addons.wago.io/wowup_ad_nitro` plus its `preload/wago.js`) serves the
+  token, which arrives 3-9 s after launch and is logged as
+  `[wago] onWagoTokenReceived`. A search before that, or while the ad page
+  fails to load, returns nothing: WowUp waits up to 10 s for the token and
+  then continues with an empty bearer token. Ad subresources inside that
+  page already fail under the Wine network stack
+  (`us-u.openx.net`, `tpc.googlesyndication.com` and `imasdk.googleapis.com`
+  all fail with `ERR_SOCKET_NOT_CONNECTED`), so the page is slow to hand the
+  token over and can retry. Once a request fails, WowUp opens a 30 s
+  circuit breaker and a 10 s HTTP timeout applies to every call, so one slow
+  call makes the next searches fail as well. Updates for an empty addon list
+  stay on their `Loading...` spinner for the life of the session.
+  What helps in practice: wait for the token line, keep searches to one
+  word, and give the phone free memory. For catalog browsing and installs,
+  CurseForge (search validated) or the app's own GitHub-releases provider
+  is both lighter and more reliable on the phone.
 - **Limits:** the empty Wine desktop stays after an app closes (use the
   session menu's Exit, as after Battle.net). The apps' own updaters cannot
   install updates in the container for the same PowerShell reason, so updates
