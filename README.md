@@ -22,6 +22,7 @@ WeHavePhones offers a graphics driver selector on supported devices, with driver
 | OnePlus 15 | Retail | System driver or Qualcomm 842.6 |
 | Lenovo Idea Tab Pro Gen 2 | Classic Era | Qualcomm 863.1 |
 | Xiaomi Pad 8 Pro | Retail | System driver |
+| Samsung Galaxy S26 Ultra | Classic Era | System driver |
 
 \* Forever tested to the login screen only.
 
