@@ -69,7 +69,8 @@ public final class LaunchSelfTest {
         check("anniversary launch uid", "wow_classic_anniversary", plan.resolve("_anniversary_").launchUid);
         check("titan uid", "wow_classic_titan", plan.resolve("_classic_titan_").uid);
         check("forever beta uid (_classic_beta_)", "wow_classic_beta", plan.resolve("_classic_beta_").uid);
-        check("forever uid", "wow_forever", plan.resolve("_forever_").uid);
+        check("forever uid", "wowf", plan.resolve("_forever_").uid);
+        check("forever exec code", "WoWF", plan.resolve("_forever_").execCodes.get(0));
         check("forever exe comes from the scan", "", plan.resolve("_forever_").exe);
         check("play button from left", 155, plan.playFromLeft);
         check("play button from bottom", 108, plan.playFromBottom);

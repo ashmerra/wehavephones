@@ -21,6 +21,7 @@ public final class BattleNetGamesSelfTest {
         productDb();
         buildInfo();
         merge();
+        foreverStressTest();
         installFlags();
         System.out.println("[bnet-games-selftest] " + checks + " checks, " + failures + " failure(s)");
         System.exit(failures == 0 ? 0 : 1);
@@ -176,6 +177,28 @@ public final class BattleNetGamesSelfTest {
 
         List<BattleNetGames.Game> foldersOnly = BattleNetGames.merge(folders, null, null, null);
         check("no Battle.net data: folders only", 2, foldersOnly.size());
+    }
+
+    private static void foreverStressTest() {
+        check("wowf is a game product code", true, WowFlavor.isGameProductCode("wowf"));
+        check("wowf resolves to the Forever product", WowFlavor.FOREVER, WowFlavor.forProductCode("wowf"));
+        check("wowf directory", "_forever_", WowFlavor.forProductCode("wowf").directoryName);
+        check("wowdev is still not a game product code", false, WowFlavor.isGameProductCode("wowdev"));
+
+        BattleNetLauncherLog log = new BattleNetLauncherLog();
+        log.feed("D 2026-10-17 05:16:35.759199 [ProductState] {Main} Game product state created: uid=wowf");
+        log.feed("D 2026-10-17 05:16:35.759282 [ProductState] {Main} InstallState (wowf): currentOperation=Install currentOperationStatus=New");
+        List<BattleNetGames.Game> games = BattleNetGames.merge(
+                java.util.Collections.<WowProduct>emptyList(), null, null, log);
+        check("Forever Stress Test is listed without an install", 1, games.size());
+        BattleNetGames.Game forever = games.get(0);
+        check("Forever Stress Test install=false", false, forever.installed);
+        check("Forever Stress Test uid", "wowf", forever.uid);
+        check("Forever Stress Test directory", "_forever_", forever.directoryName);
+        check("Forever Stress Test display name", "Forever Stress Test", forever.getDisplayName());
+        check("Forever Stress Test selection key", "bnet:wowf", forever.selectionKey());
+        check("Forever Stress Test install flags", "--game=wowf --install",
+                WeHavePhonesLaunchPlan.installFlags(forever.bnetGameId()));
     }
 
     private static void installFlags() {

@@ -215,7 +215,7 @@ addon-provider mappings.
 | Family | Live | PTR | Beta | Title shown |
 | --- | --- | --- | --- | --- |
 | Retail | `_retail_` | `_ptr_`, `_xptr_` | `_beta_` | World of Warcraft (+ expansion from the build, e.g. *Midnight*) |
-| Forever | `_forever_` (expected) | `_forever_ptr_` (expected) | `_forever_beta_` (expected), **`_classic_beta_` with a 1.60+ build** | World of Warcraft: Forever |
+| Forever | `_forever_` (product `wowf`, the Forever Stress Test option) | `_forever_ptr_` (expected) | `_forever_beta_` (expected), **`_classic_beta_` with a 1.60+ build** (`wow_classic_beta`) | World of Warcraft: Forever |
 | Classic progression | `_classic_` | `_classic_ptr_` | `_classic_beta_` | World of Warcraft Classic (+ *Mists of Pandaria*) |
 | Titan-Reforged | `_classic_titan_` | | | Titan-Reforged Classic |
 | Anniversary | `_anniversary_` | | | Classic Anniversary |
@@ -231,9 +231,12 @@ Detection (`WowFlavor.detect(dir, version)`, version from `.build.info`):
    3.80 Titan, 3–9 Classic, 10+ Retail) with the channel taken from `ptr`/`beta`
    in the name. Anything else is listed under its prettified directory name.
 
-The live Forever directory, product uid and exec code are guesses
-(`_forever_`/`wow_forever`). Rule 1 and the pattern-based exe scan still pick
-the game up wherever it lands, and the launch table can be hot-fixed through
+The Forever client is product `wowf` in `_forever_` (Battle.net offers it as
+the October 19 2026 Forever Stress Test under In Development, and the folder is
+reused for the live game on 2026-11-04). Its PTR and beta companion directories
+are still guesses, and the beta currently shares `_classic_beta_` with the
+Classic progression beta. Rule 1 and the pattern-based exe scan still pick the
+game up wherever it lands, and the launch table can be hot-fixed through
 `files/wehavephones/launch-overrides.json` without a rebuild. The README lists
 which games have been tested on a phone.
 

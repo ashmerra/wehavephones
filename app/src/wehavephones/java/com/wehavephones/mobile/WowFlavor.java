@@ -14,10 +14,11 @@ import java.util.regex.Pattern;
  *
  * <p>Detection prefers the install directory, except that a client whose
  * {@code .build.info} version belongs to World of Warcraft: Forever (1.60+)
- * is always Forever: the Forever beta ships in {@code _classic_beta_}
- * (WowB.exe, 1.60.1), and the directory of the live game (launch
- * 2026-11-04) is not published yet, so {@code _forever_*} is the expected
- * name and any other directory is caught by the version.
+ * is always Forever: the Forever client is product code {@code wowf} in
+ * {@code _forever_} (offered as the October 2026 Forever Stress Test and
+ * reused for the live game launching 2026-11-04), and the beta still ships
+ * in {@code _classic_beta_} (WowB.exe, 1.60.1). Any other directory with a
+ * Forever build is caught by the version.
  *
  * <p>Pure Java on purpose: the host JVM self-tests compile this class.
  */
@@ -35,8 +36,10 @@ public enum WowFlavor {
             Arrays.asList("Mainline"),
             new String[]{"Mainline", "Standard"}, 120001),
     // CurseForge 88568 and the Forever suffix order are unverified.
-    // Live Forever directory/product codes are unpublished guesses; the beta uses wow_classic_beta.
-    FOREVER("_forever_", "wow_forever", "Forever", Family.FOREVER, Release.LIVE, 88568, "forever",
+    // The Forever product code (wowf) and directory (_forever_) come from the
+    // Battle.net launcher's ProductManager/InstallState data; the beta still
+    // ships as wow_classic_beta in _classic_beta_.
+    FOREVER("_forever_", "wowf", "Forever Stress Test", Family.FOREVER, Release.LIVE, 88568, "forever",
             Arrays.asList("Forever", "Camelot"),
             new String[]{"Forever", "Camelot", "Mainline"}, 16001),
     FOREVER_PTR("_forever_ptr_", "wow_forever_ptr", "Forever PTR", Family.FOREVER, Release.PTR, 88568, "forever",
@@ -138,7 +141,7 @@ public enum WowFlavor {
             "WowClassic-arm64.exe", "WowClassicT-arm64.exe", "WowClassicB-arm64.exe",
             "Wow.exe", "WowT.exe", "WowB.exe", "WowClassic.exe", "WowClassicT.exe", "WowClassicB.exe"));
 
-    private static final Pattern GAME_PRODUCT_CODE = Pattern.compile("wow(t|xptr|_[a-z0-9_]+)?");
+    private static final Pattern GAME_PRODUCT_CODE = Pattern.compile("wow(t|f|xptr|_[a-z0-9_]+)?");
 
     /** Any Wow*.exe game client, including builds not listed above; excludes the voice helper and WowUp. */
     private static final Pattern GAME_EXECUTABLE = Pattern.compile("(?i)wow[a-z]*(-arm64)?\\.exe");
@@ -190,8 +193,9 @@ public enum WowFlavor {
 
     /**
      * True for a World of Warcraft game product code ({@code wow}, {@code wowt},
-     * {@code wowxptr}, {@code wow_<anything>}); false for the Agent, Battle.net
-     * itself, other games and internal WoW builds such as {@code wowdev}.
+     * {@code wowf}, {@code wowxptr}, {@code wow_<anything>}); false for the
+     * Agent, Battle.net itself, other games and internal WoW builds such as
+     * {@code wowdev}.
      */
     public static boolean isGameProductCode(String productCode) {
         return productCode != null && GAME_PRODUCT_CODE.matcher(productCode.trim().toLowerCase(Locale.US)).matches();
