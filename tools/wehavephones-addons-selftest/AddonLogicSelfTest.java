@@ -52,6 +52,7 @@ public final class AddonLogicSelfTest {
             testTocParsing();
             testProviderLabels();
             testIdentityPreservation();
+            testExternalRewriteRebinds();
             testMultiTocSelection();
             testProviderUrls();
             testGitHubRepoAndAssets();
@@ -256,6 +257,54 @@ public final class AddonLogicSelfTest {
                 new ArrayList<AddonRecord>()).records.get(0);
         check(local.provider() == ProviderType.LOCAL && local.shownProvider() == ProviderType.LOCAL,
                 "a folder with no catalog id and no history stays Local ZIP");
+    }
+
+    private static void testExternalRewriteRebinds() throws Exception {
+        // A folder written after we recorded its install was replaced by another
+        // manager, so the catalog its TOC declares takes over. The stale GitHub
+        // update metadata is dropped and the install time moves to the rewrite.
+        File addons = new File(workDir, "rewrite-AddOns");
+        write(new File(addons, "Questie/Questie.toc"),
+                "## Version: 12.2.0\n## Title: Questie\n## X-Curse-Project-ID: 334372\n");
+        AddonRecord previous = new AddonRecord();
+        previous.flavorDir = "_classic_era_";
+        previous.providerId = ProviderType.GITHUB.id;
+        previous.externalId = "Questie/Questie";
+        previous.folderNames.add("Questie");
+        previous.latestVersion = "12.1.0";
+        previous.latestReleaseId = "12.1.0";
+        previous.installedFrom = "https://github.com/Questie/Questie/releases/download/12.1.0/Questie.zip";
+        previous.status = InstallStatus.UP_TO_DATE.id;
+        previous.installedAt = System.currentTimeMillis() - 3600_000L;
+
+        AddonRecord rebound = AddonScanner.scan(addons, WowFlavor.CLASSIC_ERA, Arrays.asList(previous)).records.get(0);
+        check(rebound.provider() == ProviderType.CURSEFORGE && "334372".equals(rebound.externalId),
+                "an externally rewritten folder adopts its TOC catalog");
+        check(rebound.latestVersion.isEmpty() && rebound.installedFrom.isEmpty(),
+                "the replaced source's update metadata is dropped");
+        check(rebound.installedAt > previous.installedAt, "the rewrite time replaces the install time");
+
+        // The same folder with an install time at or after the rewrite is ours.
+        File ours = new File(workDir, "rewrite-ours-AddOns");
+        write(new File(ours, "Questie/Questie.toc"),
+                "## Version: 12.2.0\n## Title: Questie\n## X-Curse-Project-ID: 334372\n");
+        AddonRecord fresh = previous.copy();
+        fresh.installedAt = System.currentTimeMillis();
+        AddonRecord kept = AddonScanner.scan(ours, WowFlavor.CLASSIC_ERA, Arrays.asList(fresh)).records.get(0);
+        check(kept.provider() == ProviderType.GITHUB, "a folder we just installed keeps its source");
+
+        // Without a TOC catalog there is nothing to rebind to, so the source stands.
+        File noId = new File(workDir, "rewrite-noid-AddOns");
+        write(new File(noId, "Guidelime/Guidelime-Vanilla.toc"),
+                "## Version: 6.009\n## Title: Guidelime\n");
+        AddonRecord guide = new AddonRecord();
+        guide.flavorDir = "_classic_era_";
+        guide.providerId = ProviderType.GITHUB.id;
+        guide.externalId = "max-ri/Guidelime";
+        guide.folderNames.add("Guidelime");
+        guide.installedAt = System.currentTimeMillis() - 3600_000L;
+        AddonRecord guideKept = AddonScanner.scan(noId, WowFlavor.CLASSIC_ERA, Arrays.asList(guide)).records.get(0);
+        check(guideKept.provider() == ProviderType.GITHUB, "a rewritten folder with no TOC catalog keeps its source");
     }
 
     private static void testMultiTocSelection() throws Exception {

@@ -64,11 +64,13 @@ the game picker, four tabs (**Installed**, **Browse**, **Addon apps**,
 addons with an update. The LCD panel shows the tab:
 
 - **Installed:** one row per addon with an enable switch, version and source,
-  and one status or an Update button. The source names the catalog detected in
-  the TOC (`X-Curse-Project-ID`, `X-Wago-ID`, `X-Tukui-Project-ID`,
+  and one status or an Update button. The source names the provider this app
+  installed the addon from. When the app has no record, it names the catalog
+  the TOC declares (`X-Curse-Project-ID`, `X-Wago-ID`, `X-Tukui-Project-ID`,
   `X-WoWI-ID`), so an addon another manager installed shows as CurseForge,
-  Wago, Tukui or WoWInterface. Only an addon with no such id reads as Local
-  ZIP. Updates sort first. ConsolePort and its
+  Wago, Tukui or WoWInterface. A catalog the app does not offer shows as
+  **Not tracked** with no Update button. Only an addon with no catalog id and
+  no history reads as Local ZIP. Updates sort first. ConsolePort and its
   setup addon sit in their own group without Delete. Update all appears when
   there are updates. Check for updates, Rescan folder and Import ZIP are in the
   ⋯ menu. Tapping a row opens **Details** (facts, changelog, Update, Website,
@@ -118,6 +120,16 @@ operation, which cleans all older delete-backups.
 shows a multi-choice confirmation with name/version/inferred provider identity →
 selected folders are installed, the index is rebound from TOC `X-…-ID` values
 when present (otherwise `LOCAL_ONLY`).
+
+### External rewrite
+An addon manager run in the container (CurseForge, WowUp) writes into
+`Interface/AddOns` directly. On the next scan the app keeps the provider it
+recorded when it installed the addon, so its update tracking survives. If that
+folder was written after the recorded install time (its TOC then names a
+catalog), the app treats the addon as handed over: it adopts the TOC catalog,
+drops the previous provider's update metadata, and shows **Not tracked**. A
+folder with no TOC catalog keeps the recorded source, since there is nothing
+better to adopt.
 
 ## 4. Persistence
 
@@ -188,6 +200,10 @@ Exit code is non-zero on any failure. No Gradle test dependency was added.
   stays `Not tracked` with no Update button. This is how addons installed by
   another manager (CurseForge, WowUp) keep their origin. Addons whose TOC
   carries no `X-…-ID` still read as Local ZIP.
+- Handover detection compares the folder's modification time with the recorded
+  install time. An external manager that rewrites only file contents without
+  touching the folder's entries, or an addon whose TOC declares no catalog, is
+  not detected and keeps its recorded source.
 - No download resume, no Wi-Fi-only setting, no background service (installs
   run in a visible activity-scoped executor), no SavedVariables cleanup
   (SavedVariables are outside `Interface/AddOns` and untouched).

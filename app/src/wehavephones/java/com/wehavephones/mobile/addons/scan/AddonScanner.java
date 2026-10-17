@@ -23,6 +23,13 @@ import java.util.Locale;
 public final class AddonScanner {
     private AddonScanner() {}
 
+    /**
+     * A folder written this long after we recorded its install counts as an
+     * external rewrite. The gap absorbs filesystem timestamp rounding and the
+     * small delay between moving an archive into place and recording it.
+     */
+    private static final long EXTERNAL_WRITE_SLACK_MS = 5000L;
+
     public static final class ScanResult {
         public final ArrayList<AddonRecord> records = new ArrayList<>();
         public final ArrayList<String> unrecognizedFolders = new ArrayList<>();
@@ -153,7 +160,14 @@ public final class AddonScanner {
             record.id = match.id;
             record.enabled = !allDisabled;
             record.ignored = match.ignored;
-            if (match.hasProviderBinding()) {
+            // An external manager (CurseForge, WowUp) that rewrites the folder
+            // after we installed it takes over the addon: adopt the catalog its
+            // TOC declares rather than the source we recorded. Without a TOC
+            // catalog, or without a known install time, the stored source stands.
+            long modifiedAt = latestModified(group);
+            boolean rewritten = binding != null && match.installedAt > 0
+                    && modifiedAt > match.installedAt + EXTERNAL_WRITE_SLACK_MS;
+            if (match.hasProviderBinding() && !rewritten) {
                 record.providerId = match.providerId;
                 record.externalId = match.externalId;
                 record.providerVersionId = match.providerVersionId;
@@ -169,7 +183,7 @@ public final class AddonScanner {
                 record.installedFrom = match.installedFrom;
                 record.archiveSha256 = match.archiveSha256;
             }
-            record.installedAt = match.installedAt;
+            record.installedAt = rewritten ? modifiedAt : match.installedAt;
         }
         if (consolePort && !ProviderType.GITHUB.id.equals(record.providerId)) {
             // Older index entries were bound to the TOC's CurseForge project (needs an API key).
@@ -222,6 +236,15 @@ public final class AddonScanner {
             if (byPhysical != null) return byPhysical;
         }
         return null;
+    }
+
+    /** The newest modification time across the group's folders, or 0 when unknown. */
+    private static long latestModified(ArrayList<AddonFolderInfo> group) {
+        long latest = 0;
+        for (AddonFolderInfo folder : group) {
+            if (folder.directory != null) latest = Math.max(latest, folder.directory.lastModified());
+        }
+        return latest;
     }
 
     private static AddonRecord findByFolder(List<AddonRecord> records, String folderName) {
