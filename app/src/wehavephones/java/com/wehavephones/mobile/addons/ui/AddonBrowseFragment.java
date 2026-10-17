@@ -123,7 +123,8 @@ public class AddonBrowseFragment extends Fragment {
             @Override
             public void onSuccess(List<RemoteAddon> addons) {
                 if (!isAdded()) return;
-                activity.setBusy(false, null);
+                // The panel shows the result count, so the rail's Loading line clears.
+                activity.setBusy(false, "");
                 if (addons == null || addons.isEmpty()) {
                     statusView.setText(R.string.wehavephones_addons_no_results);
                     return;
@@ -140,7 +141,7 @@ public class AddonBrowseFragment extends Fragment {
             @Override
             public void onError(String message) {
                 if (!isAdded()) return;
-                activity.setBusy(false, null);
+                activity.setBusy(false, "");
                 statusView.setText(getString(R.string.wehavephones_addons_error, message));
             }
         });

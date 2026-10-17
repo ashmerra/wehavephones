@@ -160,7 +160,15 @@ public class AddonListFragment extends Fragment {
         updateAllButton.setVisibility(updates > 0 ? View.VISIBLE : View.GONE);
         updateAllButton.setText(getString(R.string.wehavephones_addons_update_all_count, updates));
 
-        filtersView.setVisibility(total > 0 ? View.VISIBLE : View.GONE);
+        // A chip only appears when it would narrow the list, and All only beside another chip.
+        if (filter == Filter.UPDATES && updates == 0 || filter == Filter.DISABLED && disabled == 0) {
+            filter = Filter.ALL;
+            refresh();
+            return;
+        }
+        filterUpdates.setVisibility(updates > 0 ? View.VISIBLE : View.GONE);
+        filterDisabled.setVisibility(disabled > 0 ? View.VISIBLE : View.GONE);
+        filtersView.setVisibility(updates > 0 || disabled > 0 ? View.VISIBLE : View.GONE);
         filterAll.setText(getString(R.string.wehavephones_addons_filter_all, total));
         filterUpdates.setText(getString(R.string.wehavephones_addons_filter_updates, updates));
         filterDisabled.setText(getString(R.string.wehavephones_addons_filter_disabled, disabled));
