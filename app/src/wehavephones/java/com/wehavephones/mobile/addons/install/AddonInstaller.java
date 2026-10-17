@@ -217,6 +217,11 @@ public final class AddonInstaller {
      * target folder is missing (a crash mid-swap).
      */
     public static void recoverInterrupted(File addonsDir) {
+        recoverInterrupted(addonsDir, null);
+    }
+
+    /** As {@link #recoverInterrupted(File)}, keeping {@code keepStaging}: an import still waiting for the player's choice. */
+    public static void recoverInterrupted(File addonsDir, File keepStaging) {
         if (addonsDir == null || !addonsDir.isDirectory()) return;
         File[] children = addonsDir.listFiles();
         if (children == null) return;
@@ -224,6 +229,7 @@ public final class AddonInstaller {
             if (!child.isDirectory()) continue;
             String name = child.getName();
             if (FileOps.isStagingDir(name)) {
+                if (keepStaging != null && child.getAbsoluteFile().equals(keepStaging.getAbsoluteFile())) continue;
                 FileOps.deleteRecursively(child);
             }
             else if (FileOps.isBackupDir(name)) {

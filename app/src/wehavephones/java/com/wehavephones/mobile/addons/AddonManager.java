@@ -87,6 +87,8 @@ public final class AddonManager {
 
     private AddonIndex index;
     private volatile boolean closed;
+    /** Staging folder of the import waiting for the player's choice; the rescan on return from the picker keeps it. */
+    private volatile File pendingStaging;
     private ArrayList<WowProduct> cachedProducts = new ArrayList<>();
     private long productsLoadedAt;
 
@@ -219,7 +221,7 @@ public final class AddonManager {
             public Integer run() throws Exception {
                 File addons = addonsDir();
                 if (addons == null || !addons.isDirectory()) return -1;
-                AddonInstaller.recoverInterrupted(addons);
+                AddonInstaller.recoverInterrupted(addons, pendingStaging);
                 syncScan();
                 saveIndex();
                 return records().size();
@@ -451,6 +453,7 @@ public final class AddonManager {
                 }
                 String sourceName = uri != null && uri.getLastPathSegment() != null
                         ? uri.getLastPathSegment() : "import.zip";
+                pendingStaging = staging;
                 return new ImportPreview(staging, discovered, sourceName);
             }
         }, callback);
@@ -462,6 +465,7 @@ public final class AddonManager {
             @Override
             public Boolean run() throws Exception {
                 FileOps.deleteRecursively(preview.stagingDir);
+                if (preview.stagingDir.equals(pendingStaging)) pendingStaging = null;
                 return Boolean.TRUE;
             }
         }, null);
@@ -489,6 +493,7 @@ public final class AddonManager {
                 AddonInstaller.Result result = AddonInstaller.install(new AddonInstaller.Request(
                         addons, preview.stagingDir, chosen, previous, false));
                 AddonInstaller.commit(result);
+                if (preview.stagingDir.equals(pendingStaging)) pendingStaging = null;
                 cleanupDeleteBackups(null);
                 for (DiscoveredAddon addon : chosen) {
                     recordLocalInstall(addon, preview.sourceName, result.installedFolders);

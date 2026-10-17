@@ -553,6 +553,15 @@ public final class AddonLogicSelfTest {
         AddonInstaller.recoverInterrupted(recovering);
         check(new File(recovering, "Restored/Restored.toc").isFile(), "crash backup restored");
         check(!staleStage.exists(), "stale staging deleted");
+
+        // Returning from the file picker rescans while the import waits for the player's choice.
+        File pendingStage = new File(recovering, ".wehavephones-staging-pending");
+        write(new File(pendingStage, "Pending/Pending.toc"), "## Version: 1.0\n");
+        File otherStage = new File(recovering, ".wehavephones-staging-old");
+        write(new File(otherStage, "junk.txt"), "junk\n");
+        AddonInstaller.recoverInterrupted(recovering, pendingStage);
+        check(new File(pendingStage, "Pending/Pending.toc").isFile(), "pending import staging kept");
+        check(!otherStage.exists(), "other staging still deleted");
     }
 
     private static void testDisabledUpdate() throws Exception {
