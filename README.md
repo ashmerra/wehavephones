@@ -5,7 +5,7 @@ We do have phones, and also Wine.
 Winlator fork for running World of Warcraft (ARM64 Windows version) and Battle.net on Android phones.
 
 Controller support.\
-Built-in addon manager.
+Built-in addon manager, with optional CurseForge and WowUp apps.
 
 > **Alpha build:** WeHavePhones is still in development. Expect bugs, rough edges, and compatibility differences between phones. Report problems through Diagnostics in the app.
 

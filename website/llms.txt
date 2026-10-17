@@ -13,7 +13,7 @@
 - Requirements: a 64-bit ARM phone running Android 8.0 or newer, enough storage for the game, and the player's own Blizzard account and World of Warcraft license (including a subscription for versions that require one).
 - How it works: the app runs the Windows version of World of Warcraft locally through Wine. No PC, Steam Link, Moonlight or GeForce Now is needed.
 - Controllers: World of Warcraft: Forever has built-in controller support. For Retail and Classic, the app installs the ConsolePort addon.
-- Addons: managed from inside the app.
+- Addons: managed from inside the app, with optional CurseForge and WowUp apps.
 - Existing game files: a WoW folder from a PC can be imported, then Battle.net finishes updates.
 - Graphics: the app offers graphics drivers matched to the phone's GPU.
 - Release integrity: each GitHub release lists SHA-256 checksums. Official builds are signed with the certificate whose SHA-256 fingerprint is 72:79:47:E7:30:A7:F2:37:13:BC:6D:2B:89:EF:33:AD:1C:C1:11:8B:D8:67:DA:A8:CB:C9:81:25:0A:07:48:95. Copies from other sites are not official.
