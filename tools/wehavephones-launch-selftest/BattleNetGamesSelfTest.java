@@ -199,6 +199,24 @@ public final class BattleNetGamesSelfTest {
         check("Forever Stress Test selection key", "bnet:wowf", forever.selectionKey());
         check("Forever Stress Test install flags", "--game=wowf --install",
                 WeHavePhonesLaunchPlan.installFlags(forever.bnetGameId()));
+
+        // The launcher also offers the Forever beta as wow_classic_beta in
+        // _classic_beta_ (productCode WoWF_wow_classic_beta); with no build yet
+        // it must still read as the Forever beta, not the Classic beta.
+        BattleNetLauncherLog betaLog = new BattleNetLauncherLog();
+        betaLog.feed("D 2026-10-17 05:16:35.669945 [ProductState] {Main} Game product state created: uid=wow_classic_beta");
+        betaLog.feed("D 2026-10-17 05:16:35.670055 [ProductState] {Main} InstallState (wow_classic_beta): currentOperation=Install currentOperationStatus=New");
+        betaLog.feed("D 2026-10-17 05:16:35.759199 [ProductState] {Main} Game product state created: uid=wowf");
+        betaLog.feed("D 2026-10-17 05:16:35.759282 [ProductState] {Main} InstallState (wowf): currentOperation=Install currentOperationStatus=New");
+        List<BattleNetGames.Game> offered = BattleNetGames.merge(
+                java.util.Collections.<WowProduct>emptyList(), null, null, betaLog);
+        check("Forever live and beta are both offered without an install", 2, offered.size());
+        BattleNetGames.Game beta = BattleNetGames.pick(offered, "bnet:wow_classic_beta");
+        check("offered Forever beta flavor", WowFlavor.FOREVER_BETA, beta.flavor);
+        check("offered Forever beta display name", "Forever Beta", beta.getDisplayName());
+        check("offered Forever beta directory", "_classic_beta_", beta.directoryName);
+        check("offered Forever beta product code", "wow_classic_beta", beta.productCode);
+        check("offered Forever beta selection key", "bnet:wow_classic_beta", beta.selectionKey());
     }
 
     private static void installFlags() {

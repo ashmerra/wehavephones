@@ -83,8 +83,8 @@ public final class AddonLogicSelfTest {
                 "Forever beta in _classic_beta_ detected by version");
         checkEquals(WowFlavor.CLASSIC_BETA, WowFlavor.detect("_classic_beta_", "5.5.0.60000"),
                 "_classic_beta_ with a MoP build stays Classic Beta");
-        checkEquals(WowFlavor.CLASSIC_BETA, WowFlavor.detect("_classic_beta_", ""),
-                "_classic_beta_ without build info stays Classic Beta");
+        checkEquals(WowFlavor.FOREVER_BETA, WowFlavor.detect("_classic_beta_", ""),
+                "_classic_beta_ without build info is the Forever beta");
         checkEquals(WowFlavor.FOREVER, WowFlavor.detect("_forever_", ""), "expected Forever directory");
         checkEquals(WowFlavor.FOREVER, WowFlavor.detect("_wow_forever_", "1.60.2.70001"),
                 "unknown directory with a Forever build");
@@ -549,6 +549,8 @@ public final class AddonLogicSelfTest {
         check(!ConsolePort.requiredFor(WowFlavor.FOREVER), "Forever uses native controller support");
         check(!ConsolePort.requiredFor(WowFlavor.detect("_classic_beta_", "1.60.1.60000")),
                 "Forever beta in _classic_beta_ skipped by version");
+        check(!ConsolePort.requiredFor(WowFlavor.detect("_classic_beta_", "wow_classic_beta", "")),
+                "offered Forever beta (no build yet) uses native controller support");
         check(ConsolePort.isConsolePortFolder("ConsolePort_Bar.disabled"), "module folder recognized");
         check(!ConsolePort.isConsolePortFolder("ConsolePortish"), "similar names are not ConsolePort");
         check(ConsolePort.needsInstall("", "3.2.7"), "missing ConsolePort needs install");

@@ -216,8 +216,8 @@ addon-provider mappings.
 | Family | Live | PTR | Beta | Title shown |
 | --- | --- | --- | --- | --- |
 | Retail | `_retail_` | `_ptr_`, `_xptr_` | `_beta_` | World of Warcraft (+ expansion from the build, e.g. *Midnight*) |
-| Forever | `_forever_` (product `wowf`, the Forever Stress Test option) | `_forever_ptr_` (expected) | `_forever_beta_` (expected), **`_classic_beta_` with a 1.60+ build** (`wow_classic_beta`) | World of Warcraft: Forever |
-| Classic progression | `_classic_` | `_classic_ptr_` | `_classic_beta_` | World of Warcraft Classic (+ *Mists of Pandaria*) |
+| Forever | `_forever_` (product `wowf`, the Forever Stress Test option) | `_forever_ptr_` (expected) | `_classic_beta_` (`wow_classic_beta`, the launcher's Forever beta) | World of Warcraft: Forever |
+| Classic progression | `_classic_` | `_classic_ptr_` | shares `_classic_beta_` (a 5.x build there) | World of Warcraft Classic (+ *Mists of Pandaria*) |
 | Titan-Reforged | `_classic_titan_` | | | Titan-Reforged Classic |
 | Anniversary | `_anniversary_` | | | Classic Anniversary |
 | Classic Era | `_classic_era_` | `_classic_era_ptr_` | `_classic_era_beta_` | Classic Era |
@@ -226,18 +226,23 @@ Detection (`WowFlavor.detect(dir, version)`, version from `.build.info`):
 
 1. A **Forever** build (client 1.60 or later) is always Forever, keeping the
    directory's channel, whatever the directory is called.
-2. Otherwise a directory in the table wins (so a progressed `_anniversary_`
+2. `_classic_beta_` is the Forever beta unless its build is Classic-line (3–9),
+   which is the Classic progression beta sharing the same directory.
+3. Otherwise a directory in the table wins (so a progressed `_anniversary_`
    stays Anniversary).
-3. Unknown directories are classified by version (1.x Era, 2.x Anniversary,
+4. Unknown directories are classified by version (1.x Era, 2.x Anniversary,
    3.80 Titan, 3–9 Classic, 10+ Retail) with the channel taken from `ptr`/`beta`
    in the name. Anything else is listed under its prettified directory name.
 
 The Forever client is product `wowf` in `_forever_` (Battle.net offers it as
 the October 19 2026 Forever Stress Test under In Development, and the folder is
-reused for the live game on 2026-11-04). Its PTR and beta companion directories
-are still guesses, and the beta currently shares `_classic_beta_` with the
-Classic progression beta. Rule 1 and the pattern-based exe scan still pick the
-game up wherever it lands, and the launch table can be hot-fixed through
+reused for the live game on 2026-11-04). The Forever beta is product
+`wow_classic_beta` in `_classic_beta_` (the launcher logs it as
+`productCode=WoWF_wow_classic_beta`), a directory it shares with the Classic
+progression beta: offered with no build yet it reads **Forever Beta**, while a
+Classic-line (5.x) build there reads **Classic Beta**. The Forever PTR
+directory is still a guess. Rules 1–2 and the pattern-based exe scan still pick
+the game up wherever it lands, and the launch table can be hot-fixed through
 `files/wehavephones/launch-overrides.json` without a rebuild. The README lists
 which games have been tested on a phone.
 

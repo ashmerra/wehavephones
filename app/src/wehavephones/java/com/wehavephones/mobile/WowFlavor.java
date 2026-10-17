@@ -16,9 +16,11 @@ import java.util.regex.Pattern;
  * {@code .build.info} version belongs to World of Warcraft: Forever (1.60+)
  * is always Forever: the Forever client is product code {@code wowf} in
  * {@code _forever_} (offered as the October 2026 Forever Stress Test and
- * reused for the live game launching 2026-11-04), and the beta still ships
- * in {@code _classic_beta_} (WowB.exe, 1.60.1). Any other directory with a
- * Forever build is caught by the version.
+ * reused for the live game launching 2026-11-04), and the beta is product
+ * code {@code wow_classic_beta} in {@code _classic_beta_} (WowB.exe, 1.60.1).
+ * That beta directory is shared with the Classic progression beta, so a
+ * Classic-line build there is still the Classic beta. Any other directory
+ * with a Forever build is caught by the version.
  *
  * <p>Pure Java on purpose: the host JVM self-tests compile this class.
  */
@@ -36,16 +38,18 @@ public enum WowFlavor {
             Arrays.asList("Mainline"),
             new String[]{"Mainline", "Standard"}, 120001),
     // CurseForge 88568 and the Forever suffix order are unverified.
-    // The Forever product code (wowf) and directory (_forever_) come from the
-    // Battle.net launcher's ProductManager/InstallState data; the beta still
-    // ships as wow_classic_beta in _classic_beta_.
+    // The Forever product codes (wowf, wow_classic_beta) and directories
+    // (_forever_, _classic_beta_) come from the Battle.net launcher's
+    // ProductManager/InstallState data.
     FOREVER("_forever_", "wowf", "Forever Stress Test", Family.FOREVER, Release.LIVE, 88568, "forever",
             Arrays.asList("Forever", "Camelot"),
             new String[]{"Forever", "Camelot", "Mainline"}, 16001),
     FOREVER_PTR("_forever_ptr_", "wow_forever_ptr", "Forever PTR", Family.FOREVER, Release.PTR, 88568, "forever",
             Arrays.asList("Forever", "Camelot"),
             new String[]{"Forever", "Camelot", "Mainline"}, 16001),
-    FOREVER_BETA("_forever_beta_", "wow_forever_beta", "Forever Beta", Family.FOREVER, Release.BETA, 88568, "forever",
+    // The Forever beta is the launcher's wow_classic_beta (productCode
+    // WoWF_wow_classic_beta), shipping in _classic_beta_.
+    FOREVER_BETA("_classic_beta_", "wow_classic_beta", "Forever Beta", Family.FOREVER, Release.BETA, 88568, "forever",
             Arrays.asList("Forever", "Camelot"),
             new String[]{"Forever", "Camelot", "Mainline"}, 16001),
     CLASSIC("_classic_", "wow_classic", "MoP Classic", Family.CLASSIC, Release.LIVE, 79434, "mop",
@@ -54,7 +58,10 @@ public enum WowFlavor {
     CLASSIC_PTR("_classic_ptr_", "wow_classic_ptr", "Classic PTR", Family.CLASSIC, Release.PTR, 79434, "mop",
             Arrays.asList("Mists", "Classic"),
             new String[]{"Mists", "Classic"}, 50504),
-    CLASSIC_BETA("_classic_beta_", "wow_classic_beta", "Classic Beta", Family.CLASSIC, Release.BETA, 79434, "mop",
+    // The Classic progression beta shares _classic_beta_ with the Forever beta;
+    // it has no directory of its own, so it is resolved by version only
+    // (see detect). Keeps its MoP addon mappings.
+    CLASSIC_BETA("", "", "Classic Beta", Family.CLASSIC, Release.BETA, 79434, "mop",
             Arrays.asList("Mists", "Classic"),
             new String[]{"Mists", "Classic"}, 50500),
     TITAN("_classic_titan_", "wow_classic_titan", "Wrath / Titan", Family.TITAN, Release.LIVE, 81212, "titan",
@@ -221,6 +228,11 @@ public enum WowFlavor {
         Family byVersion = Family.forVersion(version);
         if (byVersion == Family.FOREVER && byDirectory.family != Family.FOREVER) {
             return of(Family.FOREVER, byDirectory.isKnown() ? byDirectory.release : Release.forDirectory(directoryName));
+        }
+        // The Forever beta shares _classic_beta_ with the Classic progression
+        // beta: a Classic-line build there is the Classic beta, not Forever.
+        if (byDirectory == FOREVER_BETA && byVersion == Family.CLASSIC) {
+            return of(Family.CLASSIC, Release.BETA);
         }
         if (byDirectory.isKnown() || byVersion == null) return byDirectory;
         return of(byVersion, Release.forDirectory(directoryName));
