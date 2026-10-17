@@ -161,6 +161,12 @@ public final class AddonLogicSelfTest {
         checkEquals(2, toc.interfaces.size(), "comma interface list size");
         checkEquals("120100", toc.primaryInterface(), "primary interface");
         checkEquals("WeakAuras", toc.title, "title");
+        checkEquals("Questie v12.1.0", TocParser.parseText("## Title: Questie|cFF00FF00 v12.1.0|r\n",
+                "Questie").displayName(), "colour escapes stripped from title");
+        checkEquals("Bag | Bank", TocData.plainText("|TInterface\\Icons\\INV_Misc_Bag_08:16|t Bag || |cnNORMAL_FONT_COLOR:Bank|r"),
+                "texture, colour name and escaped bar");
+        checkEquals("ElvUI", TocParser.parseText("## Title: |cff1784d1E|r|cffe5e3e3lvUI|r\n", "ElvUI").displayName(),
+                "split colour runs joined");
         check(toc.hasPlaceholderVersion(), "placeholder version detected");
         checkEquals("", toc.versionOrUnknown(), "placeholder version is unknown");
         checkEquals("65387", toc.curseId, "curse id");

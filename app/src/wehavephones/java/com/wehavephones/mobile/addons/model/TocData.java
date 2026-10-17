@@ -25,8 +25,23 @@ public final class TocData {
     public final ArrayList<String> allowLoadGameType = new ArrayList<>();
 
     public String displayName() {
-        if (title != null && !title.isEmpty()) return title;
-        return baseName;
+        String plain = plainText(title);
+        return plain.isEmpty() ? baseName : plain;
+    }
+
+    /**
+     * Text without WoW UI escapes: colours ({@code |cAARRGGBB}, {@code |cn<name>:},
+     * {@code |r}), textures ({@code |T...|t}) and atlases ({@code |A...|a}).
+     */
+    public static String plainText(String value) {
+        if (value == null || value.indexOf('|') < 0) return value != null ? value.trim() : "";
+        String plain = value.replace("||", "\u0000")
+                .replaceAll("\\|c[0-9A-Fa-f]{8}", "")
+                .replaceAll("\\|cn[^:|]*:", "")
+                .replaceAll("\\|[TA][^|]*\\|[ta]", "")
+                .replace("|r", "")
+                .replace("\u0000", "|");
+        return plain.replaceAll("\\s+", " ").trim();
     }
 
     public String primaryInterface() {

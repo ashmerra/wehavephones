@@ -48,7 +48,8 @@ public final class AddonRecord {
     }
 
     public String displayName() {
-        if (name != null && !name.isEmpty()) return name;
+        String plain = TocData.plainText(name);
+        if (!plain.isEmpty()) return plain;
         if (toc != null && !toc.displayName().isEmpty()) return toc.displayName();
         return folderNames.isEmpty() ? "(unnamed)" : folderNames.get(0);
     }
