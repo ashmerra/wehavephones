@@ -76,3 +76,6 @@ skills-lock.json
 
 # Machine-specific phone connection notes (kept locally)
 docs/ADB_S23_CONNECTION.md
+
+# Internal Battle.net debugging reports (kept locally)
+docs/BATTLENET*.md
