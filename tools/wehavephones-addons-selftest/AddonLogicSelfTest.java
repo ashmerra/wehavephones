@@ -50,6 +50,7 @@ public final class AddonLogicSelfTest {
             testGameCatalog();
             testVersionComparator();
             testTocParsing();
+            testProviderLabels();
             testMultiTocSelection();
             testProviderUrls();
             testGitHubRepoAndAssets();
@@ -187,6 +188,37 @@ public final class AddonLogicSelfTest {
 
         checkEquals("1.2.3", TocParser.versionFromName("Addon-1.2.3"), "version from folder name");
         checkEquals("v2.0", TocParser.versionFromName("MyAddon_v2.0.zip"), "version from zip name");
+    }
+
+    private static void testProviderLabels() {
+        // WoWInterface has no provider implementation, only the TOC identity.
+        TocData toc = TocParser.parseText(
+                "## X-WoWI-ID: 24910\n## X-Tukui-Project-ID: 1234\n", "Addon");
+        TocData.ProviderBinding binding = toc.identity();
+        check(binding != null && binding.provider == ProviderType.WOWINTERFACE
+                && binding.externalId.equals("24910"), "identity maps WoWInterface to its own catalog");
+        check("WoWInterface".equals(ProviderType.WOWINTERFACE.displayName), "WoWInterface label");
+        check(!ProviderType.WOWINTERFACE.offered, "WoWInterface is display-only");
+
+        // A detected catalog names itself even while updates stay off.
+        AddonRecord curse = new AddonRecord();
+        curse.providerId = ProviderType.CURSEFORGE.id;
+        curse.externalId = "65387";
+        check(curse.shownProvider() == ProviderType.CURSEFORGE, "bound CurseForge names itself");
+        check(curse.hasProviderBinding() && !curse.hasOfferedBinding(), "CurseForge bound but not offered");
+        check(curse.provider() == ProviderType.CURSEFORGE, "CurseForge identity preserved");
+
+        AddonRecord wago = new AddonRecord();
+        wago.providerId = ProviderType.WAGO.id;
+        wago.externalId = "VBNBxKx5";
+        check(wago.shownProvider() == ProviderType.WAGO, "bound Wago names itself");
+
+        // Only a record with no binding reads as a Local ZIP.
+        AddonRecord local = new AddonRecord();
+        check(local.shownProvider() == ProviderType.LOCAL, "unbound addon stays Local ZIP");
+        AddonRecord emptyId = new AddonRecord();
+        emptyId.providerId = ProviderType.CURSEFORGE.id;
+        check(emptyId.shownProvider() == ProviderType.LOCAL, "provider id without an id stays Local ZIP");
     }
 
     private static void testMultiTocSelection() throws Exception {

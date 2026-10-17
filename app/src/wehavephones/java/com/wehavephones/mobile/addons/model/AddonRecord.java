@@ -75,9 +75,13 @@ public final class AddonRecord {
         return hasProviderBinding() && provider().offered;
     }
 
-    /** The provider to show; bindings to providers not offered yet display as local. */
+    /**
+     * The provider to show. A detected catalog names itself even when it is not
+     * offered yet, so an addon installed by another manager (CurseForge, WowUp)
+     * keeps its origin. Only a record with no binding reads as Local ZIP.
+     */
     public ProviderType shownProvider() {
-        return provider().offered ? provider() : ProviderType.LOCAL;
+        return hasProviderBinding() ? provider() : ProviderType.LOCAL;
     }
 
     public AddonRecord copy() {

@@ -80,8 +80,7 @@ public class AddonDetailFragment extends Fragment {
             appendLine(meta, R.string.wehavephones_addons_detail_latest, record.latestVersion);
         }
         appendLine(meta, R.string.wehavephones_addons_detail_provider, AddonUi.sourceLabel(record)
-                + (!record.provider().offered || record.externalId.isEmpty()
-                        ? "" : " \u00b7 " + record.externalId));
+                + (record.hasProviderBinding() ? " \u00b7 " + record.externalId : ""));
         if (record.toc != null && !record.toc.primaryInterface().isEmpty()) {
             appendLine(meta, R.string.wehavephones_addons_detail_interface, record.toc.primaryInterface());
         }

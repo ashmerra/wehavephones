@@ -3,14 +3,19 @@ package com.wehavephones.mobile.addons.model;
 import java.util.Locale;
 
 /**
- * CurseForge, Tukui and Wago are implemented but untested live, so they are not
- * offered in the app yet: no search, key settings, update checks or labels.
+ * CurseForge, Tukui, Wago and WoWInterface are not offered in the app yet: no
+ * search, key settings or update checks. A TOC identity still labels such an
+ * addon with its catalog (see {@link AddonRecord#shownProvider()}), so addons
+ * installed by another manager (CurseForge, WowUp) keep their origin instead
+ * of reading as a Local ZIP. WoWInterface is display-only: it has no provider
+ * implementation, only the TOC's {@code X-WoWI-ID}.
  */
 public enum ProviderType {
     CURSEFORGE("curseforge", "CurseForge", true, false),
     GITHUB("github", "GitHub releases", false, true),
     TUKUI("tukui", "Tukui", false, false),
     WAGO("wago", "Wago", true, false),
+    WOWINTERFACE("wowi", "WoWInterface", false, false),
     LOCAL("local", "Local ZIP", false, true);
 
     public final String id;

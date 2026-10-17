@@ -398,7 +398,7 @@ public class AddonsActivity extends AppCompatActivity {
             TocData toc = addon.toc;
             if (toc != null) {
                 TocData.ProviderBinding binding = toc.identity();
-                if (binding != null && binding.provider.offered) {
+                if (binding != null) {
                     label.append(" [").append(binding.provider.displayName)
                             .append(':').append(binding.externalId).append(']');
                 }

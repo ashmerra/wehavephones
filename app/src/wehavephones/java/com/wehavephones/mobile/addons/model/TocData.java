@@ -62,7 +62,7 @@ public final class TocData {
         if (isFilled(curseId)) return new ProviderBinding(ProviderType.CURSEFORGE, curseId.trim());
         if (isFilled(wagoId)) return new ProviderBinding(ProviderType.WAGO, wagoId.trim());
         if (isFilled(tukuiId)) return new ProviderBinding(ProviderType.TUKUI, tukuiId.trim());
-        if (isFilled(wowiId)) return new ProviderBinding(ProviderType.LOCAL, wowiId.trim());
+        if (isFilled(wowiId)) return new ProviderBinding(ProviderType.WOWINTERFACE, wowiId.trim());
         return null;
     }
 
