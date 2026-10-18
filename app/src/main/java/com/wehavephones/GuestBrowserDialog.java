@@ -198,12 +198,18 @@ public final class GuestBrowserDialog extends Dialog {
         else dismiss();
     }
 
-    /** Battle.net's local sign-in callback (localbattle.net resolves to 127.0.0.1). */
+    /**
+     * Battle.net's local sign-in callback, /login-callback on this device
+     * (localbattle.net resolves to 127.0.0.1). Other local requests, such as a
+     * page checking for a local agent, don't count.
+     */
     static boolean isCallback(Uri uri) {
         String host = uri.getHost();
-        if (host == null) return false;
+        String path = uri.getPath();
+        if (host == null || path == null) return false;
         host = host.toLowerCase(Locale.ROOT);
-        return host.equals("127.0.0.1") || host.equals("localhost") || host.equals("localbattle.net");
+        boolean local = host.equals("127.0.0.1") || host.equals("localhost") || host.equals("localbattle.net");
+        return local && path.startsWith("/login-callback");
     }
 
     private void openExternally() {
