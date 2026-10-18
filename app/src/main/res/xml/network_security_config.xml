@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Cleartext only to this device: Battle.net's sign-in callback (http://127.0.0.1:<port>/login-callback)
+     loads in the in-app sign-in panel. Everything else keeps the platform default (HTTPS only). -->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">127.0.0.1</domain>
+        <domain includeSubdomains="false">localhost</domain>
+    </domain-config>
+</network-security-config>

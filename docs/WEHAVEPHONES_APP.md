@@ -140,7 +140,18 @@ desktop wallpaper.
   web pages draw text through DirectWrite, which only sees registered fonts, so
   every session start registers the prefix's CJK fonts (`WineFontRegistry`,
   run by `WineFontPaths`). Without it Chinese and Korean page text is empty
-  boxes. Completion is
+  boxes. China sign-in continues in the default browser (the NetEase account
+  page), which Wine's own browser cannot render, so every session start
+  installs `C:\windows\openurl.exe` as the http/https "open" command. It sends
+  the link to WinHandler (UDP packet `0x75`, loopback senders only), which
+  shows it in a WebView panel over the session (`GuestBrowserDialog`). The
+  phone's browser would send the session to the background, where Android
+  may stop it before sign-in finishes. The page's final redirect to
+  `127.0.0.1:<port>/login-callback` reaches Battle.net because Wine shares the
+  phone's network (the manifest's network security config allows cleartext to
+  127.0.0.1 and localhost only), and the panel closes shortly after it. Links
+  to other apps go to Android; **Open in browser** is the fallback, as is the
+  browser on devices without a WebView. Source: `tools/openurl`. Completion is
   detected while this screen is visible and on return from the installer.
   Sign-in and WoW downloads are not completion requirements. Interrupted setup
   resumes from the prepared-container marker. Existing installations migrate

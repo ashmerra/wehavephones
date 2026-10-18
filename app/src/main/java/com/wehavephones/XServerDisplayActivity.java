@@ -1,8 +1,10 @@
 package com.wehavephones;
 
 import android.app.Activity;
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.SystemClock;
@@ -134,6 +136,12 @@ import java.util.concurrent.Executors;
     private static final int ROOTFS_UTILS_PATCH_VERSION = 4;
     private static final String WINHANDLER_LITE_ASSET = "winhandler/winhandler-lite.exe";
     private static final String WINHANDLER_LITE_GUEST_PATH = "C:\\windows\\winhandler-lite.exe";
+    private static final String OPEN_URL_ASSET = "winhandler/openurl.exe";
+    /** Shell "open" command for http/https links in the container. */
+    private static final String OPEN_URL_COMMAND = "\"C:\\windows\\openurl.exe\" \"%1\"";
+    private String lastGuestUrl;
+    private long lastGuestUrlAt;
+    private GuestBrowserDialog guestBrowser;
     // Bump when changing assets extracted by applyGeneralPatches() (e.g. imagefs_patches.tzst contents)
     // so existing containers re-apply patches without requiring appVersion/imgVersion changes.
     private static final int GENERAL_PATCH_VERSION = 6;
@@ -406,6 +414,10 @@ import java.util.concurrent.Executors;
 
     @Override
     protected void onDestroy() {
+        if (guestBrowser != null) {
+            guestBrowser.destroy();
+            guestBrowser = null;
+        }
         SessionInputExtras.onSessionDestroyed(this);
         if (activeInstance.get() == this) activeInstance = NO_ACTIVE_INSTANCE;
         shutdownRuntimeOnce();
@@ -594,6 +606,7 @@ import java.util.concurrent.Executors;
         }
 
         ensureWinHandlerLiteInstalled(imageFs.getRootDir());
+        ensureUrlOpenerInstalled(imageFs.getRootDir());
         if (containerDataChanged) container.saveData();
     }
 
@@ -1956,6 +1969,7 @@ import java.util.concurrent.Executors;
         // Vanilla: install native input helper (libfakeinput.so) into imagefs so it can be LD_PRELOAD'ed.
         ensureFakeInputInstalled(rootDir);
         ensureWinHandlerLiteInstalled(rootDir);
+        ensureUrlOpenerInstalled(rootDir);
         TarCompressorUtils.extract(TarCompressorUtils.Type.ZSTD, this, "pulseaudio.tzst", new File(getFilesDir(), "pulseaudio"));
         WineUtils.applySystemTweaks(this, wineInfo);
         container.putExtra("graphicsDriver", null);
@@ -1998,6 +2012,87 @@ import java.util.concurrent.Executors;
         catch (Exception e) {
             Log.w("ImeBridge", "Failed to install winhandler-lite", e);
         }
+    }
+
+    /**
+     * Sends http/https links that the container opens to {@link #openGuestUrl}.
+     * Wine's own browser cannot render current sign-in pages (Battle.net China
+     * opens the NetEase account page in the default browser); the login callback
+     * to 127.0.0.1 still reaches Battle.net, as Wine shares the phone's network.
+     */
+    private void ensureUrlOpenerInstalled(File rootDir) {
+        if (rootDir == null) return;
+        try {
+            File dst = new File(rootDir, ImageFs.WINEPREFIX + "/drive_c/windows/openurl.exe");
+            FileUtils.copy(this, OPEN_URL_ASSET, dst);
+            FileUtils.chmod(dst, 0771);
+            // HKCU classes override HKLM ones, so the handler goes into both hives.
+            registerUrlOpener(new File(rootDir, ImageFs.WINEPREFIX + "/system.reg"));
+            registerUrlOpener(new File(rootDir, ImageFs.WINEPREFIX + "/user.reg"));
+        }
+        catch (Exception e) {
+            Log.w("OpenUrl", "Failed to install openurl", e);
+        }
+    }
+
+    private static void registerUrlOpener(File regFile) {
+        if (!regFile.isFile()) return;
+        try (WineRegistryEditor editor = new WineRegistryEditor(regFile)) {
+            for (String scheme : new String[] {"http", "https"}) {
+                String key = "Software\\Classes\\" + scheme;
+                String command = key + "\\shell\\open\\command";
+                if (!OPEN_URL_COMMAND.equals(editor.getStringValue(command, null))) {
+                    editor.setStringValue(key, "URL Protocol", "");
+                    editor.setStringValue(command, null, OPEN_URL_COMMAND);
+                }
+                // A DDE verb would send the link to iexplore instead of running the command.
+                editor.removeKey(key + "\\shell\\open\\ddeexec", true);
+            }
+        }
+    }
+
+    /**
+     * A link that the container opened through openurl.exe; called on WinHandler's thread.
+     * It opens in {@link GuestBrowserDialog}, or the phone's browser without a WebView.
+     */
+    public void openGuestUrl(String url) {
+        runOnUiThread(() -> {
+            long now = SystemClock.elapsedRealtime();
+            if (url.equals(lastGuestUrl) && now - lastGuestUrlAt < 3000) return;
+            lastGuestUrl = url;
+            lastGuestUrlAt = now;
+            if (isFinishing() || isDestroyed()) return;
+            // In-app panel first: the phone's browser would send the session to the background.
+            if (guestBrowser == null) {
+                guestBrowser = GuestBrowserDialog.create(this);
+                if (guestBrowser != null) guestBrowser.setOnClosed(this::refocusAfterGuestBrowser);
+            }
+            if (guestBrowser != null) {
+                guestBrowser.load(url);
+                return;
+            }
+            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+            intent.addCategory(Intent.CATEGORY_BROWSABLE);
+            try {
+                startActivity(intent);
+                AppUtils.showToast(this, R.string.guest_url_opened);
+            }
+            catch (ActivityNotFoundException e) {
+                AppUtils.showToast(this, R.string.guest_url_no_browser);
+            }
+        });
+    }
+
+    /**
+     * After sign-in, Battle.net waits for its window to be activated again, as
+     * on a PC when you switch back from the browser. Until then Battle.net
+     * China keeps its sign-in overlay over the page. Other links leave the
+     * window order alone, so a link opened from the game doesn't raise
+     * Battle.net over it.
+     */
+    private void refocusAfterGuestBrowser(boolean afterCallback) {
+        xServerView.requestFocus();
+        if (afterCallback && winHandler != null) winHandler.bringToFront("Battle.net.exe");
     }
 
     private void applyRootfsUtilsPatches() {
