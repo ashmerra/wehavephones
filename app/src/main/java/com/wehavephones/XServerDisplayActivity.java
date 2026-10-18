@@ -415,7 +415,7 @@ import java.util.concurrent.Executors;
     @Override
     protected void onDestroy() {
         if (guestBrowser != null) {
-            guestBrowser.dismiss();
+            guestBrowser.destroy();
             guestBrowser = null;
         }
         SessionInputExtras.onSessionDestroyed(this);

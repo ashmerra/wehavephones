@@ -54,6 +54,7 @@ public final class GuestBrowserDialog extends Dialog {
     private TextView title;
     private String currentUrl;
     private boolean closeScheduled;
+    private boolean destroyed;
     private OnClosedListener onClosed;
 
     public interface OnClosedListener {
@@ -184,11 +185,21 @@ public final class GuestBrowserDialog extends Dialog {
         });
 
         setOnDismissListener(d -> {
+            if (destroyed) return;
             handler.removeCallbacksAndMessages(null);
             webView.stopLoading();
             webView.loadUrl("about:blank");
             if (onClosed != null) onClosed.onClosed(closeScheduled);
         });
+    }
+
+    /** Closes the panel for good and frees its WebView, when the session ends. */
+    public void destroy() {
+        destroyed = true;
+        onClosed = null;
+        handler.removeCallbacksAndMessages(null);
+        dismiss();
+        webView.destroy();
     }
 
     /** Any program in the container can open a link, so the title names the site, not the task. */
