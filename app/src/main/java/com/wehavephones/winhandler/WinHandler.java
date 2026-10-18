@@ -37,9 +37,11 @@ public class WinHandler {
     private static final byte LITE_READY = 0x70;
     private static final byte LITE_FOCUS = 0x73;
     private static final byte LITE_REQUEST_TEXT = 0x01;
+    /** openurl.exe: a link the container opened (ShellExecute on http/https). */
+    private static final byte OPEN_URL = 0x75;
     private static final int LITE_FLAG_SUBMIT = 0x00000001;
     private static final int LITE_MAX_UTF16_BYTES = 4096;
-    private static final int RX_PACKET_MAX = 2048;
+    private static final int RX_PACKET_MAX = 8192;
     public static final byte DINPUT_MAPPER_TYPE_STANDARD = 0;
     public static final byte DINPUT_MAPPER_TYPE_XINPUT = 1;
     private DatagramSocket socket;
@@ -397,6 +399,28 @@ public class WinHandler {
         }
     }
 
+    private void handleOpenUrl(int packetLen) {
+        if (packetLen < 3) return;
+        int length = receiveData.getShort() & 0xffff;
+        if (length <= 0 || length > packetLen - 3) return;
+        byte[] bytes = new byte[length];
+        receiveData.get(bytes);
+        String url = parseOpenUrl(bytes);
+        if (url != null) activity.openGuestUrl(url);
+    }
+
+    /** The http(s) link in an openurl.exe packet, or null if it is anything else. */
+    public static String parseOpenUrl(byte[] utf8) {
+        String url = new String(utf8, StandardCharsets.UTF_8).trim();
+        String lower = url.toLowerCase(java.util.Locale.ROOT);
+        if (!lower.startsWith("https://") && !lower.startsWith("http://")) return null;
+        for (int i = 0; i < url.length(); i++) {
+            char c = url.charAt(i);
+            if (c <= 0x20 || c == 0x7f) return null;
+        }
+        return url;
+    }
+
     public void start() {
         initReceived = false;
         liteReady = false;
@@ -427,6 +451,12 @@ public class WinHandler {
                         receiveData.rewind();
                         receiveData.limit(packetLen);
                         byte requestCode = receiveData.get();
+                        if (requestCode == OPEN_URL) {
+                            // The socket listens on every interface; only the container may open links.
+                            InetAddress sender = receivePacket.getAddress();
+                            if (sender != null && sender.isLoopbackAddress()) handleOpenUrl(packetLen);
+                            continue;
+                        }
                         handleRequest(requestCode, receivePacket.getPort(), packetLen);
                     }
                 }
