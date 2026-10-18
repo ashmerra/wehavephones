@@ -61,6 +61,7 @@ public final class AddonLogicSelfTest {
             testSafeZipRejections();
             testZipImporterDiscovery();
             testInstallAndRollback();
+            testHeldImportStaging();
             testDisabledUpdate();
             testEnableDisableAndBackup();
             testScannerGrouping();
@@ -553,15 +554,70 @@ public final class AddonLogicSelfTest {
         AddonInstaller.recoverInterrupted(recovering);
         check(new File(recovering, "Restored/Restored.toc").isFile(), "crash backup restored");
         check(!staleStage.exists(), "stale staging deleted");
+    }
+
+    private static void testHeldImportStaging() throws Exception {
+        File addons = new File(workDir, "held-addons");
+        File pending = new File(addons, ".wehavephones-staging-pending");
+        File pendingToc = new File(pending, "Pending/Pending.toc");
+        File other = new File(addons, ".wehavephones-staging-old");
+        write(pendingToc, "## Version: 1.0\n");
+        write(new File(other, "junk.txt"), "junk\n");
 
         // Returning from the file picker rescans while the import waits for the player's choice.
-        File pendingStage = new File(recovering, ".wehavephones-staging-pending");
-        write(new File(pendingStage, "Pending/Pending.toc"), "## Version: 1.0\n");
-        File otherStage = new File(recovering, ".wehavephones-staging-old");
-        write(new File(otherStage, "junk.txt"), "junk\n");
-        AddonInstaller.recoverInterrupted(recovering, pendingStage);
-        check(new File(pendingStage, "Pending/Pending.toc").isFile(), "pending import staging kept");
-        check(!otherStage.exists(), "other staging still deleted");
+        AddonInstaller.holdStaging(pending);
+        AddonInstaller.recoverInterrupted(addons);
+        check(pendingToc.isFile(), "held import staging survives a rescan");
+        check(!other.exists(), "unheld staging still deleted");
+
+        // The ConsolePort sync installs into the same AddOns folder in the background.
+        ConsolePort.install(consolePortZip("cp-held.zip", "3.2.7", "ConsolePort_Bar"), addons, WowFlavor.RETAIL);
+        checkEquals("3.2.7", ConsolePort.installedVersion(addons), "ConsolePort installs beside a held import");
+        check(pendingToc.isFile(), "held import staging survives a ConsolePort install");
+
+        // Confirming the import from the held staging installs it.
+        List<DiscoveredAddon> found = ZipImporter.discoverAddons(pending, WowFlavor.RETAIL);
+        checkEquals(1, found.size(), "held import discovery");
+        AddonInstaller.Result result = AddonInstaller.install(new AddonInstaller.Request(
+                addons, pending, found, null, false));
+        AddonInstaller.commit(result);
+        AddonInstaller.discardStaging(pending);
+        check(new File(addons, "Pending/Pending.toc").isFile(), "held import installed");
+        check(!pending.exists(), "confirmed import staging deleted");
+        write(pendingToc, "## Version: 1.0\n");
+        AddonInstaller.recoverInterrupted(addons);
+        check(!pending.exists(), "confirmed import staging released");
+
+        // A confirm that fails before installing (the game is running) still frees the preview.
+        File failed = new File(addons, ".wehavephones-staging-failed");
+        write(new File(failed, "Failed/Failed.toc"), "## Version: 1.0\n");
+        AddonInstaller.holdStaging(failed);
+        try {
+            AddonInstaller.install(new AddonInstaller.Request(
+                    addons, failed, new ArrayList<DiscoveredAddon>(), null, false));
+            check(false, "empty import rejected");
+        }
+        catch (IOException expected) {
+            check(true, "empty import rejected");
+        }
+        finally {
+            AddonInstaller.discardStaging(failed);
+        }
+        check(!failed.exists(), "failed import staging deleted");
+        write(new File(failed, "Failed/Failed.toc"), "## Version: 1.0\n");
+        AddonInstaller.recoverInterrupted(addons);
+        check(!failed.exists(), "failed import staging released");
+
+        // A preview abandoned with its activity is released and the next rescan deletes it.
+        File abandoned = new File(addons, ".wehavephones-staging-abandoned");
+        write(new File(abandoned, "Gone/Gone.toc"), "## Version: 1.0\n");
+        AddonInstaller.holdStaging(abandoned);
+        AddonInstaller.recoverInterrupted(addons);
+        check(abandoned.isDirectory(), "abandoned preview kept while held");
+        AddonInstaller.releaseStaging(abandoned);
+        AddonInstaller.recoverInterrupted(addons);
+        check(!abandoned.exists(), "released preview deleted by the next rescan");
+        check(new File(addons, "Pending/Pending.toc").isFile(), "recovery leaves installed addons alone");
     }
 
     private static void testDisabledUpdate() throws Exception {

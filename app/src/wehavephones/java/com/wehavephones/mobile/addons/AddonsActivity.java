@@ -418,6 +418,7 @@ public class AddonsActivity extends AppCompatActivity {
                     }
                     confirmImport(preview, chosen);
                 })
+                .setOnCancelListener(dialog -> manager.discardPreview(preview))
                 .show();
     }
 

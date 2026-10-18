@@ -44,6 +44,8 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -87,8 +89,8 @@ public final class AddonManager {
 
     private AddonIndex index;
     private volatile boolean closed;
-    /** Staging folder of the import waiting for the player's choice; the rescan on return from the picker keeps it. */
-    private volatile File pendingStaging;
+    /** Staging folders of import previews this manager holds in {@link AddonInstaller}. */
+    private final Set<File> heldPreviews = ConcurrentHashMap.newKeySet();
     private ArrayList<WowProduct> cachedProducts = new ArrayList<>();
     private long productsLoadedAt;
 
@@ -112,6 +114,11 @@ public final class AddonManager {
     public void shutdown() {
         closed = true;
         executor.shutdownNow();
+        // A preview whose dialog went away with the activity is never confirmed.
+        // Release it so the next rescan deletes it. Deleting it here could race
+        // an install that is still moving folders out of it.
+        for (File staging : heldPreviews) AddonInstaller.releaseStaging(staging);
+        heldPreviews.clear();
     }
 
     public boolean isClosed() {
@@ -221,7 +228,7 @@ public final class AddonManager {
             public Integer run() throws Exception {
                 File addons = addonsDir();
                 if (addons == null || !addons.isDirectory()) return -1;
-                AddonInstaller.recoverInterrupted(addons, pendingStaging);
+                AddonInstaller.recoverInterrupted(addons);
                 syncScan();
                 saveIndex();
                 return records().size();
@@ -453,7 +460,12 @@ public final class AddonManager {
                 }
                 String sourceName = uri != null && uri.getLastPathSegment() != null
                         ? uri.getLastPathSegment() : "import.zip";
-                pendingStaging = staging;
+                // Returning from the file picker rescans the list while the preview waits.
+                holdPreview(staging);
+                if (closed) {
+                    dropPreview(staging);
+                    throw new IOException("Addon manager closed");
+                }
                 return new ImportPreview(staging, discovered, sourceName);
             }
         }, callback);
@@ -464,11 +476,20 @@ public final class AddonManager {
         runAsync(new Job<Boolean>() {
             @Override
             public Boolean run() throws Exception {
-                FileOps.deleteRecursively(preview.stagingDir);
-                if (preview.stagingDir.equals(pendingStaging)) pendingStaging = null;
+                dropPreview(preview.stagingDir);
                 return Boolean.TRUE;
             }
         }, null);
+    }
+
+    private void holdPreview(File staging) {
+        heldPreviews.add(staging);
+        AddonInstaller.holdStaging(staging);
+    }
+
+    private void dropPreview(File staging) {
+        heldPreviews.remove(staging);
+        AddonInstaller.discardStaging(staging);
     }
 
     public void confirmImport(final ImportPreview preview, final List<DiscoveredAddon> chosen,
@@ -476,31 +497,37 @@ public final class AddonManager {
         runAsync(new Job<String>() {
             @Override
             public String run() throws Exception {
-                if (preview == null || chosen == null || chosen.isEmpty()) {
-                    throw new IOException("No addons selected for import");
-                }
-                File addons = ensureAddonsDir();
-                requireGameClosed();
-                ArrayList<String> previous = new ArrayList<>();
-                for (DiscoveredAddon addon : chosen) {
-                    AddonRecord existing = findByFolder(addon.folderName);
-                    if (existing != null) {
-                        for (String folder : existing.folderNames) {
-                            if (!previous.contains(folder)) previous.add(folder);
+                if (preview == null) throw new IOException("No addons selected for import");
+                // The dialog is gone, so the preview is spent whether or not the install succeeds.
+                try {
+                    if (chosen == null || chosen.isEmpty()) {
+                        throw new IOException("No addons selected for import");
+                    }
+                    File addons = ensureAddonsDir();
+                    requireGameClosed();
+                    ArrayList<String> previous = new ArrayList<>();
+                    for (DiscoveredAddon addon : chosen) {
+                        AddonRecord existing = findByFolder(addon.folderName);
+                        if (existing != null) {
+                            for (String folder : existing.folderNames) {
+                                if (!previous.contains(folder)) previous.add(folder);
+                            }
                         }
                     }
+                    AddonInstaller.Result result = AddonInstaller.install(new AddonInstaller.Request(
+                            addons, preview.stagingDir, chosen, previous, false));
+                    AddonInstaller.commit(result);
+                    cleanupDeleteBackups(null);
+                    for (DiscoveredAddon addon : chosen) {
+                        recordLocalInstall(addon, preview.sourceName, result.installedFolders);
+                    }
+                    syncScan();
+                    saveIndex();
+                    return result.installedFolders.isEmpty() ? "" : result.installedFolders.get(0);
                 }
-                AddonInstaller.Result result = AddonInstaller.install(new AddonInstaller.Request(
-                        addons, preview.stagingDir, chosen, previous, false));
-                AddonInstaller.commit(result);
-                if (preview.stagingDir.equals(pendingStaging)) pendingStaging = null;
-                cleanupDeleteBackups(null);
-                for (DiscoveredAddon addon : chosen) {
-                    recordLocalInstall(addon, preview.sourceName, result.installedFolders);
+                finally {
+                    dropPreview(preview.stagingDir);
                 }
-                syncScan();
-                saveIndex();
-                return result.installedFolders.isEmpty() ? "" : result.installedFolders.get(0);
             }
         }, callback);
     }

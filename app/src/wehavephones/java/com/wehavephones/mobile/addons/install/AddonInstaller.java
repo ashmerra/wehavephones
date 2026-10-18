@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Atomic addon install/update/remove pipeline modeled on WowUp's:
@@ -15,6 +17,13 @@ import java.util.Locale;
 public final class AddonInstaller {
     /** Serializes AddOns mutations between the addon manager and the ConsolePort updater. */
     public static final Object LOCK = new Object();
+
+    /**
+     * Staging folders of imports waiting for the player's choice. Every
+     * {@link #recoverInterrupted} caller keeps them, so neither a rescan nor a
+     * ConsolePort install deletes an import before it is confirmed.
+     */
+    private static final Set<File> HELD_STAGING = ConcurrentHashMap.newKeySet();
 
     private AddonInstaller() {}
 
@@ -212,16 +221,28 @@ public final class AddonInstaller {
         return backupDir;
     }
 
-    /**
-     * Crash recovery: deletes stale staging dirs and restores backups whose
-     * target folder is missing (a crash mid-swap).
-     */
-    public static void recoverInterrupted(File addonsDir) {
-        recoverInterrupted(addonsDir, null);
+    /** Keeps {@code staging} through {@link #recoverInterrupted} until it is released or discarded. */
+    public static void holdStaging(File staging) {
+        if (staging != null) HELD_STAGING.add(staging.getAbsoluteFile());
     }
 
-    /** As {@link #recoverInterrupted(File)}, keeping {@code keepStaging}: an import still waiting for the player's choice. */
-    public static void recoverInterrupted(File addonsDir, File keepStaging) {
+    /** Lets the next {@link #recoverInterrupted} delete {@code staging} again. */
+    public static void releaseStaging(File staging) {
+        if (staging != null) HELD_STAGING.remove(staging.getAbsoluteFile());
+    }
+
+    /** Deletes a held staging folder and releases it. */
+    public static void discardStaging(File staging) {
+        if (staging == null) return;
+        FileOps.deleteRecursively(staging);
+        releaseStaging(staging);
+    }
+
+    /**
+     * Crash recovery: deletes stale staging dirs and restores backups whose
+     * target folder is missing (a crash mid-swap). Held staging dirs are kept.
+     */
+    public static void recoverInterrupted(File addonsDir) {
         if (addonsDir == null || !addonsDir.isDirectory()) return;
         File[] children = addonsDir.listFiles();
         if (children == null) return;
@@ -229,7 +250,7 @@ public final class AddonInstaller {
             if (!child.isDirectory()) continue;
             String name = child.getName();
             if (FileOps.isStagingDir(name)) {
-                if (keepStaging != null && child.getAbsoluteFile().equals(keepStaging.getAbsoluteFile())) continue;
+                if (HELD_STAGING.contains(child.getAbsoluteFile())) continue;
                 FileOps.deleteRecursively(child);
             }
             else if (FileOps.isBackupDir(name)) {
