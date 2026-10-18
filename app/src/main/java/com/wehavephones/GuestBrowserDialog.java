@@ -54,7 +54,8 @@ public final class GuestBrowserDialog extends Dialog {
     private TextView title;
     private String currentUrl;
     private boolean closeScheduled;
-    private boolean clearHistoryOnLoad;
+    /** History index of the current link's first page. Back closes the panel there. */
+    private int firstHistoryIndex;
     private boolean destroyed;
     private OnClosedListener onClosed;
 
@@ -92,7 +93,7 @@ public final class GuestBrowserDialog extends Dialog {
         handler.removeCallbacksAndMessages(null);
         closeScheduled = false;
         // Back must not return to pages from an earlier link.
-        clearHistoryOnLoad = true;
+        firstHistoryIndex = webView.copyBackForwardList().getCurrentIndex() + 1;
         webView.loadUrl(url);
         if (!isShowing() && !activity.isFinishing()) show();
     }
@@ -185,10 +186,6 @@ public final class GuestBrowserDialog extends Dialog {
                 progress.setVisibility(View.GONE);
                 if (url == null || url.startsWith("about:")) return;
                 currentUrl = url;
-                if (clearHistoryOnLoad) {
-                    clearHistoryOnLoad = false;
-                    view.clearHistory();
-                }
             }
         });
 
@@ -230,7 +227,7 @@ public final class GuestBrowserDialog extends Dialog {
 
     @Override
     public void onBackPressed() {
-        if (webView.canGoBack()) webView.goBack();
+        if (webView.copyBackForwardList().getCurrentIndex() > firstHistoryIndex) webView.goBack();
         else dismiss();
     }
 
