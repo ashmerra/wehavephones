@@ -2015,7 +2015,7 @@ import java.util.concurrent.Executors;
     }
 
     /**
-     * Sends http/https links that the container opens to the phone's browser.
+     * Sends http/https links that the container opens to {@link #openGuestUrl}.
      * Wine's own browser cannot render current sign-in pages (Battle.net China
      * opens the NetEase account page in the default browser); the login callback
      * to 127.0.0.1 still reaches Battle.net, as Wine shares the phone's network.

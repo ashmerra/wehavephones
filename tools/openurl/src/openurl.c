@@ -5,9 +5,9 @@
  * as the NetEase account page that Battle.net China opens. This program is
  * registered as the shell "open" command for http/https, so ShellExecute on a
  * link sends it to WinHandler on the Android side (UDP 127.0.0.1:7947), which
- * opens it in the phone's browser. Links that return to 127.0.0.1 (Battle.net's
- * login callback) still reach the container, because Wine shares the phone's
- * network.
+ * shows it in a WebView panel over the session (GuestBrowserDialog). Links
+ * that return to 127.0.0.1 (Battle.net's login callback) still reach the
+ * container, because Wine shares the phone's network.
  *
  * Packet: 0x75, uint16 little-endian byte length, UTF-8 URL.
  */
