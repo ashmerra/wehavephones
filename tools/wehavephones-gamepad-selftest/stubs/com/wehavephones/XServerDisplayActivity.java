@@ -20,6 +20,7 @@ public class XServerDisplayActivity extends Context {
     public WinHandler getWinHandler() { return winHandler; }
     public void showInputControls(ControlsProfile profile) { view.profile = profile; view.visibility = 0; shows++; }
     public void hideInputControls() { view.profile = null; view.visibility = 8; }
+    public void openGuestUrl(String url) {}
     public XServer getXServer() { return null; }
     public RenderView getXServerView() { return null; }
     public static class RenderView { public void requestRender() {} }
