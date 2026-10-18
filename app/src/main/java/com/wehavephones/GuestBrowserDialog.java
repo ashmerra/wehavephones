@@ -54,6 +54,7 @@ public final class GuestBrowserDialog extends Dialog {
     private TextView title;
     private String currentUrl;
     private boolean closeScheduled;
+    private boolean clearHistoryOnLoad;
     private boolean destroyed;
     private OnClosedListener onClosed;
 
@@ -90,6 +91,8 @@ public final class GuestBrowserDialog extends Dialog {
         showHost(url);
         handler.removeCallbacksAndMessages(null);
         closeScheduled = false;
+        // Back must not return to pages from an earlier link.
+        clearHistoryOnLoad = true;
         webView.loadUrl(url);
         if (!isShowing() && !activity.isFinishing()) show();
     }
@@ -180,7 +183,12 @@ public final class GuestBrowserDialog extends Dialog {
             @Override
             public void onPageFinished(WebView view, String url) {
                 progress.setVisibility(View.GONE);
-                if (url != null && !url.startsWith("about:")) currentUrl = url;
+                if (url == null || url.startsWith("about:")) return;
+                currentUrl = url;
+                if (clearHistoryOnLoad) {
+                    clearHistoryOnLoad = false;
+                    view.clearHistory();
+                }
             }
         });
 
