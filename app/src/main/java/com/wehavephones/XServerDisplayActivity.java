@@ -2084,14 +2084,15 @@ import java.util.concurrent.Executors;
     }
 
     /**
-     * The app that opened the link (Battle.net) waits for its window to be
-     * activated again, as on a PC when you switch back from the browser; until
-     * then Battle.net China keeps its sign-in overlay over the page.
+     * After sign-in, Battle.net waits for its window to be activated again, as
+     * on a PC when you switch back from the browser. Until then Battle.net
+     * China keeps its sign-in overlay over the page. Other links leave the
+     * window order alone, so a link opened from the game doesn't raise
+     * Battle.net over it.
      */
-    private void refocusAfterGuestBrowser() {
-        if (winHandler == null) return;
+    private void refocusAfterGuestBrowser(boolean afterCallback) {
         xServerView.requestFocus();
-        winHandler.bringToFront("Battle.net.exe");
+        if (afterCallback && winHandler != null) winHandler.bringToFront("Battle.net.exe");
     }
 
     private void applyRootfsUtilsPatches() {

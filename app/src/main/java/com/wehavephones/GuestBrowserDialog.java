@@ -53,7 +53,12 @@ public final class GuestBrowserDialog extends Dialog {
     private ProgressBar progress;
     private String currentUrl;
     private boolean closeScheduled;
-    private Runnable onClosed;
+    private OnClosedListener onClosed;
+
+    public interface OnClosedListener {
+        /** afterCallback: the page called Battle.net's login callback before the panel closed. */
+        void onClosed(boolean afterCallback);
+    }
 
     private GuestBrowserDialog(Activity activity) {
         super(activity, android.R.style.Theme_DeviceDefault_NoActionBar);
@@ -74,7 +79,7 @@ public final class GuestBrowserDialog extends Dialog {
     }
 
     /** Runs after the panel closes, however it was closed. */
-    public void setOnClosed(Runnable onClosed) {
+    public void setOnClosed(OnClosedListener onClosed) {
         this.onClosed = onClosed;
     }
 
@@ -177,7 +182,7 @@ public final class GuestBrowserDialog extends Dialog {
             handler.removeCallbacksAndMessages(null);
             webView.stopLoading();
             webView.loadUrl("about:blank");
-            if (onClosed != null) onClosed.run();
+            if (onClosed != null) onClosed.onClosed(closeScheduled);
         });
     }
 
