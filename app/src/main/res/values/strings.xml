@@ -127,7 +127,7 @@
     <string name="unable_to_install_wine">Unable to install Wine</string>
     <string name="guest_url_opened">Opened in your browser. Come back here when you have signed in.</string>
     <string name="guest_url_no_browser">No browser is installed to open this link.</string>
-    <string name="guest_browser_title">Sign in</string>
+    <string name="guest_browser_title">Web page</string>
     <string name="guest_browser_open_external">Open in browser</string>
     <string name="guest_browser_close">Close</string>
     <string name="guest_browser_signed_in">Signed in. Battle.net continues on its own.</string>

@@ -51,6 +51,7 @@ public final class GuestBrowserDialog extends Dialog {
     private final Handler handler = new Handler(Looper.getMainLooper());
     private WebView webView;
     private ProgressBar progress;
+    private TextView title;
     private String currentUrl;
     private boolean closeScheduled;
     private OnClosedListener onClosed;
@@ -85,6 +86,7 @@ public final class GuestBrowserDialog extends Dialog {
 
     public void load(String url) {
         currentUrl = url;
+        showHost(url);
         handler.removeCallbacksAndMessages(null);
         closeScheduled = false;
         webView.loadUrl(url);
@@ -106,8 +108,10 @@ public final class GuestBrowserDialog extends Dialog {
         int pad = dp(8);
         bar.setPadding(pad, pad, pad, pad);
 
-        TextView title = new TextView(activity);
+        title = new TextView(activity);
         title.setText(R.string.guest_browser_title);
+        title.setSingleLine(true);
+        title.setEllipsize(android.text.TextUtils.TruncateAt.END);
         title.setTextColor(Color.WHITE);
         title.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
         title.setPadding(dp(8), 0, 0, 0);
@@ -169,6 +173,7 @@ public final class GuestBrowserDialog extends Dialog {
             @Override
             public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
                 progress.setVisibility(View.VISIBLE);
+                if (url != null && !url.startsWith("about:")) showHost(url);
             }
 
             @Override
@@ -184,6 +189,13 @@ public final class GuestBrowserDialog extends Dialog {
             webView.loadUrl("about:blank");
             if (onClosed != null) onClosed.onClosed(closeScheduled);
         });
+    }
+
+    /** Any program in the container can open a link, so the title names the site, not the task. */
+    private void showHost(String url) {
+        String host = Uri.parse(url).getHost();
+        if (host != null && !host.isEmpty()) title.setText(host);
+        else title.setText(R.string.guest_browser_title);
     }
 
     private void scheduleClose() {
