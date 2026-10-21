@@ -12,6 +12,15 @@ public final class WowFirstBoot {
     public static final String[] REGIONS = {"us", "eu", "kr", "tw", "cn"};
     /** Blizzard runs China on its own Battle.net app, accounts and game client. */
     public static final String CHINA = "cn";
+    /**
+     * Forever's "Enable Gamepad UI (Alpha)" option sets this CVar to
+     * Enum.InputDeviceInterfaceType.Gamepad (Blizzard_SettingsDefinitions_Shared
+     * Gamepad.lua, 1.60.1). Turning it on needs a controller, so it is seeded once.
+     */
+    public static final String GAMEPAD_UI_CVAR = "InputDeviceInterfaceStyle";
+    public static final String GAMEPAD_UI = "1";
+    /** Written after the seed, so a player who turns the gamepad UI off keeps it off. */
+    public static final String GAMEPAD_UI_MARKER = "WTF/.wehavephones-gamepad-ui-seeded";
 
     private WowFirstBoot() {}
 
@@ -45,6 +54,12 @@ public final class WowFirstBoot {
      */
     public static String configure(String existing, String region, boolean retail,
             String screenSize, boolean overrideRegion, String apiArg) {
+        return configure(existing, region, retail, screenSize, overrideRegion, apiArg, false);
+    }
+
+    /** {@code gamepadUi} turns on Forever's gamepad UI ({@link #GAMEPAD_UI_CVAR}). */
+    public static String configure(String existing, String region, boolean retail,
+            String screenSize, boolean overrideRegion, String apiArg, boolean gamepadUi) {
         if (!validRegion(region)) throw new IllegalArgumentException("Invalid WoW region");
         LinkedHashMap<String, String> settings = new LinkedHashMap<>();
         // The native language/region dialogs run before D3D initializes. Seed
@@ -61,6 +76,9 @@ public final class WowFirstBoot {
         }
         String gxApi = gxApi(apiArg);
         if (gxApi != null && !gxApi.equalsIgnoreCase(WowClientFiles.cvarValue(existing, "GxApi"))) settings.put("GxApi", gxApi);
+        if (gamepadUi && !GAMEPAD_UI.equals(WowClientFiles.cvarValue(existing, GAMEPAD_UI_CVAR))) {
+            settings.put(GAMEPAD_UI_CVAR, GAMEPAD_UI);
+        }
         return MemoryTransforms.editConfigWtf(existing, settings);
     }
 
@@ -87,10 +105,24 @@ public final class WowFirstBoot {
 
     public static boolean prepare(File productDir, String region, boolean retail,
             String screenSize, boolean overrideRegion, String apiArg) throws IOException {
+        return prepare(productDir, region, retail, screenSize, overrideRegion, apiArg, false);
+    }
+
+    /** {@code forever} seeds the gamepad UI once per install (see {@link #GAMEPAD_UI_MARKER}). */
+    public static boolean prepare(File productDir, String region, boolean retail,
+            String screenSize, boolean overrideRegion, String apiArg, boolean forever) throws IOException {
         File config = new File(productDir, "WTF/Config.wtf");
+        File gamepadUiMarker = new File(productDir, GAMEPAD_UI_MARKER);
+        boolean seedGamepadUi = forever && !gamepadUiMarker.exists();
         String existing = config.isFile() ? new String(Files.readAllBytes(config.toPath()), StandardCharsets.UTF_8) : "";
-        String updated = configure(existing, region, retail, screenSize, overrideRegion, apiArg);
-        if (updated.equals(existing)) return false;
+        String updated = configure(existing, region, retail, screenSize, overrideRegion, apiArg, seedGamepadUi);
+        boolean changed = !updated.equals(existing);
+        if (changed) write(config, updated);
+        if (seedGamepadUi) Files.write(gamepadUiMarker.toPath(), new byte[0]);
+        return changed;
+    }
+
+    private static void write(File config, String updated) throws IOException {
         if (config.isFile()) {
             File backup = new File(config.getPath() + ".wehavephones-firstboot-backup");
             if (!backup.exists()) Files.copy(config.toPath(), backup.toPath());
@@ -111,6 +143,5 @@ public final class WowFirstBoot {
             }
         }
         finally { Files.deleteIfExists(temporary); }
-        return true;
     }
 }

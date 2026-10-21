@@ -118,7 +118,8 @@ public final class WeHavePhonesRuntimeApplier {
                     if (WowFirstBoot.prepare(product.directory, WeHavePhonesConfig.getGameRegion(context),
                             product.getFlavor() == WowFlavor.RETAIL,
                             WeHavePhonesConfig.getGameScreenSize(context), WeHavePhonesConfig.isGameRegionOverride(context),
-                            DeviceProfileSelector.wowApiArg(context))) result.step("WoW first-boot settings prepared");
+                            DeviceProfileSelector.wowApiArg(context),
+                            product.getFlavor().family == WowFlavor.Family.FOREVER)) result.step("WoW first-boot settings prepared");
                 }
                 catch (java.io.IOException e) {
                     result.fail("Could not prepare WoW first boot: " + e.getMessage());

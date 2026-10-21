@@ -53,6 +53,12 @@ public final class WowClientFilesSelfTest {
         check("null profile flag keeps the saved GxApi", "D3D12".equals(WowClientFiles.cvarValue(
                 WowFirstBoot.configure(played, "us", true, "1024x576", false, null), "GxApi")));
         check("unknown flag does not map to GxApi", WowFirstBoot.gxApi("-dx9") == null);
+        check("gamepad UI left alone by default", WowClientFiles.cvarValue(fresh, WowFirstBoot.GAMEPAD_UI_CVAR) == null);
+        String gamepad = WowFirstBoot.configure(played, "us", false, "1024x576", false, null, true);
+        check("gamepad UI seeded", "1".equals(WowClientFiles.cvarValue(gamepad, WowFirstBoot.GAMEPAD_UI_CVAR)));
+        check("gamepad UI seed is idempotent", gamepad.equals(WowFirstBoot.configure(gamepad, "us", false, "1024x576", false, null, true)));
+        check("gamepad UI seed replaces mouse UI", "1".equals(WowClientFiles.cvarValue(WowFirstBoot.configure(
+                "SET InputDeviceInterfaceStyle \"0\"\n", "us", false, "1024x576", false, null, true), WowFirstBoot.GAMEPAD_UI_CVAR)));
 
         File dir = Files.createTempDirectory("wow-client-files").toFile();
         try {
@@ -71,6 +77,18 @@ public final class WowClientFilesSelfTest {
             check("explicit region change is idempotent", !WowFirstBoot.prepare(dir, "eu", true, "1024x576", true));
             check("region change preserves initial backup", original.equals(new String(Files.readAllBytes(backup.toPath()), StandardCharsets.UTF_8)));
 
+            File marker = new File(dir, WowFirstBoot.GAMEPAD_UI_MARKER);
+            check("non-Forever launch leaves no gamepad UI marker", !marker.exists());
+            check("Forever launch seeds the gamepad UI", WowFirstBoot.prepare(dir, "eu", false, "1024x576", false, null, true));
+            check("gamepad UI persists", "1".equals(WowClientFiles.cvarValue(new String(Files.readAllBytes(config.toPath()), StandardCharsets.UTF_8), WowFirstBoot.GAMEPAD_UI_CVAR)));
+            check("gamepad UI marker written", marker.isFile());
+            String mouse = new String(Files.readAllBytes(config.toPath()), StandardCharsets.UTF_8).replace(
+                    "SET InputDeviceInterfaceStyle \"1\"", "SET InputDeviceInterfaceStyle \"0\"");
+            Files.write(config.toPath(), mouse.getBytes(StandardCharsets.UTF_8));
+            check("player's mouse UI choice is kept", !WowFirstBoot.prepare(dir, "eu", false, "1024x576", false, null, true));
+            Files.write(config.toPath(), mouse.replace("SET InputDeviceInterfaceStyle \"0\"\r\n", "").getBytes(StandardCharsets.UTF_8));
+            check("dropped gamepad UI CVar is not re-seeded", !WowFirstBoot.prepare(dir, "eu", false, "1024x576", false, null, true));
+
             File gx = new File(dir, "gx.log");
             Files.write(gx.toPath(), "10/4 08:15:09.453  ---- Startup ----\n".getBytes(StandardCharsets.UTF_8));
             check("no marker before the device", !WowClientFiles.fileContains(gx, WowClientFiles.DEVICE_READY_MARKER, 1024));
@@ -81,7 +99,7 @@ public final class WowClientFilesSelfTest {
             check("missing file", !WowClientFiles.fileContains(new File(dir, "missing.log"), WowClientFiles.DEVICE_READY_MARKER, 1024));
         }
         finally {
-            for (File file : new File[]{new File(dir, "WTF/Config.wtf"), new File(dir, "WTF/Config.wtf.wehavephones-firstboot-backup"), new File(dir, "WTF"), new File(dir, "gx.log"), dir}) file.delete();
+            for (File file : new File[]{new File(dir, "WTF/Config.wtf"), new File(dir, "WTF/Config.wtf.wehavephones-firstboot-backup"), new File(dir, WowFirstBoot.GAMEPAD_UI_MARKER), new File(dir, "WTF"), new File(dir, "gx.log"), dir}) file.delete();
         }
 
         System.out.println("[wow-client-files-selftest] " + failures + " failure(s)");

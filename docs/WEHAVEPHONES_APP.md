@@ -186,7 +186,11 @@ desktop wallpaper.
   does), the session always returns to the menu when WoW closes
   (`WowExitWatcher`), Battle.net always closes after launching WoW, and the
   first-boot photosensitivity warning and intro cinematic are always skipped
-  (`WowFirstBoot`). Explicit region changes
+  (`WowFirstBoot`). Forever starts with its **Enable Gamepad UI (Alpha)**
+  option on: the first Forever launch writes `InputDeviceInterfaceStyle 1`
+  (the CVar behind that checkbox), then leaves the marker
+  `WTF/.wehavephones-gamepad-ui-seeded` so a player who turns it off in the
+  game's Options keeps it off. Explicit region changes
   replace WoW's saved portal on the next launch. Switching to or from China
   once Battle.net is installed is refused with a note pointing to Setup's
   **Add New**, since the installed Battle.net app cannot sign in to the
