@@ -1,8 +1,8 @@
 {
   "schema": 1,
-  "rulesVersion": 7,
+  "rulesVersion": 8,
   "minAppVersionCode": 1,
-  "updatedAt": "2026-10-16",
+  "updatedAt": "2026-10-21",
   "drivers": {
     "system": {
       "type": "system",
@@ -223,8 +223,8 @@
       ],
       "env": {},
       "vulkanCompatLayer": false,
-      "wowApiArg": null,
-      "notes": "Adreno 7xx (Galaxy S23, Adreno 740): the pinned Turnip, the long-standing default.",
+      "wowApiArg": "-d3d11",
+      "notes": "Adreno 7xx (Galaxy S23, Adreno 740): the pinned Turnip with D3D11 through DXVK. In WoW Forever on the S23, D3D11 needed about 20% fewer GPU cycles per frame than D3D12 through vkd3d-proton, so the thermally limited GPU draws more frames.",
       "choices": [
         "turnip-gamesir-rutabaga-v3"
       ]

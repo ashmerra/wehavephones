@@ -249,6 +249,21 @@ public final class DeviceRulesSelfTest {
         eq(java.util.Arrays.asList("system"), ids(picker.getProfile("mali").pickerDrivers()), "Mali offers only the system driver");
     }
 
+    /**
+     * The v6 catalog plus the one intended v8 change: Adreno 7xx runs WoW in D3D11. Applying it to
+     * the baseline keeps every other v6 default frozen.
+     */
+    private static String withV8ApiChange(String v6Json) throws Exception {
+        JSONObject baseline = new JSONObject(v6Json);
+        JSONObject bundled7xx = new JSONObject(bundledJson).getJSONObject("profiles").getJSONObject("adreno-7xx");
+        eq("-d3d11", bundled7xx.getString("wowApiArg"), "v8 gives Adreno 7xx D3D11");
+        JSONObject a7xx = baseline.getJSONObject("profiles").getJSONObject("adreno-7xx");
+        check(a7xx.isNull("wowApiArg"), "v6 Adreno 7xx kept the default graphics API");
+        a7xx.put("wowApiArg", "-d3d11");
+        a7xx.put("notes", bundled7xx.getString("notes"));
+        return baseline.toString();
+    }
+
     private static java.util.List<String> ids(java.util.List<DeviceRules.Driver> drivers) {
         ArrayList<String> list = new ArrayList<>();
         for (DeviceRules.Driver driver : drivers) list.add(driver.id);
@@ -256,12 +271,13 @@ public final class DeviceRulesSelfTest {
     }
 
     // The exact committed v6 catalog freezes every pre-existing default, rule and saved driver id.
-    private static void testOptionalTurnipUpdate(String baselineJson) throws Exception {
+    private static void testOptionalTurnipUpdate(String v6Json) throws Exception {
+        eq(6, new JSONObject(v6Json).getInt("rulesVersion"), "baseline is the pre-update v6 catalog");
+        String baselineJson = withV8ApiChange(v6Json);
         JSONObject before = new JSONObject(baselineJson);
         JSONObject after = new JSONObject(bundledJson);
         DeviceRules oldRules = DeviceRules.parse(baselineJson);
         DeviceRules newRules = parseBundled();
-        eq(6, before.getInt("rulesVersion"), "baseline is the pre-update v6 catalog");
         check(after.getInt("rulesVersion") > 6, "optional update bumps rulesVersion");
         JSONObject oldHeader = new JSONObject(baselineJson);
         JSONObject newHeader = new JSONObject(bundledJson);
@@ -1172,7 +1188,9 @@ public final class DeviceRulesSelfTest {
             else {
                 eq("system", plan.driverId, "system driver for \"" + renderer + "\"");
             }
-            eq(null, plan.wowApiArg, "default wowApiArg for \"" + renderer + "\"");
+            // Adreno 7xx moved from D3D12 to D3D11 in rules v8. Every other GPU keeps the default flag.
+            String apiArg = renderer.matches("Adreno \\(TM\\) 7\\d\\d") ? "-d3d11" : null;
+            eq(apiArg, plan.wowApiArg, "default wowApiArg for \"" + renderer + "\"");
         }
         GPUInformation.renderer = "";
 
@@ -1180,6 +1198,7 @@ public final class DeviceRulesSelfTest {
         GraphicsPlan s23 = select(newContext(), identity("Adreno (TM) 740", -1), new FakeProber(), available());
         eq("turnip26.3.0-devel-1b51639c20", s23.driverId, "S23 driver is the pinned Turnip");
         check(s23.useAdrenotools && !s23.vulkanCompatLayer && s23.env.isEmpty(), "S23: Turnip, no compat layer, no extra env");
+        eq("-d3d11", s23.wowApiArg, "S23 runs WoW with D3D11");
         GraphicsPlan pixel = select(newContext(), identity("Mali-G715", -1), new FakeProber(), available());
         check("system".equals(pixel.driverId) && !pixel.useAdrenotools && pixel.vulkanCompatLayer && pixel.env.isEmpty(),
             "Pixel 8a: system driver, compat layer, no extra env");

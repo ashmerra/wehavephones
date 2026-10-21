@@ -10,7 +10,10 @@ At the start of a session the app matches the phone against the rules and gets a
 profile lists Vulkan drivers in order of preference, extra environment variables, whether the BCn
 compat layer is installed, and optionally the WoW graphics API flag.
 
-- Galaxy S23 (Adreno 7xx): the pinned Turnip, as before.
+- Galaxy S23 (Adreno 7xx): the pinned Turnip, with WoW in D3D11 through DXVK since rules v8. In WoW
+  Forever on the S23, D3D11 needed about 20% fewer GPU cycles per frame than D3D12 through
+  vkd3d-proton. The S23's GPU is thermally limited in long sessions, so that work decides the frame
+  rate. `d3d12.dll` stays enabled because the app writes `GxApi D3D11` before each launch.
 - Pixel 8a and other Mali phones: the phone's own Vulkan driver with the BCn compat layer, as before.
 - Adreno 840 and newer (Snapdragon 8 Elite Gen 5): WoW in D3D11 with the system driver. On a OnePlus 15
   every offered Turnip build drew glitches in WoW Retail, while the Qualcomm drivers played in-world
