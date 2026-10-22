@@ -34,6 +34,7 @@ These are maintainer tests, rather than independent community confirmations.
 | Samsung Galaxy S23+ (same device) | Burning Crusade Anniversary — `2.5.6.69795` | Driver not recorded in this run | Entered world | [Issue #1 test record](https://github.com/ashmerra/wehavephones/issues/1#issuecomment-6103721746) |
 | Samsung Galaxy S23+ (same device) | Mists of Pandaria Classic — `5.5.4.70268` | Driver not recorded in this run | Entered world | [Issue #1 test record](https://github.com/ashmerra/wehavephones/issues/1#issuecomment-6103721746) |
 | Samsung Galaxy S23+ (same device) | Retail / Midnight — `12.1.0.69933` | Driver not recorded in this run | Owner confirmed world login. Disconnects occurred during testing | [Issue #1 test record](https://github.com/ashmerra/wehavephones/issues/1#issuecomment-6103721746) |
+| Samsung Galaxy S23+ (same device) | Forever stress test — build not recorded | Driver not recorded in this run | Owner confirmed fully tested in-world gameplay during the Oct 21, 2026 stress test | Maintainer's first-hand confirmation, Oct 21, 2026 |
 | Google Pixel 8a (Tensor G3 / Mali-G715, Android 17) | Classic Era — build not recorded | System Vulkan driver + BCn compatibility layer, per project runtime record | Playable in-world | [README](../README.md#tested-on), [runtime](WEHAVEPHONES_RUNTIME.md), [profile](DEVICE_PROFILES.md) |
 | Samsung Galaxy S26 Ultra (SM-S948U, Android 16, One UI 8.5) | Classic Era — build not recorded | Device's automatic system graphics driver. Exact version not recorded | Signed in and reached in-world gameplay. The account owner performed the in-world step | [Issue #18](https://github.com/ashmerra/wehavephones/issues/18), internal S26 test report, Oct 16 |
 
@@ -46,8 +47,12 @@ Classic Era testing with the pinned Turnip, and
 records its validation on Oct 3. The S23+ profile prefers that driver, but this
 does not prove which driver was selected in each Oct 10 run.
 
-The README also records **S23+ / Forever beta / login screen only**. Beta
-access was unavailable. This is not a confirmed playable combination.
+On **2026-10-21**, the maintainer confirmed fully tested **Forever gameplay on
+the S23+** during the stress test. This supersedes the earlier login-screen-only
+coverage for Forever, when beta access was unavailable. The new confirmation
+is for the stress-test client, not a separate validation of the earlier beta
+client. Exact game build, app version, selected driver, session duration and
+performance measurements were not recorded with this confirmation.
 
 The S26 Ultra test used a Dev build from the Security Check fix (`4acd2fd`),
 which is included in 0.0.6. The agent observed the complete Security Check page,
@@ -108,6 +113,9 @@ accessible evidence, not an exhaustive compatibility guarantee.
 The S26 Ultra row was added on 2026-10-17 from the project's own rental-device
 test record and the account owner's confirmation, which fall outside the
 snapshot above.
+
+The S23+ Forever row was added on 2026-10-21 from the maintainer's first-hand
+stress-test gameplay confirmation, also outside the research snapshot above.
 
 For a new row, record the device/model code, WoW edition and build, app version,
 driver picker ID (and system-driver version if available), graphics API,

@@ -13,18 +13,15 @@ Built-in addon manager, with optional CurseForge and WowUp apps.
 
 ## Tested on
 
-WeHavePhones offers a graphics driver selector on supported devices, with driver options matched to your device.
+All WoW versions have been tested and confirmed playable on the **Samsung Galaxy S23+**: Forever, Classic Era, BC Anniversary, MOP Classic, and Retail.
 
-| Device | WoW version | Working driver |
-|---|---|---|
-| Samsung Galaxy S23+ | Classic Era, BC Anniversary, MOP Classic, Retail, Forever* | Turnip 26.3.0-devel |
-| Google Pixel 8a | Classic Era | System driver |
-| OnePlus 15 | Retail | System driver or Qualcomm 842.6 |
-| Lenovo Idea Tab Pro Gen 2 | Classic Era | Qualcomm 863.1 |
-| Xiaomi Pad 8 Pro | Retail | System driver |
-| Samsung Galaxy S26 Ultra | Classic Era | System driver |
+Other tested devices:
 
-\* Forever tested to the login screen only.
+- Google Pixel 8a
+- OnePlus 15
+- Lenovo Idea Tab Pro Gen 2
+- Xiaomi Pad 8 Pro
+- Samsung Galaxy S26 Ultra
 
 See the [full device and driver chart](docs/TESTED_DEVICES.md) for details and community reports.
 
