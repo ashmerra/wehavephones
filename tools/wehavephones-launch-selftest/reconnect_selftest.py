@@ -257,7 +257,7 @@ def main():
 
     def stopped_shell(serial, command, timeout=30):
         run_calls.append(command)
-        return 0, 'PID PPID NAME\n101 1 wine-preloader\n102 1 Battle.net.exe\n103 1 wineserver\n104 1 app_process64\n105 99 wine-preloader\n', ''
+        return 0, 'PID PPID S NAME\n101 1 S wine-preloader\n102 1 S Battle.net.exe\n103 1 S wineserver\n104 1 S app_process64\n105 99 S wine-preloader\n', ''
     module.shell = stopped_shell
     module.stop_runtime('phone')
     check('runtime stop follows the package', 'am force-stop --user 0 org.example.app', run_calls[0])
@@ -268,17 +268,29 @@ def main():
 
     def stopped_shell(serial, command, timeout=30):
         calls_made.append(command)
-        return 0, 'PID PPID NAME\n101 1 wine-preloader\n102 1 Battle.net.exe\n103 1 wineserver\n104 1 app_process64\n105 99 wine-preloader\n', ''
+        if '/proc/106/task' in command:
+            return 0, 'C:\\Program Files (x86)\\Battle.net\\Battle.net.exe\n', ''
+        if '/proc/107/task' in command:
+            return 0, '/system/bin/sh\n', ''
+        if '/task/' in command:
+            return 0, '', ''
+        return 0, ('PID PPID S NAME\n101 1 S wine-preloader\n102 1 S Battle.net.exe\n103 1 S wineserver\n'
+                   '104 1 S app_process64\n105 99 S wine-preloader\n106 1 Z [Main]\n107 1 Z [sh]\n'
+                   '108 1 Z [Main]\n'), ''
     module.shell = stopped_shell
     killed = module.stop_runtime('phone')
     check('runtime stop excludes Secure Folder', 'am force-stop --user 0 com.wehavephones.dev', calls_made[0])
-    check('runtime scan uses base app UID', True, 'ps -o PID,PPID,NAME -u' in calls_made[1] and 'id -u' in calls_made[1])
-    check('runtime stop includes GE preloader orphans', True, 'kill -9 101 102 103 ' in calls_made[2])
-    check('runtime stop excludes non-orphans and Android processes', False, '104' in calls_made[2] or '105' in calls_made[2])
-    check('runtime stop returns the killed PIDs', ['101', '102', '103'], killed)
+    check('runtime scan uses base app UID', True, 'ps -o PID,PPID,S,NAME -u' in calls_made[1] and 'id -u' in calls_made[1])
+    check('runtime stop includes GE preloader orphans', True, 'kill -9 101 102 103 ' in calls_made[-1])
+    check('runtime stop excludes non-orphans and Android processes', False, '104' in calls_made[-1] or '105' in calls_made[-1])
+    check('runtime stop includes a renamed Battle.net zombie', True, ' 106 ' in calls_made[-1] + ' ')
+    check('runtime stop excludes other zombies', False, '107' in calls_made[-1] or '108' in calls_made[-1])
+    check('runtime stop returns the killed PIDs', ['101', '102', '103', '106'], killed)
     check('GE preloader recognized', True, module.is_wine_process('wine-preloader'))
     check('Wine game recognized', True, module.is_wine_process('WowClassic.exe'))
     check('Android app excluded', False, module.is_wine_process('app_process64'))
+    check('Windows path names a Wine program', True, module.is_wine_program('C:\\Program Files (x86)\\Battle.net\\Battle.net.exe'))
+    check('Android shell is not a Wine program', False, module.is_wine_program('/system/bin/sh'))
     shutil.rmtree(state)
 
     # 13. protected apps: WEHAVEPHONES_PROTECTED_PACKAGES from the environment or local.env.

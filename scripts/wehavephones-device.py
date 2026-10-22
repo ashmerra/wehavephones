@@ -304,17 +304,34 @@ def is_wine_process(name):
     return name.endswith('.exe') or name in ('wine', 'wine-preloader', 'wineserver')
 
 
+def is_wine_program(argv0):
+    """True when an argv[0] (a Windows or Unix path) names a Wine process."""
+    return is_wine_process(argv0.replace('\\', '/').rsplit('/', 1)[-1])
+
+
+# argv[0] of a thread other than the zombie leader, empty when none is left.
+THREAD_ARGV0 = 'for t in /proc/{pid}/task/*; do [ "${{t##*/}}" = {pid} ] && continue; tr "\\0" "\\n" < "$t/cmdline" | head -n 1; break; done'
+
+
 def stop_runtime(serial):
     """Force-stop the app and kill detached Wine processes; returns the PIDs it killed."""
     # A package-wide stop also affects Secure Folder (user 150). Only the base
     # app's test session is authorized by this helper.
     shell(serial, 'am force-stop --user 0 ' + PKG)
-    listing = shell(serial, 'run-as %s sh -c %s' % (PKG, shlex.quote('ps -o PID,PPID,NAME -u "$(id -u)"')))[1]
+    listing = shell(serial, 'run-as %s sh -c %s' % (PKG, shlex.quote('ps -o PID,PPID,S,NAME -u "$(id -u)"')))[1]
     orphans = []
     for line in listing.splitlines()[1:]:
-        fields = line.split(None, 2)
-        if len(fields) == 3 and fields[0].isdigit() and fields[1] == '1' and is_wine_process(fields[2]):
+        fields = line.split(None, 3)
+        if len(fields) != 4 or not fields[0].isdigit() or fields[1] != '1':
+            continue
+        if is_wine_process(fields[3]):
             orphans.append(fields[0])
+        elif fields[2] == 'Z':
+            # Blizzard renames its main thread, so a leftover Battle.net leader
+            # shows as "Main". Its remaining threads still report the exe.
+            argv0 = shell(serial, 'run-as %s sh -c %s' % (PKG, shlex.quote(THREAD_ARGV0.format(pid=fields[0]))))[1]
+            if is_wine_program(argv0.strip()):
+                orphans.append(fields[0])
     if orphans:
         shell(serial, 'run-as %s sh -c %s' % (PKG, shlex.quote('kill -9 %s 2>/dev/null || true' % ' '.join(orphans))))
     print('[wehavephones-device] runtime stopped%s' % (' (killed %s)' % ', '.join(orphans) if orphans else ''))
