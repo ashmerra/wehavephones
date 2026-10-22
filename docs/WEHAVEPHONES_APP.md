@@ -377,9 +377,11 @@ saved or entered password into it. That path is gone.)
 
 - Before every stage the memory transform is composed on top of the profile
   (`WeHavePhonesMemoryOverrides.apply`): it removes the debug `DXVK_HUD`, pins
-  `WRAPPER_MAX_IMAGE_COUNT=2` and `MESA_SHADER_CACHE_MAX_SIZE=256MB`, and applies
-  the game resolution from Settings to the container `screenSize` and the WoW
-  CVars of every detected product. The profile JSON itself is never modified.
+  `WRAPPER_MAX_IMAGE_COUNT=2` and `MESA_SHADER_CACHE_MAX_SIZE=256MB`, sets
+  `dxvk.maxChunkSize=32` in `DXVK_CONFIG` (other DXVK options there are kept),
+  and applies the game resolution from Settings to the container `screenSize`
+  and the WoW CVars of every detected product. The profile JSON itself is
+  never modified.
 - `mode = single` (the default) with **one-button Play** (always on, via
   `OneButtonLauncher`):
   1. Apply the configured `singleStageProfile` (`p10-ge34`) exactly as below,
@@ -753,6 +755,11 @@ The opt-in LOW memory mode is gone. What remains is default behavior:
   `Config.wtf` files) after every profile apply, with a snapshot and
   read-back. It also removes the old LOW `wehavephones-dxvk.conf` and its
   `DXVK_CONFIG_FILE` entry. It no longer writes the LOW CVar preset.
+- DXVK 2.3 suballocates GPU memory from 256 MB chunks by default. In Forever
+  on the S23 (D3D11, Elwynn Forest) DXVK held 1524 MB for 1155 MB of
+  resources, and the game process held about 370 MB more outside DXVK. With
+  32 MB chunks DXVK held 1332 to 1347 MB for the same use (16 MB chunks:
+  1286 MB). On phones GPU memory is system RAM.
 - `ProcessScanner.leftoverProcesses` also matches a zombie leader whose comm
   was renamed (Battle.net shows `Main`) by the command line its remaining
   threads report. One such Battle.net held 396 MB of swap across sessions.

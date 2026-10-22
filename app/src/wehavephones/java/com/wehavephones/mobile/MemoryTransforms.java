@@ -23,6 +23,7 @@ public final class MemoryTransforms {
     public static final String ENV_MESA_SHADER_CACHE_MAX_SIZE = "MESA_SHADER_CACHE_MAX_SIZE";
     public static final String ENV_WRAPPER_MAX_IMAGE_COUNT = "WRAPPER_MAX_IMAGE_COUNT";
     public static final String ENV_DXVK_CONFIG_FILE = "DXVK_CONFIG_FILE";
+    public static final String ENV_DXVK_CONFIG = "DXVK_CONFIG";
 
     /** DXVK config the removed low-memory mode generated; cleaned up when found. */
     public static final String LEGACY_DXVK_CONFIG_GUEST_PATH = "C:/wehavephones-dxvk.conf";
@@ -33,6 +34,13 @@ public final class MemoryTransforms {
     public static final String[] SCREEN_SIZES = {"1024x576", "1280x720", "1600x900", "1920x1080"};
     public static final String MESA_CACHE = "256MB";
     public static final String WRAPPER_IMAGE_COUNT = "2";
+    /**
+     * DXVK 2.3 suballocates GPU memory from 256 MB chunks. In Forever on the
+     * S23 they held about 370 MB more than the game used. 32 MB chunks cut
+     * that by about 180 MB, and 16 MB gained little more.
+     */
+    public static final String DXVK_CHUNK_OPTION = "dxvk.maxChunkSize";
+    public static final String DXVK_CHUNK_MB = "32";
 
     /** Keys always removed; {@link #envOverrides()} replaces the rest. */
     public static final String[] REMOVED_ENV_KEYS = {
@@ -51,8 +59,9 @@ public final class MemoryTransforms {
 
     /**
      * Compose the effective container env: remove the debug-only DXVK HUD and
-     * the old low-memory DXVK config, then replace the override keys (any
-     * other token, including a profile's own {@code DXVK_CONFIG_FILE}, is
+     * the old low-memory DXVK config, then replace the override keys and set
+     * the DXVK chunk size inside {@code DXVK_CONFIG} (any other token or DXVK
+     * option, including a profile's own {@code DXVK_CONFIG_FILE}, is
      * preserved). The result is byte-stable when applied repeatedly.
      */
     public static String composeEnv(String envVars) {
@@ -65,7 +74,33 @@ public final class MemoryTransforms {
             String updated = setEnvVar(result, entry.getKey(), entry.getValue());
             if (updated != null) result = updated;
         }
-        return result;
+        String dxvkConfig = withDxvkOption(parseEnv(result).get(ENV_DXVK_CONFIG), DXVK_CHUNK_OPTION, DXVK_CHUNK_MB);
+        String updated = setEnvVar(result, ENV_DXVK_CONFIG, dxvkConfig);
+        return updated != null ? updated : result;
+    }
+
+    /**
+     * {@code config} in {@code DXVK_CONFIG}'s {@code a=1;b=2} form with
+     * {@code option} set to {@code value} last. Other options keep their order.
+     */
+    public static String withDxvkOption(String config, String option, String value) {
+        StringBuilder builder = new StringBuilder();
+        if (config != null) {
+            for (String entry : config.split(";")) {
+                int index = entry.indexOf('=');
+                if (entry.trim().isEmpty() || (index >= 0 ? entry.substring(0, index) : entry).trim().equals(option)) continue;
+                if (builder.length() > 0) builder.append(';');
+                builder.append(entry);
+            }
+        }
+        if (builder.length() > 0) builder.append(';');
+        return builder.append(option).append('=').append(value).toString();
+    }
+
+    /** True when {@code envVars} carries the DXVK chunk size in {@code DXVK_CONFIG}. */
+    public static boolean hasDxvkChunkSize(String envVars) {
+        String config = parseEnv(envVars).get(ENV_DXVK_CONFIG);
+        return config != null && Arrays.asList(config.split(";")).contains(DXVK_CHUNK_OPTION + "=" + DXVK_CHUNK_MB);
     }
 
     /** A {@code WIDTHxHEIGHT} screen size, or {@link #DEFAULT_SCREEN_SIZE} when unset or malformed. */

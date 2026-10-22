@@ -258,6 +258,9 @@ public final class WeHavePhonesMemoryOverrides {
                 mismatches.add(entry.getKey() + "=" + entry.getValue());
             }
         }
+        if (!MemoryTransforms.hasDxvkChunkSize(envVars)) {
+            mismatches.add(MemoryTransforms.ENV_DXVK_CONFIG + " without " + MemoryTransforms.DXVK_CHUNK_OPTION);
+        }
         if (envVars.contains(MemoryTransforms.ENV_DXVK_HUD + "=")) {
             mismatches.add(MemoryTransforms.ENV_DXVK_HUD + " still present");
         }
