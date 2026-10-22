@@ -8,13 +8,15 @@ release. Only the `wehavephones` flavor uses it. The `runtime` flavor keeps the 
 
 At the start of a session the app matches the phone against the rules and gets a profile. The
 profile lists Vulkan drivers in order of preference, extra environment variables, whether the BCn
-compat layer is installed, and optionally the WoW graphics API flag.
+compat layer is installed, and optionally the WoW graphics API flag. Since rules v9 every profile
+runs WoW in D3D11 through DXVK. D3D11 needed less GPU work per frame than D3D12 on the Galaxy S23,
+and D3D12 through vkd3d-proton fails on Mali.
 
 - Galaxy S23 (Adreno 7xx): the pinned Turnip, with WoW in D3D11 through DXVK since rules v8. In WoW
   Forever on the S23, D3D11 needed about 20% fewer GPU cycles per frame than D3D12 through
   vkd3d-proton. The S23's GPU is thermally limited in long sessions, so that work decides the frame
   rate. `d3d12.dll` stays enabled because the app writes `GxApi D3D11` before each launch.
-- Pixel 8a and other Mali phones: the phone's own Vulkan driver with the BCn compat layer, as before.
+- Pixel 8a and other Mali phones: the phone's own Vulkan driver with the BCn compat layer, and D3D11.
 - Adreno 840 and newer (Snapdragon 8 Elite Gen 5): WoW in D3D11 with the system driver. On a OnePlus 15
   every offered Turnip build drew glitches in WoW Retail, while the Qualcomm drivers played in-world
   (issue #13). The Turnip builds stay in the driver picker. The profile also disables `d3d12.dll`
@@ -23,7 +25,7 @@ compat layer is installed, and optionally the WoW graphics API flag.
 - Other Adreno 8xx (800-839, such as the 825 in the Snapdragon 8s Gen 4 and the 830 in the Snapdragon
   8 Elite): WoW in D3D11, also without `d3d12.dll`, with Turnip V32-RP6sched, downloaded on first use,
   then Gen 8 Turnip V37, the pinned Turnip and the system driver.
-- Anything else falls through to a catch-all rule that matches the old behavior.
+- Anything else falls through to a catch-all rule that matches the old driver choice, with D3D11.
 
 Players can also pick a driver themselves on the Play screen (see [Driver picker](#driver-picker)).
 Adreno 840 phones are offered 23 drivers and other Adreno 8xx phones 21: the profile's own, plus
@@ -72,7 +74,8 @@ show how much a setup has been run on real hardware.
   them, and a choice may not repeat a driver from `drivers`. Apps older than the picker ignore it.
 - `env` is applied only for keys the container does not already set. The default
   `TU_DEBUG` logic still runs afterwards (`noconform`, always plus `sysmem`).
-- `wowApiArg: null` keeps `-d3d12` in `wow.bat` and the direct launch. A profile may set `-d3d11`.
+- `wowApiArg: null` keeps `-d3d12` in `wow.bat` and the direct launch. A profile may set `-d3d11`,
+  and every bundled profile does since rules v9.
   Battle.net's Play button starts the game without our command line, so before each launch the app
   also writes `-d3d11`/`-d3d12` as `SET GxApi` in the game's `Config.wtf`. A null flag leaves the
   saved `GxApi` alone, so a profile that drops `-d3d11` keeps D3D11 until the player changes it.

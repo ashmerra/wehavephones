@@ -250,17 +250,22 @@ public final class DeviceRulesSelfTest {
     }
 
     /**
-     * The v6 catalog plus the one intended v8 change: Adreno 7xx runs WoW in D3D11. Applying it to
-     * the baseline keeps every other v6 default frozen.
+     * The v6 catalog plus the intended graphics API changes: Adreno 7xx runs WoW in D3D11 since v8
+     * and every other profile that had no flag since v9. Applying them to the baseline keeps every
+     * other v6 default frozen.
      */
-    private static String withV8ApiChange(String v6Json) throws Exception {
+    private static String withD3D11ApiChange(String v6Json) throws Exception {
         JSONObject baseline = new JSONObject(v6Json);
-        JSONObject bundled7xx = new JSONObject(bundledJson).getJSONObject("profiles").getJSONObject("adreno-7xx");
-        eq("-d3d11", bundled7xx.getString("wowApiArg"), "v8 gives Adreno 7xx D3D11");
-        JSONObject a7xx = baseline.getJSONObject("profiles").getJSONObject("adreno-7xx");
-        check(a7xx.isNull("wowApiArg"), "v6 Adreno 7xx kept the default graphics API");
-        a7xx.put("wowApiArg", "-d3d11");
-        a7xx.put("notes", bundled7xx.getString("notes"));
+        JSONObject bundledProfiles = new JSONObject(bundledJson).getJSONObject("profiles");
+        JSONObject profiles = baseline.getJSONObject("profiles");
+        for (String name : new String[] {"adreno-7xx", "adreno-6xx", "adreno-other", "mali", "non-adreno-other", "unknown-gpu"}) {
+            JSONObject bundled = bundledProfiles.getJSONObject(name);
+            eq("-d3d11", bundled.getString("wowApiArg"), name + " runs WoW with D3D11");
+            JSONObject old = profiles.getJSONObject(name);
+            check(old.isNull("wowApiArg"), "v6 " + name + " kept the default graphics API");
+            old.put("wowApiArg", "-d3d11");
+            old.put("notes", bundled.getString("notes"));
+        }
         return baseline.toString();
     }
 
@@ -273,7 +278,7 @@ public final class DeviceRulesSelfTest {
     // The exact committed v6 catalog freezes every pre-existing default, rule and saved driver id.
     private static void testOptionalTurnipUpdate(String v6Json) throws Exception {
         eq(6, new JSONObject(v6Json).getInt("rulesVersion"), "baseline is the pre-update v6 catalog");
-        String baselineJson = withV8ApiChange(v6Json);
+        String baselineJson = withD3D11ApiChange(v6Json);
         JSONObject before = new JSONObject(baselineJson);
         JSONObject after = new JSONObject(bundledJson);
         DeviceRules oldRules = DeviceRules.parse(baselineJson);
@@ -1188,9 +1193,8 @@ public final class DeviceRulesSelfTest {
             else {
                 eq("system", plan.driverId, "system driver for \"" + renderer + "\"");
             }
-            // Adreno 7xx moved from D3D12 to D3D11 in rules v8. Every other GPU keeps the default flag.
-            String apiArg = renderer.matches("Adreno \\(TM\\) 7\\d\\d") ? "-d3d11" : null;
-            eq(apiArg, plan.wowApiArg, "default wowApiArg for \"" + renderer + "\"");
+            // Adreno 7xx moved from D3D12 to D3D11 in rules v8 and every other GPU in rules v9.
+            eq("-d3d11", plan.wowApiArg, "default wowApiArg for \"" + renderer + "\"");
         }
         GPUInformation.renderer = "";
 
@@ -1202,6 +1206,7 @@ public final class DeviceRulesSelfTest {
         GraphicsPlan pixel = select(newContext(), identity("Mali-G715", -1), new FakeProber(), available());
         check("system".equals(pixel.driverId) && !pixel.useAdrenotools && pixel.vulkanCompatLayer && pixel.env.isEmpty(),
             "Pixel 8a: system driver, compat layer, no extra env");
+        eq("-d3d11", pixel.wowApiArg, "Pixel 8a runs WoW with D3D11");
         // A user env value still wins: the integration applies profile env only for unset keys, so with
         // an empty profile env the legacy TU_DEBUG logic is untouched.
         eq("foo,sysmem", legacyTuDebug("foo"), "legacy TU_DEBUG logic");

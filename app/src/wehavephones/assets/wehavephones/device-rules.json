@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "rulesVersion": 8,
+  "rulesVersion": 9,
   "minAppVersionCode": 1,
   "updatedAt": "2026-10-21",
   "drivers": {
@@ -237,8 +237,8 @@
       ],
       "env": {},
       "vulkanCompatLayer": false,
-      "wowApiArg": null,
-      "notes": "Adreno 6xx: same driver choice as before device rules existed; no 6xx phone has been tested.",
+      "wowApiArg": "-d3d11",
+      "notes": "Adreno 6xx: same driver choice as before device rules existed, with D3D11 through DXVK since rules v9 like the Adreno 7xx. No 6xx phone has been tested.",
       "choices": [
         "turnip-gamesir-rutabaga-v3"
       ]
@@ -322,8 +322,8 @@
       ],
       "env": {},
       "vulkanCompatLayer": false,
-      "wowApiArg": null,
-      "notes": "Any other Adreno: same driver choice as before device rules existed."
+      "wowApiArg": "-d3d11",
+      "notes": "Any other Adreno: same driver choice as before device rules existed, with D3D11 through DXVK since rules v9."
     },
     "mali": {
       "status": "tested",
@@ -332,8 +332,8 @@
       ],
       "env": {},
       "vulkanCompatLayer": true,
-      "wowApiArg": null,
-      "notes": "Mali and Immortalis (Pixel 8a, Mali-G715): the system driver with the BCn compat layer."
+      "wowApiArg": "-d3d11",
+      "notes": "Mali and Immortalis (Pixel 8a, Mali-G715): the system driver with the BCn compat layer and D3D11 through DXVK. D3D12 through vkd3d-proton fails on the Pixel 8a."
     },
     "non-adreno-other": {
       "status": "untested",
@@ -342,8 +342,8 @@
       ],
       "env": {},
       "vulkanCompatLayer": true,
-      "wowApiArg": null,
-      "notes": "Xclipse, PowerVR and other non-Adreno GPUs: the system driver with the BCn compat layer, as before device rules existed."
+      "wowApiArg": "-d3d11",
+      "notes": "Xclipse, PowerVR and other non-Adreno GPUs: the system driver with the BCn compat layer, as before device rules existed, with D3D11 through DXVK since rules v9."
     },
     "unknown-gpu": {
       "status": "untested",
@@ -353,8 +353,8 @@
       ],
       "env": {},
       "vulkanCompatLayer": false,
-      "wowApiArg": null,
-      "notes": "No GL renderer string: treated as a possible Adreno like before device rules existed."
+      "wowApiArg": "-d3d11",
+      "notes": "No GL renderer string: treated as a possible Adreno like before device rules existed, with D3D11 through DXVK since rules v9."
     }
   },
   "rules": [

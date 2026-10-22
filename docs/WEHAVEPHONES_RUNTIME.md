@@ -55,8 +55,9 @@ phone from a computer, for manual tests.
 ### Graphics default
 
 The graphics setup is chosen per device by the [device rules](DEVICE_PROFILES.md). The rules
-bundled with the app reproduce the earlier defaults for the phones that were tested, except that
-Adreno 7xx phones run WoW in D3D11 through DXVK instead of D3D12 since rules v8.
+bundled with the app reproduce the earlier driver defaults for the phones that were tested. WoW
+runs in D3D11 through DXVK instead of D3D12 on Adreno 7xx since rules v8 and on every other GPU
+since rules v9.
 
 Adreno 6xx and 7xx (and an unknown GPU) use **Mesa Turnip 26.3.0-devel (git-1b51639c20)**,
 under the immutable driver ID `turnip26.3.0-devel-1b51639c20`. This is the exact
