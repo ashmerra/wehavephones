@@ -753,6 +753,9 @@ The opt-in LOW memory mode is gone. What remains is default behavior:
   `Config.wtf` files) after every profile apply, with a snapshot and
   read-back. It also removes the old LOW `wehavephones-dxvk.conf` and its
   `DXVK_CONFIG_FILE` entry. It no longer writes the LOW CVar preset.
+- `ProcessScanner.leftoverProcesses` also matches a zombie leader whose comm
+  was renamed (Battle.net shows `Main`) by the command line its remaining
+  threads report. One such Battle.net held 396 MB of swap across sessions.
 - `WeHavePhonesLauncherReaper` closes Battle.net/Agent/CEF on every launch path
   when Battle.net has not closed itself within 60 s of the game starting.
   `WeHavePhonesMemoryDiagnostics` feeds the diagnostics panel and the JSONL report.

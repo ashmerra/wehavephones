@@ -74,11 +74,47 @@ public final class ProcessScannerSelfTest {
             java.nio.file.Files.deleteIfExists(dir);
         }
         check("zombie without a guest name is not a leftover", !ProcessScanner.isLeftoverProcess(
-                new ProcessScanner.Entry(1, "", "sh", ""), 'Z'));
+                new ProcessScanner.Entry(1, "", "sh", ""), 'Z', ""));
         check("process with a command line is not a leftover", !ProcessScanner.isLeftoverProcess(
-                new ProcessScanner.Entry(1, "C:\\windows\\system32\\rpcss.exe", "rpcss.exe"), 'Z'));
+                new ProcessScanner.Entry(1, "C:\\windows\\system32\\rpcss.exe", "rpcss.exe"), 'Z', ""));
         check("sleeping Wine service is not a leftover", !ProcessScanner.isLeftoverProcess(
-                new ProcessScanner.Entry(1, "", "plugplay.exe", ""), 'S'));
+                new ProcessScanner.Entry(1, "", "plugplay.exe", ""), 'S', ""));
+        check("renamed zombie whose threads run Battle.net is a leftover", ProcessScanner.isLeftoverProcess(
+                new ProcessScanner.Entry(1, "", "Main", ""), 'Z', "Battle.net.exe\u0000--disable-gpu\u0000"));
+        check("renamed zombie with no thread left is not a leftover", !ProcessScanner.isLeftoverProcess(
+                new ProcessScanner.Entry(1, "", "Main", ""), 'Z', ""));
+        check("zombie shell whose arguments mention an exe is not a leftover", !ProcessScanner.isLeftoverProcess(
+                new ProcessScanner.Entry(1, "", "sh", ""), 'Z', "/system/bin/sh\u0000-c\u0000Wow.exe\u0000"));
+        checkRenamedLeftover();
+    }
+
+    /**
+     * The S23 shape: Battle.net's leader thread renames itself "Main" and
+     * exits while another thread lives on, so the leader is a zombie with no
+     * command line. python3 reproduces it with prctl(PR_SET_NAME) and
+     * pthread_exit on the main thread. The worker ends the process after 5 s.
+     */
+    private static void checkRenamedLeftover() throws Exception {
+        String script = "import ctypes, threading, time\n"
+                + "libc = ctypes.CDLL(None)\n"
+                + "threading.Thread(target=time.sleep, args=(5,)).start()\n"
+                + "libc.prctl(15, b'Main', 0, 0, 0)\n"
+                + "libc.pthread_exit(None)\n";
+        java.lang.Process holder = new ProcessBuilder("bash", "-c", "exec -a \"$0\" python3 -c \"$1\"",
+                "C:\\Program Files (x86)\\Battle.net\\Battle.net.exe", script).start();
+        try {
+            TimeUnit.MILLISECONDS.sleep(800);
+            int pid = (int)holder.pid();
+            check("renamed leader is a zombie", ProcessScanner.processState(pid) == 'Z');
+            boolean listed = false;
+            for (ProcessScanner.Entry entry : ProcessScanner.leftoverProcesses()) {
+                if (entry.pid == pid) listed = true;
+            }
+            check("renamed Battle.net zombie with a live thread is a leftover", listed);
+        }
+        finally {
+            holder.destroyForcibly();
+        }
     }
 
     /** Process shapes seen on the S23 (ps ARGS + comm); flags must not change the verdict. */

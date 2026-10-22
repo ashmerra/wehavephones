@@ -132,7 +132,8 @@ public final class ProcessScanner {
     public static List<Entry> leftoverProcesses() {
         ArrayList<Entry> leftovers = new ArrayList<>();
         for (Entry entry : sameUidProcesses()) {
-            if (isLeftoverProcess(entry, processState(entry.pid))) leftovers.add(entry);
+            char state = processState(entry.pid);
+            if (isLeftoverProcess(entry, state, state == 'Z' ? liveThreadCommand(entry.pid) : "")) leftovers.add(entry);
         }
         return leftovers;
     }
@@ -147,11 +148,31 @@ public final class ProcessScanner {
         return killed;
     }
 
-    /** A zombie leader (no command line) of a guest process. */
-    static boolean isLeftoverProcess(Entry entry, char state) {
+    /**
+     * A zombie leader (no command line) of a guest process. Blizzard programs
+     * rename their main thread, so a Battle.net leftover's comm is "Main" (one
+     * held 396 MB of swap on the S23 across sessions). The command line its
+     * remaining threads still report ({@code threadCommand}) names the exe.
+     */
+    static boolean isLeftoverProcess(Entry entry, char state, String threadCommand) {
         if (entry == null || state != 'Z' || !entry.cmdline.isEmpty()) return false;
         String name = entry.name.toLowerCase(Locale.ROOT);
-        return name.contains(".exe") || name.startsWith("wine");
+        if (name.contains(".exe") || name.startsWith("wine")) return true;
+        int argEnd = threadCommand != null ? threadCommand.indexOf('\u0000') : -1;
+        String argv0 = threadCommand == null ? "" : argEnd >= 0 ? threadCommand.substring(0, argEnd) : threadCommand;
+        return program(new Entry(entry.pid, argv0, "", argv0)).toLowerCase(Locale.ROOT).endsWith(".exe");
+    }
+
+    /** The raw command line of a thread other than the (zombie) leader, or "" when none is left. */
+    static String liveThreadCommand(int pid) {
+        File[] tasks = new File("/proc/" + pid + "/task").listFiles();
+        if (tasks == null) return "";
+        for (File task : tasks) {
+            if (task.getName().equals(String.valueOf(pid))) continue;
+            String command = readText(task.getPath() + "/cmdline");
+            if (!command.isEmpty()) return command;
+        }
+        return "";
     }
 
     /** The state letter from /proc/[pid]/stat, or '?' when unreadable. */
