@@ -137,7 +137,9 @@ public final class VirtualGamepadController implements InputManager.InputDeviceL
 
     private static String describe(ControlsProfile profile, InputControlsView view) {
         if (profile == null) return "none";
-        return profile.getName() + " (#" + profile.id + (profile.isVirtualGamepad() ? ", gamepad profile" : "")
+        // The view loads elements on first draw, and with them the gamepad flag.
+        String kind = !profile.isElementsLoaded() ? ", not drawn yet" : profile.isVirtualGamepad() ? ", gamepad profile" : "";
+        return profile.getName() + " (#" + profile.id + kind
                 + (view.getVisibility() == View.VISIBLE && view.isShowTouchscreenControls() ? ", visible)" : ", hidden)");
     }
 

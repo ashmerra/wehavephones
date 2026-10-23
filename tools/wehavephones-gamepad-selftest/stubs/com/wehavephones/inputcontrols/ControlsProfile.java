@@ -8,6 +8,7 @@ public class ControlsProfile {
     public ControlsProfile(int id, String name) { this.id = id; this.name = name; }
     public String getName() { return name; }
     public boolean isVirtualGamepad() { return name.startsWith("Virtual Gamepad"); }
+    public boolean isElementsLoaded() { return true; }
     public GamepadState getGamepadState() { return state; }
     public void loadElements(InputControlsView view) { reloads++; }
 }
