@@ -197,7 +197,7 @@ public class GamepadSelfTest {
         controller.onControlsChosen(null, true);
         controller.refresh();
         check(activity.view.profile == copy, "desktop pick of a gamepad profile stays after polling");
-        check(VirtualGamepadController.describeSession().contains("Mode: manual"),
+        check(VirtualGamepadController.describeSession(activity).contains("Mode: manual"),
                 "diagnostics report manual mode");
 
         set(controller, "gameRunning", true);

@@ -37,8 +37,10 @@ public final class VirtualGamepadController implements InputManager.InputDeviceL
     private boolean gameRunning;
     private ControlsProfile virtualProfile;
     private boolean manual;
-    private static volatile String sessionState = "";
-    private static volatile String lastChange = "";
+    // Persisted because the app process restarts when a session ends, before diagnostics are read.
+    private static final String KEY_STATE = "wehavephones_controls_state";
+    private static final String KEY_LAST_CHANGE = "wehavephones_controls_last_change";
+    private String sessionState = "";
 
     public VirtualGamepadController(XServerDisplayActivity activity) {
         this.activity = activity;
@@ -49,6 +51,7 @@ public final class VirtualGamepadController implements InputManager.InputDeviceL
     public boolean isFor(XServerDisplayActivity activity) { return this.activity == activity; }
 
     public void start() {
+        preferences.edit().putString(KEY_LAST_CHANGE, "").apply();
         inputManager.registerInputDeviceListener(this, handler);
         preferences.registerOnSharedPreferenceChangeListener(this);
         // Process scanning stays off the UI thread, including while Battle.net launches WoW.
@@ -81,9 +84,13 @@ public final class VirtualGamepadController implements InputManager.InputDeviceL
         if (stopped || activity.isFinishing() || activity.isDestroyed() || view == null) return;
         if (!manual) applyAutomatic(view);
         activity.getWinHandler().refreshGamepadController();
-        sessionState = "Mode: " + (manual ? "manual (picked in Input Controls)" : "automatic")
+        String state = "Mode: " + (manual ? "manual (picked in Input Controls)" : "automatic")
                 + "\nOverlay: " + describe(view.getProfile(), view)
                 + "\nWoW running: " + (gameRunning ? "yes" : "no") + "\n";
+        if (!state.equals(sessionState)) {
+            sessionState = state;
+            preferences.edit().putString(KEY_STATE, state).apply();
+        }
     }
 
     /** The user confirmed Input Controls. A changed profile or visibility stops automatic show/hide. */
@@ -143,16 +150,18 @@ public final class VirtualGamepadController implements InputManager.InputDeviceL
                 + (view.getVisibility() == View.VISIBLE && view.isShowTouchscreenControls() ? ", visible)" : ", hidden)");
     }
 
-    private static void note(String change) {
-        lastChange = new SimpleDateFormat("HH:mm:ss", Locale.US).format(new Date()) + " " + change;
+    private void note(String change) {
+        String stamped = new SimpleDateFormat("HH:mm:ss", Locale.US).format(new Date()) + " " + change;
+        preferences.edit().putString(KEY_LAST_CHANGE, stamped).apply();
         Log.i("VirtualGamepad", change);
     }
 
-    /** Controls state of the current or last session in this app process, for diagnostics. */
-    public static String describeSession() {
-        String state = sessionState;
-        if (state.isEmpty()) return "No game session since the app started\n";
-        String change = lastChange;
+    /** Controls state of the current or last session, for diagnostics. */
+    public static String describeSession(Context context) {
+        SharedPreferences prefs = WeHavePhonesConfig.prefs(context);
+        String state = prefs.getString(KEY_STATE, "");
+        if (state.isEmpty()) return "No session recorded\n";
+        String change = prefs.getString(KEY_LAST_CHANGE, "");
         return state + "Last change: " + (change.isEmpty() ? "none" : change) + "\n";
     }
 

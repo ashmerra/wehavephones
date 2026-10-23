@@ -182,7 +182,7 @@ public final class WeHavePhonesDiagnostics {
             count++;
         }
         if (count == 0) builder.append("Game controllers: none\n");
-        builder.append(VirtualGamepadController.describeSession());
+        builder.append(VirtualGamepadController.describeSession(context));
         return builder.toString();
     }
 
