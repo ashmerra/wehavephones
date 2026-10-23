@@ -1,5 +1,6 @@
 package com.wehavephones;
 
+import com.wehavephones.inputcontrols.ControlsProfile;
 import com.wehavephones.mobile.BattleNetSignInWatcher;
 import com.wehavephones.mobile.GlueControllerBridge;
 import com.wehavephones.mobile.WowExitWatcher;
@@ -24,6 +25,11 @@ public final class SessionInputExtras {
 
     public static void onSessionResumed(XServerDisplayActivity activity) {
         if (gamepad != null && gamepad.isFor(activity)) gamepad.refresh();
+    }
+
+    /** Input Controls was confirmed (or a shortcut applied a profile). Keeps a changed choice. */
+    public static void onControlsChosen(XServerDisplayActivity activity, ControlsProfile previous, boolean previousShown) {
+        if (gamepad != null && gamepad.isFor(activity)) gamepad.onControlsChosen(previous, previousShown);
     }
 
     public static void onSessionDestroyed(XServerDisplayActivity activity) {

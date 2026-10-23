@@ -946,7 +946,10 @@ import java.util.concurrent.Executors;
             String controlsProfile = shortcut.getExtra("controlsProfile");
             if (!controlsProfile.isEmpty()) {
                 ControlsProfile profile = inputControlsManager.getProfile(Integer.parseInt(controlsProfile));
-                if (profile != null) showInputControls(profile);
+                if (profile != null) {
+                    showInputControls(profile);
+                    SessionInputExtras.onControlsChosen(this, null, true);
+                }
             }
         }
 
@@ -1275,6 +1278,8 @@ import java.util.concurrent.Executors;
         });
 
         dialog.setOnConfirmCallback(() -> {
+            ControlsProfile previousProfile = inputControlsView.getProfile();
+            boolean previousShown = inputControlsView.isShowTouchscreenControls();
             xServer.setRelativeMouseMovement(cbRelativeMouseMovement.isChecked());
             inputControlsView.setShowTouchscreenControls(cbShowTouchscreenControls.isChecked());
             boolean tapDragGestureEnabled = cbIcpTapDragMouseGestureRuntime.isChecked();
@@ -1288,6 +1293,7 @@ import java.util.concurrent.Executors;
                 showInputControls(inputControlsManager.getProfiles().get(position - 1));
             }
             else hideInputControls();
+            SessionInputExtras.onControlsChosen(this, previousProfile, previousShown);
         });
 
         dialog.show();

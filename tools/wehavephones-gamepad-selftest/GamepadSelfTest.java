@@ -156,12 +156,82 @@ public class GamepadSelfTest {
             check(activity.view.profile != null && activity.view.profile.id == 9,
                     "deleted stock profile restored under a new id");
             restored.stop();
+            checkManualChoice(activity);
         } finally {
             controller.stop();
             Files.deleteIfExists(evdev.resolve("event0"));
             Files.deleteIfExists(evdev);
         }
         System.out.println("GamepadSelfTest: PASS (" + checks + " checks)");
+    }
+
+    /** Input Controls picks (issue #25) must survive polling, controller hotplug and the opt-out. */
+    private static void checkManualChoice(XServerDisplayActivity activity) throws Exception {
+        activity.hideInputControls();
+        ExternalController.devices.clear();
+        VirtualGamepadController controller = new VirtualGamepadController(activity);
+        controller.start();
+        ControlsProfile copy = new ControlsProfile(4, "Virtual Gamepad (copy)");
+        ControlsProfile keyboard = new ControlsProfile(5, "Keyboard");
+        activity.profiles.profiles.add(copy);
+        activity.profiles.profiles.add(keyboard);
+
+        controller.refresh();
+        controller.onControlsChosen(null, true); // OK without changes keeps automatic mode.
+        set(controller, "gameRunning", true);
+        controller.refresh();
+        check(activity.view.profile != null && activity.view.profile.getName().equals("Virtual Gamepad"),
+                "unchanged confirm keeps automatic controls");
+        ControlsProfile automatic = activity.view.profile;
+        controller.onControlsChosen(automatic, true);
+        new ExternalController(85);
+        activity.inputManager.listener.onInputDeviceAdded(85);
+        check(activity.view.profile == null, "confirm without changes keeps controller handoff");
+        ExternalController.devices.clear();
+        activity.inputManager.listener.onInputDeviceRemoved(85);
+
+        set(controller, "gameRunning", false);
+        controller.refresh();
+        check(activity.view.profile == null, "automatic controls leave the desktop");
+        activity.showInputControls(copy);
+        controller.onControlsChosen(null, true);
+        controller.refresh();
+        check(activity.view.profile == copy, "desktop pick of a gamepad profile stays after polling");
+        check(VirtualGamepadController.describeSession().contains("Mode: manual"),
+                "diagnostics report manual mode");
+
+        set(controller, "gameRunning", true);
+        controller.refresh();
+        check(activity.view.profile == copy, "game start keeps the picked profile");
+        new ExternalController(86);
+        activity.inputManager.listener.onInputDeviceAdded(86);
+        check(activity.view.profile == copy, "controller connect keeps the picked profile");
+        WeHavePhonesConfig.setVirtualGamepadDisabled(activity, true);
+        check(activity.view.profile == copy, "opt-out keeps the picked profile");
+        WeHavePhonesConfig.setVirtualGamepadDisabled(activity, false);
+        ExternalController.devices.clear();
+        activity.inputManager.listener.onInputDeviceRemoved(86);
+
+        copy.getGamepadState().setPressed(0, true);
+        int reloads = copy.reloads;
+        activity.showInputControls(keyboard);
+        controller.onControlsChosen(copy, true);
+        controller.refresh();
+        check(activity.view.profile == keyboard, "in-game keyboard pick is not replaced by the gamepad");
+        check(copy.getGamepadState().buttons == 0 && copy.reloads == reloads + 1,
+                "switching away releases the picked gamepad");
+        activity.hideInputControls();
+        controller.onControlsChosen(keyboard, true);
+        controller.refresh();
+        check(activity.view.profile == null, "in-game Disabled pick stays hidden");
+        controller.stop();
+
+        VirtualGamepadController next = new VirtualGamepadController(activity);
+        set(next, "gameRunning", true);
+        next.refresh();
+        check(activity.view.profile != null && activity.view.profile.isVirtualGamepad(),
+                "a new session starts automatic again");
+        next.stop();
     }
 
     private static void checkReleased(Path dir) throws Exception {

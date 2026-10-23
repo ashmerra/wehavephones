@@ -2,11 +2,13 @@ package com.wehavephones.mobile;
 
 import android.content.Context;
 import android.os.Environment;
+import android.view.InputDevice;
 
 import com.wehavephones.BuildConfig;
 import com.wehavephones.container.Container;
 import com.wehavephones.core.FileUtils;
 import com.wehavephones.core.GraphicsPlan;
+import com.wehavephones.inputcontrols.ExternalController;
 import com.wehavephones.mobile.devices.DeviceIdentity;
 import com.wehavephones.mobile.devices.DeviceProfileSelector;
 import com.wehavephones.mobile.devices.DeviceReport;
@@ -94,6 +96,9 @@ public final class WeHavePhonesDiagnostics {
         }
         builder.append(memInfo());
 
+        builder.append("\n-- Controls --\n");
+        builder.append(controls(context));
+
         builder.append("\n-- Logs --\n");
         File wineLog = new File(new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "WeHavePhones"), "wine.log");
         builder.append("wine.log: ").append(wineLog.getPath()).append(wineLog.isFile() ? " (" + wineLog.length() + " bytes)" : " (missing)").append('\n');
@@ -159,6 +164,26 @@ public final class WeHavePhonesDiagnostics {
         DeviceReport.putLines(fields, identity.toReportText());
         fields.put("vk_device", vkDevice);
         return fields;
+    }
+
+    /** The opt-out, every device counted as a game controller and the session's on-screen controls. */
+    static String controls(Context context) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("Disable virtual gamepad: ")
+                .append(WeHavePhonesConfig.isVirtualGamepadDisabled(context) ? "on" : "off").append('\n');
+        int count = 0;
+        for (int deviceId : InputDevice.getDeviceIds()) {
+            InputDevice device = InputDevice.getDevice(deviceId);
+            if (!ExternalController.isGameController(device)) continue;
+            builder.append("Game controller: ").append(device.getName())
+                    .append(String.format(java.util.Locale.US, " vendor=0x%04x product=0x%04x sources=0x%08x",
+                            device.getVendorId(), device.getProductId(), device.getSources()))
+                    .append('\n');
+            count++;
+        }
+        if (count == 0) builder.append("Game controllers: none\n");
+        builder.append(VirtualGamepadController.describeSession());
+        return builder.toString();
     }
 
     private static String choiceLabel(String driverId) {
