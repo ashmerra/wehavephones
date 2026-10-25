@@ -1,9 +1,9 @@
 package com.wehavephones.mobile;
 
 import android.app.AlertDialog;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.os.Environment;
-import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,6 +23,9 @@ import java.util.Arrays;
 
 public class WeHavePhonesSettingsFragment extends Fragment {
     private WeHavePhonesActivity activity;
+    private Spinner resolutionSpinner;
+    /** The screen the resolution list was built for. */
+    private String resolutionScreen;
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -35,7 +38,8 @@ public class WeHavePhonesSettingsFragment extends Fragment {
         activity = (WeHavePhonesActivity)getActivity();
         setUpGamePreferences(view);
 
-        setUpResolution(view.findViewById(R.id.SPGameResolution));
+        resolutionSpinner = view.findViewById(R.id.SPGameResolution);
+        setUpResolution(resolutionSpinner);
 
         CheckBox disableGamepad = view.findViewById(R.id.CBDisableVirtualGamepad);
         disableGamepad.setChecked(WeHavePhonesConfig.isVirtualGamepadDisabled(activity));
@@ -99,10 +103,28 @@ public class WeHavePhonesSettingsFragment extends Fragment {
         });
     }
 
+    /**
+     * The activity handles screen changes itself, so folding or unfolding
+     * keeps this fragment. Rebuild the list for the new screen.
+     */
+    @Override
+    public void onConfigurationChanged(@NonNull Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        if (resolutionSpinner == null || activity == null) return;
+        String screen = WeHavePhonesConfig.currentNativeScreenSize(activity);
+        if (screen != null && !screen.equals(resolutionScreen)) setUpResolution(resolutionSpinner);
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        resolutionSpinner = null;
+    }
+
     private void setUpResolution(Spinner spinner) {
-        DisplayMetrics metrics = new DisplayMetrics();
-        activity.getWindowManager().getDefaultDisplay().getRealMetrics(metrics);
-        final String nativeSize = MemoryTransforms.nativeScreenSize(metrics.widthPixels, metrics.heightPixels);
+        spinner.setOnItemSelectedListener(null);
+        final String nativeSize = WeHavePhonesConfig.currentNativeScreenSize(activity);
+        resolutionScreen = nativeSize;
         final String[] sizes = MemoryTransforms.screenSizeOptions(nativeSize);
         ArrayList<String> labels = new ArrayList<>();
         for (String size : sizes) {

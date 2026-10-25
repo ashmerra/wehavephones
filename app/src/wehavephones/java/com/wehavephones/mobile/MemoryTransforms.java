@@ -114,6 +114,14 @@ public final class MemoryTransforms {
     }
 
     /**
+     * The resolution saved for the screen in use, else the single one older
+     * versions saved for every screen, else {@link #DEFAULT_SCREEN_SIZE}.
+     */
+    public static String savedScreenSize(String forScreen, String legacy) {
+        return screenSizeOrDefault(forScreen != null ? forScreen : legacy);
+    }
+
+    /**
      * The device's own display size as a landscape {@code WIDTHxHEIGHT} (long
      * side first, since the game always runs in landscape), or null when the
      * size is unknown or outside what {@link #screenSizeOrDefault} accepts.

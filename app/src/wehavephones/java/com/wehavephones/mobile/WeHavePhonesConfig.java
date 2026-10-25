@@ -2,6 +2,9 @@ package com.wehavephones.mobile;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.hardware.display.DisplayManager;
+import android.util.DisplayMetrics;
+import android.view.Display;
 
 import androidx.preference.PreferenceManager;
 
@@ -11,7 +14,10 @@ public final class WeHavePhonesConfig {
     private static final String KEY_GAME_REGION_OVERRIDE = "wehavephones_game_region_override_";
     private static final String KEY_INITIAL_SETUP_COMPLETE = "wehavephones_initial_setup_complete";
     public static final String KEY_RUNTIME_PROFILE = "wehavephones_runtime_profile";
+    /** The single game resolution older versions saved, used for screens without their own. */
     public static final String KEY_GAME_SCREEN_SIZE = "wehavephones_game_screen_size";
+    /** Followed by a screen's native size: the game resolution chosen on that screen. */
+    public static final String KEY_GAME_SCREEN_SIZE_FOR = "wehavephones_game_screen_size_";
     public static final String KEY_MEMORY_SNAPSHOT = "wehavephones_memory_snapshot";
     public static final String KEY_CONTAINER_ID = "wehavephones_container_id";
     public static final String KEY_PRODUCT_DIR = "wehavephones_product_dir";
@@ -64,13 +70,37 @@ public final class WeHavePhonesConfig {
         prefs(context).edit().putString(KEY_RUNTIME_PROFILE, profile).apply();
     }
 
-    /** Game resolution (container screen size), low by default to save memory. */
+    /**
+     * Game resolution (container screen size) for the screen in use, low by
+     * default to save memory. Each screen of a foldable keeps its own choice.
+     */
     public static String getGameScreenSize(Context context) {
-        return MemoryTransforms.screenSizeOrDefault(prefs(context).getString(KEY_GAME_SCREEN_SIZE, null));
+        SharedPreferences prefs = prefs(context);
+        String nativeSize = currentNativeScreenSize(context);
+        return MemoryTransforms.savedScreenSize(
+                nativeSize != null ? prefs.getString(KEY_GAME_SCREEN_SIZE_FOR + nativeSize, null) : null,
+                prefs.getString(KEY_GAME_SCREEN_SIZE, null));
     }
 
+    /** Saves {@code screenSize} for the screen in use only. */
     public static void setGameScreenSize(Context context, String screenSize) {
-        prefs(context).edit().putString(KEY_GAME_SCREEN_SIZE, MemoryTransforms.screenSizeOrDefault(screenSize)).apply();
+        String nativeSize = currentNativeScreenSize(context);
+        prefs(context).edit().putString(nativeSize != null ? KEY_GAME_SCREEN_SIZE_FOR + nativeSize : KEY_GAME_SCREEN_SIZE,
+                MemoryTransforms.screenSizeOrDefault(screenSize)).apply();
+    }
+
+    /**
+     * The native size of the screen in use, as {@link MemoryTransforms#nativeScreenSize}
+     * gives it, or null when unknown. A foldable reports the inner or cover
+     * screen depending on how it is held.
+     */
+    public static String currentNativeScreenSize(Context context) {
+        DisplayManager displays = (DisplayManager)context.getSystemService(Context.DISPLAY_SERVICE);
+        Display display = displays != null ? displays.getDisplay(Display.DEFAULT_DISPLAY) : null;
+        if (display == null) return null;
+        DisplayMetrics metrics = new DisplayMetrics();
+        display.getRealMetrics(metrics);
+        return MemoryTransforms.nativeScreenSize(metrics.widthPixels, metrics.heightPixels);
     }
 
     public static String getMemorySnapshot(Context context) {

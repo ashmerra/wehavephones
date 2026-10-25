@@ -118,6 +118,10 @@ public final class MemoryLogicSelfTest {
         check("screen_options_no_native",
                 MemoryTransforms.screenSizeOptions(null).length == MemoryTransforms.SCREEN_SIZES.length, "");
 
+        check("screen_saved_for_screen", "1560x720".equals(MemoryTransforms.savedScreenSize("1560x720", "1280x720")), "");
+        check("screen_saved_legacy", "1280x720".equals(MemoryTransforms.savedScreenSize(null, "1280x720")), "");
+        check("screen_saved_none", "1024x576".equals(MemoryTransforms.savedScreenSize(null, null)), "");
+        check("screen_saved_malformed", "1024x576".equals(MemoryTransforms.savedScreenSize("big", "1280x720")), "");
         String wide = String.join(",", MemoryTransforms.fittedScreenSizes("2772x1272"));
         check("screen_fitted_wide", "1256x576,1570x720,1962x900".equals(wide), wide);
         String squarish = String.join(",", MemoryTransforms.fittedScreenSizes("2184x1968"));

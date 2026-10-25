@@ -752,8 +752,14 @@ the installed addon list (`InstalledAddon`) without holding an activity.
 
 The opt-in LOW memory mode is gone. What remains is default behavior:
 
-- `WeHavePhonesConfig` persists the game resolution (`wehavephones_game_screen_size`,
-  default 1024x576) and the last memory snapshot name.
+- `WeHavePhonesConfig` persists the game resolution for each screen
+  (`wehavephones_game_screen_size_<native size>`, so the inner and cover
+  screens of a foldable keep their own) and the last memory snapshot name.
+  Play reads the choice for the screen in use. A screen without its own uses
+  the single `wehavephones_game_screen_size` older versions saved, then
+  1024x576. Settings rebuilds the list when the screen changes while it is
+  open. A game already running keeps its resolution when the phone is
+  folded or unfolded.
 - `WeHavePhonesMemoryOverrides` applies the always-on env trims and the game
   resolution (container `screenSize` + `GxMaximize 1` and
   `GxWindowedResolution` in existing
