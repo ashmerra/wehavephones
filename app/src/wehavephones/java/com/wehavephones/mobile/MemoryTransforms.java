@@ -32,6 +32,11 @@ public final class MemoryTransforms {
     /** Games start at this resolution; Settings can raise it. */
     public static final String DEFAULT_SCREEN_SIZE = "1024x576";
     public static final String[] SCREEN_SIZES = {"1024x576", "1280x720", "1600x900", "1920x1080"};
+    /**
+     * Heights of the sizes shaped like the device's screen, so the game fills
+     * a wider or squarer screen than 16:9 without black bars (#26, #27).
+     */
+    public static final int[] FITTED_HEIGHTS = {576, 720, 900};
     public static final String MESA_CACHE = "256MB";
     public static final String WRAPPER_IMAGE_COUNT = "2";
     /**
@@ -118,9 +123,35 @@ public final class MemoryTransforms {
         return size.equals(screenSizeOrDefault(size)) ? size : null;
     }
 
-    /** The fixed {@link #SCREEN_SIZES} plus the native size last, when known and not already listed. */
+    /**
+     * Sizes with {@code nativeSize}'s aspect ratio at each of
+     * {@link #FITTED_HEIGHTS} below the native height, widths rounded to an
+     * even number. Empty when the native size is unknown or within 2% of
+     * 16:9, which {@link #SCREEN_SIZES} already fits.
+     */
+    public static String[] fittedScreenSizes(String nativeSize) {
+        ArrayList<String> sizes = new ArrayList<>();
+        if (nativeSize == null || !nativeSize.equals(screenSizeOrDefault(nativeSize))) return new String[0];
+        String[] parts = nativeSize.split("x");
+        int nativeWidth = Integer.parseInt(parts[0]);
+        int nativeHeight = Integer.parseInt(parts[1]);
+        double aspect = (double)nativeWidth / nativeHeight;
+        if (Math.abs(aspect / (16.0 / 9.0) - 1.0) < 0.02) return new String[0];
+        for (int height : FITTED_HEIGHTS) {
+            if (height >= nativeHeight) break;
+            String size = Math.round(height * aspect / 2.0) * 2 + "x" + height;
+            if (!Arrays.asList(SCREEN_SIZES).contains(size)) sizes.add(size);
+        }
+        return sizes.toArray(new String[0]);
+    }
+
+    /**
+     * The fixed {@link #SCREEN_SIZES}, then the {@link #fittedScreenSizes},
+     * then the native size last, when known and not already listed.
+     */
     public static String[] screenSizeOptions(String nativeSize) {
         ArrayList<String> options = new ArrayList<>(Arrays.asList(SCREEN_SIZES));
+        options.addAll(Arrays.asList(fittedScreenSizes(nativeSize)));
         if (nativeSize != null && !options.contains(nativeSize)) options.add(nativeSize);
         return options.toArray(new String[0]);
     }

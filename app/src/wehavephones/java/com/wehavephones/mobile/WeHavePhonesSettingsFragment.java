@@ -20,6 +20,7 @@ import com.wehavephones.R;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 public class WeHavePhonesSettingsFragment extends Fragment {
     private WeHavePhonesActivity activity;
@@ -104,12 +105,15 @@ public class WeHavePhonesSettingsFragment extends Fragment {
         activity.getWindowManager().getDefaultDisplay().getRealMetrics(metrics);
         final String nativeSize = MemoryTransforms.nativeScreenSize(metrics.widthPixels, metrics.heightPixels);
         final String[] sizes = MemoryTransforms.screenSizeOptions(nativeSize);
+        List<String> fitted = Arrays.asList(MemoryTransforms.fittedScreenSizes(nativeSize));
         ArrayList<String> labels = new ArrayList<>();
         for (String size : sizes) {
             if (size.equals(MemoryTransforms.DEFAULT_SCREEN_SIZE)) {
                 labels.add(getString(R.string.wehavephones_settings_resolution_default, size));
             } else if (size.equals(nativeSize)) {
                 labels.add(getString(R.string.wehavephones_settings_resolution_native, size));
+            } else if (fitted.contains(size)) {
+                labels.add(getString(R.string.wehavephones_settings_resolution_fitted, size));
             } else {
                 labels.add(size);
             }

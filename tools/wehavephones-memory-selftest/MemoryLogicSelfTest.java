@@ -110,12 +110,30 @@ public final class MemoryLogicSelfTest {
         check("screen_native_landscape", "2340x1080".equals(MemoryTransforms.nativeScreenSize(1080, 2340)), "");
         check("screen_native_unknown", MemoryTransforms.nativeScreenSize(0, 0) == null, "");
         String[] options = MemoryTransforms.screenSizeOptions("2340x1080");
-        check("screen_options_native_last", options.length == MemoryTransforms.SCREEN_SIZES.length + 1
+        check("screen_options_native_last", options.length == MemoryTransforms.SCREEN_SIZES.length
+                + MemoryTransforms.fittedScreenSizes("2340x1080").length + 1
                 && "2340x1080".equals(options[options.length - 1]), String.join(",", options));
         check("screen_options_native_listed",
                 MemoryTransforms.screenSizeOptions("1920x1080").length == MemoryTransforms.SCREEN_SIZES.length, "");
         check("screen_options_no_native",
                 MemoryTransforms.screenSizeOptions(null).length == MemoryTransforms.SCREEN_SIZES.length, "");
+
+        String wide = String.join(",", MemoryTransforms.fittedScreenSizes("2772x1272"));
+        check("screen_fitted_wide", "1256x576,1570x720,1962x900".equals(wide), wide);
+        String squarish = String.join(",", MemoryTransforms.fittedScreenSizes("2184x1968"));
+        check("screen_fitted_squarish", "640x576,800x720,998x900".equals(squarish), squarish);
+        String small = String.join(",", MemoryTransforms.fittedScreenSizes("1600x720"));
+        check("screen_fitted_below_native", "1280x576".equals(small), small);
+        check("screen_fitted_16_9", MemoryTransforms.fittedScreenSizes("2560x1440").length == 0
+                && MemoryTransforms.fittedScreenSizes("2400x1350").length == 0, "");
+        check("screen_fitted_unknown", MemoryTransforms.fittedScreenSizes(null).length == 0
+                && MemoryTransforms.fittedScreenSizes("big").length == 0, "");
+        for (String size : MemoryTransforms.fittedScreenSizes("2340x1080")) {
+            check("screen_fitted_valid_" + size, size.equals(MemoryTransforms.screenSizeOrDefault(size)), size);
+        }
+        String all = String.join(",", MemoryTransforms.screenSizeOptions("2772x1272"));
+        check("screen_options_fitted_before_native",
+                "1024x576,1280x720,1600x900,1920x1080,1256x576,1570x720,1962x900,2772x1272".equals(all), all);
     }
 
     private static void testReport() {

@@ -179,7 +179,12 @@ desktop wallpaper.
 - **Settings** (`WeHavePhonesSettingsFragment`): **Game resolution**
   (1024x576 by default, applied to the container screen size and
   WoW's `GxWindowedResolution` at each Play, with `GxMaximize 1` so the
-  game fills the screen), **Keep the game running when you switch apps**
+  game fills the screen). Besides the 16:9 sizes and the native one, it
+  lists "fits screen" sizes at 576, 720 and 900 lines with the aspect ratio
+  of the screen Settings is open on, for screens more than 2% from 16:9
+  (`MemoryTransforms.fittedScreenSizes`, #26, #27). The display keeps the
+  X screen's aspect ratio, so a 16:9 size leaves bars on wider or squarer
+  screens. **Keep the game running when you switch apps**
   (on by default, §6 item 11) and **Game region**. Not configurable (removed
   as settings 2026-10-04): Play always launches through Battle.net (the old
   *One-button launch* off mode only opened Battle.net, which **Open Battle.net**

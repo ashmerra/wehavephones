@@ -124,6 +124,7 @@
     <string name="wehavephones_settings_resolution_title">Game resolution</string>
     <string name="wehavephones_settings_resolution_hint">The game starts at 1024x576 to leave memory for WoW. Higher resolutions, up to the native one of this screen, look sharper but use more memory. Applies at the next Play.</string>
     <string name="wehavephones_settings_resolution_default">%1$s (default)</string>
+    <string name="wehavephones_settings_resolution_fitted">%1$s (fits screen)</string>
     <string name="wehavephones_settings_resolution_native">%1$s (native)</string>
     <string name="wehavephones_memory_launcher_closed">Closed Battle.net and helper processes (%1$d) to free memory. World of Warcraft keeps running.</string>
     <string name="wehavephones_settings_saved">Setting saved.</string>
