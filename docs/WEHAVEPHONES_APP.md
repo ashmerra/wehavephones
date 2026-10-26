@@ -233,6 +233,12 @@ Warcraft games Battle.net installs under `World of Warcraft\_<product>_`. It
 drives install detection, titles, executable choice, process detection and the
 addon-provider mappings.
 
+The `World of Warcraft` folder is `C:\Program Files (x86)\World of Warcraft`,
+then `C:\Program Files\World of Warcraft`. When neither exists,
+`WowInstallLocation` takes the first WoW product in the Agent's `product.db`
+whose recorded folder exists on a container drive, such as an SD card mapped to
+`F:`. Play, Add-ons, `wow.bat` and the direct launch use that folder.
+
 | Family | Live | PTR | Beta | Title shown |
 | --- | --- | --- | --- | --- |
 | Retail | `_retail_` | `_ptr_`, `_xptr_` | `_beta_` | World of Warcraft (+ expansion from the build, e.g. *Midnight*) |
@@ -503,7 +509,7 @@ below is kept (only `WeHavePhonesRuntimeProfiles` needs touching otherwise).
   "bnetShortcut": { "name": "Battle.net", "target": "C:\\bnet.bat" },
   "wowShortcut":  { "name": "AAWoW_Retail", "target": "C:\\wow.bat" },
   "bnetBat": "@echo off\r\ncd /d \"C:\\Program Files (x86)\\Battle.net\"\r\nBattle.net.exe{flags}\r\n",
-  "wowBat":  "@echo off\r\ncd /d \"C:\\Program Files (x86)\\World of Warcraft\\{productDir}\"\r\n...{exe} -d3d12\r\n",
+  "wowBat":  "@echo off\r\ncd /d \"{wowDir}\\{productDir}\"\r\n...{exe} -d3d12\r\n",
   "profiles": {
     "p10-ge34": {
       "description": "Verified single runtime: GE-Proton 10.0-34 arm64ec + copysafe ntdll.",
@@ -556,8 +562,9 @@ Semantics:
   `p10-ge34`. The `p10-battle`, `p10-ge34-wow` and `p10-pipe-debug` app
   profiles were removed on 2026-10-08 because single mode never used them.
 - `bnetBat` uses `{flags}` (the profile's `bnetFlags`). `wowBat` uses
-  `{productDir}` and `{exe}`, resolved from the detected WoW products
-  (`_retail_`/`Wow-ARM64.exe` by default). Product selection is stored in
+  `{wowDir}`, `{productDir}` and `{exe}`, resolved from the detected WoW
+  install and products (`C:\Program Files (x86)\World of Warcraft`,
+  `_retail_` and `Wow-ARM64.exe` by default). Product selection is stored in
   preferences and applies to all WoW product directories.
 - `ntdll[]` and `files[]` entries have the same shape (`asset`, `target`,
   optional `sha256` and optional `executable`) and the same deployment logic.

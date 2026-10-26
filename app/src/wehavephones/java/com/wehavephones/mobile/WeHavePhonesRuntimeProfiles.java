@@ -18,6 +18,7 @@ import java.util.Locale;
 public final class WeHavePhonesRuntimeProfiles {
     public static final String ASSET_PATH = "wehavephones/wehavephones-runtime-profiles.json";
     public static final String DEFAULT_PRODUCT_DIR = "_retail_";
+    public static final String DEFAULT_WOW_DIR = "C:\\Program Files (x86)\\World of Warcraft";
     /** The WoW graphics API flag used unless the device profile sets another. */
     public static final String DEFAULT_WOW_API_ARG = "-d3d12";
     public static final String DEFAULT_WOW_EXECUTABLE = "Wow-ARM64.exe";
@@ -229,11 +230,18 @@ public final class WeHavePhonesRuntimeProfiles {
 
     /** {@code apiArg} is the device profile's graphics API flag; null or empty keeps "-d3d12". */
     public String buildWowBat(String productDir, String executable, String apiArg) {
+        return buildWowBat(productDir, executable, apiArg, null);
+    }
+
+    /** {@code wowDir} is the Windows path of the WoW install; null or empty keeps {@link #DEFAULT_WOW_DIR}. */
+    public String buildWowBat(String productDir, String executable, String apiArg, String wowDir) {
         String template = !wowBatTemplate.isEmpty() ? wowBatTemplate : defaultWowBat();
         String resolvedProduct = productDir != null && !productDir.isEmpty() ? productDir : DEFAULT_PRODUCT_DIR;
         String resolvedExecutable = executable != null && !executable.isEmpty() ? executable : DEFAULT_WOW_EXECUTABLE;
         String resolvedApiArg = apiArg != null && !apiArg.isEmpty() ? apiArg : DEFAULT_WOW_API_ARG;
-        return template.replace("{productDir}", resolvedProduct).replace("{exe}", resolvedExecutable).replace("{apiArg}", resolvedApiArg);
+        String resolvedWowDir = wowDir != null && !wowDir.isEmpty() ? wowDir : DEFAULT_WOW_DIR;
+        return template.replace("{wowDir}", resolvedWowDir).replace("{productDir}", resolvedProduct)
+                .replace("{exe}", resolvedExecutable).replace("{apiArg}", resolvedApiArg);
     }
 
     public String describe() {
@@ -322,6 +330,6 @@ public final class WeHavePhonesRuntimeProfiles {
     }
 
     private static String defaultWowBat() {
-        return "@echo off\r\ncd /d \"C:\\Program Files (x86)\\World of Warcraft\\{productDir}\"\r\n{exe} {apiArg}\r\n";
+        return "@echo off\r\ncd /d \"{wowDir}\\{productDir}\"\r\n{exe} {apiArg}\r\n";
     }
 }

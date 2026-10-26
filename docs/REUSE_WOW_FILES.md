@@ -75,10 +75,11 @@ In WeHavePhones, open **Containers**, then the active container's three-dot menu
 4. Swipe in from the left edge and tap **Exit** to return to WeHavePhones.
 
 Use this `C:` location for the final installation. WeHavePhones' **Play** and
-**Add-ons** screens scan it. Leaving the game only on `D:` or choosing a custom
-Battle.net install path will not make those screens detect it. The app also
-recognizes `C:\Program Files\World of Warcraft` when the `(x86)` location is
-absent. `C:` belongs to the container's private app storage. It is not a folder
+**Add-ons** screens scan it. Leaving the copied files only on `D:` will not make
+those screens detect them. The app also recognizes
+`C:\Program Files\World of Warcraft` when the `(x86)` location is absent. When
+neither exists, it uses a folder on another drive that Battle.net installed or
+located the game in, such as an SD card mapped to a drive letter. `C:` belongs to the container's private app storage. It is not a folder
 you can browse through the phone's ordinary USB file-transfer view.
 
 ## 4. Locate the installation in Battle.net

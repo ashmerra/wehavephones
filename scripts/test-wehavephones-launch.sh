@@ -10,7 +10,8 @@
 #      packet limit, fallback ladder ordering, the greyed-out Play button
 #      classifier and the Battle.net.config edit.
 #   1a. Java (BattleNetGamesSelfTest): product.db protobuf decoding,
-#       .build.info/.flavor.info parsing and the merged Battle.net game list.
+#       .build.info/.flavor.info parsing, the merged Battle.net game list and
+#       WoW installs on other drives.
 #   1b. Java (ProcessScannerSelfTest): real /proc scan with fake WoW and
 #      Battle.net processes (bash exec -a) - game detection, launcher reap.
 #   1c. Java (WowClientFilesSelfTest): Config.wtf CVars, first-boot seeding
@@ -105,6 +106,7 @@ if [[ -n "$JAVAC" && -n "$JAVA" ]]; then
     "$SRC_DIR/WeHavePhonesLaunchPlan.java"
     "$SRC_DIR/WowFlavor.java"
     "$SRC_DIR/WowProduct.java"
+    "$SRC_DIR/WowInstallLocation.java"
     "$SELF_TEST_DIR/BattleNetGamesSelfTest.java"
   )
   if "$JAVAC" -encoding UTF-8 -d "$WORK_DIR" -cp "${JSON_JAR:-}" "${SOURCES[@]}"; then

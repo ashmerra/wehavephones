@@ -128,7 +128,8 @@ public final class WeHavePhonesRuntimeApplier {
             String productDir = product != null ? product.directoryName : WeHavePhonesRuntimeProfiles.DEFAULT_PRODUCT_DIR;
             String executable = product != null && !product.getExecutable().isEmpty()
                     ? product.getExecutable() : WeHavePhonesRuntimeProfiles.DEFAULT_WOW_EXECUTABLE;
-            writeBat(WeHavePhonesPaths.wowBat(container), profiles.buildWowBat(productDir, executable, DeviceProfileSelector.wowApiArg(context)).getBytes(StandardCharsets.UTF_8), "wow.bat", result);
+            writeBat(WeHavePhonesPaths.wowBat(container), profiles.buildWowBat(productDir, executable, DeviceProfileSelector.wowApiArg(context),
+                    WeHavePhonesPaths.wowGuestRoot(container)).getBytes(StandardCharsets.UTF_8), "wow.bat", result);
         }
 
         deployArtifacts(context, container, profile, "ntdll", profile.ntdll, true, result);

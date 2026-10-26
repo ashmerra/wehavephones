@@ -7,7 +7,9 @@ import com.wehavephones.container.Container;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.TimeZone;
 
 public final class WeHavePhonesPaths {
@@ -53,9 +55,32 @@ public final class WeHavePhonesPaths {
         return new File(driveC(container), "Program Files/World of Warcraft");
     }
 
+    /**
+     * The WoW install: {@code C:\Program Files (x86)}, {@code C:\Program Files},
+     * or the folder Battle.net installed WoW to on another drive, such as an SD card.
+     */
     public static File wowRootFor(Container container) {
         File primary = wowRoot(container);
-        return primary.isDirectory() ? primary : wowRootFallback(container);
+        if (primary.isDirectory()) return primary;
+        File fallback = wowRootFallback(container);
+        if (fallback.isDirectory()) return fallback;
+        WowInstallLocation elsewhere = wowInstallElsewhere(container);
+        return elsewhere != null ? elsewhere.hostDir : fallback;
+    }
+
+    /** A WoW install Battle.net recorded outside {@code C:\Program Files}, or null. */
+    public static WowInstallLocation wowInstallElsewhere(Container container) {
+        return WowInstallLocation.find(BattleNetProductDb.read(bnetProductDb(container)), guestDrives(container));
+    }
+
+    /** The container's drive letters (upper case) with their Android folders, C: included. */
+    static Map<Character, File> guestDrives(Container container) {
+        LinkedHashMap<Character, File> drives = new LinkedHashMap<>();
+        drives.put('C', driveC(container));
+        for (String[] drive : container.drivesIterator()) {
+            if (drive[0].length() == 1) drives.put(Character.toUpperCase(drive[0].charAt(0)), new File(drive[1]));
+        }
+        return drives;
     }
 
     public static File bnetExe(Container container) {
@@ -78,7 +103,12 @@ public final class WeHavePhonesPaths {
 
     /** Guest root of the World of Warcraft install (matches {@link #wowRootFor}). */
     public static String wowGuestRoot(Container container) {
-        return wowRoot(container).isDirectory() ? WeHavePhonesLaunchPlan.WOW_DIR_X86 : WeHavePhonesLaunchPlan.WOW_DIR;
+        if (wowRoot(container).isDirectory()) return WeHavePhonesLaunchPlan.WOW_DIR_X86;
+        if (!wowRootFallback(container).isDirectory()) {
+            WowInstallLocation elsewhere = wowInstallElsewhere(container);
+            if (elsewhere != null) return elsewhere.guestPath;
+        }
+        return WeHavePhonesLaunchPlan.WOW_DIR;
     }
 
     /** {@code users/<user>/AppData/<kind>/Battle.net} for the first prefix user that has it. */

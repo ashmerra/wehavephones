@@ -23,6 +23,7 @@ public final class BattleNetGamesSelfTest {
         merge();
         foreverStressTest();
         installFlags();
+        installLocation();
         System.out.println("[bnet-games-selftest] " + checks + " checks, " + failures + " failure(s)");
         System.exit(failures == 0 ? 0 : 1);
     }
@@ -89,6 +90,46 @@ public final class BattleNetGamesSelfTest {
         check("truncated db does not throw and keeps whole records", true, truncated.installs.size() >= 1);
         check("garbage db does not throw", 0, BattleNetProductDb.parse(new byte[]{(byte)0xFF, (byte)0xFF, 0x07}).installs.size());
         check("missing file", null, BattleNetProductDb.read(new File("/nonexistent/product.db")));
+    }
+
+    // ---- WoW installed on another drive ----------------------------------------------------
+
+    private static void installLocation() throws Exception {
+        check("forward slashes and trailing separator", "D:\\Games\\World of Warcraft",
+                WowInstallLocation.normalize("d:/Games/World of Warcraft/"));
+        check("drive root keeps its separator", "F:\\", WowInstallLocation.normalize("F:/"));
+        check("relative path rejected", "", WowInstallLocation.normalize("Games/World of Warcraft"));
+
+        File dir = Files.createTempDirectory("bnet-install-location").toFile();
+        File sdCard = new File(dir, "sdcard");
+        File wow = new File(sdCard, "Games/World of Warcraft");
+        check("test folder created", true, wow.mkdirs());
+        java.util.Map<Character, File> drives = new java.util.LinkedHashMap<>();
+        drives.put('C', new File(dir, "drive_c"));
+        drives.put('F', sdCard);
+        check("mapped drive", wow, WowInstallLocation.toHost("F:\\Games\\World of Warcraft", drives));
+        check("drive root maps to the drive folder", sdCard, WowInstallLocation.toHost("F:\\", drives));
+        check("unmapped drive", null, WowInstallLocation.toHost("G:\\Games\\World of Warcraft", drives));
+
+        BattleNetProductDb db = BattleNetProductDb.parse(new Proto()
+                .message(1, new Proto().string(1, "agent").string(2, "agent")
+                        .message(3, new Proto().string(1, "F:/Games/World of Warcraft")))
+                .message(1, new Proto().string(1, "wow_classic_era").string(2, "wow_classic_era")
+                        .message(3, new Proto().string(1, "C:/Program Files (x86)/World of Warcraft")))
+                .message(1, new Proto().string(1, "wow").string(2, "wow")
+                        .message(3, new Proto().string(1, "f:/Games/World of Warcraft/")))
+                .bytes());
+        WowInstallLocation found = WowInstallLocation.find(db, drives);
+        check("missing C: folder skipped, SD card install found", wow, found == null ? null : found.hostDir);
+        check("guest path for wow.bat and direct launch", "F:\\Games\\World of Warcraft",
+                found == null ? null : found.guestPath);
+        check("no install when the folder is gone", null, WowInstallLocation.find(db, java.util.Collections.singletonMap('C', drives.get('C'))));
+        check("missing product.db", null, WowInstallLocation.find(null, drives));
+
+        wow.delete();
+        new File(sdCard, "Games").delete();
+        sdCard.delete();
+        dir.delete();
     }
 
     // ---- .build.info / .flavor.info -----------------------------------------------------

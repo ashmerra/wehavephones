@@ -56,6 +56,12 @@ public final class RuntimeProfileParseSelfTest {
         check(wowBat.equals(profiles.buildWowBat("_retail_", "Wow-ARM64.exe", null)), "null api arg keeps wow.bat byte-identical");
         check(profiles.buildWowBat("_retail_", "Wow-ARM64.exe", "-d3d11").endsWith("\r\nWow-ARM64.exe -d3d11\r\n"), "device api arg replaces -d3d12");
         check(!wowBat.contains("{"), "wow.bat has no unresolved placeholders");
+        check(wowBat.startsWith("@echo off\r\ncd /d \"C:\\Program Files (x86)\\World of Warcraft\\_retail_\"\r\n"),
+                "default wow.bat enters the C: install");
+        check(wowBat.equals(profiles.buildWowBat("_retail_", "Wow-ARM64.exe", null, "")), "empty wow dir keeps wow.bat byte-identical");
+        check(profiles.buildWowBat("_classic_era_", "WowClassic-arm64.exe", null, "F:\\Games\\World of Warcraft")
+                        .startsWith("@echo off\r\ncd /d \"F:\\Games\\World of Warcraft\\_classic_era_\"\r\n"),
+                "wow.bat enters an install on another drive");
         check(p10 != null, "p10-ge34 profile exists");
         check("proton-10.0-34-arm64ec".equals(p10.wineVersion), "p10-ge34 wineVersion");
         check(("turnip" + DefaultVersion.ADRENOTOOLS_TURNIP).equals(p10.graphics.get("version")),
