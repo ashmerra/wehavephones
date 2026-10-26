@@ -63,6 +63,12 @@
           "asset": "dll/arm64-libunwind.dll",
           "target": "container:.wine/drive_c/arm64-libunwind.dll",
           "sha256": "535c6c8626c75f2b57cba17e0b550131d5fd699119d274290116fbe31e5b6046"
+        },
+        {
+          "asset": "server/wineserver-android-owner-10.0-34",
+          "target": "opt/{wineVersion}/bin/wineserver",
+          "sha256": "d7454aa4eefbf888efb1587ac9a8dfd83e2a4970f0a862f6836fdfba3ba67848",
+          "executable": true
         }
       ],
       "graphics": {

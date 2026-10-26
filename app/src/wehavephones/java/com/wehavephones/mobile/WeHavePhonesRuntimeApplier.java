@@ -275,7 +275,8 @@ public final class WeHavePhonesRuntimeApplier {
                 result.fail(context.getString(R.string.wehavephones_runtime_artifact_sha_mismatch, artifact.asset));
                 continue;
             }
-            if (target.isFile() && Arrays.equals(FileUtils.read(target), bundled)) {
+            if (target.isFile() && Arrays.equals(FileUtils.read(target), bundled)
+                    && (!artifact.executable || target.canExecute() || target.setExecutable(true, false))) {
                 result.step(context.getString(R.string.wehavephones_runtime_artifact_current, label, target.getName()));
                 continue;
             }
@@ -290,18 +291,33 @@ public final class WeHavePhonesRuntimeApplier {
                     FileUtils.write(new File(result.snapshotDir, label + "-" + target.getName() + ".bak"), existing);
                 }
             }
-            if (!FileUtils.write(target, bundled)) {
+            if (!(artifact.executable ? writeExecutable(target, bundled) : FileUtils.write(target, bundled))) {
                 result.fail(context.getString(R.string.wehavephones_runtime_artifact_write_failed, label, target.getPath()));
                 continue;
             }
             byte[] readBack = FileUtils.read(target);
-            if (readBack == null || !Arrays.equals(readBack, bundled)) {
+            if (readBack == null || !Arrays.equals(readBack, bundled) || (artifact.executable && !target.canExecute())) {
                 result.fail(context.getString(R.string.wehavephones_runtime_artifact_readback_failed, label, target.getPath()));
                 continue;
             }
             String shortDigest = digest.length() >= 12 ? digest.substring(0, 12) + "..." : digest;
             result.step(context.getString(R.string.wehavephones_runtime_artifact_deployed, label, target.getName(), shortDigest));
         }
+    }
+
+    /**
+     * Writes a program next to its target and renames it into place. A process
+     * still running the old file keeps it, where an in-place write would fail
+     * with "text file busy".
+     */
+    private static boolean writeExecutable(File target, byte[] data) {
+        File temp = new File(target.getParentFile(), target.getName() + ".whp-new");
+        if (!FileUtils.write(temp, data) || !temp.setExecutable(true, false) || !temp.renameTo(target)) {
+            //noinspection ResultOfMethodCallIgnored
+            temp.delete();
+            return false;
+        }
+        return true;
     }
 
     private static File resolveTarget(File imageFsDir, Container container, WeHavePhonesRuntimeProfiles.Profile profile, String target) {

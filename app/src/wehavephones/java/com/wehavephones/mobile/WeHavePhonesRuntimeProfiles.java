@@ -30,11 +30,14 @@ public final class WeHavePhonesRuntimeProfiles {
         public final String asset;
         public final String target;
         public final String sha256;
+        /** Deployed with the execute bit and replaced by rename, so a running copy is not disturbed. */
+        public final boolean executable;
 
-        Artifact(String asset, String target, String sha256) {
+        Artifact(String asset, String target, String sha256, boolean executable) {
             this.asset = asset;
             this.target = target;
             this.sha256 = sha256;
+            this.executable = executable;
         }
     }
 
@@ -284,7 +287,8 @@ public final class WeHavePhonesRuntimeProfiles {
             String asset = artifact.optString("asset", "");
             String target = artifact.optString("target", "");
             if (asset.isEmpty() || target.isEmpty()) continue;
-            parsed.add(new Artifact(asset, target, artifact.optString("sha256", "")));
+            parsed.add(new Artifact(asset, target, artifact.optString("sha256", ""),
+                    artifact.optBoolean("executable", false)));
         }
         return parsed;
     }

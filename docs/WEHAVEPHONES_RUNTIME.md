@@ -3,8 +3,8 @@
 The app runs the official Battle.net client and the installed ARM64 retail World
 of Warcraft client in one Wine container on one runtime, with no switch between
 them. It bundles a single runtime profile, `p10-ge34`. This document describes
-that profile, the patched Wine `ntdll` it depends on and how that `ntdll` is
-built. How the app applies a profile is described in
+that profile, the patched Wine `ntdll` and `wineserver` it depends on and how
+they are built. How the app applies a profile is described in
 [WEHAVEPHONES_APP.md](WEHAVEPHONES_APP.md).
 
 ## The runtime
@@ -43,11 +43,15 @@ Artifacts it installs:
 | `ntdll-grace-copysafe-10.0-34.dll` | `opt/proton-10.0-34-arm64ec/lib/wine/aarch64-windows/ntdll.dll` and prefix `drive_c/windows/system32/ntdll.dll` | `09adc21f…` |
 | `ntdll-grace-copysafe-10.0-34.so` | `opt/proton-10.0-34-arm64ec/lib/wine/aarch64-unix/ntdll.so` | `9f3e55a0…` |
 | `arm64-vkd3d.dll`, `arm64-libc++.dll`, `arm64-libunwind.dll` | `C:\arm64-*.dll` in the prefix | `f1c11399…`, `ed9edb58…`, `535c6c86…` |
+| `wineserver-android-owner-10.0-34` | `opt/proton-10.0-34-arm64ec/bin/wineserver` | `d7454aa4…` |
 
 The APK bundles the SHA-256-pinned GE-Proton 10.0-34 layer. First-run setup
 installs it offline, then `WeHavePhonesRuntimeApplier` copies the patched
 `ntdll` pair over the stock one in the layer and in the prefix (sha256-checked,
-with a snapshot and read-back) and places the ARM64 DLLs. The three ARM64 DLLs
+with a snapshot and read-back), places the ARM64 DLLs and replaces the layer's
+`wineserver`. Artifacts marked `"executable": true` are written next to their
+target, given the execute bit and renamed into place, so a server that is still
+running keeps its old file. The three ARM64 DLLs
 are copied into `system32` again when `bnet.bat` and `wow.bat` start.
 `scripts/install-wine-layer-adb.py` installs a verified `.wcp` layer onto a
 phone from a computer, for manual tests.
@@ -202,3 +206,44 @@ WoW starts and Battle.net still renders.
   `libunwind.a` had to be moved out of the way.
 - The resulting `ntdll.dll` and `ntdll.so` are the two files pinned by SHA-256 in
   the runtime profile.
+
+## The patched wineserver
+
+`patches/wine/server-android-file-owner-wine10.patch` changes how the server
+maps a file's Unix owner to a Windows owner. Stock Wine reports a file owned by
+another Unix user as owned by Anonymous Logon, with access only for SYSTEM and
+Anonymous Logon. Android runs each app as its own user, and every file on
+shared storage or an SD card belongs to the media provider, even though the app
+has full access. Battle.net checks that it can access an install folder before
+it installs, so it refused any folder there with "We couldn't access a folder.
+This is usually because you're not logged in as an administrator."
+(`BLZBNTAGT0000084B`, issue #20). On Android the patched server reports every
+owner as the current user, so those folders get the same permissions as the
+ones on `C:`.
+
+Android ignores permission changes on that storage and it has no extended
+attributes, so a Windows permission change there still does not persist. The
+current user keeps full access, which is what Battle.net checks.
+
+### How the wineserver was built
+
+- Source: the same proton-wine commit as the `ntdll`, with the Android patch
+  list from `build-scripts/build-step-arm64ec.sh` applied, then
+  `build-scripts/apply-ge-patches.sh`, then the patch above. Initialise the
+  `dlls/winedirectaudio.drv` submodule.
+- Generated files: `tools/make_requests`, `tools/make_specfiles`,
+  `dlls/winevulkan/make_vulkan -x vk.xml -X video.xml` and `autoreconf -if`.
+  The regenerated protocol is version 856. The server has 306 request
+  handlers, like the one in the layer.
+- Host tools: a native `wine-tools` build (`--enable-win64 --without-x`,
+  `make __tooldeps__`).
+- Cross build: NDK r28b (`aarch64-linux-android28-clang`, the toolchain of the
+  patched `ntdll.so`), `-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES`,
+  `-Wl,-z,max-page-size=16384` and `-Wl,-rpath=/data/data/com.termux/files/usr/lib`.
+  Configure with the script's `--prefix`, `--bindir`, `--libdir` and
+  `--exec-prefix` (`/home/runner/termuxfs/aarch64/data/data/com.termux/files/usr/../opt/wine`).
+  The server finds its `nls` files relative to its own directory, and the
+  default Android `bindir` adds an ABI subdirectory that breaks that path.
+  Pass `--without-inotify` like the layer, then build only `server/wineserver`.
+- Its exported and static symbols match the layer's server, apart from the
+  now unused `anonymous_logon_sid` and compiler inlining differences.

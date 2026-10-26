@@ -7,8 +7,8 @@ asserts the verified single-runtime contract:
   * mode/default/single/handoff profile names
   * every ntdll/files asset exists under the bundled assets and its sha256
     matches the profile entry
-  * p10-ge34 carries the verified Proton 10 copysafe ntdll pair and the
-    three WoW DLLs with the expected targets
+  * p10-ge34 carries the verified Proton 10 copysafe ntdll pair, the
+    three WoW DLLs and the patched wineserver with the expected targets
   * no profile replaces the imagefs GnuTLS library
   * the p10-ge34 layer download URL/sha256 match
     out/wehavephones-runtime/artifacts.json when that manifest is present
@@ -82,7 +82,13 @@ EXPECTED_P10_GE34_FILES = [
     ("dll/arm64-libunwind.dll",
      "container:.wine/drive_c/arm64-libunwind.dll",
      "535c6c8626c75f2b57cba17e0b550131d5fd699119d274290116fbe31e5b6046"),
+    ("server/wineserver-android-owner-10.0-34",
+     "opt/{wineVersion}/bin/wineserver",
+     "d7454aa4eefbf888efb1587ac9a8dfd83e2a4970f0a862f6836fdfba3ba67848"),
 ]
+
+# Only the wineserver is deployed as a program.
+EXPECTED_P10_GE34_EXECUTABLES = ["opt/{wineVersion}/bin/wineserver"]
 
 
 def artifact_tuples(profile, key):
@@ -114,7 +120,10 @@ def main():
     expect(p10.get("wineVersion"), "proton-10.0-34-arm64ec", "p10-ge34 wineVersion")
     expect(p10.get("bnetFlags"), "--disable-gpu --enable-features=NetworkServiceInProcess2", "p10-ge34 bnetFlags")
     expect(artifact_tuples(p10, "ntdll"), EXPECTED_P10_GE34_NTDLL, "p10-ge34 ntdll pair")
-    expect(artifact_tuples(p10, "files"), EXPECTED_P10_GE34_FILES, "p10-ge34 WoW DLL files")
+    expect(artifact_tuples(p10, "files"), EXPECTED_P10_GE34_FILES, "p10-ge34 WoW DLLs and wineserver")
+    expect([entry.get("target", "") for kind in ("ntdll", "files") for entry in p10.get(kind, [])
+            if entry.get("executable") is True],
+           EXPECTED_P10_GE34_EXECUTABLES, "p10-ge34 executable artifacts")
 
     layer = p10.get("layer", {})
     expect(layer.get("name"), "proton-10.0-34-arm64ec", "p10-ge34 layer name")
@@ -152,7 +161,7 @@ def main():
     print("[wehavephones-runtime-selftest] bundled artifacts are all referenced")
     bundled = sorted(
         str(path.relative_to(ASSET_ROOT))
-        for folder in ("ntdll", "dll")
+        for folder in ("ntdll", "dll", "server")
         for path in (ASSET_ROOT / folder).glob("*")
         if path.is_file()
     )

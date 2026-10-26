@@ -560,7 +560,9 @@ Semantics:
   (`_retail_`/`Wow-ARM64.exe` by default). Product selection is stored in
   preferences and applies to all WoW product directories.
 - `ntdll[]` and `files[]` entries have the same shape (`asset`, `target`,
-  optional `sha256`) and the same deployment logic. `asset` is relative to
+  optional `sha256` and optional `executable`) and the same deployment logic.
+  An `executable` entry is written next to its target, given the execute bit
+  and renamed into place, so a running copy keeps its old file. `asset` is relative to
   `app/src/wehavephones/assets/wehavephones/`. `target` is relative to the imagefs
   root, and `container:` targets are relative to the active container's root.
   `{wineVersion}` expands to the profile's Wine directory name. Profiles
@@ -585,6 +587,7 @@ Semantics:
 | `dll/arm64-vkd3d.dll` | 2 105 344 | `f1c11399…` |
 | `dll/arm64-libc++.dll` | 1 853 440 | `ed9edb58…` |
 | `dll/arm64-libunwind.dll` | 90 624 | `535c6c86…` |
+| `server/wineserver-android-owner-10.0-34` | 810 928 | `d7454aa4…` |
 
   The 110 MB GE-Proton layer is bundled separately
   (`assets/wehavephones/wine/GE-proton-10.0-34-arm64ec.wcp`, fetched at build time

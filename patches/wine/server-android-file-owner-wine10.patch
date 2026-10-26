@@ -1,0 +1,21 @@
+diff --git a/server/token.c b/server/token.c
+index 48c15ce..19b8245 100644
+--- a/server/token.c
++++ b/server/token.c
+@@ -210,8 +210,14 @@ const struct sid *security_unix_uid_to_sid( uid_t uid )
+     /* very simple mapping: either the current user or not the current user */
+     if (uid == getuid())
+         return &local_user_sid;
+-    else
+-        return &anonymous_logon_sid;
++#ifdef __ANDROID__
++    /* Android runs each app as its own uid. Files on shared storage and SD
++     * cards belong to the media provider's uid even though the app has full
++     * access, so treat every owner as the current user. */
++    return &local_user_sid;
++#else
++    return &anonymous_logon_sid;
++#endif
+ }
+ 
+ void init_user_sid(void)
