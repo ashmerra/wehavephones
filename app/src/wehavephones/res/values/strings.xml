@@ -431,12 +431,31 @@ World of Warcraft, Warcraft, Battle.net and Blizzard Entertainment are trademark
     <string name="wehavephones_update_error">Could not update the app: %1$s\n\nYour installed app and game data have been kept. Tap Check for update to retry.</string>
     <string name="wehavephones_disclaimer">Unofficial. Not affiliated with Blizzard Entertainment, Inc.</string>
     <string name="wehavephones_settings_mobile_touch">Mobile touch controls (experimental)</string>
-    <string name="wehavephones_settings_mobile_touch_hint">Move with the left stick. Drag above the action bars on the right to turn the camera. Tap spells in WoW. Replaces the controller overlay and disables ConsolePort. Enlarges the UI and arranges Classic action buttons in two rows. Applies at the next game launch.</string>
+    <string name="wehavephones_settings_mobile_touch_hint">Tap spells in WoW. Hold a hotbar slot to edit it. Move with the left stick and drag on the right to look. Replaces the controller overlay and disables ConsolePort. Scales the whole UI and adds a Classic action grid. More provides keyboard, window gestures and interface size. Applies at the next game launch.</string>
     <string name="wehavephones_mobile_touch_next_launch">Saved. Touch controls and addon changes apply at the next game launch.</string>
     <string name="wehavephones_touch_menu">Esc</string>
     <string name="wehavephones_touch_map">Map</string>
     <string name="wehavephones_touch_bags">Bags</string>
     <string name="wehavephones_touch_bar">Bar</string>
+    <string name="wehavephones_touch_more">More</string>
+    <string name="wehavephones_touch_keyboard">Keyboard</string>
+    <string name="wehavephones_touch_windows">Window gestures</string>
+    <string name="wehavephones_touch_next_modifier">Next tap: %1$s</string>
+    <string-array name="wehavephones_touch_actions">
+        <item>Touch interface and size</item>
+        <item>Switch camera / window gestures</item>
+        <item>Keyboard</item>
+        <item>Chat</item>
+        <item>Next action bar page</item>
+        <item>Previous target</item>
+        <item>Auto run</item>
+        <item>Sit / stand</item>
+        <item>Cancel targeting or close a window</item>
+        <item>Shift for the next tap or hold</item>
+        <item>Ctrl for the next tap or hold</item>
+        <item>Alt for the next tap or hold</item>
+        <item>Cancel next modifier</item>
+    </string-array>
     <string name="wehavephones_touch_target">Target</string>
     <string name="wehavephones_touch_interact">Use</string>
     <string name="wehavephones_touch_jump">Jump</string>

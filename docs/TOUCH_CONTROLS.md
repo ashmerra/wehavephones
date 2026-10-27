@@ -2,60 +2,105 @@
 
 Settings → **Mobile touch controls (experimental)** is an opt-in alternative
 to the controller layout. It is off by default. Close the game before changing
-it, then launch the game again.
+it, then launch again.
 
-- Move with the left stick. It sends forward, backward and strafe inputs.
-- Drag in the right middle of the screen, above the action bars, to turn the
-  camera. A tap there still clicks the game UI.
-- Tap spells directly in WoW. Movement can stay held while another finger
-  taps a spell. A spell tap releases an active camera drag. Move the camera
-  finger again to resume looking.
-- The edge buttons provide Jump, Target nearest enemy, Use the selected
-  target, Bags, Map, Escape and the next action bar page. The existing session
-  side menu still provides the keyboard and Exit.
+The WoW interface uses one scale, 150% by default. Bars, bags, portraits, quest
+windows, tooltips and text inherit that scale. **More → Touch interface and
+size** offers 125%, 150% and 175% for the whole interface.
 
-The mode suppresses the standard virtual gamepad even when a manual input
-profile was selected. It temporarily disables ConsolePort and the controller
-setup addon, including the installed ConsolePort modules. It leaves their
-saved settings and the player's saved bindings intact.
+On Classic Era, 24 stock action buttons form a six-column, four-row grid at the
+bottom right. Another 12 buttons occupy two rows in the bottom middle. The
+movement stick stays on the left. Chat sits above it, and the bars leave room
+for the XP bar below. The primary 12 buttons keep WoW's action page and stance
+behaviour. The extra groups use WoW's existing additional action slots. They
+do not copy or erase the player's action assignments.
 
-The bundled WeHavePhones Touch addon enlarges the UI and turns off the game's
-controller input. On Classic Era it arranges the twelve stock main action
-buttons in two larger rows of six. These remain WoW's secure action buttons,
-with their existing spells, paging, cooldowns, macros and stance behaviour.
-Other game versions receive the larger UI and direct touch input, with their
-existing action bar layout. Additional action bars and third-party action bar
-addons keep their own layouts. Those combinations need separate validation.
+## Editing actions
 
-Turning the mode off restores only the controller addon folders the mode
-disabled. A module that was already disabled stays disabled. The touch addon
-stays installed to restore the saved UI and controller CVars when each
-character next logs in. Stock action button positions return on a fresh load.
-Temporary keyboard overrides are never saved to the player's bindings.
+Hold a hotbar slot for about half a second. Releasing the hold does not cast
+its spell. A picker opens with **Spells**, **Items** and **Macros**. Tap a choice
+to place it in that slot. Passive and unlearned spells are excluded. Spells
+retain their rank. Items come from the player's bags, and macros include both
+account and character macros.
 
-Launch preparation stops on conflicting enabled and disabled controller
-folders rather than overwriting either copy. Addon folders are changed only
-while WoW is closed. The restore journal is kept in the game's WTF directory.
+**Clear slot** removes its action. **Undo** restores the last edited slot.
+**Cancel** leaves the slot unchanged. The picker refuses to open while an item
+is already on the cursor, and closes when combat starts. All edit callbacks
+check combat again before changing anything. These are the game's own secure
+action buttons, so normal casts, cooldowns, action counts and targeting remain
+under WoW's control.
 
-Run `scripts/test-wehavephones-touch.sh` for gesture ownership, input release,
-addon folder restoration and the Lua setup lifecycle. It uses the host JDK,
-Python and a Lua 5.2 or 5.4 shared library. The existing gamepad, launch, runtime
-and addon checks cover the default controller path.
+## Inputs for WoW
 
-## Phone validation
+| Input | Touch control |
+| --- | --- |
+| Left click, select a unit, cast, place a ground-targeted spell | Tap the game UI |
+| Right click, interact with a unit or corpse, use or equip an item, open a context menu | Hold, then release |
+| Change a hotbar action | Hold the slot, then use the picker |
+| Movement | Left stick, including diagonal movement and strafing |
+| Camera turn | Drag in the right area above the hotbars |
+| Camera zoom | Pinch with two fingers in the camera area |
+| Drag a window, slider, spellbook entry or bag item | Switch to window gestures through More, then drag |
+| Scroll a list | Use two fingers in window mode |
+| Jump, nearest enemy, interact with the selected target | Jump, Target and Use buttons |
+| Previous target, auto run, sit or stand | More |
+| Open chat, enter names, search, type text | More → Chat or Keyboard |
+| Shift-click links or split stacks, Ctrl-click previews, Alt-click self-casts | Choose the modifier in More, then tap or hold |
+| Cancel a ground-targeted cast or close a window | Escape |
+| Change the main action page | More → Next action bar page |
 
-Validated on the Galaxy S23+ with Classic Era 1.15.9.70576 on 2026-10-26.
-The character entered the world with ConsolePort disabled and the larger
-two-row action bar. A direct touch cast Healing Touch. A three-finger input
-sequence held movement, turned the camera and tapped the spell while moving.
-The game correctly rejected that cast because Healing Touch requires standing
-still. Repeating the three-finger sequence with Mark of the Wild cast the
-instant buff successfully while moving and turning. Jump, Bags, Map, Escape
-and action bar paging worked through the native utility buttons. Cycling
-through all six pages returned to the original spells and kept the two-row
-layout. The Android crash buffer remained empty.
+Window mode replaces camera drags with left mouse drags, including over the
+right side of the screen. The hint changes to **Window gestures**. Use More
+again to return to camera mode. A modifier applies to one tap, hold or drag,
+then releases. Held mouse buttons and modifiers also release on cancellation
+or loss of window focus.
 
-Turning the mode off and entering the same character restored the standard
-virtual gamepad and the saved ConsolePort action bar layout. Other game
-versions, action bar addons, class-specific stance changes and extended combat
-sessions still need device validation.
+Movement, camera and spell taps have independent pointer ownership. Tapping a
+spell releases an active camera grab so WoW can receive an absolute click.
+Moving the camera finger again resumes looking. A pinch or scroll never
+produces a leftover click when its fingers lift.
+
+The touch interface panel also opens Character, Spellbook, Quests, Talents,
+Social and the game menu. The existing session side menu provides Exit.
+
+## Preservation and compatibility
+
+The mode suppresses the standard virtual gamepad, including a manually
+selected input profile. It temporarily disables the ConsolePort suite and the
+controller setup addon. Their saved settings and the player's saved bindings
+remain intact.
+
+Turning the mode off restores only the controller folders it disabled.
+Already disabled modules stay disabled. The companion addon remains installed
+so each character can restore its saved UI CVars, root scale, extra-bar
+visibility and chat layout on its next login. Temporary binding overrides are
+never saved. Deliberate hotbar edits remain the player's ordinary WoW actions.
+
+Classic Era is the validation target. Other WoW versions receive the global
+scale and native gestures but retain their existing bar layout. Third-party
+bar replacements, pets, class-specific stance changes and extended combat
+sessions need separate validation. Third-party quest trackers may need manual
+repositioning above the action grid. The implementation follows Blizzard's
+[1.15.9 UI source](https://github.com/Gethe/wow-ui-source/tree/1.15.9), including
+the stock action buttons, spellbook and Edit Mode anchoring.
+
+Run `scripts/test-wehavephones-touch.sh` for gesture ownership, long-press
+suppression, dragging, pinch/scroll separation, addon folder preservation,
+uniform scaling, action selection, Undo and combat guards. It uses the host
+JDK, Python and a Lua 5.2 or 5.4 shared library. The existing gamepad, launch,
+runtime, addon, asset and memory checks cover the controller and launch paths.
+
+## Device validation
+
+Validated on a Samsung S23+ with Classic Era 1.15.9.70576 on October 26, 2026.
+A fresh launch confirmed the right and middle grids, chat above the joystick,
+the touch interface menu and all three scale presets. Long presses opened the
+picker on slots 49 and 61. Selecting Mark of the Wild placed it without casting,
+and a subsequent tap cast it. Undo restored both test slots to their original
+empty state. Bags, window mode, the chat keyboard and one-shot Shift stack
+splitting were checked. The stack dialog was cancelled without changing items.
+The final Android crash buffer was empty.
+
+The touch, gamepad, launch, runtime, addon, asset, memory and device host checks
+passed. Dragging, pinch/scroll separation and combat guards have automated host
+coverage. Extended play and the compatibility cases above remain unverified.
