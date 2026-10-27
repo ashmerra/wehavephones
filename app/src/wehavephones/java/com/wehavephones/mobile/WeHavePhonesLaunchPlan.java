@@ -198,6 +198,18 @@ public final class WeHavePhonesLaunchPlan {
     public int launcherRestarts = 2;
     /** Wait after an in-session {@code --game=<uid>} before clicking, for the page to show. */
     public int playSettleMs = 4000;
+    /**
+     * Clicks on Battle.net's main button (it reads Update then) after Agent
+     * fails an update, {@code updateRetryDelayMs} after the failure. Agent's
+     * "Failed to initialize the tact instance" (error 5016) happened while
+     * it was still checking another game in the same World of Warcraft
+     * folder, and a later attempt succeeded. A click Battle.net does not
+     * answer with a new update within {@code updateRetryAckSeconds} ends
+     * the launch with instructions.
+     */
+    public int updateRetries = 2;
+    public int updateRetryDelayMs = 15000;
+    public int updateRetryAckSeconds = 30;
 
     public static WeHavePhonesLaunchPlan parse(String bundledJson, String overrideJson) throws JSONException {
         WeHavePhonesLaunchPlan plan = new WeHavePhonesLaunchPlan();
@@ -250,6 +262,12 @@ public final class WeHavePhonesLaunchPlan {
             playWaitSeconds = Math.max(1, play.optInt("waitSeconds", playWaitSeconds));
             launcherRestarts = Math.max(0, play.optInt("restarts", launcherRestarts));
             playSettleMs = play.optInt("settleMs", playSettleMs);
+        }
+        JSONObject updateRetry = root.optJSONObject("updateRetry");
+        if (updateRetry != null) {
+            updateRetries = Math.max(0, updateRetry.optInt("attempts", updateRetries));
+            updateRetryDelayMs = Math.max(0, updateRetry.optInt("delayMs", updateRetryDelayMs));
+            updateRetryAckSeconds = Math.max(1, updateRetry.optInt("ackSeconds", updateRetryAckSeconds));
         }
         timeouts.merge(root.optJSONObject("timeouts"));
         options.merge(root.optJSONObject("options"));

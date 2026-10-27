@@ -97,6 +97,14 @@ public final class OneButtonLauncher {
     private long gameSeenAt;
     /** Battle.net's Play button reads as greyed out: stop the ladder instead of retrying. */
     private boolean playUnavailable;
+    /** Update clicks after Agent failed an update, for the whole launch. */
+    private int updateRetries;
+    /** The log whose update failures were counted; a restarted Battle.net starts over. */
+    private BattleNetLauncherLog failuresLog;
+    private int failuresHandled;
+    /** Update operations Battle.net had started before the last retry click, or -1 when none is pending. */
+    private int startsBeforeRetry = -1;
+    private long retryClickedAt;
 
     private OneButtonLauncher(Context context, Listener listener) {
         this.appContext = context.getApplicationContext();
@@ -334,6 +342,7 @@ public final class OneButtonLauncher {
                 put("signedInAfterMs", now - startedAt);
                 event("signed in (" + log.getLoggedInAt() + ")");
             }
+            if (log != null && phase != BattleNetLauncherLog.Phase.READY && !retryFailedUpdate(log)) return false;
             switch (phase) {
                 case STARTING:
                     stage(Stage.STARTING, appContext.getString(R.string.wehavephones_launch_starting));
@@ -410,6 +419,68 @@ public final class OneButtonLauncher {
         return false;
     }
 
+    /**
+     * Agent gives up on some updates at once ("Failed to initialize the tact
+     * instance", error 5016) and Battle.net leaves them failed, so the update
+     * stage would otherwise wait out {@code updateSeconds}. Clicks Battle.net's
+     * main button, which reads Update then, a few times; stops with
+     * instructions when the failures continue or a click starts nothing.
+     * False when the launch ended.
+     */
+    private boolean retryFailedUpdate(BattleNetLauncherLog log) {
+        if (log != failuresLog) {
+            failuresLog = log;
+            failuresHandled = 0;
+            startsBeforeRetry = -1;
+        }
+        int failures = log.updateFailures(product.uid);
+        if (failures <= failuresHandled) {
+            if (startsBeforeRetry < 0) return true;
+            if (log.updateStarts(product.uid) > startsBeforeRetry) {
+                event("Battle.net started the update again");
+                startsBeforeRetry = -1;
+                return true;
+            }
+            if (SystemClock.elapsedRealtime() - retryClickedAt < plan.updateRetryAckSeconds * 1000L) return true;
+            event("Update click started nothing within " + plan.updateRetryAckSeconds + " s");
+            return failUpdate(log);
+        }
+        failuresHandled = failures;
+        startsBeforeRetry = -1;
+        put("updateFailures", failures);
+        if (updateRetries >= plan.updateRetries) return failUpdate(log);
+        updateRetries++;
+        put("updateRetries", updateRetries);
+        stage(Stage.UPDATING, appContext.getString(R.string.wehavephones_launch_update_retrying));
+        sleep(plan.updateRetryDelayMs);
+        if (!running) return false;
+        tail.poll();
+        event("Battle.net could not update " + product.uid + " (Agent error " + errorCode(log)
+                + "); clicking Update (" + updateRetries + "/" + plan.updateRetries + ")");
+        int startsBefore = log.updateStarts(product.uid);
+        if (!clickMainButton("Update", false)) {
+            if (!running || playUnavailable) return false;
+            return failUpdate(log);
+        }
+        startsBeforeRetry = startsBefore;
+        retryClickedAt = SystemClock.elapsedRealtime();
+        return true;
+    }
+
+    private boolean failUpdate(BattleNetLauncherLog log) {
+        String code = errorCode(log);
+        put("updateError", code);
+        event("giving up on the " + product.uid + " update (Agent error " + code + ")");
+        bringSessionToFront();
+        fail(appContext.getString(R.string.wehavephones_launch_update_failed, code));
+        return false;
+    }
+
+    private String errorCode(BattleNetLauncherLog log) {
+        String code = log.agentError(product.uid);
+        return code.isEmpty() ? "?" : code;
+    }
+
     /** Parse new lines of the main-client log, switching to a newer main log when one appears. */
     private BattleNetLauncherLog pollLog(File logsDir) {
         File main = BattleNetLauncherLog.findMainLog(logsDir, logsNewerThan);
@@ -438,7 +509,7 @@ public final class OneButtonLauncher {
                 return writeLaunchBat(WeHavePhonesLaunchPlan.gameBat(WeHavePhonesPaths.bnetGuestDir(container), attempt.code))
                         && execInSession(winHandler, WeHavePhonesLaunchPlan.LAUNCH_BAT_GUEST);
             case PLAY:
-                return clickPlay();
+                return clickMainButton("Play", true);
             case DIRECT:
                 return writeLaunchBat(WeHavePhonesLaunchPlan.directBat(WeHavePhonesPaths.wowGuestRoot(container), product, product.exe,
                         DeviceProfileSelector.wowApiArg(appContext)))
@@ -474,8 +545,10 @@ public final class OneButtonLauncher {
      * its bottom-left corner. Input only reaches Wine while the session is in
      * front, so it is brought there first. Escape dismisses Battle.net's
      * in-window What's New dialog before Play; it has no separate X window.
+     * The same button reads Update after a failed update ({@code label} is
+     * for the log). {@code probe} ends the launch when Play is greyed out.
      */
-    private boolean clickPlay() {
+    private boolean clickMainButton(String label, boolean probe) {
         if (!running) return false;
         if (ProcessScanner.findWowProcess() != null) return true;
         XServerDisplayActivity session = liveSession();
@@ -484,7 +557,7 @@ public final class OneButtonLauncher {
         long deadline = SystemClock.elapsedRealtime() + 10_000L;
         while (!session.getLifecycle().getCurrentState().isAtLeast(Lifecycle.State.RESUMED)) {
             if (SystemClock.elapsedRealtime() > deadline) {
-                event("the session did not come to the front; Play not clicked");
+                event("the session did not come to the front; " + label + " not clicked");
                 return false;
             }
             sleep(250);
@@ -511,7 +584,7 @@ public final class OneButtonLauncher {
             }
         });
         if (found[0] == null) {
-            event("no Battle.net window among the mapped X windows; Play not clicked");
+            event("no Battle.net window among the mapped X windows; " + label + " not clicked");
             return false;
         }
         sleep(300);
@@ -522,11 +595,11 @@ public final class OneButtonLauncher {
         // to render. Escape closes it and is harmless on the normal game page.
         // Repeat on retries: the modal may render after the first Play attempt.
         SessionInput.key(xServer, XKeycode.KEY_ESC);
-        event("sent Escape to Battle.net before Play (dismiss What's New)");
+        event("sent Escape to Battle.net before " + label + " (dismiss What's New)");
         sleep(500);
         if (!running) return false;
         if (ProcessScanner.findWowProcess() != null) return true;
-        if (probePlayButton(xServer, target[0], target[1])) {
+        if (probe && probePlayButton(xServer, target[0], target[1])) {
             // The Play button is greyed out (for example a pre-installed
             // pre-release like the Forever Stress Test): clicking it does
             // nothing, so the normal retries and Battle.net restarts would
@@ -538,7 +611,7 @@ public final class OneButtonLauncher {
         }
         if (!running) return false;
         SessionInput.click(xServer, target[0], target[1]);
-        event("clicked Play at X " + target[0] + "," + target[1] + " (Battle.net window " + found[0] + ")");
+        event("clicked " + label + " at X " + target[0] + "," + target[1] + " (Battle.net window " + found[0] + ")");
         return true;
     }
 

@@ -32,6 +32,7 @@ public final class LaunchSelfTest {
         playButtonProbe();
         readinessWarm(fixtures);
         readinessUpdate(fixtures);
+        updateFailure(fixtures);
         readinessAnniversary(products, fixtures);
         forwarderAndFields(fixtures);
         logFiles(fixtures);
@@ -241,6 +242,24 @@ public final class LaunchSelfTest {
         synthetic.feed("D 2026-09-25 21:59:02.000000 [ProductState] {Main} InstallState (wow): currentStage=Complete");
         check("synthetic: ready", BattleNetLauncherLog.Phase.READY, synthetic.phase("wow"));
         check("synthetic: checking when uid unknown", BattleNetLauncherLog.Phase.CHECKING_UPDATES, synthetic.phase("wow_classic"));
+    }
+
+    private static void updateFailure(File fixtures) throws Exception {
+        BattleNetLauncherLog log = new BattleNetLauncherLog();
+        log.feedAll(Files.readAllLines(new File(fixtures, "update-failed.log").toPath()));
+        check("update failure: still UPDATING", BattleNetLauncherLog.Phase.UPDATING, log.phase("wow_classic_era"));
+        check("update failure: starts", 1, log.updateStarts("wow_classic_era"));
+        check("update failure: failures", 1, log.updateFailures("wow_classic_era"));
+        check("update failure: agent error", "5016", log.agentError("wow_classic_era"));
+        check("update failure: other game started", 1, log.updateStarts("wow_classic_anniversary"));
+        check("update failure: other game not failed", 0, log.updateFailures("wow_classic_anniversary"));
+        check("update failure: other game no error", "", log.agentError("wow_classic_anniversary"));
+        log.feed("I 2026-10-27 03:02:00.000000 [InstallManager] {Main} Starting [Manual] UPDATE operation for \"wow_classic_era\".");
+        check("update failure: retry counted", 2, log.updateStarts("wow_classic_era"));
+
+        BattleNetLauncherLog version = new BattleNetLauncherLog();
+        version.feed("E 2026-10-26 07:14:36.829011 [InstallManager] {Main} An agent error occurred: wow_classic_era, code=2123 url=/version/wow_classic_era");
+        check("update failure: version check errors ignored", "", version.agentError("wow_classic_era"));
     }
 
     private static void forwarderAndFields(File fixtures) throws Exception {

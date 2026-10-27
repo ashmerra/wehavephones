@@ -27,6 +27,11 @@ import java.util.regex.Pattern;
  *   Ready = {@code currentOperation=UpToDate} and {@code playable=1}.</li>
  *   <li>{@code [InstallManager] … Launched <exe> with args: <args>, pid: N}</li>
  *   <li>{@code [InstallManager] … Game is running: <uid>}</li>
+ *   <li>{@code [InstallManager] … Starting [Auto] UPDATE operation for "<uid>".}, then
+ *   {@code Update failed: <uid> setFailedState=1} and
+ *   {@code An agent error occurred: <uid>, code=5016 url=/update/<uid>} when Agent
+ *   gives up. Battle.net does not retry a failed automatic update by itself
+ *   (seen on the S23 2026-10-26).</li>
  *   <li>{@code [UnifiedAuth] … UAuth: finished loading. statusCode=200 state=LoginCredential}:
  *   the login form is up (fresh email pages report {@code state=Login});
  *   the preceding {@code UAuth: begin loading: <url>}
@@ -74,6 +79,9 @@ public final class BattleNetLauncherLog {
     private static final Pattern FIELD = Pattern.compile("(?:^|\\s)([A-Za-z][A-Za-z0-9_]*)=");
     private static final Pattern LAUNCHED = Pattern.compile("\\[InstallManager\\].*? Launched (.+?) with args: (.*), pid: (\\d+)");
     private static final Pattern GAME_RUNNING = Pattern.compile("Game is running: (\\S+)");
+    private static final Pattern UPDATE_STARTING = Pattern.compile("\\[InstallManager\\].*? Starting \\[\\w+\\] (?:UPDATE|INSTALL|REPAIR) operation for \"([^\"]+)\"");
+    private static final Pattern UPDATE_FAILED = Pattern.compile("\\[InstallManager\\].*? (?:Update|Install|Repair) failed: (\\S+)");
+    private static final Pattern AGENT_ERROR = Pattern.compile("\\[InstallManager\\].*? An agent error occurred: ([^,\\s]+), code=(\\d+) url=/(?:update|install|repair)/");
     private static final Pattern UID_ARG = Pattern.compile("-uid\\s+(\\S+)");
     private static final Pattern IPC_MODE = Pattern.compile("IPC shared memory\\..*mode=(server|client)");
     private static final Pattern TIMESTAMP = Pattern.compile("^[A-Z] (\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d+)");
@@ -92,6 +100,9 @@ public final class BattleNetLauncherLog {
     private final HashMap<String, LinkedHashMap<String, String>> products = new HashMap<>();
     private final ArrayList<Launch> launches = new ArrayList<>();
     private final ArrayList<String> runningGames = new ArrayList<>();
+    private final HashMap<String, Integer> updateStarts = new HashMap<>();
+    private final HashMap<String, Integer> updateFailures = new HashMap<>();
+    private final HashMap<String, String> agentErrors = new HashMap<>();
     private String ipcMode = "";
     private String commandLine = "";
     private boolean loggedIn;
@@ -154,6 +165,21 @@ public final class BattleNetLauncherLog {
         matcher = GAME_RUNNING.matcher(line);
         if (matcher.find()) {
             runningGames.add(matcher.group(1).toLowerCase(Locale.ROOT));
+            return;
+        }
+        matcher = UPDATE_STARTING.matcher(line);
+        if (matcher.find()) {
+            updateStarts.merge(normalize(matcher.group(1)), 1, Integer::sum);
+            return;
+        }
+        matcher = UPDATE_FAILED.matcher(line);
+        if (matcher.find()) {
+            updateFailures.merge(normalize(matcher.group(1)), 1, Integer::sum);
+            return;
+        }
+        matcher = AGENT_ERROR.matcher(line);
+        if (matcher.find()) {
+            agentErrors.put(normalize(matcher.group(1)), matcher.group(2));
             return;
         }
         matcher = IPC_MODE.matcher(line);
@@ -399,6 +425,24 @@ public final class BattleNetLauncherLog {
             if (wanted.isEmpty() || wanted.equals(launch.uid)) return launch;
         }
         return null;
+    }
+
+    /** How many update, install or repair operations Battle.net started for {@code uid}. */
+    public int updateStarts(String uid) {
+        Integer count = updateStarts.get(normalize(uid));
+        return count != null ? count : 0;
+    }
+
+    /** How many of them Agent failed. */
+    public int updateFailures(String uid) {
+        Integer count = updateFailures.get(normalize(uid));
+        return count != null ? count : 0;
+    }
+
+    /** Agent's error code for the last failed operation on {@code uid}, or "" when none was logged. */
+    public String agentError(String uid) {
+        String code = agentErrors.get(normalize(uid));
+        return code != null ? code : "";
     }
 
     public boolean isGameRunning(String uid) {

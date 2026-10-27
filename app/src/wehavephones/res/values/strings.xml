@@ -349,6 +349,8 @@
     <string name="wehavephones_launch_session_timeout">The Wine session did not become ready within %1$d s.</string>
     <string name="wehavephones_launch_session_ended">The Wine session ended before World of Warcraft started.</string>
     <string name="wehavephones_launch_ready_timeout">Battle.net did not finish signing in within %1$d s. Sign in (the Battle.net screen or the Battle.net window), then press Play again.</string>
+    <string name="wehavephones_launch_update_retrying">Battle.net could not update World of Warcraft. Trying again…</string>
+    <string name="wehavephones_launch_update_failed">Battle.net could not update World of Warcraft (Agent error %1$s). Press Update in Battle.net to try again. If it keeps failing, use Scan and Repair from the game\'s settings menu in Battle.net.</string>
     <string name="wehavephones_launch_update_timeout">The World of Warcraft update did not finish within %1$d s. Leave Battle.net running and press Play again.</string>
     <string name="wehavephones_launch_failed">Battle.net did not start World of Warcraft (tried %1$s). Press Play in the Battle.net window.</string>
     <string name="wehavephones_launch_play_unavailable">Play is not available: Battle.net\'s Play button is greyed out for this game (pre-installed or not released yet). See the Battle.net window.</string>

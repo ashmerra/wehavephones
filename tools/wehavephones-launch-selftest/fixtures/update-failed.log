@@ -1,0 +1,14 @@
+I 2026-10-27 03:00:17.543791 [Main] {Main} Opening IPC shared memory. queueName=User:xuser:Battle.net IPC ShMem mode=server
+D 2026-10-27 03:00:33.112233 [ProductState] {Main} InstallState (wow_classic_era): currentOperation=Update currentOperationStatus=Paused installed=1 playable=0
+I 2026-10-27 03:00:56.421267 [BNLogin] {Main} Logged into Battle.net successfully.
+I 2026-10-27 03:00:56.695706 [InstallManager] {Main} Starting [Auto] UPDATE operation for "wow_classic_era".
+D 2026-10-27 03:00:56.699005 [ProductState] {Main} InstallState (wow_classic_era): currentOperationStatus=Waiting
+I 2026-10-27 03:00:56.868476 [InstallManager] {Main} Starting [Auto] UPDATE operation for "wow_classic_anniversary".
+D 2026-10-27 03:00:58.007083 [ProductState] {Main} InstallState (wow_classic_era): currentOperationStatus=Initializing downloadRemainingExists=1
+E 2026-10-27 03:01:03.104830 [InstallManager] {Main} Update failed: wow_classic_era setFailedState=1
+D 2026-10-27 03:01:03.106350 [ProductState] {Main} InstallState (wow_classic_era): currentOperationStatus=Waiting downloadRemainingExists=0
+D 2026-10-27 03:01:03.109098 [ProductState] {Main} InstallState (wow_classic_era): currentOperationStatus=New
+E 2026-10-27 03:01:03.111264 [InstallManager] {Main} An agent error occurred: wow_classic_era, code=5016 url=/update/wow_classic_era
+E 2026-10-27 03:01:03.111997 [InstallManager] {Main} Ignoring error: wow_classic_era, code=5016, url=/update/wow_classic_era, autoTriggered=1
+D 2026-10-27 03:01:11.543686 [InstallManager] {Main} Update started: wow_classic_anniversary
+D 2026-10-27 03:02:37.475632 [InstallManager] {Main} Update completed: wow_classic_anniversary
