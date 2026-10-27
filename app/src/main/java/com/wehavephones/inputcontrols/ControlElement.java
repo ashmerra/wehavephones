@@ -2,6 +2,7 @@ package com.wehavephones.inputcontrols;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PointF;
@@ -81,6 +82,7 @@ public class ControlElement {
     private Range range;
     private byte orientation;
     private PointF currentPosition;
+    private final boolean[] dpadDirections = new boolean[4];
     private RangeScroller scroller;
     private CubicBezierInterpolator interpolator;
     private Object touchTime;
@@ -343,38 +345,48 @@ public class ControlElement {
     public void draw(Canvas canvas) {
         int snappingSize = inputControlsView.getSnappingSize();
         Paint paint = inputControlsView.getPaint();
-        int primaryColor = inputControlsView.getPrimaryColor();
-
-        paint.setColor(selected ? inputControlsView.getSecondaryColor() : primaryColor);
-        paint.setStyle(Paint.Style.STROKE);
+        int outlineColor = inputControlsView.getOutlineColor();
+        int backingColor = inputControlsView.getBackingColor();
+        int labelColor = inputControlsView.getLabelColor();
         float strokeWidth = snappingSize * 0.25f;
         paint.setStrokeWidth(strokeWidth);
         Rect boundingBox = getBoundingBox();
+        Path path = inputControlsView.getPath();
+        path.reset();
 
         switch (type) {
             case BUTTON: {
                 float cx = boundingBox.centerX();
                 float cy = boundingBox.centerY();
+                boolean pressed = selected || currentPointerId != -1;
 
                 switch (shape) {
                     case CIRCLE:
-                        canvas.drawCircle(cx, cy, boundingBox.width() * 0.5f, paint);
+                        path.addCircle(cx, cy, boundingBox.width() * 0.5f, Path.Direction.CW);
                         break;
-                    case RECT:
-                        canvas.drawRect(boundingBox, paint);
+                    case RECT: {
+                        float radius = snappingSize * scale;
+                        path.addRoundRect(boundingBox.left, boundingBox.top, boundingBox.right, boundingBox.bottom, radius, radius, Path.Direction.CW);
                         break;
+                    }
                     case ROUND_RECT: {
                         float radius = boundingBox.height() * 0.5f;
-                        canvas.drawRoundRect(boundingBox.left, boundingBox.top, boundingBox.right, boundingBox.bottom, radius, radius, paint);
+                        path.addRoundRect(boundingBox.left, boundingBox.top, boundingBox.right, boundingBox.bottom, radius, radius, Path.Direction.CW);
                         break;
                     }
                     case SQUARE: {
                         float radius = snappingSize * 0.75f * scale;
-                        canvas.drawRoundRect(boundingBox.left, boundingBox.top, boundingBox.right, boundingBox.bottom, radius, radius, paint);
+                        path.addRoundRect(boundingBox.left, boundingBox.top, boundingBox.right, boundingBox.bottom, radius, radius, Path.Direction.CW);
                         break;
                     }
                 }
 
+                if (pressed) {
+                    fillAndStroke(canvas, paint, path, inputControlsView.getPressedColor(), inputControlsView.getPressedOutlineColor());
+                }
+                else fillAndStroke(canvas, paint, path, backingColor, outlineColor);
+
+                paint.setColor(labelColor);
                 if (iconId > 0) {
                     drawIcon(canvas, cx, cy, boundingBox.width(), boundingBox.height(), iconId);
                 }
@@ -383,7 +395,6 @@ public class ControlElement {
                     paint.setTextSize(Math.min(getTextSizeForWidth(paint, text, boundingBox.width() - strokeWidth * 2), snappingSize * 2 * scale));
                     paint.setTextAlign(Paint.Align.CENTER);
                     paint.setStyle(Paint.Style.FILL);
-                    paint.setColor(primaryColor);
                     canvas.drawText(text, x, (y - ((paint.descent() + paint.ascent()) * 0.5f)), paint);
                 }
                 break;
@@ -391,152 +402,175 @@ public class ControlElement {
             case D_PAD: {
                 float cx = boundingBox.centerX();
                 float cy = boundingBox.centerY();
-                float offsetX = snappingSize * 2 * scale;
-                float offsetY = snappingSize * 3 * scale;
-                float start = snappingSize * scale;
-                Path path = inputControlsView.getPath();
-                path.reset();
+                float halfSize = boundingBox.width() * 0.5f;
+                float halfArm = snappingSize * 2.4f * scale;
+                float radius = snappingSize * scale;
+                Path verticalArms = inputControlsView.getSecondaryPath();
+                verticalArms.reset();
+                path.addRoundRect(boundingBox.left, cy - halfArm, boundingBox.right, cy + halfArm, radius, radius, Path.Direction.CW);
+                verticalArms.addRoundRect(cx - halfArm, boundingBox.top, cx + halfArm, boundingBox.bottom, radius, radius, Path.Direction.CW);
+                path.op(verticalArms, Path.Op.UNION);
 
-                path.moveTo(cx, cy - start);
-                path.lineTo(cx - offsetX, cy - offsetY);
-                path.lineTo(cx - offsetX, boundingBox.top);
-                path.lineTo(cx + offsetX, boundingBox.top);
-                path.lineTo(cx + offsetX, cy - offsetY);
-                path.close();
-
-                path.moveTo(cx - start, cy);
-                path.lineTo(cx - offsetY, cy - offsetX);
-                path.lineTo(boundingBox.left, cy - offsetX);
-                path.lineTo(boundingBox.left, cy + offsetX);
-                path.lineTo(cx - offsetY, cy + offsetX);
-                path.close();
-
-                path.moveTo(cx, cy + start);
-                path.lineTo(cx - offsetX, cy + offsetY);
-                path.lineTo(cx - offsetX, boundingBox.bottom);
-                path.lineTo(cx + offsetX, boundingBox.bottom);
-                path.lineTo(cx + offsetX, cy + offsetY);
-                path.close();
-
-                path.moveTo(cx + start, cy);
-                path.lineTo(cx + offsetY, cy - offsetX);
-                path.lineTo(boundingBox.right, cy - offsetX);
-                path.lineTo(boundingBox.right, cy + offsetX);
-                path.lineTo(cx + offsetY, cy + offsetX);
-                path.close();
-
+                paint.setStyle(Paint.Style.FILL);
+                paint.setColor(backingColor);
                 canvas.drawPath(path, paint);
+
+                canvas.save();
+                canvas.clipPath(path);
+                paint.setColor(inputControlsView.getPressedColor());
+                if (dpadDirections[0]) canvas.drawRect(cx - halfArm, boundingBox.top, cx + halfArm, cy - halfArm, paint);
+                if (dpadDirections[1]) canvas.drawRect(cx + halfArm, cy - halfArm, boundingBox.right, cy + halfArm, paint);
+                if (dpadDirections[2]) canvas.drawRect(cx - halfArm, cy + halfArm, cx + halfArm, boundingBox.bottom, paint);
+                if (dpadDirections[3]) canvas.drawRect(boundingBox.left, cy - halfArm, cx - halfArm, cy + halfArm, paint);
+                canvas.restore();
+
+                paint.setStyle(Paint.Style.STROKE);
+                paint.setColor(selected ? inputControlsView.getPressedOutlineColor() : outlineColor);
+                canvas.drawPath(path, paint);
+
+                // An arrow in each arm, pointing outwards
+                float arrowSize = snappingSize * 0.85f * scale;
+                float arrowDistance = halfSize * 0.68f;
+                path.reset();
+                path.moveTo(cx - arrowSize, cy - arrowDistance + arrowSize * 0.55f);
+                path.lineTo(cx, cy - arrowDistance - arrowSize * 0.45f);
+                path.lineTo(cx + arrowSize, cy - arrowDistance + arrowSize * 0.55f);
+                paint.setColor(labelColor);
+                paint.setStrokeWidth(strokeWidth * 1.4f);
+                paint.setStrokeCap(Paint.Cap.ROUND);
+                paint.setStrokeJoin(Paint.Join.ROUND);
+                for (int i = 0; i < 4; i++) {
+                    canvas.save();
+                    canvas.rotate(i * 90, cx, cy);
+                    canvas.drawPath(path, paint);
+                    canvas.restore();
+                }
+                paint.setStrokeCap(Paint.Cap.BUTT);
+                paint.setStrokeJoin(Paint.Join.MITER);
+
+                paint.setStyle(Paint.Style.FILL);
+                paint.setColor(ColorUtils.setAlphaComponent(outlineColor, Color.alpha(outlineColor) / 2));
+                canvas.drawCircle(cx, cy, snappingSize * 0.7f * scale, paint);
                 break;
             }
             case RANGE_BUTTON: {
                 Range range = getRange();
-                int oldColor = paint.getColor();
                 float radius = snappingSize * 0.75f * scale;
                 float elementSize = scroller.getElementSize();
                 float minTextSize = snappingSize * 2 * scale;
                 float scrollOffset = scroller.getScrollOffset();
                 byte[] rangeIndex = scroller.getRangeIndex();
-                Path path = inputControlsView.getPath();
-                path.reset();
+                path.addRoundRect(boundingBox.left, boundingBox.top, boundingBox.right, boundingBox.bottom, radius, radius, Path.Direction.CW);
+                fillAndStroke(canvas, paint, path, backingColor, selected ? inputControlsView.getPressedOutlineColor() : outlineColor);
+
+                canvas.save();
+                canvas.clipPath(path);
 
                 if (orientation == 0) {
                     float lineTop = boundingBox.top + strokeWidth * 0.5f;
                     float lineBottom = boundingBox.bottom - strokeWidth * 0.5f;
-                    float startX = boundingBox.left;
-                    canvas.drawRoundRect(startX, boundingBox.top, boundingBox.right, boundingBox.bottom, radius, radius, paint);
-
-                    canvas.save();
-                    path.addRoundRect(startX, boundingBox.top, boundingBox.right, boundingBox.bottom, radius, radius, Path.Direction.CW);
-                    canvas.clipPath(path);
-                    startX -= scrollOffset % elementSize;
+                    float startX = boundingBox.left - scrollOffset % elementSize;
 
                     for (byte i = rangeIndex[0]; i < rangeIndex[1]; i++) {
                         int index = i % range.max;
                         paint.setStyle(Paint.Style.STROKE);
-                        paint.setColor(oldColor);
+                        paint.setColor(outlineColor);
 
                         if (startX > boundingBox.left && startX  < boundingBox.right) canvas.drawLine(startX, lineTop, startX, lineBottom, paint);
                         String text = getRangeTextForIndex(range, index);
 
                         if (startX < boundingBox.right && startX + elementSize > boundingBox.left) {
                             paint.setStyle(Paint.Style.FILL);
-                            paint.setColor(primaryColor);
+                            paint.setColor(labelColor);
                             paint.setTextSize(Math.min(getTextSizeForWidth(paint, text, elementSize - strokeWidth * 2), minTextSize));
                             paint.setTextAlign(Paint.Align.CENTER);
                             canvas.drawText(text, startX + elementSize * 0.5f, (y - ((paint.descent() + paint.ascent()) * 0.5f)), paint);
                         }
                         startX += elementSize;
                     }
-
-                    paint.setStyle(Paint.Style.STROKE);
-                    paint.setColor(oldColor);
-                    canvas.restore();
                 }
                 else {
                     float lineLeft = boundingBox.left + strokeWidth * 0.5f;
                     float lineRight = boundingBox.right - strokeWidth * 0.5f;
-                    float startY = boundingBox.top;
-                    canvas.drawRoundRect(boundingBox.left, startY, boundingBox.right, boundingBox.bottom, radius, radius, paint);
-
-                    canvas.save();
-                    path.addRoundRect(boundingBox.left, startY, boundingBox.right, boundingBox.bottom, radius, radius, Path.Direction.CW);
-                    canvas.clipPath(inputControlsView.getPath());
-                    startY -= scrollOffset % elementSize;
+                    float startY = boundingBox.top - scrollOffset % elementSize;
 
                     for (byte i = rangeIndex[0]; i < rangeIndex[1]; i++) {
                         paint.setStyle(Paint.Style.STROKE);
-                        paint.setColor(oldColor);
+                        paint.setColor(outlineColor);
 
                         if (startY > boundingBox.top && startY < boundingBox.bottom) canvas.drawLine(lineLeft, startY, lineRight, startY, paint);
                         String text = getRangeTextForIndex(range, i);
 
                         if (startY < boundingBox.bottom && startY + elementSize > boundingBox.top) {
                             paint.setStyle(Paint.Style.FILL);
-                            paint.setColor(primaryColor);
+                            paint.setColor(labelColor);
                             paint.setTextSize(Math.min(getTextSizeForWidth(paint, text, boundingBox.width() - strokeWidth * 2), minTextSize));
                             paint.setTextAlign(Paint.Align.CENTER);
                             canvas.drawText(text, x, startY + elementSize * 0.5f - ((paint.descent() + paint.ascent()) * 0.5f), paint);
                         }
                         startY += elementSize;
                     }
-
-                    paint.setStyle(Paint.Style.STROKE);
-                    paint.setColor(oldColor);
-                    canvas.restore();
                 }
+
+                canvas.restore();
                 break;
             }
             case STICK: {
                 int cx = boundingBox.centerX();
                 int cy = boundingBox.centerY();
-                int oldColor = paint.getColor();
-                canvas.drawCircle(cx, cy, boundingBox.height() * 0.5f, paint);
+                path.addCircle(cx, cy, boundingBox.height() * 0.5f, Path.Direction.CW);
+                fillAndStroke(canvas, paint, path, backingColor, selected ? inputControlsView.getPressedOutlineColor() : outlineColor);
 
-                float thumbstickX = currentPosition != null ? currentPosition.x : cx;
-                float thumbstickY = currentPosition != null ? currentPosition.y : cy;
+                boolean active = currentPosition != null;
+                float thumbstickX = active ? currentPosition.x : cx;
+                float thumbstickY = active ? currentPosition.y : cy;
+                int pressedColor = inputControlsView.getPressedColor();
 
                 short thumbRadius = (short) (snappingSize * 3.5f * scale);
                 paint.setStyle(Paint.Style.FILL);
-                paint.setColor(ColorUtils.setAlphaComponent(primaryColor, 50));
+                paint.setColor(active ? pressedColor : ColorUtils.setAlphaComponent(pressedColor, Color.alpha(pressedColor) * 2 / 5));
                 canvas.drawCircle(thumbstickX, thumbstickY, thumbRadius, paint);
 
                 paint.setStyle(Paint.Style.STROKE);
-                paint.setColor(oldColor);
+                paint.setColor(active ? inputControlsView.getPressedOutlineColor() : outlineColor);
                 canvas.drawCircle(thumbstickX, thumbstickY, thumbRadius + strokeWidth * 0.5f, paint);
                 break;
             }
             case TRACKPAD: {
                 float radius = boundingBox.height() * 0.15f;
-                canvas.drawRoundRect(boundingBox.left, boundingBox.top, boundingBox.right, boundingBox.bottom, radius, radius, paint);
-                float offset = strokeWidth * 2.5f;
-                float innerStrokeWidth = strokeWidth * 2;
-                float innerHeight = boundingBox.height() - offset * 2;
-                radius = (innerHeight / boundingBox.height()) * radius - (innerStrokeWidth * 0.5f + strokeWidth * 0.5f);
-                paint.setStrokeWidth(innerStrokeWidth);
-                canvas.drawRoundRect(boundingBox.left + offset, boundingBox.top + offset, boundingBox.right - offset, boundingBox.bottom - offset, radius, radius, paint);
+                path.addRoundRect(boundingBox.left, boundingBox.top, boundingBox.right, boundingBox.bottom, radius, radius, Path.Direction.CW);
+                fillAndStroke(canvas, paint, path, backingColor, selected ? inputControlsView.getPressedOutlineColor() : outlineColor);
+
+                // Corner brackets mark it as a touch surface
+                float inset = boundingBox.width() * 0.104f;
+                float length = boundingBox.width() * 0.12f;
+                path.reset();
+                path.moveTo(boundingBox.left + inset, boundingBox.top + inset + length);
+                path.lineTo(boundingBox.left + inset, boundingBox.top + inset);
+                path.lineTo(boundingBox.left + inset + length, boundingBox.top + inset);
+                paint.setStrokeWidth(strokeWidth * 1.4f);
+                paint.setStrokeCap(Paint.Cap.ROUND);
+                paint.setStrokeJoin(Paint.Join.ROUND);
+                for (int i = 0; i < 4; i++) {
+                    canvas.save();
+                    canvas.rotate(i * 90, boundingBox.exactCenterX(), boundingBox.exactCenterY());
+                    canvas.drawPath(path, paint);
+                    canvas.restore();
+                }
+                paint.setStrokeCap(Paint.Cap.BUTT);
+                paint.setStrokeJoin(Paint.Join.MITER);
                 break;
             }
         }
+    }
+
+    private void fillAndStroke(Canvas canvas, Paint paint, Path path, int fillColor, int strokeColor) {
+        paint.setStyle(Paint.Style.FILL);
+        paint.setColor(fillColor);
+        canvas.drawPath(path, paint);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setColor(strokeColor);
+        canvas.drawPath(path, paint);
     }
 
     private void drawIcon(Canvas canvas, float cx, float cy, float width, float height, int iconId) {
@@ -595,6 +629,7 @@ public class ControlElement {
             if (type == Type.BUTTON) {
                 if (isKeepButtonPressedAfterMinTime()) touchTime = System.currentTimeMillis();
                 if (!toggleSwitch || !selected) inputControlsView.handleInputEvent(getBindingAt(0), true);
+                inputControlsView.invalidate();
                 return true;
             }
             else if (type == Type.RANGE_BUTTON) {
@@ -701,6 +736,10 @@ public class ControlElement {
             }
             else {
                 final boolean[] states = {deltaY <= -DPAD_DEAD_ZONE, deltaX >= DPAD_DEAD_ZONE, deltaY >= DPAD_DEAD_ZONE, deltaX <= -DPAD_DEAD_ZONE};
+                if (!Arrays.equals(states, dpadDirections)) {
+                    System.arraycopy(states, 0, dpadDirections, 0, 4);
+                    inputControlsView.invalidate();
+                }
 
                 for (byte i = 0; i < 4; i++) {
                     float value = i == 1 || i == 3 ? deltaX : deltaY;
@@ -728,14 +767,11 @@ public class ControlElement {
                     selected = (System.currentTimeMillis() - (long)touchTime) > BUTTON_MIN_TIME_TO_KEEP_PRESSED;
                     if (!selected) inputControlsView.handleInputEvent(binding, false);
                     touchTime = null;
-                    inputControlsView.invalidate();
                 }
                 else if (!toggleSwitch || selected) inputControlsView.handleInputEvent(binding, false);
 
-                if (toggleSwitch) {
-                    selected = !selected;
-                    inputControlsView.invalidate();
-                }
+                if (toggleSwitch) selected = !selected;
+                inputControlsView.invalidate();
             }
             else if (type == Type.RANGE_BUTTON || type == Type.D_PAD || type == Type.STICK || type == Type.TRACKPAD) {
                 for (byte i = 0; i < states.length; i++) {
@@ -747,6 +783,10 @@ public class ControlElement {
                     scroller.handleTouchUp();
                 }
                 else if (type == Type.STICK) {
+                    inputControlsView.invalidate();
+                }
+                else if (type == Type.D_PAD) {
+                    Arrays.fill(dpadDirections, false);
                     inputControlsView.invalidate();
                 }
 

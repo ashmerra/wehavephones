@@ -12,6 +12,7 @@ import android.graphics.Point;
 import android.graphics.PointF;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
+import android.graphics.Typeface;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
@@ -36,10 +37,17 @@ import java.util.TimerTask;
 
 public class InputControlsView extends View {
     public static final float DEFAULT_OVERLAY_OPACITY = 0.4f;
+    // Brand palette: light blue outlines over a faint navy backing, solid blue when pressed
+    private static final int OUTLINE_RGB = 0x8cc4f7;
+    private static final int BACKING_RGB = 0x091628;
+    private static final int PRESSED_RGB = 0x216bbc;
+    private static final int PRESSED_OUTLINE_RGB = 0xbfe0ff;
+    private static final int LABEL_RGB = 0xeef5ff;
     private boolean editMode = false;
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Path path = new Path();
-    private final ColorFilter colorFilter = new PorterDuffColorFilter(0xffffffff, PorterDuff.Mode.SRC_IN);
+    private final Path secondaryPath = new Path();
+    private final ColorFilter colorFilter = new PorterDuffColorFilter(0xff000000 | LABEL_RGB, PorterDuff.Mode.SRC_IN);
     private final Point cursor = new Point();
     private boolean readyToDraw = false;
     private boolean moveCursor = false;
@@ -62,6 +70,7 @@ public class InputControlsView extends View {
         setFocusable(true);
         setFocusableInTouchMode(true);
         setBackgroundColor(0x00000000);
+        paint.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
         setLayoutParams(new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
     }
 
@@ -208,12 +217,30 @@ public class InputControlsView extends View {
         this.showTouchscreenControls = showTouchscreenControls;
     }
 
-    public int getPrimaryColor() {
-        return Color.argb((int)(overlayOpacity * 255), 255, 255, 255);
+    // Alphas are tuned for the default opacity and scale with the user's overlay opacity
+    private int getOverlayColor(int rgb, float alpha) {
+        float scaledAlpha = Mathf.clamp(alpha * overlayOpacity / DEFAULT_OVERLAY_OPACITY, 0, 1);
+        return ((int)(scaledAlpha * 255) << 24) | rgb;
     }
 
-    public int getSecondaryColor() {
-        return Color.argb((int)(overlayOpacity * 255), 2, 119, 189);
+    public int getOutlineColor() {
+        return getOverlayColor(OUTLINE_RGB, 0.92f);
+    }
+
+    public int getBackingColor() {
+        return getOverlayColor(BACKING_RGB, 0.3f);
+    }
+
+    public int getPressedColor() {
+        return getOverlayColor(PRESSED_RGB, 0.82f);
+    }
+
+    public int getPressedOutlineColor() {
+        return getOverlayColor(PRESSED_OUTLINE_RGB, 0.92f);
+    }
+
+    public int getLabelColor() {
+        return getOverlayColor(LABEL_RGB, 1.0f);
     }
 
     private synchronized ControlElement intersectElement(float x, float y) {
@@ -231,6 +258,10 @@ public class InputControlsView extends View {
 
     public Path getPath() {
         return path;
+    }
+
+    public Path getSecondaryPath() {
+        return secondaryPath;
     }
 
     public ColorFilter getColorFilter() {
