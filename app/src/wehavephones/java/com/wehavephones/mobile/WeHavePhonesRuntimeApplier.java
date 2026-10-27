@@ -85,6 +85,14 @@ public final class WeHavePhonesRuntimeApplier {
         }
         result.container = container;
 
+        try {
+            MobileTouchPreparation.prepare(context, container);
+        }
+        catch (java.io.IOException e) {
+            result.fail("Could not prepare touch controls: " + e.getMessage());
+            return result;
+        }
+
         if (!checkWineLayer(context, profile, result)) return result;
 
         try {

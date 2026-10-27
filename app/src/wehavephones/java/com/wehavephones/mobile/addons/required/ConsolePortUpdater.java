@@ -12,6 +12,7 @@ import com.wehavephones.mobile.WeHavePhonesPaths;
 import com.wehavephones.mobile.WowFlavor;
 import com.wehavephones.mobile.WowInstallationScanner;
 import com.wehavephones.mobile.WowProduct;
+import com.wehavephones.mobile.MobileTouchPreparation;
 import com.wehavephones.mobile.addons.AddonManager;
 import com.wehavephones.mobile.addons.install.AddonInstaller;
 import com.wehavephones.mobile.addons.install.FileOps;
@@ -172,6 +173,18 @@ public final class ConsolePortUpdater {
         Report report = new Report();
         if (container == null) {
             report.blocked = "no container";
+            return report;
+        }
+        if (WeHavePhonesConfig.isMobileTouchEnabled(context)) {
+            report.blocked = "mobile touch controls selected";
+            return report;
+        }
+        // Restore only the folders this mode disabled before the updater considers an install.
+        try {
+            MobileTouchPreparation.prepare(context, container);
+        }
+        catch (IOException e) {
+            report.blocked = e.getMessage();
             return report;
         }
         ArrayList<WowProduct> targets = new ArrayList<>();

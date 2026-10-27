@@ -24,6 +24,7 @@ public final class WeHavePhonesConfig {
     public static final String KEY_LAST_STAGE_STATUS = "wehavephones_last_stage_status";
     public static final String KEY_PERFORMANCE_OVERLAY = "wehavephones_performance_overlay";
     public static final String KEY_DISABLE_VIRTUAL_GAMEPAD = "wehavephones_disable_virtual_gamepad";
+    public static final String KEY_MOBILE_TOUCH = "wehavephones_mobile_touch";
     public static final String KEY_KEEP_RUNNING_IN_BACKGROUND = "wehavephones_keep_running_in_background";
     public static final String KEY_START_INPUT_BRIDGE = "wehavephones_start_input_bridge";
 
@@ -155,6 +156,15 @@ public final class WeHavePhonesConfig {
 
     public static void setVirtualGamepadDisabled(Context context, boolean disabled) {
         prefs(context).edit().putBoolean(KEY_DISABLE_VIRTUAL_GAMEPAD, disabled).apply();
+    }
+
+    /** Opt-in direct touch controls. Applied to addons before the next game launch. */
+    public static boolean isMobileTouchEnabled(Context context) {
+        return prefs(context).getBoolean(KEY_MOBILE_TOUCH, false);
+    }
+
+    public static void setMobileTouchEnabled(Context context, boolean enabled) {
+        prefs(context).edit().putBoolean(KEY_MOBILE_TOUCH, enabled).apply();
     }
 
     /**

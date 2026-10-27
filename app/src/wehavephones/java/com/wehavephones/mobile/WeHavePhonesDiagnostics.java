@@ -169,6 +169,8 @@ public final class WeHavePhonesDiagnostics {
     /** The opt-out, every device counted as a game controller and the session's on-screen controls. */
     static String controls(Context context) {
         StringBuilder builder = new StringBuilder();
+        builder.append("Mobile touch controls: ")
+                .append(WeHavePhonesConfig.isMobileTouchEnabled(context) ? "on" : "off").append('\n');
         builder.append("Disable virtual gamepad: ")
                 .append(WeHavePhonesConfig.isVirtualGamepadDisabled(context) ? "on" : "off").append('\n');
         int count = 0;

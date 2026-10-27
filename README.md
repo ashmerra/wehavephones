@@ -63,6 +63,7 @@ The APK is written to `app/build/outputs/apk/wehavephones/debug/app-wehavephones
 - [Runtime and the patched Wine ntdll](docs/WEHAVEPHONES_RUNTIME.md)
 - [Addon manager](docs/WEHAVEPHONES_ADDONS.md)
 - [Input Bridge on-screen keys](docs/INPUT_BRIDGE.md)
+- [Experimental mobile touch controls](docs/TOUCH_CONTROLS.md)
 - [Device profiles](docs/DEVICE_PROFILES.md)
 - [Device reports](docs/DEVICE_REPORTS.md)
 - [Tested devices and graphics drivers](docs/TESTED_DEVICES.md)

@@ -32,6 +32,7 @@ public class GamepadSelfTest {
             set(win, "initReceived", true);
             controller.start();
             check(!WeHavePhonesConfig.isVirtualGamepadDisabled(activity), "touch controls enabled by default");
+            check(!WeHavePhonesConfig.isMobileTouchEnabled(activity), "mobile touch mode is opt-in");
             controller.refresh();
             check(activity.view.profile == null, "no controls over Battle.net before WoW starts");
 
@@ -41,6 +42,14 @@ public class GamepadSelfTest {
             check(virtual != null && activity.view.visibility == 0, "WoW start shows touch controls");
             controller.refresh();
             check(activity.shows == 1, "polling does not repeatedly reset controls");
+            WeHavePhonesConfig.setMobileTouchEnabled(activity, true);
+            controller.refresh();
+            check(activity.view.profile == null, "mobile touch replaces the standard gamepad overlay");
+            WeHavePhonesConfig.setMobileTouchEnabled(activity, false);
+            controller.refresh();
+            virtual = activity.view.profile;
+            check(virtual != null, "opting out restores the automatic gamepad overlay");
+            int reloadsBeforeHandoff = virtual.reloads;
             request(win, RequestCodes.GET_GAMEPAD, (byte) 1, (byte) 1);
             drain(win);
             int guestId = buffer(socket.last).getInt(1);
@@ -54,7 +63,7 @@ public class GamepadSelfTest {
             activity.inputManager.listener.onInputDeviceAdded(41);
             check(activity.view.profile == null && win.getCurrentController() == first,
                     "connect hides touch controls and acquires controller without input");
-            check(virtual.getGamepadState().buttons == 0 && virtual.reloads == 1,
+            check(virtual.getGamepadState().buttons == 0 && virtual.reloads == reloadsBeforeHandoff + 1,
                     "connect releases touches and resets element pointer state");
             check(SessionInputExtras.bridgeButtons == 0, "connect releases pre-game keys");
             checkReleased(evdev);

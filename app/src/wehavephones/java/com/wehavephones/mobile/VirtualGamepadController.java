@@ -37,6 +37,7 @@ public final class VirtualGamepadController implements InputManager.InputDeviceL
     private boolean gameRunning;
     private ControlsProfile virtualProfile;
     private boolean manual;
+    private java.util.function.Consumer<Boolean> gameRunningListener;
     // Persisted because the app process restarts when a session ends, before diagnostics are read.
     private static final String KEY_STATE = "wehavephones_controls_state";
     private static final String KEY_LAST_CHANGE = "wehavephones_controls_last_change";
@@ -49,6 +50,10 @@ public final class VirtualGamepadController implements InputManager.InputDeviceL
     }
 
     public boolean isFor(XServerDisplayActivity activity) { return this.activity == activity; }
+
+    public void setGameRunningListener(java.util.function.Consumer<Boolean> listener) {
+        gameRunningListener = listener;
+    }
 
     public void start() {
         preferences.edit().putString(KEY_LAST_CHANGE, "").apply();
@@ -82,10 +87,18 @@ public final class VirtualGamepadController implements InputManager.InputDeviceL
     public void refresh() {
         InputControlsView view = activity.getInputControlsView();
         if (stopped || activity.isFinishing() || activity.isDestroyed() || view == null) return;
-        if (!manual) applyAutomatic(view);
+        if (gameRunningListener != null) gameRunningListener.accept(gameRunning);
+        if (WeHavePhonesConfig.isMobileTouchEnabled(activity)) {
+            if (view.getProfile() != null) {
+                release(view.getProfile(), view);
+                activity.hideInputControls();
+            }
+        } else if (!manual) applyAutomatic(view);
         activity.getWinHandler().refreshGamepadController();
         String state = "Mode: " + (manual ? "manual (picked in Input Controls)" : "automatic")
-                + "\nOverlay: " + describe(view.getProfile(), view)
+                + "\nOverlay: " + (WeHavePhonesConfig.isMobileTouchEnabled(activity)
+                    ? "mobile touch (" + (gameRunning ? "visible" : "waiting for WoW") + ")"
+                    : describe(view.getProfile(), view))
                 + "\nWoW running: " + (gameRunning ? "yes" : "no") + "\n";
         if (!state.equals(sessionState)) {
             sessionState = state;
@@ -184,6 +197,7 @@ public final class VirtualGamepadController implements InputManager.InputDeviceL
     @Override public void onInputDeviceRemoved(int deviceId) { refresh(); }
     @Override public void onInputDeviceChanged(int deviceId) { refresh(); }
     @Override public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
-        if (WeHavePhonesConfig.KEY_DISABLE_VIRTUAL_GAMEPAD.equals(key)) refresh();
+        if (WeHavePhonesConfig.KEY_DISABLE_VIRTUAL_GAMEPAD.equals(key)
+                || WeHavePhonesConfig.KEY_MOBILE_TOUCH.equals(key)) refresh();
     }
 }

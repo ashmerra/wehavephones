@@ -94,6 +94,16 @@
                     android:layout_height="wrap_content"
                     android:text="@string/wehavephones_settings_performance_overlay" />
                 <CheckBox
+                    android:id="@+id/CBMobileTouch"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/wehavephones_settings_mobile_touch" />
+                <TextView
+                    style="@style/WeHavePhonesHint"
+                    android:layout_marginLeft="32dp"
+                    android:text="@string/wehavephones_settings_mobile_touch_hint" />
+                <CheckBox
                     android:id="@+id/CBDisableVirtualGamepad"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
