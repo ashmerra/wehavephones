@@ -52,6 +52,24 @@ public final class DeviceRulesSelfTest {
         "turnip-banner-26.3.0-20261015-r6-a8xx", "turnip-banner-26.3.0-20261015-r7-a8xx",
         "turnip-banner-27.0.0-20261016-r3-a8xx", "turnip-banner-27.0.0-20261016-r4-a8xx"
     };
+    private static final String[] GEN8_V38 = {"turnip-gen8-stevenmxz-v38", "turnip-gen8-stevenmxz-v38-patched"};
+    // October 16 r5 to October 27 r3, without 20261025 (its library equals 20261024-r7).
+    private static final String[] BANNERS_20261027 = banners(
+        "20261016-r5", "20261016-r6", "20261016-r7", "20261017", "20261017-r2",
+        "20261018", "20261018-r2", "20261018-r3", "20261019", "20261019-r2", "20261019-r3",
+        "20261020", "20261020-r2", "20261020-r3", "20261020-r4", "20261020-r5",
+        "20261021", "20261021-r2", "20261021-r3", "20261021-r4", "20261021-r5", "20261021-r6",
+        "20261022", "20261023-r3", "20261023-r4", "20261023-r5", "20261023-r6",
+        "20261024", "20261024-r2", "20261024-r3", "20261024-r4", "20261024-r5", "20261024-r6", "20261024-r7",
+        "20261025-r2", "20261025-r3", "20261025-r5", "20261026", "20261026-r2", "20261026-r3",
+        "20261027", "20261027-r2", "20261027-r3");
+    private static final String BANNER_850_845 = "turnip-banner-a8xx-850-845-pre1";
+
+    private static String[] banners(String... builds) {
+        String[] ids = new String[builds.length];
+        for (int i = 0; i < builds.length; i++) ids[i] = "turnip-banner-27.0.0-" + builds[i] + "-a8xx";
+        return ids;
+    }
 
     public static void main(String[] args) throws Exception {
         if (args.length < 2) throw new IllegalArgumentException("usage: DeviceRulesSelfTest <device-rules.json> <v6-baseline.json>");
@@ -296,7 +314,8 @@ public final class DeviceRulesSelfTest {
         for (String id : oldDrivers.keySet()) {
             check(oldDrivers.getJSONObject(id).similar(newDrivers.getJSONObject(id)), "existing driver unchanged: " + id);
         }
-        eq(oldDrivers.length() + 7, newDrivers.length(), "exactly seven requested releases added");
+        int added = 1 + BANNERS.length + GEN8_V38.length + BANNERS_20261027.length + 1;
+        eq(oldDrivers.length() + added, newDrivers.length(), "exactly the requested releases added");
         JSONObject oldProfiles = before.getJSONObject("profiles");
         JSONObject newProfiles = after.getJSONObject("profiles");
         eq(oldProfiles.keySet(), newProfiles.keySet(), "no profiles added or removed");
@@ -328,7 +347,13 @@ public final class DeviceRulesSelfTest {
             ArrayList<String> expected = new ArrayList<>(ids(oldP.pickerDrivers()));
             boolean a8xx = name.equals("adreno-8xx") || name.equals("adreno-84x");
             if (a8xx || name.equals("adreno-6xx") || name.equals("adreno-7xx")) expected.add(RUTABAGA);
-            if (a8xx) java.util.Collections.addAll(expected, BANNERS);
+            if (a8xx) {
+                java.util.Collections.addAll(expected, BANNERS);
+                java.util.Collections.addAll(expected, GEN8_V38);
+                java.util.Collections.addAll(expected, BANNERS_20261027);
+            }
+            // The A850/A845 test build: those GPUs match the 840-859 profile.
+            if (name.equals("adreno-84x")) expected.add(BANNER_850_845);
             eq(expected, ids(newP.pickerDrivers()), "exact optional applicability and old picker order: " + name);
             DeviceIdentity id = identities.get(name);
             eq(name, newRules.match(id).profile.name, "representative matches " + name);
