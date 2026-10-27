@@ -1,11 +1,13 @@
 local _, addon = ...
 local enabled = addon.enabled
 local frame = CreateFrame("Frame")
-local applied, editor, controls, selectedSlot, chatHooked, positioningChat
+local applied, editor, controls, selectedSlot, chatHooked, positioningChat, pager
 local category, page, entries = "Spells", 1, {}
 local undo
 local buttons = {}
 local Layout, OpenEditor, RefreshEditor
+local ACTION_SCALE = 1.35
+local WHITE = "Interface\\Buttons\\WHITE8X8"
 
 -- Overrides last for this UI session and never overwrite saved bindings.
 local bindings = {
@@ -46,24 +48,58 @@ local function Panel(name, title, width, height)
     panel:SetFrameStrata("DIALOG")
     panel:EnableMouse(true)
     panel:SetClampedToScreen(true)
-    panel:SetBackdrop({bgFile="Interface\\DialogFrame\\UI-DialogBox-Background",
-        edgeFile="Interface\\DialogFrame\\UI-DialogBox-Border", tile=true, tileSize=32, edgeSize=24,
-        insets={left=6, right=6, top=6, bottom=6}})
+    panel:SetBackdrop({bgFile=WHITE, edgeFile=WHITE, edgeSize=1})
+    panel:SetBackdropColor(.035, .086, .157, .98)
+    panel:SetBackdropBorderColor(.55, .77, .97, .9)
+    panel.brand = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    panel.brand:SetPoint("TOP", 0, -12)
+    panel.brand:SetText("We|cff62b2f2Have|rPhones")
     panel.title = panel:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    panel.title:SetPoint("TOP", 0, -18)
+    panel.title:SetPoint("TOP", 0, -28)
+    panel.title:SetTextColor(.93, .96, 1)
     panel.title:SetText(title)
     tinsert(UISpecialFrames, name)
     panel:Hide()
     return panel
 end
 
-local function Button(parent, name, text, x, y, width, height, callback)
-    local button = CreateFrame("Button", name, parent, "UIPanelButtonTemplate")
+local function Button(parent, name, text, x, y, width, height, callback, template)
+    local button = CreateFrame("Button", name, parent, template or "BackdropTemplate")
     button:SetSize(width, height)
     button:SetPoint("TOPLEFT", x, y)
-    button:SetText(text)
-    button:SetScript("OnClick", callback)
+    button:SetBackdrop({bgFile=WHITE, edgeFile=WHITE, edgeSize=1})
+    button:SetBackdropColor(.07, .40, .73, 1)
+    button:SetBackdropBorderColor(.55, .77, .97, .9)
+    button:SetHighlightTexture(WHITE)
+    button:GetHighlightTexture():SetVertexColor(.55, .77, .97, .22)
+    local label = button:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    label:SetPoint("CENTER")
+    label:SetWidth(width-12)
+    label:SetText(text)
+    button:SetFontString(label)
+    if callback then button:SetScript("OnClick", callback) end
     return button
+end
+
+local function UpdatePager()
+    if pager then pager.label:SetText("Bar " .. C_ActionBar.GetActionBarPage()) end
+end
+
+local function CreatePager()
+    if pager then return end
+    pager = CreateFrame("Frame", "WeHavePhonesTouchPager", UIParent)
+    pager:SetSize(144, 48)
+    pager:SetPoint("BOTTOMLEFT", UIParent, "BOTTOM", -264, 64)
+    pager.label = pager:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    pager.label:SetPoint("CENTER")
+    for i, direction in ipairs({"decrement", "increment"}) do
+        local button = Button(pager, "WeHavePhonesTouchPage" .. i, i == 1 and "<" or ">",
+            (i-1)*96, 0, 48, 48, nil, "SecureActionButtonTemplate,BackdropTemplate")
+        button:RegisterForClicks("AnyUp", "AnyDown")
+        button:SetAttribute("type", "actionbar")
+        button:SetAttribute("action", direction)
+    end
+    UpdatePager()
 end
 
 local function Collect()
@@ -260,25 +296,22 @@ end
 Layout = function()
     if not enabled or InCombatLockdown() then return end
     if WOW_PROJECT_ID ~= WOW_PROJECT_CLASSIC then return end
-    if MultiBarBottomLeft then MultiBarBottomLeft:Show() end
-    if MultiBarBottomRight then MultiBarBottomRight:Show() end
+    if MultiBarBottomLeft then MultiBarBottomLeft:Hide() end
+    if MultiBarBottomRight then MultiBarBottomRight:Hide() end
     if VIEWABLE_ACTION_BAR_PAGES then
-        VIEWABLE_ACTION_BAR_PAGES[5], VIEWABLE_ACTION_BAR_PAGES[6] = nil, nil
+        for i = 1, 6 do VIEWABLE_ACTION_BAR_PAGES[i] = 1 end
     end
-    for i = 1, 36 do
-        local button
-        if i <= 12 then button = _G["ActionButton" .. i]
-        elseif i <= 24 then button = _G["MultiBarBottomLeftButton" .. (i-12)]
-        else button = _G["MultiBarBottomRightButton" .. (i-24)] end
+    for i = 1, 12 do
+        local button = _G["ActionButton" .. i]
         if button then
-            -- Every widget inherits the same parent scale, with no per-button enlargement.
-            button:SetScale(1)
+            button:SetScale(ACTION_SCALE)
             button:ClearAllPoints()
-            if i <= 24 then
-                button:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMRIGHT", -256+((i-1)%6)*40, 64+(3-math.floor((i-1)/6))*40)
+            -- Compensate local button scale so anchors stay in UIParent units.
+            if i <= 8 then
+                button:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMRIGHT",
+                    (-228+((i-1)%4)*54)/ACTION_SCALE, (64+(1-math.floor((i-1)/4))*54)/ACTION_SCALE)
             else
-                local index = i-25
-                button:SetPoint("BOTTOMLEFT", UIParent, "BOTTOM", -120+(index%6)*40, 64+(1-math.floor(index/6))*40)
+                button:SetPoint("BOTTOMLEFT", UIParent, "BOTTOM", (-108+(i-9)*54)/ACTION_SCALE, 64/ACTION_SCALE)
             end
             button:SetAttribute("showgrid", 1)
             button:SetAttribute("type2", "")
@@ -292,6 +325,8 @@ Layout = function()
             end
         end
     end
+    CreatePager()
+    UpdatePager()
     for _, name in ipairs({"MainMenuBarTexture0", "MainMenuBarTexture1", "MainMenuBarTexture2",
         "MainMenuBarTexture3", "MainMenuBarLeftEndCap", "MainMenuBarRightEndCap"}) do
         if _G[name] then _G[name]:SetAlpha(0) end
@@ -325,7 +360,7 @@ local function Apply()
                     db.actionBars = {}
                     for i = 1, 7 do db.actionBars[i] = toggles[i] and true or false end
                 end
-                toggles[1], toggles[2] = true, true
+                toggles[1], toggles[2] = false, false
                 SetActionBarToggles(unpack(toggles))
             end
             for key, action in pairs(bindings) do SetOverrideBinding(frame, true, key, action) end
@@ -363,8 +398,11 @@ frame:RegisterEvent("PLAYER_ENTERING_WORLD")
 frame:RegisterEvent("PLAYER_REGEN_ENABLED")
 frame:RegisterEvent("PLAYER_REGEN_DISABLED")
 frame:RegisterEvent("UI_SCALE_CHANGED")
+frame:RegisterEvent("ACTIONBAR_PAGE_CHANGED")
 frame:SetScript("OnEvent", function(_, event)
-    if event == "PLAYER_REGEN_DISABLED" then
+    if event == "ACTIONBAR_PAGE_CHANGED" then
+        UpdatePager()
+    elseif event == "PLAYER_REGEN_DISABLED" then
         if editor then editor:Hide() end
         if controls then controls:Hide() end
     elseif event == "UI_SCALE_CHANGED" then

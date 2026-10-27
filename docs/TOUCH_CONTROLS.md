@@ -4,16 +4,27 @@ Settings → **Mobile touch controls (experimental)** is an opt-in alternative
 to the controller layout. It is off by default. Close the game before changing
 it, then launch again.
 
-The WoW interface uses one scale, 150% by default. Bars, bags, portraits, quest
-windows, tooltips and text inherit that scale. **More → Touch interface and
-size** offers 125%, 150% and 175% for the whole interface.
+The WoW interface uses one scale, 150% by default. Bags, portraits, quest
+windows, tooltips and text inherit that scale. Action buttons have a larger
+base size, 35% bigger than the earlier touch layout, and follow the same scale
+presets. **More → Touch interface and size** offers 125%, 150% and 175%.
 
-On Classic Era, 24 stock action buttons form a six-column, four-row grid at the
-bottom right. Another 12 buttons occupy two rows in the bottom middle. The
-movement stick stays on the left. Chat sits above it, and the bars leave room
-for the XP bar below. The primary 12 buttons keep WoW's action page and stance
-behaviour. The extra groups use WoW's existing additional action slots. They
-do not copy or erase the player's action assignments.
+On Classic Era, eight large stock action buttons form a four-column, two-row
+grid at the bottom right. Four more sit in one low row near the bottom middle.
+The movement stick stays on the left, with chat above it. The camera area
+extends down toward these groups and farther toward the center, leaving a
+broad space for natural thumb swipes. The XP bar stays below the actions.
+
+The **< Bar >** switcher beside the middle row cycles through all six normal
+WoW action pages, including the slots previously shown in the extra grids.
+Only 12 actions are visible at once. Both groups change together. The arrows
+are secure action buttons and stay usable in combat. The primary buttons keep
+WoW's stance behaviour and existing action assignments. Paging never copies
+or erases actions. The two extra bottom bars are hidden for this mode and
+their prior visibility is restored on opt-out.
+
+Touch panels, the movement overlay and the blue **More** selector use the
+app's navy shell, blue keys and silver text, matching the controller overlay.
 
 ## Editing actions
 
@@ -38,7 +49,7 @@ under WoW's control.
 | Right click, interact with a unit or corpse, use or equip an item, open a context menu | Hold, then release |
 | Change a hotbar action | Hold the slot, then use the picker |
 | Movement | Left stick, including diagonal movement and strafing |
-| Camera turn | Drag in the right area above the hotbars |
+| Camera turn | Drag in the broad center-right area above the hotbars |
 | Camera zoom | Pinch with two fingers in the camera area |
 | Drag a window, slider, spellbook entry or bag item | Switch to window gestures through More, then drag |
 | Scroll a list | Use two fingers in window mode |
@@ -47,7 +58,7 @@ under WoW's control.
 | Open chat, enter names, search, type text | More → Chat or Keyboard |
 | Shift-click links or split stacks, Ctrl-click previews, Alt-click self-casts | Choose the modifier in More, then tap or hold |
 | Cancel a ground-targeted cast or close a window | Escape |
-| Change the main action page | More → Next action bar page |
+| Change the action page | Tap the visible < or > arrows, or More → Next action bar page |
 
 Window mode replaces camera drags with left mouse drags, including over the
 right side of the screen. The hint changes to **Window gestures**. Use More
@@ -84,23 +95,24 @@ repositioning above the action grid. The implementation follows Blizzard's
 [1.15.9 UI source](https://github.com/Gethe/wow-ui-source/tree/1.15.9), including
 the stock action buttons, spellbook and Edit Mode anchoring.
 
-Run `scripts/test-wehavephones-touch.sh` for gesture ownership, long-press
-suppression, dragging, pinch/scroll separation, addon folder preservation,
-uniform scaling, action selection, Undo and combat guards. It uses the host
-JDK, Python and a Lua 5.2 or 5.4 shared library. The existing gamepad, launch,
-runtime, addon, asset and memory checks cover the controller and launch paths.
+Run `scripts/test-wehavephones-touch.sh` for camera-area boundaries, gesture
+ownership, long-press suppression, dragging, pinch/scroll separation, addon
+folder preservation, uniform scaling, paged action selection, Undo, secure
+paging and combat guards. It uses the host JDK, Python and a Lua 5.2 or 5.4
+shared library. The existing gamepad, launch, runtime, addon, asset and memory
+checks cover the controller and launch paths.
 
 ## Device validation
 
-Validated on a Samsung S23+ with Classic Era 1.15.9.70576 on October 26, 2026.
-A fresh launch confirmed the right and middle grids, chat above the joystick,
-the touch interface menu and all three scale presets. Long presses opened the
-picker on slots 49 and 61. Selecting Mark of the Wild placed it without casting,
-and a subsequent tap cast it. Undo restored both test slots to their original
-empty state. Bags, window mode, the chat keyboard and one-shot Shift stack
-splitting were checked. The stack dialog was cancelled without changing items.
-The final Android crash buffer was empty.
+The previous layout was validated on a Samsung S23+ with Classic Era
+1.15.9.70576 on October 26, 2026, including action editing, casting, Undo,
+the scale presets, chat keyboard and one-shot Shift stack splitting.
+On October 27, 2026, the updated build passed the touch, gamepad, launch,
+runtime, addon, asset, memory and device host checks and was installed on the
+same S23+. The Android crash buffer was empty. The phone was locked, which
+prevented a fresh in-game check of the 8+4 layout, larger buttons, page arrows
+and blue menus. WeHavePhones was closed after installation as requested.
 
-The touch, gamepad, launch, runtime, addon, asset, memory and device host checks
-passed. Dragging, pinch/scroll separation and combat guards have automated host
-coverage. Extended play and the compatibility cases above remain unverified.
+Dragging, pinch/scroll separation, page-button attributes and combat guards
+have automated host coverage. The new layout, extended play and the
+compatibility cases above still need in-game validation.

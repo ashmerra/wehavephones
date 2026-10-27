@@ -33,6 +33,12 @@ public final class TouchSelfTest {
         public void scroll(float x, float y, int clicks) { scrolls += clicks; }
     }
     public static void main(String[] args) throws Exception {
+        check(MobileTouchInput.isCameraArea(500, 690, 1000, 1000), "camera reaches the lower middle");
+        check(MobileTouchInput.isCameraArea(390, 500, 1000, 1000), "camera starts closer to the center");
+        check(MobileTouchInput.isCameraArea(800, 590, 1000, 1000), "camera reaches down above the right actions");
+        check(!MobileTouchInput.isCameraArea(800, 660, 1000, 1000), "enlarged right actions stay directly tappable");
+        check(!MobileTouchInput.isCameraArea(500, 800, 1000, 1000), "middle actions and paging stay directly tappable");
+        check(!MobileTouchInput.isCameraArea(250, 600, 1000, 1000), "camera never covers the joystick");
         Sink sink = new Sink();
         MobileTouchInput input = new MobileTouchInput(sink, 8);
         input.down(4, Zone.STICK, 100, 100, 0);

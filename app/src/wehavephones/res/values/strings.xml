@@ -438,6 +438,8 @@ World of Warcraft, Warcraft, Battle.net and Blizzard Entertainment are trademark
     <string name="wehavephones_touch_bags">Bags</string>
     <string name="wehavephones_touch_bar">Bar</string>
     <string name="wehavephones_touch_more">More</string>
+    <string name="wehavephones_touch_controls_title">WeHavePhones · Touch controls</string>
+    <string name="wehavephones_touch_close">Close</string>
     <string name="wehavephones_touch_keyboard">Keyboard</string>
     <string name="wehavephones_touch_windows">Window gestures</string>
     <string name="wehavephones_touch_next_modifier">Next tap: %1$s</string>

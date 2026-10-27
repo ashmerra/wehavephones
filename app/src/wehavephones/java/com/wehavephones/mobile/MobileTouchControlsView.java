@@ -3,15 +3,19 @@ package com.wehavephones.mobile;
 import android.app.AlertDialog;
 import android.os.SystemClock;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.RectF;
+import android.graphics.Typeface;
+import android.view.Gravity;
 import android.view.InputDevice;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
+import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.ScrollView;
 
 import com.wehavephones.R;
 import com.wehavephones.XServerDisplayActivity;
@@ -43,6 +47,7 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
         xServer = activity.getXServer();
         density = getResources().getDisplayMetrics().density;
         input = new MobileTouchInput(this, ViewConfiguration.get(activity).getScaledTouchSlop());
+        paint.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
         holdCheck = () -> input.advanceTime(SystemClock.uptimeMillis());
         labels = new String[]{activity.getString(R.string.wehavephones_touch_menu),
                 activity.getString(R.string.wehavephones_touch_map), activity.getString(R.string.wehavephones_touch_bags),
@@ -84,8 +89,7 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
     private MobileTouchInput.Zone zone(float x, float y) {
         for (int i = 0; i < buttons.length; i++) if (buttons[i].contains(x, y)) return zones[i];
         if (Math.hypot(x - stickX, y - stickY) <= radius * 1.2f) return MobileTouchInput.Zone.STICK;
-        if (x > getWidth() * .52f && x < getWidth() * .88f
-                && y > getHeight() * .19f && y < getHeight() * .48f) return MobileTouchInput.Zone.CAMERA;
+        if (MobileTouchInput.isCameraArea(x, y, getWidth(), getHeight())) return MobileTouchInput.Zone.CAMERA;
         return MobileTouchInput.Zone.UI;
     }
 
@@ -136,25 +140,34 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
 
     @Override protected void onDraw(Canvas canvas) {
         paint.setStyle(Paint.Style.FILL);
-        paint.setColor(0x55313D50);
+        // Match the controller overlay's navy backing, blue outlines and silver labels.
+        paint.setColor(0x66091628);
         canvas.drawCircle(stickX, stickY, radius, paint);
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(1.5f * density);
-        paint.setColor(0x99FFFFFF);
+        paint.setColor(0xB38CC4F7);
         canvas.drawCircle(stickX, stickY, radius, paint);
         paint.setStyle(Paint.Style.FILL);
-        paint.setColor(0x99DCE5EF);
+        paint.setColor(0xB3216BBC);
         canvas.drawCircle(knobX, knobY, radius * .38f, paint);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setColor(0xB38CC4F7);
+        canvas.drawCircle(knobX, knobY, radius * .38f, paint);
+        paint.setStyle(Paint.Style.FILL);
         paint.setTextAlign(Paint.Align.CENTER);
         paint.setTextSize(12 * density);
         for (int i = 0; i < buttons.length; i++) {
             RectF rect = buttons[i];
-            paint.setColor(0x99313D50);
+            paint.setColor(0x99091628);
             canvas.drawRoundRect(rect, 12 * density, 12 * density, paint);
-            paint.setColor(Color.WHITE);
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setColor(0xB38CC4F7);
+            canvas.drawRoundRect(rect, 12 * density, 12 * density, paint);
+            paint.setStyle(Paint.Style.FILL);
+            paint.setColor(0xFFEEF5FF);
             canvas.drawText(labels[i], rect.centerX(), rect.centerY() - (paint.ascent() + paint.descent()) / 2, paint);
         }
-        paint.setColor(0x99FFFFFF);
+        paint.setColor(0xB38CC4F7);
         canvas.drawText(getContext().getString(input.isUiMode() ? R.string.wehavephones_touch_windows : R.string.wehavephones_touch_camera),
                 getWidth() * .70f, getHeight() * .23f, paint);
         if (nextModifier != null) {
@@ -245,28 +258,67 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
 
     private void showMore() {
         if (activity.isFinishing() || !activity.hasWindowFocus()) return;
-        new AlertDialog.Builder(activity).setTitle(R.string.wehavephones_touch_more)
-                .setItems(R.array.wehavephones_touch_actions, (dialog, which) -> postDelayed(() -> {
-                    switch (which) {
-                        case 0: tap(XKeycode.KEY_F9); break;
-                        case 1: input.setUiMode(!input.isUiMode()); invalidate(); break;
-                        case 2: showKeyboard(); break;
-                        case 3: tap(XKeycode.KEY_ENTER); postDelayed(this::showKeyboard, 150); break;
-                        case 4: tap(XKeycode.KEY_N); break;
-                        case 5:
-                            xServer.injectKeyPress(XKeycode.KEY_SHIFT_L);
-                            tap(XKeycode.KEY_TAB);
-                            xServer.injectKeyRelease(XKeycode.KEY_SHIFT_L);
-                            break;
-                        case 6: tap(XKeycode.KEY_R); break;
-                        case 7: tap(XKeycode.KEY_X); break;
-                        case 9: nextModifier = XKeycode.KEY_SHIFT_L; invalidate(); break;
-                        case 10: nextModifier = XKeycode.KEY_CTRL_L; invalidate(); break;
-                        case 11: nextModifier = XKeycode.KEY_ALT_L; invalidate(); break;
-                        case 12: nextModifier = null; invalidate(); break;
-                        default: tap(XKeycode.KEY_ESC);
-                    }
-                }, 200)).show();
+        String[] actions = getResources().getStringArray(R.array.wehavephones_touch_actions);
+        LinearLayout choices = new LinearLayout(activity);
+        choices.setOrientation(LinearLayout.VERTICAL);
+        choices.setPadding(dp(12), dp(4), dp(12), dp(4));
+        ScrollView scroll = new ScrollView(activity);
+        scroll.addView(choices);
+        AlertDialog dialog = new AlertDialog.Builder(activity, R.style.WeHavePhonesTouchDialog)
+                .setTitle(R.string.wehavephones_touch_controls_title)
+                .setView(scroll).setNegativeButton(R.string.wehavephones_touch_close, null).create();
+        for (int i = 0; i < actions.length; i += 2) {
+            LinearLayout row = new LinearLayout(activity);
+            choices.addView(row);
+            for (int j = i; j < Math.min(i + 2, actions.length); j++) {
+                final int which = j;
+                Button button = new Button(activity);
+                button.setText(actions[j]);
+                button.setTextColor(0xFFEEF5FF);
+                button.setTextSize(14);
+                button.setAllCaps(false);
+                button.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+                button.setBackgroundResource(R.drawable.wehavephones_button_primary);
+                button.setBackgroundTintList(null);
+                button.setPadding(dp(10), dp(4), dp(10), dp(4));
+                button.setGravity(Gravity.CENTER);
+                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0, dp(56), 1);
+                params.setMargins(dp(4), dp(4), dp(4), dp(4));
+                row.addView(button, params);
+                button.setOnClickListener(view -> {
+                    dialog.dismiss();
+                    postDelayed(() -> runMoreAction(which), 200);
+                });
+            }
+        }
+        dialog.show();
+        dialog.getWindow().setLayout(Math.min(dp(560), (int)(getWidth() * .88f)),
+                Math.min(dp(480), (int)(getHeight() * .90f)));
+        dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(0xFF8CC4F7);
+    }
+
+    private int dp(float value) { return Math.round(value * density); }
+
+    private void runMoreAction(int which) {
+        switch (which) {
+            case 0: tap(XKeycode.KEY_F9); break;
+            case 1: input.setUiMode(!input.isUiMode()); invalidate(); break;
+            case 2: showKeyboard(); break;
+            case 3: tap(XKeycode.KEY_ENTER); postDelayed(this::showKeyboard, 150); break;
+            case 4: tap(XKeycode.KEY_N); break;
+            case 5:
+                xServer.injectKeyPress(XKeycode.KEY_SHIFT_L);
+                tap(XKeycode.KEY_TAB);
+                xServer.injectKeyRelease(XKeycode.KEY_SHIFT_L);
+                break;
+            case 6: tap(XKeycode.KEY_R); break;
+            case 7: tap(XKeycode.KEY_X); break;
+            case 9: nextModifier = XKeycode.KEY_SHIFT_L; invalidate(); break;
+            case 10: nextModifier = XKeycode.KEY_CTRL_L; invalidate(); break;
+            case 11: nextModifier = XKeycode.KEY_ALT_L; invalidate(); break;
+            case 12: nextModifier = null; invalidate(); break;
+            default: tap(XKeycode.KEY_ESC);
+        }
     }
 
     private void showKeyboard() {

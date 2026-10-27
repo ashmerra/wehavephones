@@ -1,7 +1,7 @@
 local original = {GamePadEnable="1", InputDeviceInterfaceStyle="1", useUiScale="0", uiScale="0.64"}
 local values, held, objects, all = {}, {}, {}, {}
 for k,v in pairs(original) do values[k]=v end
-local combat, cursor, layout, notices = false, nil, 0, 0
+local combat, cursor, layout, notices, actionPage = false, nil, 0, 0, 1
 local extraBars = {false,false,true,false,false,false,false}
 local actions = {[1]={"spell",101}, [61]={"item",500}}
 WOW_PROJECT_CLASSIC, WOW_PROJECT_ID, BOOKTYPE_SPELL = 2, 2, "spell"
@@ -26,8 +26,11 @@ function methods:Hide() self.visible=false end
 function methods:SetShown(v) self.visible=v end
 function methods:SetEnabled(v) self.enabled=v end
 function methods:SetText(v) self.text=v end
+function methods:SetFontString(label) self.font=label end
+function methods:GetHighlightTexture() return self.highlight end
+function methods:SetHighlightTexture() self.highlight=CreateFrame("Texture") end
 for _,name in ipairs({"RegisterEvent","ClearAllPoints","SetFrameStrata","EnableMouse","SetClampedToScreen","SetBackdrop",
-    "SetTexture","SetJustifyH","SetAlpha"}) do methods[name]=function() end end
+    "SetTexture","SetJustifyH","SetAlpha","SetTextColor","SetBackdropColor","SetBackdropBorderColor","SetVertexColor"}) do methods[name]=function() end end
 function CreateFrame(_,name,parent)
     local object=setmetatable({name=name, scripts={}, parent=parent}, {__index=methods})
     if name then objects[name]=object _G[name]=object end
@@ -64,6 +67,13 @@ function InCombatLockdown() return combat end
 function GetCursorInfo() if cursor then return cursor[1],cursor[2] end end
 function ClearCursor() cursor=nil end
 function GetActionInfo(slot) if actions[slot] then return unpack(actions[slot]) end end
+C_ActionBar={
+    GetActionBarPage=function() return actionPage end,
+    SetActionBarPage=function(value)
+        actionPage=value
+        for i=1,12 do _G["ActionButton"..i].action=(value-1)*12+i end
+    end,
+}
 function PickupAction(slot) assert(not combat) cursor=actions[slot] actions[slot]=nil end
 function PickupSpell(id) cursor={"spell",id} end
 function PickupItem(id) cursor={"item",id} end
@@ -104,9 +114,20 @@ end
 local function clickText(text)
     for i=#all,1,-1 do
         local button=all[i]
-        if button.text==text and button.scripts.OnClick then button.scripts.OnClick(button) return end
+        if (button.text==text or (button.font and button.font.text==text)) and button.scripts.OnClick then button.scripts.OnClick(button) return end
     end
     error("Missing button "..text)
+end
+local function pageClick(name)
+    -- Emulate Blizzard's secure actionbar action from the configured attributes.
+    -- This path must not depend on an insecure OnClick callback or Layout in combat.
+    local button=objects[name]
+    assert(button.type=="actionbar" and button.scripts.OnClick==nil)
+    local delta=button.action=="increment" and 1 or -1
+    local value=((actionPage-1+delta)%6)+1
+    assert(VIEWABLE_ACTION_BAR_PAGES[value])
+    C_ActionBar.SetActionBarPage(value)
+    active.scripts.OnEvent(active,"ACTIONBAR_PAGE_CHANGED")
 end
 local function edit(button)
     button.scripts.OnMouseUp(button,"RightButton")
@@ -114,20 +135,25 @@ end
 boot(false)
 assert(next(held)==nil and UIParent:GetScale()==1)
 boot(true)
-assert(values.GamePadEnable=="0" and extraBars[1] and extraBars[2] and extraBars[3])
-assert(UIParent:GetScale()==1.5 and layout==36)
-assert(VIEWABLE_ACTION_BAR_PAGES[4] and not VIEWABLE_ACTION_BAR_PAGES[5] and not VIEWABLE_ACTION_BAR_PAGES[6],
-    "fixed extra bars are not duplicated when paging the main bar")
+assert(values.GamePadEnable=="0" and not extraBars[1] and not extraBars[2] and extraBars[3])
+assert(UIParent:GetScale()==1.5 and layout==12)
+for i=1,6 do assert(VIEWABLE_ACTION_BAR_PAGES[i],"all six pages accessible through the switcher") end
+assert(not MultiBarBottomLeft.visible and not MultiBarBottomRight.visible,"extra grids do not take camera space")
 assert(held.F9=="WeHavePhonesTouchMenuTrigger" and held.W=="MOVEFORWARD")
 assert(objects.WeHavePhonesTouchMenuTrigger.clicks[1]=="AnyUp" and objects.WeHavePhonesTouchMenuTrigger.clicks[2]=="AnyDown",
     "menu accepts bindings dispatched on press or release")
 for i=1,12 do
-    assert(_G["ActionButton"..i].scale==1 and _G["MultiBarBottomLeftButton"..i].scale==1)
-    assert(_G["MultiBarBottomRightButton"..i].scale==1)
+    assert(_G["ActionButton"..i].scale==1.35,"35 percent larger default actions")
     assert(_G["ActionButton"..i].type2=="" and _G["ActionButton"..i].clicks[1]=="LeftButtonUp")
 end
 assert(ActionButton1.point[3]=="BOTTOMRIGHT", "main grid at the bottom right")
-assert(MultiBarBottomRightButton1.point[3]=="BOTTOM", "extra actions in the bottom middle")
+assert(ActionButton8.point[3]=="BOTTOMRIGHT" and ActionButton9.point[3]=="BOTTOM", "eight right actions and four middle actions")
+assert(ActionButton9.point[5]==ActionButton12.point[5],"middle group is only one row")
+assert(math.abs(ActionButton1.point[5]*1.35-118)<.001,"right grid is only two rows high")
+pageClick("WeHavePhonesTouchPage1")
+assert(actionPage==6 and objects.WeHavePhonesTouchPager.label.text=="Bar 6","previous wraps to page six")
+pageClick("WeHavePhonesTouchPage2")
+assert(actionPage==1,"next wraps back to page one")
 ChatFrame1:ApplySystemAnchor()
 assert(ChatFrame1.point[3]=="LEFT" and ChatFrame1.detached, "late Edit Mode changes cannot move chat over the controls")
 ChatFrame1:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", 0, 0)
@@ -141,14 +167,16 @@ assert(actions[1][2]==103 and not cursor,"selection changes only the selected sl
 edit(ActionButton1)
 clickText("Undo")
 assert(actions[1][2]==101,"undo restores the original action")
-edit(MultiBarBottomLeftButton1)
+pageClick("WeHavePhonesTouchPage1")
+edit(ActionButton1)
 clickText("Macros")
 objects.WeHavePhonesTouchChoice1.scripts.OnClick(objects.WeHavePhonesTouchChoice1)
 assert(actions[61][1]=="macro" and actions[61][2]==1)
-edit(MultiBarBottomLeftButton1)
+edit(ActionButton1)
 clickText("Items")
 objects.WeHavePhonesTouchChoice1.scripts.OnClick(objects.WeHavePhonesTouchChoice1)
 assert(actions[61][1]=="item" and actions[61][2]==500)
+pageClick("WeHavePhonesTouchPage2")
 edit(ActionButton1)
 clickText("Clear slot")
 assert(actions[1]==nil)
@@ -174,6 +202,8 @@ combat=true
 active.scripts.OnEvent(active,"PLAYER_REGEN_DISABLED")
 assert(not objects.WeHavePhonesTouchEditor.visible,"combat closes the editor")
 before=layout
+pageClick("WeHavePhonesTouchPage2")
+assert(actionPage==2 and ActionButton1.action==13 and layout==before,"secure paging works in combat without moving buttons")
 active.scripts.OnEvent(active,"UI_SCALE_CHANGED")
 assert(layout==before,"secure buttons untouched in combat")
 objects.WeHavePhonesTouchChoice1.scripts.OnClick(objects.WeHavePhonesTouchChoice1)
@@ -186,4 +216,4 @@ for k,v in pairs(original) do assert(values[k]==v,"restore CVar "..k) end
 assert(UIParent:GetScale()==1 and not extraBars[1] and not extraBars[2] and extraBars[3],"root scale and extra bars restored without changing another bar")
 assert(ChatFrame1.width==300 and ChatFrame1.height==150,"chat geometry restored")
 assert(next(held)==nil and next(WeHavePhonesTouchDB.cvars)==nil)
-print("Touch addon PASS (uniform grid, spell/item/macro editing, undo, combat and restoration)")
+print("Touch addon PASS (large paged actions, spell/item/macro editing, undo, combat and restoration)")

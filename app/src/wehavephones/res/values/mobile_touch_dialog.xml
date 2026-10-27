@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="WeHavePhonesTouchDialog" parent="@android:style/Theme.Material.Dialog.Alert">
+        <item name="android:colorAccent">@color/wehavephones_blue_light</item>
+        <item name="android:colorBackground">@color/wehavephones_background</item>
+        <item name="android:windowBackground">@color/wehavephones_background</item>
+        <item name="android:textColorPrimary">@color/wehavephones_on_shell</item>
+        <item name="android:textColorSecondary">@color/wehavephones_silver</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:windowNoTitle">false</item>
+    </style>
+</resources>

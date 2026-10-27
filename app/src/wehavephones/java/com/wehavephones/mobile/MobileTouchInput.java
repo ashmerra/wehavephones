@@ -46,6 +46,13 @@ public final class MobileTouchInput {
 
     public MobileTouchInput(Sink sink, float slop) { this.sink = sink; this.slop = slop; }
 
+    /** Wide camera swipes with room reserved for the enlarged bars at every UI preset. */
+    public static boolean isCameraArea(float x, float y, float width, float height) {
+        float horizontal = x / width, vertical = y / height;
+        return horizontal > .38f && horizontal < .90f && vertical > .19f
+                && vertical < (horizontal >= .66f ? .60f : .72f);
+    }
+
     public void down(int id, Zone zone, float x, float y, long now) {
         if (fingers.containsKey(id)) return;
         if (uiMode && zone == Zone.CAMERA) zone = Zone.UI;
