@@ -173,18 +173,55 @@ for i=1,12 do
     assert(_G["ActionButton"..i].scale==1.35,"35 percent larger default actions")
     assert(_G["ActionButton"..i].type2=="" and _G["ActionButton"..i].clicks[1]=="LeftButtonUp")
 end
-assert(ActionButton1.point[3]=="BOTTOMRIGHT", "main grid at the bottom right")
-assert(ActionButton8.point[3]=="BOTTOMRIGHT" and ActionButton9.point[3]=="BOTTOM", "eight right actions and four middle actions")
+assert(ActionButton1.point[3]=="CENTER", "main grid uses the screen center")
+assert(ActionButton8.point[3]=="CENTER" and ActionButton9.point[3]=="CENTER", "both action groups use the same anchor")
 assert(ActionButton9.point[5]==ActionButton12.point[5],"middle group is only one row")
-assert(math.abs(ActionButton1.point[5]*1.35-118)<.001,"right grid is only two rows high")
+assert(math.abs(ActionButton1.point[5]*1.35+UIParent:GetHeight()/2-118)<.001,"right grid is only two rows high")
+local function close(a,b,message) assert(math.abs(a-b)<.001,message) end
+local function positions()
+    local result={}
+    for i=1,12 do
+        local button=_G["ActionButton"..i]
+        assert(button.point[2]==UIParent and button.point[3]=="CENTER")
+        result[i]={button.point[4]*button:GetScale(),button.point[5]*button:GetScale()}
+    end
+    return result
+end
+for _,scale in ipairs({1.25,1.5,1.75}) do
+    WeHavePhonesTouchDB.touchScale=scale
+    local height=720/scale
+    UIParent:SetSize(height*16/9,height)
+    active.scripts.OnEvent(active,"UI_SCALE_CHANGED")
+    local baseline=positions()
+    local chatX,chatWidth=ChatFrame1.point[4],ChatFrame1:GetWidth()
+    local pager=objects.WeHavePhonesTouchPager
+    assert(pager.point[3]=="CENTER")
+    close(pager.point[5]+height/2,64,"pager follows the action row after height changes")
+    assert(baseline[9][1]+3*54+36*1.35<baseline[5][1],"action groups stay separate at every preset")
+    assert(pager.point[4]+pager:GetWidth()<baseline[9][1],"pager stays clear of the middle actions")
+    for _,aspect in ipairs({19.5/9,21/9,32/9}) do
+        UIParent:SetSize(height*aspect,height)
+        active.scripts.OnEvent(active,"DISPLAY_SIZE_CHANGED")
+        local wider=positions()
+        for i=1,12 do
+            close(wider[i][1],baseline[i][1],"wider games preserve action spacing from the center")
+            close(wider[i][2],baseline[i][2],"wider games preserve action height")
+        end
+        close(ChatFrame1.point[4],chatX,"chat does not follow the left border")
+        close(ChatFrame1:GetWidth(),chatWidth,"wider games do not stretch chat into the controls")
+    end
+end
+WeHavePhonesTouchDB.touchScale=1.5
+UIParent:SetSize(1600,900)
+active.scripts.OnEvent(active,"DISPLAY_SIZE_CHANGED")
 pageClick("WeHavePhonesTouchPage1")
 assert(actionPage==6 and objects.WeHavePhonesTouchPager.label.text=="6","previous wraps and shows only the page number")
 pageClick("WeHavePhonesTouchPage2")
 assert(actionPage==1,"next wraps back to page one")
 ChatFrame1:ApplySystemAnchor()
-assert(ChatFrame1.point[3]=="LEFT" and ChatFrame1.detached, "late Edit Mode changes cannot move chat over the controls")
+assert(ChatFrame1.point[3]=="CENTER" and ChatFrame1.detached, "late Edit Mode changes cannot move chat over the controls")
 ChatFrame1:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", 0, 0)
-assert(ChatFrame1.point[3]=="LEFT", "panel-driven anchor changes cannot cover the joystick")
+assert(ChatFrame1.point[3]=="CENTER", "panel-driven anchor changes cannot cover the joystick")
 ActionButton1:SetTooltip()
 assert(GameTooltip.point[2]==ChatFrame1 and GameTooltip.point[3]=="BOTTOMLEFT","action tooltips cover the chat area")
 assert(GameTooltip.anchor=="ANCHOR_NONE" and GameTooltip.contents=="Action 1" and GameTooltip.owner==ActionButton1,
@@ -239,6 +276,8 @@ pageClick("WeHavePhonesTouchPage2")
 assert(actionPage==2 and ActionButton1.action==13 and layout==before,"secure paging works in combat without moving buttons")
 active.scripts.OnEvent(active,"UI_SCALE_CHANGED")
 assert(layout==before,"secure buttons untouched in combat")
+active.scripts.OnEvent(active,"DISPLAY_SIZE_CHANGED")
+assert(layout==before,"display changes defer secure layout until combat ends")
 objects.WeHavePhonesTouchChoice1.scripts.OnClick(objects.WeHavePhonesTouchChoice1)
 assert(actions[1][2]==101,"stale picker callbacks cannot edit in combat")
 boot(false)

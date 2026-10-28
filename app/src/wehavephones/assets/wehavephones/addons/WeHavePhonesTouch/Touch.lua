@@ -41,6 +41,11 @@ local function UniformScale()
     if math.abs(UIParent:GetScale() - scale) > .001 then UIParent:SetScale(scale) end
 end
 
+local function LayoutWidth()
+    -- Keep the touch layout centered when the game gains extra horizontal space.
+    return math.min(UIParent:GetWidth(), UIParent:GetHeight()*16/9)
+end
+
 local function Panel(name, title, width, height)
     local panel = CreateFrame("Frame", name, UIParent, "BackdropTemplate")
     panel:SetSize(width, height)
@@ -89,7 +94,6 @@ local function CreatePager()
     if pager then return end
     pager = CreateFrame("Frame", "WeHavePhonesTouchPager", UIParent)
     pager:SetSize(120, 48)
-    pager:SetPoint("BOTTOMLEFT", UIParent, "BOTTOM", -240, 64)
     pager.label = pager:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     pager.label:SetPoint("CENTER")
     pager.label:SetWidth(24)
@@ -289,8 +293,8 @@ local function PositionChat()
     end
     if ChatFrame1.BreakFromFrameManager then ChatFrame1:BreakFromFrameManager() end
     ChatFrame1:ClearAllPoints()
-    ChatFrame1:SetPoint("BOTTOMLEFT", UIParent, "LEFT", 16, 36)
-    ChatFrame1:SetSize(math.min(300, UIParent:GetWidth()*.34), 92)
+    ChatFrame1:SetPoint("BOTTOMLEFT", UIParent, "CENTER", -LayoutWidth()/2+16, 36)
+    ChatFrame1:SetSize(math.min(300, LayoutWidth()*.34), 92)
     positioningChat = false
 end
 
@@ -310,6 +314,7 @@ Layout = function()
     if VIEWABLE_ACTION_BAR_PAGES then
         for i = 1, 6 do VIEWABLE_ACTION_BAR_PAGES[i] = 1 end
     end
+    local halfWidth, halfHeight = LayoutWidth()/2, UIParent:GetHeight()/2
     for i = 1, 12 do
         local button = _G["ActionButton" .. i]
         if button then
@@ -317,10 +322,12 @@ Layout = function()
             button:ClearAllPoints()
             -- Compensate local button scale so anchors stay in UIParent units.
             if i <= 8 then
-                button:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMRIGHT",
-                    (-228+((i-1)%4)*54)/ACTION_SCALE, (64+(1-math.floor((i-1)/4))*54)/ACTION_SCALE)
+                button:SetPoint("BOTTOMLEFT", UIParent, "CENTER",
+                    (halfWidth-228+((i-1)%4)*54)/ACTION_SCALE,
+                    (64+(1-math.floor((i-1)/4))*54-halfHeight)/ACTION_SCALE)
             else
-                button:SetPoint("BOTTOMLEFT", UIParent, "BOTTOM", (-108+(i-9)*54)/ACTION_SCALE, 64/ACTION_SCALE)
+                button:SetPoint("BOTTOMLEFT", UIParent, "CENTER",
+                    (-108+(i-9)*54)/ACTION_SCALE, (64-halfHeight)/ACTION_SCALE)
             end
             button:SetAttribute("showgrid", 1)
             button:SetAttribute("type2", "")
@@ -336,6 +343,8 @@ Layout = function()
         end
     end
     CreatePager()
+    pager:ClearAllPoints()
+    pager:SetPoint("BOTTOMLEFT", UIParent, "CENTER", -240, 64-halfHeight)
     UpdatePager()
     for _, name in ipairs({"MainMenuBarTexture0", "MainMenuBarTexture1", "MainMenuBarTexture2",
         "MainMenuBarTexture3", "MainMenuBarLeftEndCap", "MainMenuBarRightEndCap"}) do
@@ -427,6 +436,7 @@ frame:RegisterEvent("PLAYER_ENTERING_WORLD")
 frame:RegisterEvent("PLAYER_REGEN_ENABLED")
 frame:RegisterEvent("PLAYER_REGEN_DISABLED")
 frame:RegisterEvent("UI_SCALE_CHANGED")
+frame:RegisterEvent("DISPLAY_SIZE_CHANGED")
 frame:RegisterEvent("ACTIONBAR_PAGE_CHANGED")
 frame:SetScript("OnEvent", function(_, event)
     if event == "ACTIONBAR_PAGE_CHANGED" then
@@ -434,7 +444,7 @@ frame:SetScript("OnEvent", function(_, event)
     elseif event == "PLAYER_REGEN_DISABLED" then
         if editor then editor:Hide() end
         if controls then controls:Hide() end
-    elseif event == "UI_SCALE_CHANGED" then
+    elseif event == "UI_SCALE_CHANGED" or event == "DISPLAY_SIZE_CHANGED" then
         C_Timer.After(0, function() if enabled and applied then UniformScale() Layout() end end)
     else Apply() end
 end)

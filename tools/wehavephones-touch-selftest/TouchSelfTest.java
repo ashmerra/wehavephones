@@ -43,6 +43,18 @@ public final class TouchSelfTest {
         check(!MobileTouchInput.isCameraArea(800, 660, 1000, 1000), "enlarged right actions stay directly tappable");
         check(!MobileTouchInput.isCameraArea(500, 800, 1000, 1000), "middle actions and paging stay directly tappable");
         check(!MobileTouchInput.isCameraArea(250, 600, 1000, 1000), "camera never covers the joystick");
+        for (float aspect : new float[]{16f / 9, 19.5f / 9, 21f / 9, 32f / 9}) {
+            float height = 1080, width = height * aspect, layoutWidth = height * 16 / 9;
+            float left = (width - layoutWidth) / 2;
+            check(MobileTouchInput.isCameraArea(left + layoutWidth * .5f, height * .69f, width, height),
+                    "wider games preserve camera swipes in the lower middle");
+            check(MobileTouchInput.isCameraArea(left + layoutWidth * .8f, height * .59f, width, height),
+                    "wider games preserve camera swipes above the right actions");
+            check(!MobileTouchInput.isCameraArea(left + layoutWidth * .67f, height * .66f, width, height),
+                    "centered right actions stay directly tappable in wider games");
+            check(!MobileTouchInput.isCameraArea(left + layoutWidth * .5f, height * .8f, width, height),
+                    "centered middle actions stay directly tappable in wider games");
+        }
         Sink sink = new Sink();
         MobileTouchInput input = new MobileTouchInput(sink, 8);
         input.down(4, Zone.STICK, 100, 100, 0);

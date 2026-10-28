@@ -48,7 +48,8 @@ public final class MobileTouchInput {
 
     /** Wide camera swipes with room reserved for the enlarged bars at every UI preset. */
     public static boolean isCameraArea(float x, float y, float width, float height) {
-        float horizontal = x / width, vertical = y / height;
+        float layoutWidth = Math.min(width, height * 16 / 9);
+        float horizontal = (x - (width - layoutWidth) / 2) / layoutWidth, vertical = y / height;
         return horizontal > .38f && horizontal < .90f && vertical > .19f
                 && vertical < (horizontal >= .66f ? .60f : .72f);
     }

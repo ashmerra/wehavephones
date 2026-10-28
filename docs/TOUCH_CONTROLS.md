@@ -17,6 +17,13 @@ broad space for natural thumb swipes. The XP bar stays below the actions.
 Action tooltips appear over the chat window, keeping the bars and camera area
 clear.
 
+The hotbars, page switcher and chat are anchored to the screen center within a
+16:9 layout area. Wider and native game resolutions add space on either side
+without moving those elements toward the borders or into the thumb controls.
+The camera gesture area follows the same centered layout so swipes stay clear
+of the actions. The layout updates after display changes and keeps the same
+scale presets.
+
 The compact **< number >** switcher beside the middle row cycles through all
 six normal WoW action pages, including the slots previously shown in the
 extra grids.
@@ -145,6 +152,14 @@ target stayed selected and the range/facing hint appeared. The window-mode
 label appeared only while window gestures were enabled. The touch suite
 passed 53 checks, and the gamepad, launch, runtime and addon checks passed.
 Both builds succeeded, with no new Android app crash entries.
+
+The centered layout was then checked on the S23+ at its native 2340×1080
+resolution. Chat stayed above the joystick, and the action grid stayed clear
+of Jump and Use. Paging changed from 1 to 2 and back, and tapping Mark of the
+Wild refreshed its buff to 30 minutes. The touch suite passed 69 checks plus
+the addon layout fixtures across all three scale presets and wider aspect
+ratios. The addon, launch, gamepad and asset checks and both builds passed.
+There were no new Android crash entries.
 
 Dragging, pinch/scroll separation, page-button attributes and combat guards
 have automated host coverage. Extended play and the compatibility cases
