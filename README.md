@@ -69,6 +69,12 @@ The APK is written to `app/build/outputs/apk/wehavephones/debug/app-wehavephones
 - [Tested devices and graphics drivers](docs/TESTED_DEVICES.md)
 - [Build assets](docs/BUILD_ASSETS.md)
 
+## Support the project
+
+WeHavePhones is free and open source. If it helps you play, you can
+[buy me a coffee](https://buymeacoffee.com/ashmerra). Donations support the
+project's development and do not unlock any features.
+
 ## Credits
 
 WeHavePhones builds on [Winlator LLM](https://github.com/FrontMage/winlator-llm)
