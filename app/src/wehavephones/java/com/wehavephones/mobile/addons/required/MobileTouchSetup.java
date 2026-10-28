@@ -56,7 +56,7 @@ public final class MobileTouchSetup {
         Files.createDirectories(folder.toPath());
         String toc = "## Interface: " + interfaceVersion + "\n## Title: WeHavePhones Touch\n"
                 + "## Notes: Large paged touch actions and temporary movement bindings.\n"
-                + "## Version: 1.2.0\n## SavedVariablesPerCharacter: WeHavePhonesTouchDB\n\nMode.lua\nTouch.lua\n";
+                + "## Version: 1.2.1\n## SavedVariablesPerCharacter: WeHavePhonesTouchDB\n\nMode.lua\nTouch.lua\n";
         write(new File(folder, FOLDER + ".toc"), toc.getBytes(StandardCharsets.UTF_8));
         write(new File(folder, "Touch.lua"), script);
         write(new File(folder, "Mode.lua"), ("local _, addon = ...\naddon.enabled = " + enabled + "\n").getBytes(StandardCharsets.UTF_8));

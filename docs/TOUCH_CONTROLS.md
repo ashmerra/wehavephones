@@ -14,9 +14,12 @@ grid at the bottom right. Four more sit in one low row near the bottom middle.
 The movement stick stays on the left, with chat above it. The camera area
 extends down toward these groups and farther toward the center, leaving a
 broad space for natural thumb swipes. The XP bar stays below the actions.
+Action tooltips appear over the chat window, keeping the bars and camera area
+clear.
 
-The **< Bar >** switcher beside the middle row cycles through all six normal
-WoW action pages, including the slots previously shown in the extra grids.
+The compact **< number >** switcher beside the middle row cycles through all
+six normal WoW action pages, including the slots previously shown in the
+extra grids.
 Only 12 actions are visible at once. Both groups change together. The arrows
 are secure action buttons and stay usable in combat. The primary buttons keep
 WoW's stance behaviour and existing action assignments. Paging never copies
@@ -113,6 +116,13 @@ same S23+. The Android crash buffer was empty. The phone was locked, which
 prevented a fresh in-game check of the 8+4 layout, larger buttons, page arrows
 and blue menus. WeHavePhones was closed after installation as requested.
 
+A later Classic Era session on the same day confirmed the 8+4 layout, spell
+tooltips over the chat window and the smaller number-only page selector.
+Mark of the Wild cast normally, and paging changed the displayed number from
+1 to 2 and back to 1. The touch and addon host checks and both builds passed.
+There were no new Android app crash entries. The game exited normally and
+WeHavePhones was closed after testing.
+
 Dragging, pinch/scroll separation, page-button attributes and combat guards
-have automated host coverage. The new layout, extended play and the
-compatibility cases above still need in-game validation.
+have automated host coverage. Extended play and the compatibility cases
+above still need in-game validation.

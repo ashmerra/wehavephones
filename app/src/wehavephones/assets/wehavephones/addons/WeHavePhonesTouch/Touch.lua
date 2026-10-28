@@ -82,19 +82,20 @@ local function Button(parent, name, text, x, y, width, height, callback, templat
 end
 
 local function UpdatePager()
-    if pager then pager.label:SetText("Bar " .. C_ActionBar.GetActionBarPage()) end
+    if pager then pager.label:SetText(tostring(C_ActionBar.GetActionBarPage())) end
 end
 
 local function CreatePager()
     if pager then return end
     pager = CreateFrame("Frame", "WeHavePhonesTouchPager", UIParent)
-    pager:SetSize(144, 48)
-    pager:SetPoint("BOTTOMLEFT", UIParent, "BOTTOM", -264, 64)
+    pager:SetSize(120, 48)
+    pager:SetPoint("BOTTOMLEFT", UIParent, "BOTTOM", -240, 64)
     pager.label = pager:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     pager.label:SetPoint("CENTER")
+    pager.label:SetWidth(24)
     for i, direction in ipairs({"decrement", "increment"}) do
         local button = Button(pager, "WeHavePhonesTouchPage" .. i, i == 1 and "<" or ">",
-            (i-1)*96, 0, 48, 48, nil, "SecureActionButtonTemplate,BackdropTemplate")
+            (i-1)*72, 0, 48, 48, nil, "SecureActionButtonTemplate,BackdropTemplate")
         button:RegisterForClicks("AnyUp", "AnyDown")
         button:SetAttribute("type", "actionbar")
         button:SetAttribute("action", direction)
@@ -293,6 +294,14 @@ local function PositionChat()
     positioningChat = false
 end
 
+local function PositionActionTooltip(button)
+    if not enabled or not ChatFrame1 or not GameTooltip:IsOwned(button) then return end
+    -- Keep the owner and spell contents while replacing WoW's corner anchor.
+    GameTooltip:SetAnchorType("ANCHOR_NONE")
+    GameTooltip:ClearAllPoints()
+    GameTooltip:SetPoint("BOTTOMLEFT", ChatFrame1, "BOTTOMLEFT", 0, 0)
+end
+
 Layout = function()
     if not enabled or InCombatLockdown() then return end
     if WOW_PROJECT_ID ~= WOW_PROJECT_CLASSIC then return end
@@ -321,6 +330,7 @@ Layout = function()
                 button:HookScript("OnMouseUp", function(self, mouse)
                     if mouse == "RightButton" then OpenEditor(self) end
                 end)
+                if button.SetTooltip then hooksecurefunc(button, "SetTooltip", PositionActionTooltip) end
                 buttons[button] = true
             end
         end

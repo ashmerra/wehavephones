@@ -29,6 +29,8 @@ function methods:SetText(v) self.text=v end
 function methods:SetFontString(label) self.font=label end
 function methods:GetHighlightTexture() return self.highlight end
 function methods:SetHighlightTexture() self.highlight=CreateFrame("Texture") end
+function methods:IsOwned(owner) return self.owner==owner end
+function methods:SetAnchorType(anchor) self.anchor=anchor end
 for _,name in ipairs({"RegisterEvent","ClearAllPoints","SetFrameStrata","EnableMouse","SetClampedToScreen","SetBackdrop",
     "SetTexture","SetJustifyH","SetAlpha","SetTextColor","SetBackdropColor","SetBackdropBorderColor","SetVertexColor"}) do methods[name]=function() end end
 function CreateFrame(_,name,parent)
@@ -42,6 +44,7 @@ function methods:CreateTexture() return CreateFrame("Texture") end
 UIParent=CreateFrame("Frame","UIParent")
 ChatFrame1=CreateFrame("Frame","ChatFrame1")
 ChatFrame1:SetSize(300,150)
+GameTooltip=CreateFrame("GameTooltip","GameTooltip")
 MultiBarBottomLeft=CreateFrame("Frame","MultiBarBottomLeft")
 MultiBarBottomRight=CreateFrame("Frame","MultiBarBottomRight")
 function ChatFrame1:ApplySystemAnchor() self:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", 0, 0) end
@@ -98,6 +101,12 @@ function GetMacroInfo(i) return "Macro "..i,i end
 for i=1,12 do
     local main=CreateFrame("Button","ActionButton"..i)
     main.action=i
+    function main:SetTooltip()
+        GameTooltip.owner=self
+        GameTooltip.contents="Action "..self.action
+        GameTooltip.anchor="ANCHOR_RIGHT"
+        GameTooltip:SetPoint("BOTTOMRIGHT",UIParent,"BOTTOMRIGHT",0,0)
+    end
     local extra=CreateFrame("Button","MultiBarBottomLeftButton"..i)
     extra.action=60+i
     local middle=CreateFrame("Button","MultiBarBottomRightButton"..i)
@@ -151,13 +160,17 @@ assert(ActionButton8.point[3]=="BOTTOMRIGHT" and ActionButton9.point[3]=="BOTTOM
 assert(ActionButton9.point[5]==ActionButton12.point[5],"middle group is only one row")
 assert(math.abs(ActionButton1.point[5]*1.35-118)<.001,"right grid is only two rows high")
 pageClick("WeHavePhonesTouchPage1")
-assert(actionPage==6 and objects.WeHavePhonesTouchPager.label.text=="Bar 6","previous wraps to page six")
+assert(actionPage==6 and objects.WeHavePhonesTouchPager.label.text=="6","previous wraps and shows only the page number")
 pageClick("WeHavePhonesTouchPage2")
 assert(actionPage==1,"next wraps back to page one")
 ChatFrame1:ApplySystemAnchor()
 assert(ChatFrame1.point[3]=="LEFT" and ChatFrame1.detached, "late Edit Mode changes cannot move chat over the controls")
 ChatFrame1:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", 0, 0)
 assert(ChatFrame1.point[3]=="LEFT", "panel-driven anchor changes cannot cover the joystick")
+ActionButton1:SetTooltip()
+assert(GameTooltip.point[2]==ChatFrame1 and GameTooltip.point[3]=="BOTTOMLEFT","action tooltips cover the chat area")
+assert(GameTooltip.anchor=="ANCHOR_NONE" and GameTooltip.contents=="Action 1" and GameTooltip.owner==ActionButton1,
+    "tooltip relocation preserves the action text and owner")
 edit(ActionButton1)
 assert(objects.WeHavePhonesTouchEditor.visible and actions[1][2]==101)
 assert(objects.WeHavePhonesTouchChoice1.entry.name:find("Spell 1"))
@@ -199,6 +212,8 @@ boot(true)
 assert(UIParent:GetScale()==scale,"reload never compounds scale")
 edit(ActionButton1)
 combat=true
+ActionButton1:SetTooltip()
+assert(GameTooltip.point[2]==ChatFrame1,"action tooltips stay over chat in combat")
 active.scripts.OnEvent(active,"PLAYER_REGEN_DISABLED")
 assert(not objects.WeHavePhonesTouchEditor.visible,"combat closes the editor")
 before=layout
