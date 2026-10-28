@@ -441,6 +441,20 @@ World of Warcraft, Warcraft, Battle.net and Blizzard Entertainment are trademark
     <string name="wehavephones_touch_close">Close</string>
     <string name="wehavephones_touch_keyboard">Keyboard</string>
     <string name="wehavephones_touch_windows">Window gestures</string>
+    <string name="wehavephones_touch_windows_short">Windows</string>
+    <string name="wehavephones_touch_play">Play</string>
+    <string name="wehavephones_touch_inspect">Inspect</string>
+    <string name="wehavephones_touch_inspecting">Inspect · touch to read, tap Inspect to interact</string>
+    <string name="wehavephones_touch_dive">Dive</string>
+    <string name="wehavephones_touch_handle">Controls</string>
+    <string name="wehavephones_touch_target_group">Choose a friendly target</string>
+    <string-array name="wehavephones_touch_targets">
+        <item>Self</item>
+        <item>Party member 1</item>
+        <item>Party member 2</item>
+        <item>Party member 3</item>
+        <item>Party member 4</item>
+    </string-array>
     <string name="wehavephones_touch_next_modifier">Next tap: %1$s</string>
     <string-array name="wehavephones_touch_actions">
         <item>Touch interface and size</item>
@@ -457,6 +471,12 @@ World of Warcraft, Warcraft, Battle.net and Blizzard Entertainment are trademark
         <item>Alt for the next tap or hold</item>
         <item>Cancel next modifier</item>
         <item>Target nearby corpse</item>
+        <item>Target self or party member</item>
+        <item>Next friendly target</item>
+        <item>Assist selected target</item>
+        <item>Walk / run</item>
+        <item>Switch Jump / Dive</item>
+        <item>Collapse to movable Controls tab</item>
     </string-array>
     <string name="wehavephones_touch_target">Target</string>
     <string name="wehavephones_touch_interact">Use</string>

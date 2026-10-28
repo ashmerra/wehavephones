@@ -1,6 +1,7 @@
 """Run the bundled Lua against a small client API fixture, using the host Lua library."""
 import ctypes
 import ctypes.util
+import sys
 from pathlib import Path
 
 library = ctypes.util.find_library("lua5.4") or ctypes.util.find_library("lua5.2")
@@ -17,7 +18,8 @@ lua.lua_close.argtypes = [ctypes.c_void_p]
 script = Path(__file__).resolve().parents[2] / "app/src/wehavephones/assets/wehavephones/addons/WeHavePhonesTouch/Touch.lua"
 source = Path(__file__).with_name('addon_fixture.lua').read_text()
 # A Lua long string keeps the actual addon byte-for-byte, without escaping its code.
-payload = ("local ADDON = [====[" + script.read_text() + "]====]\n" + source).encode()
+geometry = "local GEOMETRY_PATH = [====[" + sys.argv[1] + "]====]\n" if len(sys.argv)>1 else ""
+payload = (geometry + "local ADDON = [====[" + script.read_text() + "]====]\n" + source).encode()
 state = lua.luaL_newstate()
 try:
     lua.luaL_openlibs(state)

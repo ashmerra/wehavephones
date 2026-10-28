@@ -5,8 +5,8 @@ import java.util.Map;
 
 /** Pointer ownership for simultaneous movement, camera and direct UI taps. No Android dependencies. */
 public final class MobileTouchInput {
-    public enum Key { FORWARD, BACK, LEFT, RIGHT, JUMP, TARGET, INTERACT, BAGS, MAP, ESCAPE, BAR, MORE, CORPSE }
-    public enum Zone { STICK, CAMERA, UI, JUMP, TARGET, INTERACT, BAGS, MAP, ESCAPE, BAR, MORE }
+    public enum Key { FORWARD, BACK, LEFT, RIGHT, JUMP, TARGET, INTERACT, BAGS, MAP, ESCAPE, BAR, MORE, CORPSE, MODE, KEYBOARD, INSPECT }
+    public enum Zone { STICK, CAMERA, UI, JUMP, TARGET, INTERACT, BAGS, MAP, ESCAPE, BAR, MORE, MODE, KEYBOARD, INSPECT }
     public interface Sink {
         void key(Key key, boolean down);
         void click(float x, float y);
@@ -38,6 +38,7 @@ public final class MobileTouchInput {
     private int stick = -1, camera = -1;
     private boolean cameraDown;
     private boolean uiMode;
+    private boolean inspectMode;
     private int drag = -1, multiA = -1, multiB = -1;
     private float multiDistance, multiY;
     private int multiMode;
@@ -48,17 +49,34 @@ public final class MobileTouchInput {
 
     /** Wide camera swipes with room reserved for the enlarged bars at every UI preset. */
     public static boolean isCameraArea(float x, float y, float width, float height) {
-        float layoutWidth = Math.min(width, height * 16 / 9);
+        float layoutWidth = Math.min(width * .80f, height * 16 / 9);
         float horizontal = (x - (width - layoutWidth) / 2) / layoutWidth, vertical = y / height;
-        return horizontal > .38f && horizontal < .90f && vertical > .19f
+        if (width / height < 1.6f) {
+            // The 4x3 action grid leaves a tall camera strip beside it.
+            return (horizontal > .38f && horizontal < .90f && vertical > .31f && vertical < (width / height < 1.25f ? .45f : .50f))
+                    || (horizontal > .32f && horizontal < .54f && vertical > .52f && vertical < .72f);
+        }
+        return horizontal > .38f && horizontal < .90f && vertical > .31f
                 && vertical < (horizontal >= .66f ? .60f : .72f);
     }
 
     public void down(int id, Zone zone, float x, float y, long now) {
         if (fingers.containsKey(id)) return;
         if (uiMode && zone == Zone.CAMERA) zone = Zone.UI;
-        if (zone == Zone.STICK && stick != -1) zone = Zone.UI;
+        // A second thumb in the stick must never click or drag the game underneath it.
+        if (zone == Zone.STICK && stick != -1) {
+            Finger ignored = new Finger(zone, x, y, now);
+            ignored.consumed = true;
+            fingers.put(id, ignored);
+            return;
+        }
         fingers.put(id, new Finger(zone, x, y, now));
+        if (inspectMode && (zone == Zone.UI || zone == Zone.CAMERA)) {
+            fingers.get(id).consumed = true;
+            setCamera(false);
+            sink.hover(x, y);
+            return;
+        }
         if (drag != -1 && (zone == Zone.UI || zone == Zone.CAMERA)) fingers.get(id).consumed = true;
         if (zone == Zone.STICK) stick = id;
         else if (zone == Zone.CAMERA && camera == -1) camera = id;
@@ -84,7 +102,7 @@ public final class MobileTouchInput {
     public void advanceTime(long now) {
         if (drag != -1 || multiA != -1) return;
         for (Finger finger : fingers.values()) {
-            if (finger.zone == Zone.TARGET && !finger.consumed && now - finger.downAt >= HOLD_MS) {
+            if (finger.zone == Zone.TARGET && !finger.dragged && !finger.consumed && now - finger.downAt >= HOLD_MS) {
                 finger.consumed = true;
                 setCamera(false);
                 pulse(Key.CORPSE);
@@ -98,7 +116,9 @@ public final class MobileTouchInput {
     }
 
     public boolean isUiMode() { return uiMode; }
-    public void setUiMode(boolean enabled) { cancel(); uiMode = enabled; }
+    public void setUiMode(boolean enabled) { cancel(); uiMode = enabled; inspectMode = false; }
+    public boolean isInspectMode() { return inspectMode; }
+    public void setInspectMode(boolean enabled) { cancel(); inspectMode = enabled; if (enabled) uiMode = true; }
 
     /** Supply both paired positions before interpreting one Android move event. */
     public void updateMultiPosition(int id, float x, float y) {
@@ -137,7 +157,8 @@ public final class MobileTouchInput {
             setKey(Key.RIGHT, x - stickX > radius * .24f);
             setKey(Key.FORWARD, y - stickY < -radius * .24f);
             setKey(Key.BACK, y - stickY > radius * .24f);
-        } else if (finger.consumed) return;
+        } else if (inspectMode && finger.zone == Zone.UI) sink.hover(x, y);
+        else if (finger.consumed) return;
         else if (id == camera && finger.dragged && (dx != 0 || dy != 0)) {
             setCamera(true);
             sink.moveCamera(dx, dy);
@@ -177,7 +198,13 @@ public final class MobileTouchInput {
             sink.click(finger.x, finger.y);
             // A held camera finger re-arms only on its next movement.
         }
-        if (finger.zone == Zone.TARGET && !finger.consumed) pulse(Key.TARGET);
+        if (!finger.consumed && !finger.dragged) {
+            if (finger.zone == Zone.TARGET) pulse(Key.TARGET);
+            if (finger.zone == Zone.MORE) pulse(Key.MORE);
+            if (finger.zone == Zone.MODE) pulse(Key.MODE);
+            if (finger.zone == Zone.KEYBOARD) pulse(Key.KEYBOARD);
+            if (finger.zone == Zone.INSPECT) pulse(Key.INSPECT);
+        }
         refreshKeys();
     }
 
@@ -185,7 +212,8 @@ public final class MobileTouchInput {
         for (int i = Key.JUMP.ordinal(); i < Key.values().length; i++) {
             Key key = Key.values()[i];
             // Target is a tap or hold action. Never cycle a living enemy before a corpse hold.
-            if (key == Key.TARGET || key == Key.CORPSE) continue;
+            if (key == Key.TARGET || key == Key.CORPSE || key == Key.MORE || key == Key.MODE
+                    || key == Key.KEYBOARD || key == Key.INSPECT) continue;
             boolean held = false;
             for (Finger finger : fingers.values()) if (finger.zone.name().equals(key.name())) held = true;
             setKey(key, held);
