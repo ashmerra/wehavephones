@@ -17,6 +17,11 @@ public final class MobileTouchSetup {
     private MobileTouchSetup() {}
 
     public static void prepare(File product, boolean enabled, int interfaceVersion, byte[] script) throws IOException {
+        prepare(product, enabled, 1.5f, interfaceVersion, script);
+    }
+
+    /** {@code scale} is the app-wide touch interface size, applied to every character at login. */
+    public static void prepare(File product, boolean enabled, float scale, int interfaceVersion, byte[] script) throws IOException {
         File state = new File(product, STATE);
         File folder = new File(product, "Interface/AddOns/" + FOLDER);
         // Default-off installs never acquire a touch addon or have their addons changed.
@@ -56,10 +61,12 @@ public final class MobileTouchSetup {
         Files.createDirectories(folder.toPath());
         String toc = "## Interface: " + interfaceVersion + "\n## Title: WeHavePhones Touch\n"
                 + "## Notes: Large paged touch actions and temporary movement bindings.\n"
-                + "## Version: 1.4.0\n## SavedVariablesPerCharacter: WeHavePhonesTouchDB\n\nMode.lua\nTouch.lua\n";
+                + "## Version: 1.5.0\n## SavedVariablesPerCharacter: WeHavePhonesTouchDB\n\nMode.lua\nTouch.lua\n";
         write(new File(folder, FOLDER + ".toc"), toc.getBytes(StandardCharsets.UTF_8));
         write(new File(folder, "Touch.lua"), script);
-        write(new File(folder, "Mode.lua"), ("local _, addon = ...\naddon.enabled = " + enabled + "\n").getBytes(StandardCharsets.UTF_8));
+        String size = String.format(java.util.Locale.US, "%.2f", scale == 1.25f || scale == 1.75f ? scale : 1.5f);
+        write(new File(folder, "Mode.lua"), ("local _, addon = ...\naddon.enabled = " + enabled
+                + "\naddon.scale = " + size + "\n").getBytes(StandardCharsets.UTF_8));
     }
 
     private static boolean isController(String name) {

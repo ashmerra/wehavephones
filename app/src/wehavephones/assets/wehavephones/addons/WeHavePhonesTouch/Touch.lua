@@ -1,12 +1,17 @@
 local _, addon = ...
 local enabled = addon.enabled
 local frame = CreateFrame("Frame")
-local applied, editor, controls, selectedSlot, chatHooked, positioningChat, pager
+local applied, editor, selectedSlot, chatHooked, positioningChat, pager
 local category, page, entries = "Spells", 1, {}
 local undo
+-- Bottom of the player and target frames, kept free of the native toolbar.
+local unitBottom = 100
 local buttons = {}
-local Layout, OpenEditor, RefreshEditor, LayoutWorkspace, QueueWorkspace
+local Layout, OpenEditor, RefreshEditor, LayoutWorkspace, QueueWorkspace, LateTracker
 local ACTION_SCALE = 1.35
+-- Taller action grids below this aspect ratio. 16:10 is wide on both sides of the
+-- native and Lua boundary, whatever the rounding. Keep in step with MobileTouchLayout.
+local COMPACT = 1.59
 local WHITE = "Interface\\Buttons\\WHITE8X8"
 
 -- Overrides last for this UI session and never overwrite saved bindings.
@@ -18,6 +23,12 @@ local bindings = {
     F1 = "TARGETSELF", F2 = "TARGETPARTYMEMBER1", F3 = "TARGETPARTYMEMBER2",
     F4 = "TARGETPARTYMEMBER3", F5 = "TARGETPARTYMEMBER4", F6 = "TARGETNEARESTFRIEND",
     F7 = "TOGGLERUN", G = "ASSISTTARGET", F11 = "SITORSTAND",
+    -- The touch menu. Modifier chords on function keys stay clear of letters players type.
+    ["CTRL-SHIFT-F1"] = "TOGGLECHARACTER0", ["CTRL-SHIFT-F2"] = "TOGGLESPELLBOOK", ["CTRL-SHIFT-F3"] = "TOGGLETALENTS",
+    ["CTRL-SHIFT-F4"] = "TOGGLEQUESTLOG", ["CTRL-SHIFT-F5"] = "TOGGLESOCIAL", ["CTRL-SHIFT-F6"] = "TOGGLECHARACTER1",
+    ["CTRL-SHIFT-F7"] = "TOGGLECHARACTER2", ["CTRL-SHIFT-F8"] = "TOGGLECHARACTER4", ["CTRL-SHIFT-F9"] = "TOGGLEPETBOOK",
+    ["CTRL-SHIFT-F10"] = "TOGGLEGAMEMENU", ["CTRL-SHIFT-F11"] = "FOLLOWTARGET", ["CTRL-SHIFT-F12"] = "REPLY",
+    ["SHIFT-F7"] = "NAMEPLATES",
 }
 
 local function Notice(text)
@@ -56,7 +67,7 @@ end
 local function ActionFit()
     local aspect = UIParent:GetWidth()/UIParent:GetHeight()
     if aspect<1.25 then return math.min(1, UIParent:GetHeight()/548) end
-    if aspect<1.6 then return math.min(1, UIParent:GetWidth()/760) end
+    if aspect<COMPACT then return math.min(1, UIParent:GetWidth()/760) end
     return math.min(1, LayoutWidth()/760)
 end
 
@@ -323,47 +334,11 @@ OpenEditor = function(button)
     editor:Show()
 end
 
-local function ShowControls()
-    if InCombatLockdown() then Notice("Touch interface settings are available after combat.") return end
-    if not controls then
-        controls = Panel("WeHavePhonesTouchControls", "Touch interface", 540, 398)
-        controls.size = controls:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        controls.size:SetPoint("TOP", 0, -54)
-        for i, scale in ipairs({1.25, 1.5, 1.75}) do
-            Button(controls, nil, string.format("%d%%", scale * 100), 18 + (i-1)*170, -76, 164, 36, function()
-                WeHavePhonesTouchDB.touchScale = scale
-                UniformScale()
-                Layout()
-                controls.size:SetText(string.format("All interface elements: %d%%", scale * 100))
-            end)
-        end
-        local actions = {
-            {"Character", function() ToggleCharacter("PaperDollFrame") end},
-            {"Spellbook", function() ToggleSpellBook(BOOKTYPE_SPELL) end},
-            {"Quests", function() ToggleQuestLog() end},
-            {"Talents", function() ToggleTalentFrame() end},
-            {"Social", function() ToggleFriendsFrame() end},
-            {"Macros", function() ShowMacroFrame() end},
-            {"Skills", function() ToggleCharacter("SkillFrame") end},
-            {"Reputation", function() ToggleCharacter("ReputationFrame") end},
-            {"PvP", function() ToggleCharacter("HonorFrame") end},
-            {"Undo last edit", Undo},
-            {"Game menu", function() ToggleGameMenu() end},
-            {"Help", function() ToggleHelpFrame() end},
-        }
-        for i, action in ipairs(actions) do
-            Button(controls, nil, action[1], 18+((i-1)%3)*170, -132-math.floor((i-1)/3)*46,
-                164, 38, function() controls:Hide() action[2]() end)
-        end
-        local hint = controls:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-        hint:SetPoint("TOP", 0, -324)
-        hint:SetWidth(504)
-        hint:SetText("Windows clears the thumb controls for menus. Inspect reads tooltips without clicking.\nHold a slot to edit. Hold elsewhere to right-click. Tap Play to return to camera gestures.")
-        Button(controls, nil, "Close", 189, -352, 162, 32, function() controls:Hide() end)
-    end
-    controls.size:SetText(string.format("All interface elements: %d%%", (WeHavePhonesTouchDB.touchScale or 1.5)*100))
-    FitPanel(controls)
-    controls:Show()
+local function SetTouchScale(scale)
+    WeHavePhonesTouchDB.touchScale = scale
+    if InCombatLockdown() then Notice("The interface size changes after combat.") return end
+    UniformScale()
+    Layout()
 end
 
 local function PositionChat()
@@ -430,7 +405,7 @@ local function ShowBagPage(bag)
 end
 
 local function InventoryStrip(bags)
-    if #bags == 0 or (editor and editor:IsShown()) or (controls and controls:IsShown()) then
+    if #bags == 0 or (editor and editor:IsShown()) then
         if inventoryStrip then inventoryStrip:Hide() end
         return 0
     end
@@ -493,6 +468,29 @@ local function RestoreGeometry(object, state)
     for _, point in ipairs(state.points) do object:SetPoint(unpack(point)) end
 end
 
+local editBoxes = {}
+local function RaiseEditBox(editBox)
+    if not enabled or not editBox or WOW_PROJECT_ID ~= WOW_PROJECT_CLASSIC then return end
+    -- The Android keyboard covers the lower half. Type just below the unit frames instead.
+    if not editBoxes[editBox] then
+        local state = RememberGeometry(editBox)
+        state.width = editBox:GetWidth()
+        editBoxes[editBox] = state
+    end
+    local relative = editBox:GetEffectiveScale()/UIParent:GetEffectiveScale()
+    editBox:ClearAllPoints()
+    editBox:SetPoint("TOP", UIParent, "TOP", 0, -(math.max(.14*UIParent:GetHeight(), unitBottom)+6)/relative)
+    editBox:SetWidth(math.min(LayoutWidth()*.6, 560)/relative)
+end
+
+local function LowerEditBox(editBox)
+    local state = editBox and editBoxes[editBox]
+    if not state then return end
+    RestoreGeometry(editBox, state)
+    editBox:SetWidth(state.width)
+    editBoxes[editBox] = nil
+end
+
 local function HudObject(name)
     if type(name) ~= "string" or name == "" then return end
     local object = _G
@@ -526,6 +524,17 @@ local function RememberHud(name, hide)
     if hide then
         if db.hud[name].shown == nil then db.hud[name].shown = object:IsShown() end
         object:Hide()
+    end
+end
+
+-- Put a remembered HUD object back on its own anchors, optionally smaller.
+local function ApplyHud(name, scale)
+    local object, state = HudObject(name), WeHavePhonesTouchDB.hud and WeHavePhonesTouchDB.hud[name]
+    if not object or not state then return end
+    object:SetScale(state.scale*(scale or 1))
+    object:ClearAllPoints()
+    for _, point in ipairs(state.points) do
+        object:SetPoint(point[1], HudObject(point[2]) or UIParent, point[3], point[4], point[5])
     end
 end
 
@@ -612,7 +621,6 @@ LayoutWorkspace = function()
         end
     end
     FitPanel(editor)
-    FitPanel(controls)
     positioningWorkspace = false
 end
 
@@ -641,8 +649,7 @@ frame:SetScript("OnUpdate", function(_, elapsed)
     if workspaceElapsed < .2 then return end
     workspaceElapsed = 0
     local panels, bags = WorkspaceFrames()
-    local signature = {UIParent:GetWidth(), UIParent:GetHeight(),
-        editor and editor:IsShown() and 1 or 0, controls and controls:IsShown() and 1 or 0}
+    local signature = {UIParent:GetWidth(), UIParent:GetHeight(), editor and editor:IsShown() and 1 or 0}
     for _, group in ipairs({panels, bags}) do
         for _, object in ipairs(group) do
             signature[#signature+1] = object:GetName()
@@ -652,6 +659,7 @@ frame:SetScript("OnUpdate", function(_, elapsed)
     end
     signature = table.concat(signature, ":")
     if signature ~= workspaceSignature then workspaceSignature = signature QueueWorkspace() end
+    if LateTracker then LateTracker() end
 end)
 
 local positioningClassBars
@@ -667,7 +675,7 @@ local function PositionClassBars()
             total = total+object:GetWidth()
         end
     end
-    local reserved = UIParent:GetWidth()/UIParent:GetHeight()<1.6 and 132*ActionFit() or 0
+    local reserved = UIParent:GetWidth()/UIParent:GetHeight()<COMPACT and 132*ActionFit() or 0
     local scale = math.min(1, (LayoutWidth()-32-reserved)/math.max(1, total+12))
     local x = -LayoutWidth()/2+16+reserved
     for _, object in ipairs(bars) do
@@ -698,6 +706,111 @@ local function QueueHud()
     C_Timer.After(0, function() hudQueued = false PositionHud() end)
 end
 
+-- The native toolbar's reserved regions, in fractions of the game's height. Keep these
+-- in step with MobileTouchLayout: a band along the top with a minimap square at its right
+-- end on wide games, and the right rail beside the centered layout on narrower ones.
+local TOOLBAR_BAND, MINIMAP_RESERVE, ZONE_GAP, AURA_ROW, AURA_ICON = .14, .30, .012, 45, 35
+local topHooks, auraLeft, auraBottom = {}, 0, 0
+local function HookTop(object)
+    -- Edit Mode reapplies its anchors and frame sizes after login and layout changes.
+    if not object or topHooks[object] then return end
+    hooksecurefunc(object, "SetPoint", QueueHud)
+    hooksecurefunc(object, "SetScale", QueueHud)
+    topHooks[object] = true
+end
+
+local function ToolbarZone()
+    return math.max(.42, math.min(.75, UIParent:GetWidth()/UIParent:GetHeight()-MINIMAP_RESERVE-.80))
+end
+
+local function RelativeScale(object)
+    return object:GetEffectiveScale()/UIParent:GetEffectiveScale()
+end
+
+local minimapLeft, minimapBottom = 0, 0
+local function PositionTopHud()
+    local width, height = UIParent:GetWidth(), UIParent:GetHeight()
+    local compact = width/height < COMPACT
+    local rail = compact and (width-LayoutWidth())/2 or 0
+    minimapLeft, minimapBottom = width-rail, 0
+    if MinimapCluster then
+        RememberHud("MinimapCluster")
+        local scale = math.min(1, MINIMAP_RESERVE*height/math.max(1, MinimapCluster:GetWidth(), MinimapCluster:GetHeight()))
+        SetRelativeScale(MinimapCluster, scale)
+        MinimapCluster:ClearAllPoints()
+        MinimapCluster:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -rail/scale, 0)
+        minimapLeft = width-rail-MinimapCluster:GetWidth()*scale
+        minimapBottom = MinimapCluster:GetHeight()*scale
+        HookTop(MinimapCluster)
+    end
+    if not compact and UIWidgetTopCenterContainerFrame then
+        -- Battleground scores and other top-center widgets start below the toolbar band.
+        RememberHud("UIWidgetTopCenterContainerFrame")
+        UIWidgetTopCenterContainerFrame:ClearAllPoints()
+        UIWidgetTopCenterContainerFrame:SetPoint("TOP", UIParent, "TOP", 0,
+            -(TOOLBAR_BAND*height+4)/RelativeScale(UIWidgetTopCenterContainerFrame))
+        HookTop(UIWidgetTopCenterContainerFrame)
+    end
+    -- Player and target frames keep their own anchors. They shrink toward those anchors only
+    -- when the target frame would reach the toolbar, or the minimap on narrower games.
+    if PlayerFrame and TargetFrame then
+        local right = compact and minimapLeft-8 or width-(MINIMAP_RESERVE+ZONE_GAP+ToolbarZone())*height-8
+        RememberHud("PlayerFrame")
+        RememberHud("TargetFrame")
+        ApplyHud("PlayerFrame")
+        ApplyHud("TargetFrame")
+        local edge = TargetFrame:GetRight() and TargetFrame:GetRight()*RelativeScale(TargetFrame)
+            or (232+TargetFrame:GetWidth())*RelativeScale(TargetFrame)
+        local scale = math.max(.4, math.min(1, right/math.max(1, edge)))
+        if scale < 1 then
+            ApplyHud("PlayerFrame", scale)
+            ApplyHud("TargetFrame", scale)
+        end
+        HookTop(PlayerFrame)
+        HookTop(TargetFrame)
+        local bottom = height-100
+        for _, object in ipairs({PlayerFrame, TargetFrame}) do
+            if object:GetBottom() then bottom = math.min(bottom, object:GetBottom()*RelativeScale(object)) end
+        end
+        unitBottom = height-bottom
+    end
+end
+
+local function BuffCount()
+    local count = 0
+    for i = 1, 40 do
+        if not (UnitBuff and UnitBuff("player", i)) then break end
+        count = count+1
+    end
+    return count
+end
+
+local PositionTracker
+-- Auras are not protected. They follow buff changes in combat as well.
+local function PositionAuras()
+    if not enabled or WOW_PROJECT_ID ~= WOW_PROJECT_CLASSIC then return end
+    local width, height = UIParent:GetWidth(), UIParent:GetHeight()
+    local compact = width/height < COMPACT
+    -- Wide games: right-aligned under the toolbar band. Narrower games: under the minimap,
+    -- clear of Target, Use and Jump, which can be wider than the rail.
+    local right = compact and math.max((width-LayoutWidth())/2, width*.16)+4 or (MINIMAP_RESERVE+ZONE_GAP)*height
+    local top = compact and minimapBottom+4 or TOOLBAR_BAND*height+4
+    local rows = math.max(1, math.ceil(BuffCount()/11))
+    auraLeft, auraBottom = width-right-11*AURA_ICON, top+(rows+1)*AURA_ROW
+    for _, aura in ipairs({{"BuffFrame", 0, 0}, {"DebuffFrame", 0, rows*AURA_ROW}}) do
+        local object = _G[aura[1]]
+        if object then
+            RememberHud(aura[1])
+            local relative = RelativeScale(object)
+            object:ClearAllPoints()
+            object:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -(right+aura[2])/relative, -(top+aura[3])/relative)
+            HookTop(object)
+        end
+    end
+    -- The tracker may be an addon's scaled frame. Refit it after combat.
+    if PositionTracker and not InCombatLockdown() then PositionTracker() end
+end
+
 local partyHooked
 local function PositionParty()
     if not PartyFrame then return end
@@ -710,10 +823,8 @@ local function PositionParty()
         local member = PartyFrame["MemberFrame"..i]
         if member then maxWidth = math.max(maxWidth, member:GetWidth()) end
     end
-    local available = width*.76
-    if MinimapCluster and MinimapCluster:GetLeft() then
-        available = math.min(available, MinimapCluster:GetLeft()*MinimapCluster:GetEffectiveScale()/UIParent:GetEffectiveScale()-width*.025-16)
-    end
+    local available = math.min(width*.76, minimapLeft-width*.025-16)
+    if width/UIParent:GetHeight() >= COMPACT then available = math.min(available, auraLeft-width*.025-16) end
     -- Reserve pet and aura space as well as the 53-pixel stock unit button.
     local scale = math.min(1, math.max(1, available)/(maxWidth*4+42), UIParent:GetHeight()*.125/104)
     for i = 1, 4 do
@@ -730,18 +841,21 @@ local function PositionParty()
     PositionChat()
 end
 
-local function PositionTracker()
+-- Questie can show its tracker after the first layout. Fit it once it appears.
+LateTracker = function()
+    if Questie_BaseFrame and Questie_BaseFrame:IsShown() and not trackerHooks[Questie_BaseFrame] then QueueHud() end
+end
+
+PositionTracker = function()
     local name = Questie_BaseFrame and Questie_BaseFrame:IsShown() and "Questie_BaseFrame" or "QuestWatchFrame"
     local object = _G[name]
     if not object then return end
     RememberHud(name)
     if name == "Questie_BaseFrame" then RememberHud("QuestWatchFrame", true) end
     local fit = math.min(1, LayoutWidth()/760)
-    local top = UIParent:GetHeight()*.65
-    if MinimapCluster and MinimapCluster:GetBottom() then
-        top = math.min(top, MinimapCluster:GetBottom()*MinimapCluster:GetEffectiveScale()/UIParent:GetEffectiveScale()-12)
-    end
-    local actionTop = UIParent:GetWidth()/UIParent:GetHeight()<1.6
+    -- Below the minimap and the player's buffs and debuffs.
+    local top = math.min(UIParent:GetHeight()*.65, UIParent:GetHeight()-math.max(minimapBottom+12, auraBottom+8))
+    local actionTop = UIParent:GetWidth()/UIParent:GetHeight()<COMPACT
         and (64+(math.ceil(12/CompactColumns())-1)*54+36*ACTION_SCALE)*ActionFit() or (118+36*ACTION_SCALE)*fit
     local height = math.max(32, top-actionTop-16)
     local scale = math.min(1, LayoutWidth()*.30/math.max(1, object:GetWidth()), height/math.max(1, object:GetHeight()))
@@ -757,9 +871,9 @@ local function PositionTracker()
     end
 end
 
-PositionHud = function()
-    if not enabled or WOW_PROJECT_ID ~= WOW_PROJECT_CLASSIC or InCombatLockdown() or positioningHud then return end
-    positioningHud = true
+local function PlaceHud()
+    PositionTopHud()
+    PositionAuras()
     PositionParty()
     if ChatFrame1ButtonFrame then
         RememberHud("ChatFrame1ButtonFrame")
@@ -783,7 +897,15 @@ PositionHud = function()
         StatusTrackingBarManager:ClearAllPoints()
         StatusTrackingBarManager:SetPoint("BOTTOM", UIParent, "BOTTOM", 0, 1/scale)
     end
+end
+
+PositionHud = function()
+    if not enabled or WOW_PROJECT_ID ~= WOW_PROJECT_CLASSIC or InCombatLockdown() or positioningHud then return end
+    positioningHud = true
+    -- Report an error, but never leave the guard set: that would stop every later layout.
+    local ok, problem = pcall(PlaceHud)
     positioningHud = false
+    if not ok then geterrorhandler()(problem) end
 end
 
 Layout = function()
@@ -795,7 +917,7 @@ Layout = function()
         for i = 1, 6 do VIEWABLE_ACTION_BAR_PAGES[i] = 1 end
     end
     local halfWidth, halfHeight = LayoutWidth()/2, UIParent:GetHeight()/2
-    local compact = UIParent:GetWidth()/UIParent:GetHeight()<1.6
+    local compact = UIParent:GetWidth()/UIParent:GetHeight()<COMPACT
     local fit = ActionFit()
     local columns = CompactColumns()
     for i = 1, 12 do
@@ -844,6 +966,14 @@ Layout = function()
     PositionChat()
     if not tooltipHooked and GameTooltip_SetDefaultAnchor then
         hooksecurefunc("GameTooltip_SetDefaultAnchor", PositionDefaultTooltip)
+        -- Classic Era 1.15 calls ChatFrameUtil directly. ChatEdit_* are only deprecated aliases there.
+        if ChatFrameUtil and ChatFrameUtil.ActivateChat then
+            hooksecurefunc(ChatFrameUtil, "ActivateChat", RaiseEditBox)
+            hooksecurefunc(ChatFrameUtil, "DeactivateChat", LowerEditBox)
+        elseif ChatEdit_ActivateChat then
+            hooksecurefunc("ChatEdit_ActivateChat", RaiseEditBox)
+            hooksecurefunc("ChatEdit_DeactivateChat", LowerEditBox)
+        end
         tooltipHooked = true
     end
     PositionHud()
@@ -872,6 +1002,8 @@ local function Apply()
         if not applied then
             applied = true
             if db.originalRootScale == nil then db.originalRootScale = UIParent:GetScale() end
+            -- The app's size reaches every character once. Later in-game choices survive a reload.
+            if addon.scale and db.modeScale ~= addon.scale then db.touchScale, db.modeScale = addon.scale, addon.scale end
             SaveCVar("GamePadEnable", "0")
             SaveCVar("InputDeviceInterfaceStyle", "0")
             SaveCVar("useUiScale", "1")
@@ -883,6 +1015,8 @@ local function Apply()
             SaveCVar("SoftTargetIconInteract", "1")
             SaveCVar("lootUnderMouse", "0")
             SaveCVar("alwaysCompareItems", "1")
+            -- Nameplates are steadier tap targets than moving creature models.
+            SaveCVar("nameplateShowEnemies", "1")
             if WOW_PROJECT_ID == WOW_PROJECT_CLASSIC and GetActionBarToggles then
                 local toggles = {GetActionBarToggles()}
                 for i = 1, 7 do toggles[i] = toggles[i] == true or toggles[i] == 1 end
@@ -894,13 +1028,22 @@ local function Apply()
                 SetActionBarToggles(unpack(toggles))
             end
             for key, action in pairs(bindings) do SetOverrideBinding(frame, true, key, action) end
-            local trigger = CreateFrame("Button", "WeHavePhonesTouchMenuTrigger", UIParent)
-            trigger:RegisterForClicks("AnyUp", "AnyDown")
-            trigger:SetSize(1, 1)
-            trigger:SetPoint("TOPLEFT")
-            trigger:SetScript("OnClick", ShowControls)
-            trigger:Show()
-            SetOverrideBindingClick(frame, true, "F9", "WeHavePhonesTouchMenuTrigger")
+            -- Touch menu entries without a stock binding. Each runs once, when its chord is released.
+            -- No Alt chords: Windows reads Alt with F4 as closing the game window.
+            for key, action in pairs({["SHIFT-F1"] = function()
+                    if InCombatLockdown() then Notice("Macros can be opened after combat.") else ShowMacroFrame() end
+                end, ["SHIFT-F2"] = function() ToggleHelpFrame() end, ["SHIFT-F3"] = Undo,
+                ["SHIFT-F4"] = function() SetTouchScale(1.25) end, ["SHIFT-F5"] = function() SetTouchScale(1.5) end,
+                ["SHIFT-F6"] = function() SetTouchScale(1.75) end}) do
+                local name = "WeHavePhonesTouchMenu" .. key:gsub("%-", "")
+                local trigger = _G[name] or CreateFrame("Button", name, UIParent)
+                trigger:RegisterForClicks("AnyUp", "AnyDown")
+                trigger:SetSize(1, 1)
+                trigger:SetPoint("TOPLEFT")
+                trigger:SetScript("OnClick", function(_, _, down) if not down then action() end end)
+                trigger:Show()
+                SetOverrideBindingClick(frame, true, key, name)
+            end
             local corpse = CreateFrame("Button", "WeHavePhonesTouchCorpseTrigger", UIParent, "SecureActionButtonTemplate")
             corpse:RegisterForClicks("AnyUp", "AnyDown")
             corpse:SetSize(1, 1)
@@ -915,7 +1058,7 @@ local function Apply()
             end)
             corpse:Show()
             SetOverrideBindingClick(frame, true, "F10", "WeHavePhonesTouchCorpseTrigger")
-            print("WeHavePhones touch: tap Controls, then Play for movement. Drag Controls aside if needed. Hold a slot to edit. More opens the interface menu.")
+            print("WeHavePhones touch: tap Controls, then Play to move. Menu has every window and the touch guide. Hold a hotbar slot to change it.")
         end
         UniformScale()
         Layout()
@@ -934,6 +1077,7 @@ local function Apply()
             db.chat = nil
         end
         RestoreHud()
+        for editBox in pairs(editBoxes) do LowerEditBox(editBox) end
         for object, state in pairs(workspaceOriginal) do RestoreGeometry(object, state) end
         workspaceOriginal = {}
         ClearOverrideBindings(frame)
@@ -952,12 +1096,17 @@ frame:RegisterEvent("QUEST_WATCH_UPDATE")
 frame:RegisterEvent("UPDATE_SHAPESHIFT_FORMS")
 frame:RegisterEvent("UNIT_PET")
 frame:RegisterEvent("GROUP_ROSTER_UPDATE")
+if frame.RegisterUnitEvent then frame:RegisterUnitEvent("UNIT_AURA", "player") end
+local buffRows
 frame:SetScript("OnEvent", function(_, event)
     if event == "ACTIONBAR_PAGE_CHANGED" then
         UpdatePager()
+    elseif event == "UNIT_AURA" then
+        -- A new row of buffs moves the debuffs down, in combat as well. The tracker follows after combat.
+        local rows = math.max(1, math.ceil(BuffCount()/11))
+        if enabled and applied and rows ~= buffRows then buffRows = rows PositionAuras() end
     elseif event == "PLAYER_REGEN_DISABLED" then
         if editor then editor:Hide() end
-        if controls then controls:Hide() end
         if inventoryStrip then inventoryStrip:Hide() end
     elseif event == "UI_SCALE_CHANGED" or event == "DISPLAY_SIZE_CHANGED" then
         C_Timer.After(0, function() if enabled and applied then UniformScale() Layout() end end)

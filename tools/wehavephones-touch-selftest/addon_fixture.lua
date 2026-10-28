@@ -1,11 +1,12 @@
 local original = {GamePadEnable="1", InputDeviceInterfaceStyle="1", useUiScale="0", uiScale="0.64", lootUnderMouse="1", alwaysCompareItems="0",
-    SoftTargetInteract="1", SoftTargetInteractArc="0", SoftTargetIconInteract="0"}
+    SoftTargetInteract="1", SoftTargetInteractArc="0", SoftTargetIconInteract="0", nameplateShowEnemies="0"}
 local values, held, objects, all = {}, {}, {}, {}
 for k,v in pairs(original) do values[k]=v end
 local combat, cursor, layout, notices, actionPage = false, nil, 0, 0, 1
 local extraBars = {false,false,true,false,false,false,false}
 local actions = {[1]={"spell",101}, [61]={"item",500}}
 local targetExists, targetDead = false, false
+local buffs = 0
 WOW_PROJECT_CLASSIC, WOW_PROJECT_ID, BOOKTYPE_SPELL = 2, 2, "spell"
 tinsert, UISpecialFrames, unpack = table.insert, {}, table.unpack or unpack
 VIEWABLE_ACTION_BAR_PAGES = {1,1,1,1,1,1}
@@ -20,7 +21,30 @@ function methods:GetHeight() return self.height or 900 end
 function methods:SetSize(w,h) self.width,self.height=w,h end
 function methods:SetWidth(w) self.width=w end
 function methods:SetHeight(h) self.height=h end
-function methods:GetBottom() return UIParent:GetHeight()-160 end
+local function topRect(object)
+    -- Left, bottom, width and height in UIParent units, from the object's single anchor.
+    local s=object:GetEffectiveScale()/UIParent:GetEffectiveScale()
+    local point,_,relativePoint,x,y=unpack(object.point)
+    local W,H=UIParent:GetWidth(),UIParent:GetHeight()
+    local ax=relativePoint:find("LEFT") and 0 or relativePoint:find("RIGHT") and W or W/2
+    local ay=relativePoint:find("TOP") and H or relativePoint:find("BOTTOM") and 0 or H/2
+    ax,ay=ax+x*s,ay+y*s
+    local w,h=object:GetWidth()*s,object:GetHeight()*s
+    local left=point:find("LEFT") and ax or point:find("RIGHT") and ax-w or ax-w/2
+    local bottom=point:find("TOP") and ay-h or point:find("BOTTOM") and ay or ay-h/2
+    return left,bottom,w,h
+end
+-- Like WoW, edges are in the object's own scaled coordinates.
+function methods:GetBottom()
+    if not self.point or self.point[2]~=UIParent then return nil end
+    local _,bottom=topRect(self)
+    return bottom*UIParent:GetEffectiveScale()/self:GetEffectiveScale()
+end
+function methods:GetRight()
+    if not self.point or self.point[2]~=UIParent then return nil end
+    local left,_,w=topRect(self)
+    return (left+w)*UIParent:GetEffectiveScale()/self:GetEffectiveScale()
+end
 function methods:SetPoint(...) self.point={...} if self.action then layout=layout+1 end end
 function methods:GetPoint() return unpack(self.point or {"BOTTOMLEFT",UIParent,"BOTTOMLEFT",2,3}) end
 function methods:GetName() return self.name end
@@ -50,10 +74,11 @@ function methods:GetHighlightTexture() return self.highlight end
 function methods:SetHighlightTexture() self.highlight=CreateFrame("Texture") end
 function methods:IsOwned(owner) return self.owner==owner end
 function methods:SetAnchorType(anchor) self.anchor=anchor end
-for _,name in ipairs({"RegisterEvent","ClearAllPoints","SetFrameStrata","EnableMouse","SetClampedToScreen","SetBackdrop",
+for _,name in ipairs({"RegisterEvent","RegisterUnitEvent","ClearAllPoints","SetFrameStrata","EnableMouse","SetClampedToScreen","SetBackdrop",
     "SetTexture","SetJustifyH","SetBackdropColor","SetBackdropBorderColor","SetGradient","SetThickness",
     "SetColorTexture","SetStartPoint","SetEndPoint"}) do methods[name]=function() end end
 function CreateColor(r,g,b,a) return {r=r,g=g,b=b,a=a} end
+function UnitBuff(_,i) if i<=buffs then return "Buff "..i end end
 function CreateFrame(_,name,parent)
     local object=setmetatable({name=name, scripts={}, parent=parent}, {__index=methods})
     if name then objects[name]=object _G[name]=object end
@@ -72,6 +97,24 @@ GameTooltip=CreateFrame("GameTooltip","GameTooltip")
 function GameTooltip_SetDefaultAnchor(tooltip)
     tooltip:SetPoint("BOTTOMRIGHT",UIParent,"BOTTOMRIGHT",0,0)
 end
+ChatFrame1EditBox=CreateFrame("EditBox","ChatFrame1EditBox",UIParent)
+ChatFrame1EditBox:SetSize(300,32)
+ChatFrame1EditBox:SetPoint("TOPLEFT",ChatFrame1,"BOTTOMLEFT",-5,-2)
+-- Classic Era 1.15 activates chat through ChatFrameUtil. The old globals are aliases.
+ChatFrameUtil={ActivateChat=function(editBox) editBox:Show() end, DeactivateChat=function(editBox) editBox:Hide() end}
+ChatEdit_ActivateChat, ChatEdit_DeactivateChat = ChatFrameUtil.ActivateChat, ChatFrameUtil.DeactivateChat
+local macroFrames, helpFrames = 0, 0
+function ShowMacroFrame() macroFrames=macroFrames+1 end
+function ToggleHelpFrame() helpFrames=helpFrames+1 end
+-- Classic Era's Edit Mode preset positions at the top of the screen.
+for _, top in ipairs({{"MinimapCluster",192,192,"TOPRIGHT",0,0},{"PlayerFrame",232,100,"TOPLEFT",-1,0},
+    {"TargetFrame",232,100,"TOPLEFT",232,-4},{"BuffFrame",385,45,"TOPRIGHT",-187,-13},{"DebuffFrame",280,45,"TOPRIGHT",-202,-152},
+    {"UIWidgetTopCenterContainerFrame",300,40,"TOP",0,-15}}) do
+    local object=CreateFrame("Frame",top[1],UIParent)
+    object:SetSize(top[2],top[3])
+    object:SetPoint(top[4],UIParent,top[4],top[5],top[6])
+    object:Show()
+end
 MultiBarBottomLeft=CreateFrame("Frame","MultiBarBottomLeft")
 MultiBarBottomRight=CreateFrame("Frame","MultiBarBottomRight")
 function ChatFrame1:ApplySystemAnchor() self:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", 0, 0) end
@@ -82,6 +125,7 @@ function hooksecurefunc(object,name,callback)
     object[name]=function(...) original(...) callback(...) end
 end
 UIErrorsFrame={AddMessage=function() notices=notices+1 end}
+function geterrorhandler() return error end
 Settings={
     GetValue=function() return nil end,
     SetValue=function() error("Settings proxies are unavailable before their definitions load") end,
@@ -196,7 +240,7 @@ function UIParent_ManageFramePositions()
     PetActionBar:SetPoint("BOTTOMLEFT",UIParent,"BOTTOMLEFT",0,0)
 end
 local active
-local function boot(enabled)
+local function boot(enabled, scale)
     -- Reloading WoW discards the previous Lua runtime and its secure hooks.
     -- Keep the DB and frame geometry here, but never run old enabled callbacks
     -- while exercising a new disabled addon instance.
@@ -207,7 +251,7 @@ local function boot(enabled)
     secureHooks={}
     local chunk=assert(load(ADDON,"Touch.lua"))
     local before=#all
-    chunk("WeHavePhonesTouch",{enabled=enabled})
+    chunk("WeHavePhonesTouch",{enabled=enabled,scale=scale})
     active=all[before+1]
     active.scripts.OnEvent(active,"PLAYER_LOGIN")
 end
@@ -239,7 +283,20 @@ assert(values.GamePadEnable=="0" and not extraBars[1] and not extraBars[2] and e
 assert(UIParent:GetScale()==1.5 and layout==12)
 for i=1,6 do assert(VIEWABLE_ACTION_BAR_PAGES[i],"all six pages accessible through the switcher") end
 assert(not MultiBarBottomLeft.visible and not MultiBarBottomRight.visible,"extra grids do not take camera space")
-assert(held.F9=="WeHavePhonesTouchMenuTrigger" and held.W=="MOVEFORWARD")
+assert(held.W=="MOVEFORWARD" and held.F9==nil,"the old in-game touch panel is gone")
+assert(held["CTRL-SHIFT-F1"]=="TOGGLECHARACTER0" and held["CTRL-SHIFT-F4"]=="TOGGLEQUESTLOG" and held["CTRL-SHIFT-F10"]=="TOGGLEGAMEMENU"
+    and held["CTRL-SHIFT-F11"]=="FOLLOWTARGET" and held["CTRL-SHIFT-F12"]=="REPLY" and held["SHIFT-F7"]=="NAMEPLATES" and held["CTRL-ALT-F7"]==nil,
+    "the touch menu opens windows and helpers through stock bindings")
+local function menuChord(key)
+    local trigger=objects[held[key]]
+    assert(trigger and trigger.clicks[1]=="AnyUp" and trigger.clicks[2]=="AnyDown","menu triggers accept either click phase")
+    trigger.scripts.OnClick(trigger,"LeftButton",true)
+    trigger.scripts.OnClick(trigger,"LeftButton",false)
+end
+menuChord("SHIFT-F1")
+menuChord("SHIFT-F2")
+assert(macroFrames==1 and helpFrames==1,"Macros and Help open once per chord, not on both click phases")
+assert(values.nameplateShowEnemies=="1","enemy nameplates give steadier tap targets")
 assert(held.F1=="TARGETSELF" and held.F2=="TARGETPARTYMEMBER1" and held.F5=="TARGETPARTYMEMBER4"
     and held.F6=="TARGETNEARESTFRIEND" and held.G=="ASSISTTARGET", "friendly targets use standard secure bindings")
 assert(held.F7=="TOGGLERUN" and held.F11=="SITORSTAND", "walking and held descent use Classic's actual binding names")
@@ -254,11 +311,18 @@ Questie_BaseFrame=CreateFrame("Frame","Questie_BaseFrame",UIParent)
 Questie_BaseFrame:SetSize(300,180)
 Questie_BaseFrame:SetPoint("TOPRIGHT",UIParent,"TOPRIGHT",-2,-200)
 Questie_BaseFrame:Show()
-active.scripts.OnEvent(active,"QUEST_LOG_UPDATE")
+active.scripts.OnUpdate(active,.3)
+assert(Questie_BaseFrame.point[3]=="CENTER","a Questie tracker shown after login is fitted without a quest event")
 assert(not QuestWatchFrame.visible and Questie_BaseFrame.point[3]=="CENTER",
     "late Questie initialization removes the duplicate stock tracker without changing Questie settings")
 Questie_BaseFrame:SetPoint("TOPRIGHT",UIParent,"TOPRIGHT",-2,-200)
 assert(Questie_BaseFrame.point[3]=="CENTER","late tracker layout cannot move quests back over Target")
+local getRight=TargetFrame.GetRight
+TargetFrame.GetRight=function() error("fixture layout failure") end
+assert(not pcall(active.scripts.OnEvent,active,"GROUP_ROSTER_UPDATE"),"layout errors are still reported")
+TargetFrame.GetRight=getRight
+Questie_BaseFrame:SetPoint("TOPRIGHT",UIParent,"TOPRIGHT",-2,-200)
+assert(Questie_BaseFrame.point[3]=="CENTER","one failed layout never blocks the next one")
 assert(values.SoftTargetInteract=="3" and values.SoftTargetInteractArc=="1" and values.SoftTargetIconInteract=="1",
     "mouse-based touch enables nearby interaction with a visible front-cone target")
 local corpse=objects.WeHavePhonesTouchCorpseTrigger
@@ -273,8 +337,6 @@ assert(notices==beforeCorpseNotice+1,"missing corpse gives a useful range and fa
 targetExists,targetDead=true,true
 corpse.scripts.PostClick(corpse,"LeftButton",false)
 assert(notices==beforeCorpseNotice+1,"selected corpses need no extra status text")
-assert(objects.WeHavePhonesTouchMenuTrigger.clicks[1]=="AnyUp" and objects.WeHavePhonesTouchMenuTrigger.clicks[2]=="AnyDown",
-    "menu accepts bindings dispatched on press or release")
 for i=1,12 do
     assert(math.abs(_G["ActionButton"..i].scale-1.35)<.001,"35 percent larger default actions")
     assert(_G["ActionButton"..i].type2=="" and _G["ActionButton"..i].clicks[1]=="LeftButtonUp")
@@ -297,6 +359,11 @@ local geometry=GEOMETRY_PATH and assert(io.open(GEOMETRY_PATH,"w"))
 local function exportGeometry(object, width, height, kind, fullHeight)
     if not geometry then return end
     local scale=object:GetEffectiveScale()/UIParent:GetEffectiveScale()
+    if object.point[3]~="CENTER" then
+        local left,bottom,w,h=topRect(object)
+        geometry:write(table.concat({width,height,left,bottom,w,h,kind},"\t"),"\n")
+        return
+    end
     local x=width/2+object.point[4]*scale
     local y=height/2+object.point[5]*scale
     local h=(fullHeight or object:GetHeight())*scale
@@ -313,7 +380,7 @@ for _,scale in ipairs({1.25,1.5,1.75}) do
         local current=positions()
         local pager=objects.WeHavePhonesTouchPager
         local fit=ActionButton1:GetScale()/1.35
-        local compact=aspect<1.6
+        local compact=aspect<1.59
         local pagerScale=pager:GetEffectiveScale()/UIParent:GetEffectiveScale()
         close(pager.point[5]*pagerScale+height/2,compact and 12 or 64*fit,"pager follows the fitted action layout")
         local rectangles={}
@@ -341,6 +408,32 @@ for _,scale in ipairs({1.25,1.5,1.75}) do
             end
         end
         assert(StanceBar.point[3]=="CENTER" and PetActionBar.point[3]=="CENTER","class controls have a separate footer")
+        local compactTop=aspect<1.59
+        local rail=compactTop and (width-math.min(width*.8,height*16/9))/2 or 0
+        local zoneLeft=width-(.312+math.max(.42,math.min(.75,aspect-1.1)))*height
+        local ml,mb,mw,mh=topRect(MinimapCluster)
+        assert(math.abs(ml+mw-(width-rail))<.01 and mw<=height*.30+.01 and mh<=height*.30+.01,
+            "the minimap fits its square, out of the rail on narrower games")
+        local pl,pb,pw,ph=topRect(PlayerFrame)
+        local tl,tb,tw,th=topRect(TargetFrame)
+        assert(pl<1 and math.abs(tl-(pl+pw+1*(pw/232)))<1 and math.abs(pb-tb-4*pw/232)<.01,"player and target frames keep their stock order")
+        assert(PlayerFrame.point[5]==0 and TargetFrame.point[5]==-4 and TargetFrame.point[4]==232,
+            "unit frames keep their own anchors and only change size")
+        assert(tl+tw<=(compactTop and ml or zoneLeft)+.01 or tw<=232*.4+.01,"the target frame stays left of the toolbar zone and minimap")
+        for _,name in ipairs({"BuffFrame","DebuffFrame"}) do
+            local al,ab,aw,ah=topRect(_G[name])
+            if compactTop then assert(al+aw<=width-math.max(rail,width*.16)+.01 and ab+ah<=mb+.01,"narrower games show auras under the minimap")
+            else assert(ab+ah<=height*.86+.01 and al+aw<=width-.30*height+.01,"wide games show auras under the toolbar band") end
+            exportGeometry(_G[name],width,height,"aura")
+        end
+        if not compactTop then
+            local wl,wb,ww,wh=topRect(UIWidgetTopCenterContainerFrame)
+            assert(wb+wh<=height*.86+.01,"top-center widgets start below the toolbar band")
+            exportGeometry(UIWidgetTopCenterContainerFrame,width,height,"widget")
+        end
+        exportGeometry(MinimapCluster,width,height,"minimap")
+        exportGeometry(PlayerFrame,width,height,"unit")
+        exportGeometry(TargetFrame,width,height,"unit")
         assert(StatusTrackingBarManager.point[3]=="BOTTOM","experience stays below the class footer")
         for i=1,4 do PartyFrame["MemberFrame"..i]:Show() end
         active.scripts.OnEvent(active,"GROUP_ROSTER_UPDATE")
@@ -554,15 +647,28 @@ local before=notices
 edit(ActionButton1)
 assert(notices==before+1 and cursor[2]==900,"cursor contents never discarded to open editor")
 cursor=nil
-objects.WeHavePhonesTouchMenuTrigger.scripts.OnClick()
-clickText("175%")
-assert(UIParent:GetScale()==1.75)
-clickText("150%")
+menuChord("SHIFT-F6")
+assert(UIParent:GetScale()==1.75 and WeHavePhonesTouchDB.touchScale==1.75,"the touch menu changes the interface size")
+menuChord("SHIFT-F5")
 local scale=UIParent:GetScale()
 active.scripts.OnEvent(active,"PLAYER_ENTERING_WORLD")
 assert(UIParent:GetScale()==scale,"re-entry never compounds scale")
 boot(true)
 assert(UIParent:GetScale()==scale,"reload never compounds scale")
+boot(true,1.25)
+assert(UIParent:GetScale()==1.25 and WeHavePhonesTouchDB.modeScale==1.25,"the app's interface size reaches each character at login")
+menuChord("SHIFT-F6")
+boot(true,1.25)
+assert(UIParent:GetScale()==1.75,"an in-game size choice survives a reload until the app writes a new one")
+boot(true,1.5)
+assert(UIParent:GetScale()==scale,"a new app-wide size applies at the next launch")
+ChatFrameUtil.ActivateChat(ChatFrame1EditBox)
+assert(ChatFrame1EditBox.point[1]=="TOP" and ChatFrame1EditBox.point[3]=="TOP"
+    and -ChatFrame1EditBox.point[5]>=UIParent:GetHeight()*.14 and -ChatFrame1EditBox.point[5]>=PlayerFrame:GetHeight()*PlayerFrame:GetScale(),
+    "typing moves the chat box above the Android keyboard, below the unit frames and toolbar")
+ChatFrameUtil.DeactivateChat(ChatFrame1EditBox)
+assert(ChatFrame1EditBox.point[1]=="TOPLEFT" and ChatFrame1EditBox.point[2]==ChatFrame1 and ChatFrame1EditBox:GetWidth()==300,
+    "the chat box returns to the chat frame after typing")
 edit(ActionButton1)
 combat=true
 ChatFrame1:ApplySystemAnchor()
@@ -578,6 +684,11 @@ ActionButton1:SetTooltip()
 assert(GameTooltip.point[2]==ChatFrame1,"action tooltips stay over chat in combat")
 active.scripts.OnEvent(active,"PLAYER_REGEN_DISABLED")
 assert(not objects.WeHavePhonesTouchEditor.visible,"combat closes the editor")
+local debuffY=DebuffFrame.point[5]
+buffs=12
+active.scripts.OnEvent(active,"UNIT_AURA")
+assert(DebuffFrame.point[5]<debuffY,"a second row of buffs moves debuffs down, in combat as well")
+buffs=0
 CharacterFrame:Show()
 local oldScale=CharacterFrame:GetScale()
 UpdateContainerFrameAnchors()

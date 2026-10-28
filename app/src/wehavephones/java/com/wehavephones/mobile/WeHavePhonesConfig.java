@@ -25,6 +25,8 @@ public final class WeHavePhonesConfig {
     public static final String KEY_PERFORMANCE_OVERLAY = "wehavephones_performance_overlay";
     public static final String KEY_DISABLE_VIRTUAL_GAMEPAD = "wehavephones_disable_virtual_gamepad";
     public static final String KEY_MOBILE_TOUCH = "wehavephones_mobile_touch";
+    private static final String KEY_MOBILE_TOUCH_SCALE = "wehavephones_mobile_touch_scale";
+    private static final String KEY_MOBILE_TOUCH_GUIDE = "wehavephones_mobile_touch_guide_";
     public static final String KEY_KEEP_RUNNING_IN_BACKGROUND = "wehavephones_keep_running_in_background";
     public static final String KEY_START_INPUT_BRIDGE = "wehavephones_start_input_bridge";
 
@@ -165,6 +167,25 @@ public final class WeHavePhonesConfig {
 
     public static void setMobileTouchEnabled(Context context, boolean enabled) {
         prefs(context).edit().putBoolean(KEY_MOBILE_TOUCH, enabled).apply();
+    }
+
+    /** Touch interface size for every character: 1.25, 1.5 or 1.75. Written to the addon before each launch. */
+    public static float getMobileTouchScale(Context context) {
+        float scale = prefs(context).getFloat(KEY_MOBILE_TOUCH_SCALE, 1.5f);
+        return scale == 1.25f || scale == 1.75f ? scale : 1.5f;
+    }
+
+    public static void setMobileTouchScale(Context context, float scale) {
+        prefs(context).edit().putFloat(KEY_MOBILE_TOUCH_SCALE, scale).apply();
+    }
+
+    /** Whether the touch guide for Play or Menus has been shown once. */
+    public static boolean isMobileTouchGuideSeen(Context context, String mode) {
+        return prefs(context).getBoolean(KEY_MOBILE_TOUCH_GUIDE + mode, false);
+    }
+
+    public static void setMobileTouchGuideSeen(Context context, String mode) {
+        prefs(context).edit().putBoolean(KEY_MOBILE_TOUCH_GUIDE + mode, true).apply();
     }
 
     /**

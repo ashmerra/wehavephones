@@ -47,9 +47,9 @@ public final class TouchSelfTest {
         for (float aspect : new float[]{1, 6f / 5, 5f / 4, 4f / 3, 3f / 2, 16f / 10, 16f / 9, 2, 19.5f / 9, 21f / 9, 32f / 9}) {
             float height = 1080, width = height * aspect, layoutWidth = Math.min(width * .80f, height * 16 / 9);
             float left = (width - layoutWidth) / 2;
-            check(MobileTouchInput.isCameraArea(left + layoutWidth * (aspect < 1.6f ? .34f : .5f), height * .69f, width, height),
+            check(MobileTouchInput.isCameraArea(left + layoutWidth * (aspect < 1.59f ? .34f : .5f), height * .69f, width, height),
                     "wider games preserve camera swipes in the lower middle");
-            check(MobileTouchInput.isCameraArea(left + layoutWidth * .8f, height * (aspect < 1.6f ? .4f : .59f), width, height),
+            check(MobileTouchInput.isCameraArea(left + layoutWidth * .8f, height * (aspect < 1.59f ? .4f : .59f), width, height),
                     "wider games preserve camera swipes above the right actions");
             check(!MobileTouchInput.isCameraArea(left + layoutWidth * .67f, height * .66f, width, height),
                     "centered right actions stay directly tappable in wider games");
@@ -142,7 +142,7 @@ public final class TouchSelfTest {
         input.cancel();
         input.up(30);
         check(!sink.events.contains("TARGET:true") && !sink.events.contains("CORPSE:true"), "cancelling a pending Target press selects nothing");
-        for (Zone zone : new Zone[]{Zone.MORE, Zone.MODE, Zone.KEYBOARD, Zone.INSPECT}) {
+        for (Zone zone : new Zone[]{Zone.MORE, Zone.PLAY, Zone.MENUS, Zone.HANDLE, Zone.KEYBOARD, Zone.INSPECT}) {
             sink.events.clear();
             input.down(32, zone, 400, 40, 7000);
             input.cancel();
@@ -174,6 +174,7 @@ public final class TouchSelfTest {
                 "inspection cannot cast, equip, use, right-click or drag");
         input.setUiMode(false);
         check(!input.isInspectMode(), "Play exits inspection");
+        checkAutoRunAndFeedback();
         checkLayouts();
         if (args.length > 0) checkAddonGeometry(Path.of(args[0]));
         Path root = Files.createTempDirectory("wehavephones-touch-fixture");
@@ -194,6 +195,11 @@ public final class TouchSelfTest {
             check(Files.isDirectory(addons.resolve("UserAddon")), "unrelated addons preserved");
             Path mode = addons.resolve("WeHavePhonesTouch/Mode.lua");
             check(Files.readString(mode).contains("true"), "generated addon enabled");
+            check(Files.readString(mode).contains("addon.scale = 1.50"), "the app-wide interface size reaches the addon");
+            MobileTouchSetup.prepare(root.toFile(), true, 1.75f, 11509, script);
+            check(Files.readString(mode).contains("addon.scale = 1.75"), "a chosen interface size is written for the next login");
+            MobileTouchSetup.prepare(root.toFile(), true, 3f, 11509, script);
+            check(Files.readString(mode).contains("addon.scale = 1.50"), "unknown sizes fall back to the default");
             MobileTouchSetup.prepare(root.toFile(), true, 11509, script);
             MobileTouchSetup.prepare(root.toFile(), false, 11509, script);
             check(Files.isDirectory(addons.resolve("ConsolePort")) && Files.isDirectory(addons.resolve("ConsolePort_Bar")), "opt-out restores owned folders");
@@ -214,40 +220,106 @@ public final class TouchSelfTest {
         System.out.println("TouchSelfTest PASS (" + checks + " checks)");
     }
 
+    private static void checkAutoRunAndFeedback() {
+        Sink sink = new Sink();
+        MobileTouchInput input = new MobileTouchInput(sink, 8);
+        float radius = 60, lockY = 300 - radius * MobileTouchInput.RUN_LOCK_OFFSET;
+        input.down(1, Zone.STICK, 200, 300, 0);
+        input.move(1, 200, 270, 200, 300, radius);
+        check(!input.isRunLockShown(), "a short forward push does not offer auto run");
+        input.move(1, 205, lockY, 200, 300, radius);
+        check(input.isRunLockShown() && input.isRunLockArmed() && sink.held.contains(Key.FORWARD),
+                "sliding up onto the runner keeps moving forward and arms auto run");
+        input.up(1);
+        int released = sink.events.indexOf("FORWARD:false"), locked = sink.events.indexOf("AUTORUN:true");
+        check(released >= 0 && locked > released && sink.events.contains("AUTORUN:false") && sink.held.isEmpty(),
+                "releasing on the runner lets go of forward, then toggles auto run once");
+        check(input.isAutoRunning() && !input.isRunLockShown(), "auto run stays on after the thumb lifts");
+        input.down(2, Zone.STICK, 200, 300, 100);
+        input.move(2, 140, 300, 200, 300, radius);
+        input.up(2);
+        check(input.isAutoRunning(), "strafing steers without ending auto run");
+        input.down(3, Zone.STICK, 200, 300, 200);
+        input.move(3, 200, 350, 200, 300, radius);
+        input.up(3);
+        check(!input.isAutoRunning(), "moving backward ends auto run, as it does in WoW");
+        sink.events.clear();
+        input.down(4, Zone.STICK, 200, 300, 300);
+        input.move(4, 200, lockY, 200, 300, radius);
+        input.move(4, 200, 280, 200, 300, radius);
+        input.up(4);
+        check(!sink.events.contains("AUTORUN:true") && !input.isAutoRunning(), "sliding off the runner cancels the lock");
+        input.down(5, Zone.STICK, 200, 300, 400);
+        input.move(5, 200, lockY, 200, 300, radius);
+        input.cancel();
+        check(!input.isRunLockShown() && !sink.events.contains("AUTORUN:true"), "cancellation never locks auto run");
+        input.toggleAutoRun();
+        check(input.isAutoRunning(), "the menu toggle tracks auto run");
+        input.toggleAutoRun();
+
+        check(input.pendingHold(0, 120) == null, "no hold indicator without a finger");
+        input.down(6, Zone.UI, 500, 400, 1000);
+        check(input.pendingHold(1100, 120) == null, "quick taps never flash a hold indicator");
+        MobileTouchInput.Hold hold = input.pendingHold(1275, 120);
+        check(hold != null && hold.zone == Zone.UI && Math.abs(hold.progress - .5f) < .01f && hold.x == 500,
+                "a held finger shows right-click progress where it touches");
+        input.move(6, 540, 400, 200, 300, radius);
+        check(input.pendingHold(1300, 120) == null, "dragging cancels the hold indicator");
+        input.up(6);
+        input.down(7, Zone.TARGET, 900, 500, 2000);
+        check(input.isPressed(Zone.TARGET) && !input.isPressed(Zone.JUMP), "pressed keys are reported for feedback");
+        hold = input.pendingHold(2400, 120);
+        check(hold != null && hold.zone == Zone.TARGET, "the Target key shows its corpse hold progress");
+        input.advanceTime(2600);
+        check(!input.isPressed(Zone.TARGET) && input.pendingHold(2600, 120) == null, "a completed hold ends its indicator");
+        input.up(7);
+
+        for (float aspect : new float[]{1, 4f / 3, 16f / 9, 19.5f / 9}) {
+            float height = 1000, width = height * aspect;
+            for (float[] rect : MobileTouchInput.cameraRects(width, height)) {
+                check(MobileTouchInput.isCameraArea((rect[0] + rect[2]) / 2 * width, (rect[1] + rect[3]) / 2 * height, width, height),
+                        "drawn camera areas match their gestures");
+                check(rect[0] >= 0 && rect[2] <= 1 && rect[1] >= 0 && rect[3] <= 1, "camera areas stay inside the game");
+            }
+        }
+    }
+
     private static void checkLayouts() {
+        int compactColumns = 0, overflowed = 0;
         for (int height : new int[]{480, 600, 720, 1080, 1440, 2160}) {
             for (float aspect : new float[]{1, 6f / 5, 5f / 4, 4f / 3, 3f / 2, 16f / 10, 16f / 9, 2, 19.5f / 9, 21f / 9, 32f / 9}) {
                 for (float density : new float[]{1, 1.5f, 2.75f, 4}) {
                     float width = height * aspect, inset = height * .035f;
-                    for (boolean windows : new boolean[]{false, true}) {
-                        MobileTouchLayout layout = new MobileTouchLayout(width, height, density, inset, 0, inset, inset, windows);
-                        int count = 0;
-                        for (int i = 0; i < layout.buttons.length; i++) {
-                            MobileTouchLayout.Bounds a = layout.buttons[i];
-                            if (a == null) continue;
-                            count++;
-                            check(a.left >= inset && a.right <= width - inset + .01f && a.top >= 0 && a.bottom <= height - inset,
-                                    "every control stays inside cutout and navigation safe bounds");
-                            check(a.contains((a.left+a.right)/2, (a.top+a.bottom)/2), "visible controls own their hit targets");
-                            for (int j = i + 1; j < layout.buttons.length; j++) {
-                                MobileTouchLayout.Bounds b = layout.buttons[j];
-                                if (b != null) check(a.right <= b.left || b.right <= a.left || a.bottom <= b.top || b.bottom <= a.top,
-                                        "native controls never overlap one another");
+                    // Native-shaped games, and 16:9 or 4:3 games letterboxed inside a wider phone.
+                    for (float guest : new float[]{aspect, 16f / 9, 4f / 3}) {
+                        if (guest > aspect) continue;
+                        MobileTouchLayout.Bounds viewport = MobileTouchLayout.viewport(width, height, height * guest, height, false);
+                        MobileTouchLayout play = null;
+                        for (boolean windows : new boolean[]{false, true}) {
+                            MobileTouchLayout layout = new MobileTouchLayout(width, height, density, inset, 0, inset, inset, viewport, windows);
+                            checkLayout(layout, width, height, density, inset, viewport, windows);
+                            if (play == null) play = layout;
+                            else for (int key : new int[]{MobileTouchLayout.PLAY, MobileTouchLayout.MENUS, MobileTouchLayout.ESCAPE, MobileTouchLayout.MORE}) {
+                                check(play.buttons[key].left == layout.buttons[key].left && play.buttons[key].top == layout.buttons[key].top,
+                                        "the mode switch, Esc and Menu never move between Play and Menus");
                             }
-                        }
-                        check(count == (windows ? 5 : 8), "window mode removes the movement and combat controls");
-                        check(layout.stickX - layout.radius * 1.2f >= inset && layout.stickY + layout.radius * 1.2f < height - inset,
-                                "the entire stick hit region stays reachable");
-                        for (float edge : new float[]{-1000, .5f, 1000}) {
-                            MobileTouchLayout.Bounds handle = MobileTouchLayout.handle(width, height, density,
-                                    width * edge, height * edge, inset, 0, inset, inset);
-                            check(handle.left >= inset && handle.right <= width - inset + .01f
-                                            && handle.top >= 0 && handle.bottom <= height - inset + .01f,
-                                    "the movable Controls handle cannot be lost beyond safe screen edges");
+                            if (layout.column) compactColumns++;
+                            if (layout.overflow) overflowed++;
                         }
                     }
                 }
             }
+        }
+        check(compactColumns > 0 && overflowed < compactColumns, "tablet shapes use the rail column, mostly without overflow");
+        // The S23+ at its native resolution, 16:9 and 4:3 games, and common tablets and foldables keep every key.
+        float[][] devices = {{2340, 1080, 2.625f, 2340, 1080}, {2340, 1080, 2.625f, 1920, 1080}, {2340, 1080, 2.625f, 1440, 1080},
+                {2400, 1080, 2.75f, 2400, 1080}, {2560, 1600, 2, 2560, 1600}, {2048, 1536, 2, 2048, 1536},
+                {2208, 1840, 2.6f, 2208, 1840}, {2176, 1812, 2.34f, 2176, 1812}, {1920, 1200, 1.5f, 1920, 1200}};
+        for (float[] device : devices) {
+            MobileTouchLayout.Bounds viewport = MobileTouchLayout.viewport(device[0], device[1], device[3], device[4], false);
+            MobileTouchLayout layout = new MobileTouchLayout(device[0], device[1], device[2], 0, 0, 0, 0, viewport, false);
+            check(!layout.overflow && layout.side >= 40 * device[2] - .01f,
+                    "phones, tablets and foldables keep Map and Bags on full-size keys");
         }
         MobileTouchLayout.Bounds viewport = MobileTouchLayout.viewport(2340, 1080, 1280, 720, false);
         check(Math.abs(viewport.left - 210) < .01f && viewport.top == 0 && viewport.width() == 1920,
@@ -257,6 +329,57 @@ public final class TouchSelfTest {
         check(Math.abs(viewport.top - 150) < .01f && viewport.left == 0, "4:3 hosts letterbox the vertical axis correctly");
         viewport = MobileTouchLayout.viewport(1600, 1200, 1920, 1080, true);
         check(viewport.width() == 1600 && viewport.height() == 1200, "stretched guests use independent axis scaling");
+    }
+
+    private static void checkLayout(MobileTouchLayout layout, float width, float height, float density, float inset,
+                                    MobileTouchLayout.Bounds viewport, boolean windows) {
+        int count = 0;
+        for (int i = 0; i < layout.buttons.length; i++) {
+            MobileTouchLayout.Bounds a = layout.buttons[i];
+            if (a == null) continue;
+            count++;
+            check(a.left >= inset - .01f && a.right <= width - inset + .01f && a.top >= 0 && a.bottom <= height - inset,
+                    "every control stays inside cutout and navigation safe bounds");
+            check(a.contains((a.left+a.right)/2, (a.top+a.bottom)/2), "visible controls own their hit targets");
+            for (int j = i + 1; j < layout.buttons.length; j++) {
+                MobileTouchLayout.Bounds b = layout.buttons[j];
+                if (b != null) check(a.right <= b.left + .01f || b.right <= a.left + .01f || a.bottom <= b.top + .01f || b.bottom <= a.top + .01f,
+                        "native controls never overlap one another");
+            }
+        }
+        int toolbar = layout.overflow ? 4 : 6;
+        check(count == toolbar + (windows ? 0 : 3), "Menus removes the movement and combat controls");
+        check(layout.buttons[MobileTouchLayout.HANDLE] == null, "the collapsed handle is separate from the toolbar");
+        check(layout.overflow == (layout.buttons[MobileTouchLayout.MORE] != null && layout.buttons[windows ? MobileTouchLayout.KEYBOARD : MobileTouchLayout.MAP] == null),
+                "only overflowed keys leave the toolbar, and the menu always remains");
+        float vpH = viewport.height(), aspect = viewport.width() / vpH;
+        check(layout.column == MobileTouchLayout.isCompact(aspect), "the toolbar follows the addon's layout family");
+        for (int key : new int[]{MobileTouchLayout.ESCAPE, MobileTouchLayout.MAP, MobileTouchLayout.BAGS, MobileTouchLayout.MORE,
+                MobileTouchLayout.PLAY, MobileTouchLayout.MENUS, MobileTouchLayout.KEYBOARD, MobileTouchLayout.INSPECT}) {
+            MobileTouchLayout.Bounds b = layout.buttons[key];
+            if (b == null) continue;
+            if (!layout.column) {
+                check(b.right <= viewport.right - (MobileTouchLayout.MINIMAP_RESERVE + MobileTouchLayout.ZONE_GAP) * vpH + .01f,
+                        "the toolbar leaves the minimap square free");
+                check(b.left >= viewport.right - (MobileTouchLayout.MINIMAP_RESERVE + MobileTouchLayout.ZONE_GAP
+                        + MobileTouchLayout.toolbarZone(aspect)) * vpH - .01f, "the toolbar stays right of the unit frames");
+                if (viewport.top == 0) check(b.bottom <= viewport.top + MobileTouchLayout.TOOLBAR_BAND * vpH + .01f,
+                        "the toolbar stays inside the band the addon keeps free");
+            } else {
+                float layoutWidth = Math.min(viewport.width() * .8f, vpH * 16 / 9);
+                check(b.left >= viewport.left + (viewport.width() + layoutWidth) / 2 - .01f, "the toolbar column stays in the right rail");
+                check(b.bottom <= (height - inset) * .48f + .01f, "the column stays above Target, Use and Jump");
+            }
+        }
+        check(layout.stickX - layout.radius * 1.2f >= inset && layout.stickY + layout.radius * 1.2f < height - inset,
+                "the entire stick hit region stays reachable");
+        for (float edge : new float[]{-1000, .5f, 1000}) {
+            MobileTouchLayout.Bounds handle = MobileTouchLayout.handle(width, height, density,
+                    width * edge, height * edge, inset, 0, inset, inset);
+            check(handle.left >= inset && handle.right <= width - inset + .01f
+                            && handle.top >= 0 && handle.bottom <= height - inset + .01f,
+                    "the movable Controls handle cannot be lost beyond safe screen edges");
+        }
     }
 
     private static void checkAddonGeometry(Path path) throws Exception {
@@ -269,8 +392,8 @@ public final class TouchSelfTest {
                 for (boolean letterboxed : new boolean[]{false, true}) {
                     float height = 1080, width = letterboxed ? 2340 : height * rootWidth / rootHeight;
                     float inset = height * .035f;
-                    MobileTouchLayout nativeLayout = new MobileTouchLayout(width, height, density, inset, inset, inset, inset, false);
                     MobileTouchLayout.Bounds viewport = MobileTouchLayout.viewport(width, height, rootWidth, rootHeight, !letterboxed);
+                    MobileTouchLayout nativeLayout = new MobileTouchLayout(width, height, density, inset, inset, inset, inset, viewport, false);
                     float left = viewport.left + x / rootWidth * viewport.width();
                     float right = left + w / rootWidth * viewport.width();
                     float top = viewport.bottom - (y + h) / rootHeight * viewport.height();
@@ -284,7 +407,9 @@ public final class TouchSelfTest {
                     float closestY = Math.max(top, Math.min(bottom, nativeLayout.stickY));
                     check(Math.hypot(closestX - nativeLayout.stickX, closestY - nativeLayout.stickY) >= nativeLayout.radius * 1.2f - .1f,
                             "actual Lua " + fields[6] + " geometry stays clear of the entire stick hit region");
-                    for (float fx : new float[]{.01f, .5f, .99f}) for (float fy : new float[]{.01f, .5f, .99f}) {
+                    // Unit frames, auras and the minimap may sit over the world. Controls never become camera drags.
+                    boolean control = fields[6].equals("action") || fields[6].equals("pager") || fields[6].equals("class") || fields[6].equals("party");
+                    if (control) for (float fx : new float[]{.01f, .5f, .99f}) for (float fy : new float[]{.01f, .5f, .99f}) {
                         float sampleX = (left + (right-left)*fx - viewport.left) / viewport.width() * rootWidth;
                         float sampleY = (top + (bottom-top)*fy - viewport.top) / viewport.height() * rootHeight;
                         check(!MobileTouchInput.isCameraArea(sampleX, sampleY, rootWidth, rootHeight),

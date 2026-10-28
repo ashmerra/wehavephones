@@ -25,7 +25,7 @@ public final class MobileTouchPreparation {
             for (WowProduct product : WowInstallationScanner.scan(container)) {
                 int clientInterface = WowFlavor.interfaceFromVersion(product.getVersion());
                 MobileTouchSetup.prepare(product.directory, WeHavePhonesConfig.isMobileTouchEnabled(context),
-                        clientInterface > 0 ? clientInterface : product.getFlavor().fallbackInterface, script);
+                        WeHavePhonesConfig.getMobileTouchScale(context), clientInterface > 0 ? clientInterface : product.getFlavor().fallbackInterface, script);
             }
         }
     }

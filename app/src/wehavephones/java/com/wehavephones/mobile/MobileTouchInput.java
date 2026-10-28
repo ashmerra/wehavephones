@@ -5,8 +5,8 @@ import java.util.Map;
 
 /** Pointer ownership for simultaneous movement, camera and direct UI taps. No Android dependencies. */
 public final class MobileTouchInput {
-    public enum Key { FORWARD, BACK, LEFT, RIGHT, JUMP, TARGET, INTERACT, BAGS, MAP, ESCAPE, BAR, MORE, CORPSE, MODE, KEYBOARD, INSPECT }
-    public enum Zone { STICK, CAMERA, UI, JUMP, TARGET, INTERACT, BAGS, MAP, ESCAPE, BAR, MORE, MODE, KEYBOARD, INSPECT }
+    public enum Key { FORWARD, BACK, LEFT, RIGHT, JUMP, TARGET, INTERACT, BAGS, MAP, ESCAPE, BAR, MORE, CORPSE, PLAY, MENUS, HANDLE, KEYBOARD, INSPECT, AUTORUN }
+    public enum Zone { STICK, CAMERA, UI, JUMP, TARGET, INTERACT, BAGS, MAP, ESCAPE, BAR, MORE, PLAY, MENUS, HANDLE, KEYBOARD, INSPECT }
     public interface Sink {
         void key(Key key, boolean down);
         void click(float x, float y);
@@ -16,6 +16,13 @@ public final class MobileTouchInput {
         void drag(float x, float y, boolean down);
         void hover(float x, float y);
         void scroll(float x, float y, int clicks);
+    }
+
+    /** A pending long press, for drawing its progress around the finger or the Target key. */
+    public static final class Hold {
+        public final Zone zone;
+        public final float x, y, progress;
+        Hold(Zone zone, float x, float y, float progress) { this.zone = zone; this.x = x; this.y = y; this.progress = progress; }
     }
 
     private static final class Finger {
@@ -42,22 +49,39 @@ public final class MobileTouchInput {
     private int drag = -1, multiA = -1, multiB = -1;
     private float multiDistance, multiY;
     private int multiMode;
+    private boolean runReach, runArmed, autoRun;
     public static final long HOLD_MS = 550;
+    /** Auto run target above the stick, in stick radii. Sliding onto it and releasing locks running. */
+    public static final float RUN_LOCK_OFFSET = 1.8f, RUN_LOCK_RADIUS = .6f;
     private final boolean[] keys = new boolean[Key.values().length];
 
     public MobileTouchInput(Sink sink, float slop) { this.sink = sink; this.slop = slop; }
 
-    /** Wide camera swipes with room reserved for the enlarged bars at every UI preset. */
-    public static boolean isCameraArea(float x, float y, float width, float height) {
+    /**
+     * Camera swipe rectangles as {left, top, right, bottom} fractions of the guest view.
+     * Wide camera swipes with room reserved for the enlarged bars at every UI preset.
+     */
+    public static float[][] cameraRects(float width, float height) {
         float layoutWidth = Math.min(width * .80f, height * 16 / 9);
-        float horizontal = (x - (width - layoutWidth) / 2) / layoutWidth, vertical = y / height;
-        if (width / height < 1.6f) {
+        float left = (width - layoutWidth) / 2 / width, scale = layoutWidth / width;
+        float[][] rects;
+        if (MobileTouchLayout.isCompact(width / height)) {
             // The 4x3 action grid leaves a tall camera strip beside it.
-            return (horizontal > .38f && horizontal < .90f && vertical > .31f && vertical < (width / height < 1.25f ? .45f : .50f))
-                    || (horizontal > .32f && horizontal < .54f && vertical > .52f && vertical < .72f);
+            rects = new float[][]{{.38f, .31f, .90f, width / height < 1.25f ? .45f : .50f}, {.32f, .52f, .54f, .72f}};
+        } else rects = new float[][]{{.38f, .31f, .66f, .72f}, {.66f, .31f, .90f, .60f}};
+        for (float[] rect : rects) {
+            rect[0] = left + rect[0] * scale;
+            rect[2] = left + rect[2] * scale;
         }
-        return horizontal > .38f && horizontal < .90f && vertical > .31f
-                && vertical < (horizontal >= .66f ? .60f : .72f);
+        return rects;
+    }
+
+    public static boolean isCameraArea(float x, float y, float width, float height) {
+        float fx = x / width, fy = y / height;
+        for (float[] rect : cameraRects(width, height)) {
+            if (fx > rect[0] && fx < rect[2] && fy > rect[1] && fy < rect[3]) return true;
+        }
+        return false;
     }
 
     public void down(int id, Zone zone, float x, float y, long now) {
@@ -115,10 +139,37 @@ public final class MobileTouchInput {
         }
     }
 
+    /** The long press closest to firing, or null. Taps shorter than {@code delay} show nothing. */
+    public Hold pendingHold(long now, long delay) {
+        if (drag != -1 || multiA != -1) return null;
+        Hold best = null;
+        for (Finger finger : fingers.values()) {
+            boolean holdable = finger.zone == Zone.TARGET || finger.zone == Zone.UI || finger.zone == Zone.CAMERA;
+            if (!holdable || finger.dragged || finger.consumed || now - finger.downAt < delay) continue;
+            float progress = Math.min(1, (now - finger.downAt) / (float) HOLD_MS);
+            if (best == null || progress > best.progress) best = new Hold(finger.zone, finger.x, finger.y, progress);
+        }
+        return best;
+    }
+
+    /** Whether a finger is still pressing a native button, for its pressed appearance. */
+    public boolean isPressed(Zone zone) {
+        for (Finger finger : fingers.values()) if (finger.zone == zone && !finger.consumed && !finger.dragged) return true;
+        return false;
+    }
+
     public boolean isUiMode() { return uiMode; }
     public void setUiMode(boolean enabled) { cancel(); uiMode = enabled; inspectMode = false; }
     public boolean isInspectMode() { return inspectMode; }
     public void setInspectMode(boolean enabled) { cancel(); inspectMode = enabled; if (enabled) uiMode = true; }
+    /** The stick finger has pushed up far enough to show the auto run target. */
+    public boolean isRunLockShown() { return runReach || runArmed; }
+    /** Releasing now locks auto run. */
+    public boolean isRunLockArmed() { return runArmed; }
+    /** Auto run started here and no forward or backward input has cancelled it since. */
+    public boolean isAutoRunning() { return autoRun; }
+    /** Auto run was toggled from a menu. WoW ends it on forward or backward movement. */
+    public void toggleAutoRun() { autoRun = !autoRun; }
 
     /** Supply both paired positions before interpreting one Android move event. */
     public void updateMultiPosition(int id, float x, float y) {
@@ -157,6 +208,8 @@ public final class MobileTouchInput {
             setKey(Key.RIGHT, x - stickX > radius * .24f);
             setKey(Key.FORWARD, y - stickY < -radius * .24f);
             setKey(Key.BACK, y - stickY > radius * .24f);
+            runReach = y - stickY < -radius * .9f && Math.abs(x - stickX) < radius;
+            runArmed = Math.hypot(x - stickX, y - (stickY - radius * RUN_LOCK_OFFSET)) <= radius * RUN_LOCK_RADIUS;
         } else if (inspectMode && finger.zone == Zone.UI) sink.hover(x, y);
         else if (finger.consumed) return;
         else if (id == camera && finger.dragged && (dx != 0 || dy != 0)) {
@@ -188,6 +241,12 @@ public final class MobileTouchInput {
             setKey(Key.BACK, false);
             setKey(Key.LEFT, false);
             setKey(Key.RIGHT, false);
+            // Like a sprint lock: release on the runner above the stick to keep running.
+            if (runArmed) {
+                pulse(Key.AUTORUN);
+                autoRun = true;
+            }
+            runReach = runArmed = false;
         } else if (id == camera) {
             camera = -1;
             setCamera(false);
@@ -201,9 +260,12 @@ public final class MobileTouchInput {
         if (!finger.consumed && !finger.dragged) {
             if (finger.zone == Zone.TARGET) pulse(Key.TARGET);
             if (finger.zone == Zone.MORE) pulse(Key.MORE);
-            if (finger.zone == Zone.MODE) pulse(Key.MODE);
+            if (finger.zone == Zone.PLAY) pulse(Key.PLAY);
+            if (finger.zone == Zone.MENUS) pulse(Key.MENUS);
             if (finger.zone == Zone.KEYBOARD) pulse(Key.KEYBOARD);
             if (finger.zone == Zone.INSPECT) pulse(Key.INSPECT);
+            // The handle can be dragged aside. Only a still press expands it.
+            if (finger.zone == Zone.HANDLE) pulse(Key.HANDLE);
         }
         refreshKeys();
     }
@@ -212,8 +274,8 @@ public final class MobileTouchInput {
         for (int i = Key.JUMP.ordinal(); i < Key.values().length; i++) {
             Key key = Key.values()[i];
             // Target is a tap or hold action. Never cycle a living enemy before a corpse hold.
-            if (key == Key.TARGET || key == Key.CORPSE || key == Key.MORE || key == Key.MODE
-                    || key == Key.KEYBOARD || key == Key.INSPECT) continue;
+            if (key == Key.TARGET || key == Key.CORPSE || key == Key.MORE || key == Key.PLAY || key == Key.MENUS
+                    || key == Key.HANDLE || key == Key.KEYBOARD || key == Key.INSPECT || key == Key.AUTORUN) continue;
             boolean held = false;
             for (Finger finger : fingers.values()) if (finger.zone.name().equals(key.name())) held = true;
             setKey(key, held);
@@ -228,6 +290,8 @@ public final class MobileTouchInput {
     private void setKey(Key key, boolean down) {
         if (keys[key.ordinal()] == down) return;
         keys[key.ordinal()] = down;
+        // WoW stops auto run on forward or backward movement, never on strafing.
+        if (down && (key == Key.FORWARD || key == Key.BACK)) autoRun = false;
         sink.key(key, down);
     }
 
@@ -244,6 +308,7 @@ public final class MobileTouchInput {
         }
         fingers.clear();
         stick = camera = drag = multiA = multiB = -1;
+        runReach = runArmed = false;
         setCamera(false);
         for (Key key : Key.values()) setKey(key, false);
     }
