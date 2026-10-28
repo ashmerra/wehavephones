@@ -431,7 +431,6 @@ World of Warcraft, Warcraft, Battle.net and Blizzard Entertainment are trademark
     <string name="wehavephones_update_error">Could not update the app: %1$s\n\nYour installed app and game data have been kept. Tap Check for update to retry.</string>
     <string name="wehavephones_disclaimer">Unofficial. Not affiliated with Blizzard Entertainment, Inc.</string>
     <string name="wehavephones_settings_mobile_touch">Mobile touch controls (experimental)</string>
-    <string name="wehavephones_settings_mobile_touch_hint">Tap spells in WoW. Hold a hotbar slot to edit it. Move with the left stick and drag on the right to look. Replaces the controller overlay and disables ConsolePort. Scales the whole UI and adds a Classic action grid. More provides keyboard, window gestures and interface size. Applies at the next game launch.</string>
     <string name="wehavephones_mobile_touch_next_launch">Saved. Touch controls and addon changes apply at the next game launch.</string>
     <string name="wehavephones_touch_menu">Esc</string>
     <string name="wehavephones_touch_map">Map</string>
