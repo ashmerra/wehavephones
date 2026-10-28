@@ -20,19 +20,10 @@ V38 = {"turnip-gen8-stevenmxz-v38": ("Turnip_Gen8_V38.zip", "Turnip Gen8 V38"),
        "turnip-gen8-stevenmxz-v38-patched": ("Turnip_Gen8_V38_Patched.zip", "Turnip Gen8 V38-patched")}
 PRE = "a8xx-850-845-pre1"
 A8XX = ["adreno-8xx", "adreno-84x"]
-# Requested releases per manifest. v27.0.0-20261025 is left out: its library equals 20261024-r7.
-BATCH_20261027 = ([f"v27.0.0-20261016-r{r}" for r in (5, 6, 7)] +
-    ["v27.0.0-20261017", "v27.0.0-20261017-r2"] +
-    [f"v27.0.0-20261018{s}" for s in ("", "-r2", "-r3")] +
-    [f"v27.0.0-20261019{s}" for s in ("", "-r2", "-r3")] +
-    [f"v27.0.0-20261020{s}" for s in ("", "-r2", "-r3", "-r4", "-r5")] +
-    [f"v27.0.0-20261021{s}" for s in ("", "-r2", "-r3", "-r4", "-r5", "-r6")] +
-    ["v27.0.0-20261022"] +
-    [f"v27.0.0-20261023-r{r}" for r in (3, 4, 5, 6)] +
-    [f"v27.0.0-20261024{s}" for s in ("", "-r2", "-r3", "-r4", "-r5", "-r6", "-r7")] +
-    [f"v27.0.0-20261025{s}" for s in ("-r2", "-r3", "-r5")] +
-    [f"v27.0.0-20261026{s}" for s in ("", "-r2", "-r3")] +
-    [f"v27.0.0-20261027{s}" for s in ("", "-r2", "-r3")])
+# Requested releases per manifest. The October 27 batch lists one Banner build per stretch of
+# Turnip-relevant Mesa changes, plus the latest.
+BATCH_20261027 = ["v27.0.0-20261021-r6", "v27.0.0-20261023-r4", "v27.0.0-20261024-r7",
+                  "v27.0.0-20261027-r3"]
 MANIFESTS = {
     "turnip-optional-20261016.json": [f"v26.3.0-20261015-r{r}" for r in range(4, 8)] + [
         "v27.0.0-20261016-r3", "v27.0.0-20261016-r4"],

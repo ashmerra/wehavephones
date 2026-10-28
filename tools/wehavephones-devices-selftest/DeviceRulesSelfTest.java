@@ -53,16 +53,8 @@ public final class DeviceRulesSelfTest {
         "turnip-banner-27.0.0-20261016-r3-a8xx", "turnip-banner-27.0.0-20261016-r4-a8xx"
     };
     private static final String[] GEN8_V38 = {"turnip-gen8-stevenmxz-v38", "turnip-gen8-stevenmxz-v38-patched"};
-    // October 16 r5 to October 27 r3, without 20261025 (its library equals 20261024-r7).
-    private static final String[] BANNERS_20261027 = banners(
-        "20261016-r5", "20261016-r6", "20261016-r7", "20261017", "20261017-r2",
-        "20261018", "20261018-r2", "20261018-r3", "20261019", "20261019-r2", "20261019-r3",
-        "20261020", "20261020-r2", "20261020-r3", "20261020-r4", "20261020-r5",
-        "20261021", "20261021-r2", "20261021-r3", "20261021-r4", "20261021-r5", "20261021-r6",
-        "20261022", "20261023-r3", "20261023-r4", "20261023-r5", "20261023-r6",
-        "20261024", "20261024-r2", "20261024-r3", "20261024-r4", "20261024-r5", "20261024-r6", "20261024-r7",
-        "20261025-r2", "20261025-r3", "20261025-r5", "20261026", "20261026-r2", "20261026-r3",
-        "20261027", "20261027-r2", "20261027-r3");
+    // One build per stretch of Turnip-relevant Mesa changes from October 16 r5 to October 27 r3, plus the latest.
+    private static final String[] BANNERS_20261027 = banners("20261021-r6", "20261023-r4", "20261024-r7", "20261027-r3");
     private static final String BANNER_850_845 = "turnip-banner-a8xx-850-845-pre1";
 
     private static String[] banners(String... builds) {
