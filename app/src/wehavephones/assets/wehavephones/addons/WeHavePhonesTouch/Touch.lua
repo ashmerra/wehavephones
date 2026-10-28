@@ -98,13 +98,31 @@ local function Panel(name, title, width, height)
     return panel
 end
 
+-- The app's raised keys: navy, or blue for the current choice, over a dark lip.
+local KEY = {{.04, .14, .28}, {.09, .25, .42}, {.24, .40, .58}}
+local ACTIVE = {{.06, .35, .69}, {.13, .45, .73}, {.46, .74, .96}}
+local function PaintKey(button, active)
+    local colors = active and ACTIVE or KEY
+    local bottom, top, edge = colors[1], colors[2], colors[3]
+    if button.face.SetGradient and CreateColor then
+        button.face:SetGradient("VERTICAL", CreateColor(bottom[1], bottom[2], bottom[3], .97), CreateColor(top[1], top[2], top[3], .97))
+    else button.face:SetVertexColor(top[1], top[2], top[3], .97) end
+    button:SetBackdropBorderColor(edge[1], edge[2], edge[3], 1)
+    local label = button:GetFontString()
+    if label then label:SetTextColor(active and 1 or .93, active and 1 or .96, 1) end
+    button.active = active and true or false
+end
+
 local function Button(parent, name, text, x, y, width, height, callback, template)
     local button = CreateFrame("Button", name, parent, template or "BackdropTemplate")
     button:SetSize(width, height)
     button:SetPoint("TOPLEFT", x, y)
     button:SetBackdrop({bgFile=WHITE, edgeFile=WHITE, edgeSize=1})
-    button:SetBackdropColor(.07, .40, .73, 1)
-    button:SetBackdropBorderColor(.55, .77, .97, .9)
+    button:SetBackdropColor(.024, .086, .176, 1)
+    button.face = button:CreateTexture(nil, "BACKGROUND", nil, 1)
+    button.face:SetTexture(WHITE)
+    button.face:SetPoint("TOPLEFT", 1, -1)
+    button.face:SetPoint("BOTTOMRIGHT", -1, 3)
     button:SetHighlightTexture(WHITE)
     button:GetHighlightTexture():SetVertexColor(.55, .77, .97, .22)
     local label = button:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
@@ -112,12 +130,30 @@ local function Button(parent, name, text, x, y, width, height, callback, templat
     label:SetWidth(width-12)
     label:SetText(text)
     button:SetFontString(label)
+    PaintKey(button, false)
     if callback then button:SetScript("OnClick", callback) end
     return button
 end
 
 local function UpdatePager()
-    if pager then pager.label:SetText(tostring(C_ActionBar.GetActionBarPage())) end
+    if not pager then return end
+    local current = C_ActionBar.GetActionBarPage()
+    pager.label:SetText(tostring(current))
+    -- Six dots show that more pages exist and which one is in use.
+    for i, dot in ipairs(pager.dots) do
+        if i == current then dot:SetVertexColor(.46, .74, .96, 1) else dot:SetVertexColor(.55, .62, .72, .55) end
+    end
+end
+
+local function Chevron(button, direction)
+    if not button.CreateLine then button:SetText(direction < 0 and "<" or ">") return end
+    for _, y in ipairs({8, -8}) do
+        local line = button:CreateLine(nil, "OVERLAY")
+        line:SetThickness(3)
+        line:SetColorTexture(.93, .96, 1, 1)
+        line:SetStartPoint("CENTER", button, -4*direction, y)
+        line:SetEndPoint("CENTER", button, 4*direction, 0)
+    end
 end
 
 local function CreatePager()
@@ -125,11 +161,20 @@ local function CreatePager()
     pager = CreateFrame("Frame", "WeHavePhonesTouchPager", UIParent)
     pager:SetSize(120, 48)
     pager.label = pager:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    pager.label:SetPoint("CENTER")
-    pager.label:SetWidth(24)
+    pager.label:SetPoint("CENTER", 0, 4)
+    pager.label:SetWidth(32)
+    pager.dots = {}
+    for i = 1, 6 do
+        local dot = pager:CreateTexture(nil, "OVERLAY")
+        dot:SetTexture(WHITE)
+        dot:SetSize(3, 3)
+        dot:SetPoint("CENTER", pager, "CENTER", (i-3.5)*5, -10)
+        pager.dots[i] = dot
+    end
     for i, direction in ipairs({"decrement", "increment"}) do
-        local button = Button(pager, "WeHavePhonesTouchPage" .. i, i == 1 and "<" or ">",
-            (i-1)*72, 0, 48, 48, nil, "SecureActionButtonTemplate,BackdropTemplate")
+        local button = Button(pager, "WeHavePhonesTouchPage" .. i, "",
+            (i-1)*76, 0, 44, 48, nil, "SecureActionButtonTemplate,BackdropTemplate")
+        Chevron(button, i == 1 and -1 or 1)
         button:RegisterForClicks("AnyUp", "AnyDown")
         button:SetAttribute("type", "actionbar")
         button:SetAttribute("action", direction)
@@ -230,6 +275,7 @@ RefreshEditor = function()
     end
     editor.empty:SetShown(#entries == 0)
     editor.undo:SetEnabled(undo ~= nil)
+    for _, tab in ipairs(editor.tabs) do PaintKey(tab, tab.category == category) end
 end
 
 OpenEditor = function(button)
@@ -239,12 +285,14 @@ OpenEditor = function(button)
     selectedSlot, page = slot, 1
     if not editor then
         editor = Panel("WeHavePhonesTouchEditor", "Choose action", 450, 384)
-        editor.choices = {}
+        editor.choices, editor.tabs = {}, {}
         for i, text in ipairs({"Spells", "Items", "Macros"}) do
-            Button(editor, nil, text, 18 + (i - 1) * 138, -48, 132, 32, function()
+            local tab = Button(editor, nil, text, 18 + (i - 1) * 138, -48, 132, 32, function()
                 category, page = text, 1
                 RefreshEditor()
             end)
+            tab.category = text
+            editor.tabs[i] = tab
         end
         for i = 1, 6 do
             local choice = Button(editor, "WeHavePhonesTouchChoice" .. i, "",
@@ -381,8 +429,8 @@ local function ShowBagPage(bag)
     QueueWorkspace()
 end
 
-local function InventoryStrip(shown)
-    if not shown or (editor and editor:IsShown()) or (controls and controls:IsShown()) then
+local function InventoryStrip(bags)
+    if #bags == 0 or (editor and editor:IsShown()) or (controls and controls:IsShown()) then
         if inventoryStrip then inventoryStrip:Hide() end
         return 0
     end
@@ -396,7 +444,7 @@ local function InventoryStrip(shown)
             inventoryStrip.bags[bag+1] = Button(inventoryStrip, "WeHavePhonesTouchBag"..bag,
                 bag == 0 and "Pack" or "Bag "..bag, bag*64, 0, 58, 38, function() ShowBagPage(id) end)
         end
-        Button(inventoryStrip, "WeHavePhonesTouchAllBags", "All", 320, 0, 54, 38, function() ShowBagPage() end)
+        inventoryStrip.all = Button(inventoryStrip, "WeHavePhonesTouchAllBags", "All", 320, 0, 54, 38, function() ShowBagPage() end)
         inventoryStrip.keys = Button(inventoryStrip, "WeHavePhonesTouchKeys", "Keys", 380, 0, 54, 38,
             function() if KEYRING_CONTAINER and ToggleBag then ShowBagPage(KEYRING_CONTAINER) end end)
         for bag = 5, 11 do
@@ -414,10 +462,18 @@ local function InventoryStrip(shown)
     SetRelativeScale(inventoryStrip, scale)
     inventoryStrip:ClearAllPoints()
     inventoryStrip:SetPoint("TOP", UIParent, "CENTER", 0, UIParent:GetHeight()*.30/scale)
-    for i, button in ipairs(inventoryStrip.bags) do button:SetEnabled(C_Container.GetContainerNumSlots(i-1)>0) end
+    -- One open container is a page. Several are All.
+    local single = #bags == 1 and bags[1].GetID and bags[1]:GetID() or nil
+    for i, button in ipairs(inventoryStrip.bags) do
+        button:SetEnabled(C_Container.GetContainerNumSlots(i-1)>0)
+        PaintKey(button, single == i-1)
+    end
+    PaintKey(inventoryStrip.all, single == nil)
+    PaintKey(inventoryStrip.keys, single ~= nil and single == KEYRING_CONTAINER)
     for i, button in ipairs(inventoryStrip.bank) do
         button:SetShown(bank and true or false)
         button:SetEnabled(bank and C_Container.GetContainerNumSlots(i+4)>0)
+        PaintKey(button, single == i+4)
     end
     inventoryStrip:Show()
     return (rows*44+6)*scale
@@ -537,7 +593,7 @@ LayoutWorkspace = function()
     for object, state in pairs(workspaceOriginal) do
         if not visible[object] then RestoreGeometry(object, state) workspaceOriginal[object] = nil end
     end
-    local stripHeight = InventoryStrip(#bags>0)
+    local stripHeight = InventoryStrip(bags)
     local width, height = UIParent:GetWidth()*.94, UIParent:GetHeight()*.78-stripHeight
     local places, used, scale
     for step = 100, 20, -2 do

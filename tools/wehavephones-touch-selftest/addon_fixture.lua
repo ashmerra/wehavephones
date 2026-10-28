@@ -41,12 +41,19 @@ function methods:SetShown(v) self.visible=v end
 function methods:SetEnabled(v) self.enabled=v end
 function methods:SetText(v) self.text=v end
 function methods:SetFontString(label) self.font=label end
+function methods:GetFontString() return self.font end
+function methods:GetID() return self.id end
+function methods:SetVertexColor(...) self.color={...} end
+function methods:SetTextColor(...) self.textColor={...} end
+function methods:CreateLine() return CreateFrame("Line") end
 function methods:GetHighlightTexture() return self.highlight end
 function methods:SetHighlightTexture() self.highlight=CreateFrame("Texture") end
 function methods:IsOwned(owner) return self.owner==owner end
 function methods:SetAnchorType(anchor) self.anchor=anchor end
 for _,name in ipairs({"RegisterEvent","ClearAllPoints","SetFrameStrata","EnableMouse","SetClampedToScreen","SetBackdrop",
-    "SetTexture","SetJustifyH","SetTextColor","SetBackdropColor","SetBackdropBorderColor","SetVertexColor"}) do methods[name]=function() end end
+    "SetTexture","SetJustifyH","SetBackdropColor","SetBackdropBorderColor","SetGradient","SetThickness",
+    "SetColorTexture","SetStartPoint","SetEndPoint"}) do methods[name]=function() end end
+function CreateColor(r,g,b,a) return {r=r,g=g,b=b,a=a} end
 function CreateFrame(_,name,parent)
     local object=setmetatable({name=name, scripts={}, parent=parent}, {__index=methods})
     if name then objects[name]=object _G[name]=object end
@@ -389,6 +396,7 @@ end
 for i=1,12 do
     local object=_G["ContainerFrame"..i] or CreateFrame("Frame","ContainerFrame"..i,UIParent)
     object:SetSize(192,300+(i%3)*60)
+    object.id=i-1
     object:SetPoint("BOTTOMRIGHT",UIParent,"BOTTOMRIGHT",0,0)
 end
 local function closeWorkspace()
@@ -458,6 +466,7 @@ OpenAllBags()
 assert(objects.WeHavePhonesTouchInventory.visible and #ContainerFrame1.bags==5,"inventory navigation appears with the stock bags")
 cursor={"item",900}
 objects.WeHavePhonesTouchBag2.scripts.OnClick()
+assert(objects.WeHavePhonesTouchBag2.active and not objects.WeHavePhonesTouchAllBags.active,"the open bag page is highlighted")
 assert(#ContainerFrame1.bags==1 and ContainerFrame3.visible and not ContainerFrame1.visible
     and cursor[2]==900,"bag pages retain a carried item without using or discarding it")
 assert(ContainerFrame3:GetScale()==1,"a single bag uses full-size item controls when it fits")
@@ -465,6 +474,7 @@ objects.WeHavePhonesTouchAllBags.scripts.OnClick()
 assert(#ContainerFrame1.bags==5 and cursor[2]==900,"All reopens every player bag after selecting one page")
 KEYRING_CONTAINER=-2
 local keyring=CreateFrame("Frame","TouchFixtureKeyring",UIParent)
+keyring.id=-2
 keyring:SetSize(192,256)
 function CloseBag(id)
     if id==KEYRING_CONTAINER then
@@ -484,8 +494,10 @@ UpdateContainerFrameAnchors()
 assert(objects.WeHavePhonesTouchKeys.visible,"Classic keyring access remains available beside inventory pages")
 objects.WeHavePhonesTouchKeys.scripts.OnClick()
 assert(keyring.visible and #ContainerFrame1.bags==1 and cursor[2]==900,"the keyring uses its stock bag behavior without clearing a carried item")
+assert(objects.WeHavePhonesTouchKeys.active and not objects.WeHavePhonesTouchBag2.active,"Keys shows as the current page")
 objects.WeHavePhonesTouchAllBags.scripts.OnClick()
 assert(not keyring.visible and #ContainerFrame1.bags==5,"All closes the keyring and restores player bags")
+assert(objects.WeHavePhonesTouchAllBags.active and not objects.WeHavePhonesTouchKeys.active,"All is highlighted with every bag open")
 BankFrame:Show()
 UpdateContainerFrameAnchors()
 assert(objects.WeHavePhonesTouchBankBag5.visible and objects.WeHavePhonesTouchBankBag5.enabled,"bank bag navigation is available only at the bank")
@@ -498,6 +510,8 @@ assert(not objects.WeHavePhonesTouchInventory.visible,"inventory navigation cann
 C_Container.GetContainerNumSlots=originalBagSlots
 pageClick("WeHavePhonesTouchPage1")
 assert(actionPage==6 and objects.WeHavePhonesTouchPager.label.text=="6","previous wraps and shows only the page number")
+assert(objects.WeHavePhonesTouchPager.dots[6].color[1]==.46 and objects.WeHavePhonesTouchPager.dots[1].color[1]==.55,
+    "six page dots show which page is in use")
 pageClick("WeHavePhonesTouchPage2")
 assert(actionPage==1,"next wraps back to page one")
 ChatFrame1:ApplySystemAnchor()
