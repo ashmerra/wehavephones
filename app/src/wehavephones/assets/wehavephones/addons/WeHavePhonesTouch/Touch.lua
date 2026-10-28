@@ -363,6 +363,11 @@ local function Apply()
             SaveCVar("InputDeviceInterfaceStyle", "0")
             SaveCVar("useUiScale", "1")
             SaveCVar("uiScale", "1")
+            -- Native touch is mouse input. Enable Blizzard's nearby interact target
+            -- without relying on the gamepad-only default or pixel-perfect corpse taps.
+            SaveCVar("SoftTargetInteract", "3")
+            SaveCVar("SoftTargetInteractArc", "1")
+            SaveCVar("SoftTargetIconInteract", "1")
             if WOW_PROJECT_ID == WOW_PROJECT_CLASSIC and GetActionBarToggles then
                 local toggles = {GetActionBarToggles()}
                 for i = 1, 7 do toggles[i] = toggles[i] == true or toggles[i] == 1 end
@@ -381,6 +386,20 @@ local function Apply()
             trigger:SetScript("OnClick", ShowControls)
             trigger:Show()
             SetOverrideBindingClick(frame, true, "F9", "WeHavePhonesTouchMenuTrigger")
+            local corpse = CreateFrame("Button", "WeHavePhonesTouchCorpseTrigger", UIParent, "SecureActionButtonTemplate")
+            corpse:RegisterForClicks("AnyUp", "AnyDown")
+            corpse:SetSize(1, 1)
+            corpse:SetPoint("TOPLEFT")
+            corpse:SetAttribute("type", "macro")
+            corpse:SetAttribute("macrotext", "/target [@softinteract,exists,dead]")
+            corpse:SetScript("PostClick", function(_, _, down)
+                if down then return end
+                if not UnitExists("target") or not UnitIsDead("target") then
+                    Notice("Face a nearby lootable corpse, then hold Target again.")
+                end
+            end)
+            corpse:Show()
+            SetOverrideBindingClick(frame, true, "F10", "WeHavePhonesTouchCorpseTrigger")
             print("WeHavePhones touch: hold a slot to edit. More opens interface size, keyboard and window gestures.")
         end
         UniformScale()

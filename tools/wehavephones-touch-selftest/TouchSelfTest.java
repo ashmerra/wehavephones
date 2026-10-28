@@ -23,7 +23,11 @@ public final class TouchSelfTest {
         boolean dragging;
         int contexts, scrolls;
         int clicks;
-        public void key(Key key, boolean down) { if (down) held.add(key); else held.remove(key); }
+        public void key(Key key, boolean down) {
+            if (key == Key.CORPSE && down) check(!camera, "corpse targeting releases the camera grab");
+            if (down) held.add(key); else held.remove(key);
+            events.add(key + ":" + down);
+        }
         public void click(float x, float y) { check(!camera, "UI click releases camera grab first"); clicks++; events.add("click"); }
         public void camera(boolean down) { camera = down; events.add("camera:" + down); }
         public void moveCamera(float dx, float dy) { check(camera, "camera movement holds right button"); }
@@ -102,7 +106,29 @@ public final class TouchSelfTest {
         input.move(1, 600, 300, 100, 100, 60);
         input.move(2, 700, 300, 100, 100, 60);
         check(sink.scrolls != beforeScroll && !sink.dragging, "two-finger movement scrolls windows without dragging items");
+        input.setUiMode(false);
+        sink.events.clear();
+        input.down(30, Zone.TARGET, 900, 600, 4000);
+        check(!sink.events.contains("TARGET:true"), "Target waits for tap or hold instead of selecting an enemy immediately");
+        input.up(30);
+        check(sink.events.contains("TARGET:true") && sink.held.isEmpty(), "short Target tap cycles once and releases its key");
+        sink.events.clear();
+        input.down(19, Zone.CAMERA, 600, 250, 5000);
+        input.move(19, 640, 250, 100, 100, 60);
+        input.down(30, Zone.TARGET, 900, 600, 5000);
+        input.advanceTime(5549);
+        check(!sink.events.contains("CORPSE:true"), "corpse selection waits for the hold threshold");
+        input.advanceTime(5550);
+        input.advanceTime(5800);
+        input.up(30);
+        input.up(19);
+        check(sink.events.stream().filter("CORPSE:true"::equals).count() == 1, "holding Target selects a corpse once");
+        check(!sink.events.contains("TARGET:true") && sink.held.isEmpty(), "a corpse hold never cycles a living enemy on press or release");
+        sink.events.clear();
+        input.down(30, Zone.TARGET, 900, 600, 6000);
         input.cancel();
+        input.up(30);
+        check(!sink.events.contains("TARGET:true") && !sink.events.contains("CORPSE:true"), "cancelling a pending Target press selects nothing");
         Path root = Files.createTempDirectory("wehavephones-touch-fixture");
         try {
             byte[] script = "-- fixture\n".getBytes(StandardCharsets.UTF_8);

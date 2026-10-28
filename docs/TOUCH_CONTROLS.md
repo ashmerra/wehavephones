@@ -57,6 +57,7 @@ under WoW's control.
 | Drag a window, slider, spellbook entry or bag item | Switch to window gestures through More, then drag |
 | Scroll a list | Use two fingers in window mode |
 | Jump, nearest enemy, interact with the selected target | Jump, Target and Use buttons |
+| Select a nearby corpse for looting | Face it, hold Target, then tap Use |
 | Previous target, auto run, sit or stand | More |
 | Open chat, enter names, search, type text | More → Chat or Keyboard |
 | Shift-click links or split stacks, Ctrl-click previews, Alt-click self-casts | Choose the modifier in More, then tap or hold |
@@ -64,10 +65,24 @@ under WoW's control.
 | Change the action page | Tap the visible < or > arrows, or More → Next action bar page |
 
 Window mode replaces camera drags with left mouse drags, including over the
-right side of the screen. The hint changes to **Window gestures**. Use More
-again to return to camera mode. A modifier applies to one tap, hold or drag,
+right side of the screen. **Window gestures** appears only while that mode is
+enabled. Normal camera mode has no status label. Use More again to return to
+camera mode. A modifier applies to one tap, hold or drag,
 then releases. Held mouse buttons and modifiers also release on cancellation
 or loss of window focus.
+
+A short Target tap cycles living enemies. Holding Target for half a second
+selects the dead unit highlighted by WoW's nearby interact system. Walk within
+interaction range and face the corpse, then hold Target and tap Use to loot.
+**More → Target nearby corpse** provides the same selection. The hold never
+cycles a living enemy first. If there is no nearby corpse available, the
+current target is kept. A direct tap on a corpse and a long press to
+right-click it remain available.
+
+Touch mode enables the native interact key for mouse input, widens its front
+cone and shows the interaction icon. The previous values restore on opt-out.
+It preserves the player's auto-loot preference and never scans world objects
+or automatically loots them.
 
 Movement, camera and spell taps have independent pointer ownership. Tapping a
 spell releases an active camera grab so WoW can receive an absolute click.
@@ -122,6 +137,14 @@ Mark of the Wild cast normally, and paging changed the displayed number from
 1 to 2 and back to 1. The touch and addon host checks and both builds passed.
 There were no new Android app crash entries. The game exited normally and
 WeHavePhones was closed after testing.
+
+Corpse controls were checked in a further Classic Era session. A short Target
+tap selected a living enemy. Holding Target selected a nearby dead Nightsaber,
+and Use successfully looted it. With no eligible corpse available, the living
+target stayed selected and the range/facing hint appeared. The window-mode
+label appeared only while window gestures were enabled. The touch suite
+passed 53 checks, and the gamepad, launch, runtime and addon checks passed.
+Both builds succeeded, with no new Android app crash entries.
 
 Dragging, pinch/scroll separation, page-button attributes and combat guards
 have automated host coverage. Extended play and the compatibility cases

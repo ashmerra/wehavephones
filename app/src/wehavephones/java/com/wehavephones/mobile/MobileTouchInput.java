@@ -5,7 +5,7 @@ import java.util.Map;
 
 /** Pointer ownership for simultaneous movement, camera and direct UI taps. No Android dependencies. */
 public final class MobileTouchInput {
-    public enum Key { FORWARD, BACK, LEFT, RIGHT, JUMP, TARGET, INTERACT, BAGS, MAP, ESCAPE, BAR, MORE }
+    public enum Key { FORWARD, BACK, LEFT, RIGHT, JUMP, TARGET, INTERACT, BAGS, MAP, ESCAPE, BAR, MORE, CORPSE }
     public enum Zone { STICK, CAMERA, UI, JUMP, TARGET, INTERACT, BAGS, MAP, ESCAPE, BAR, MORE }
     public interface Sink {
         void key(Key key, boolean down);
@@ -83,7 +83,11 @@ public final class MobileTouchInput {
     public void advanceTime(long now) {
         if (drag != -1 || multiA != -1) return;
         for (Finger finger : fingers.values()) {
-            if ((finger.zone == Zone.UI || finger.zone == Zone.CAMERA) && !finger.dragged
+            if (finger.zone == Zone.TARGET && !finger.consumed && now - finger.downAt >= HOLD_MS) {
+                finger.consumed = true;
+                setCamera(false);
+                pulse(Key.CORPSE);
+            } else if ((finger.zone == Zone.UI || finger.zone == Zone.CAMERA) && !finger.dragged
                     && !finger.consumed && now - finger.downAt >= HOLD_MS) {
                 finger.consumed = true;
                 setCamera(false);
@@ -172,16 +176,24 @@ public final class MobileTouchInput {
             sink.click(finger.x, finger.y);
             // A held camera finger re-arms only on its next movement.
         }
+        if (finger.zone == Zone.TARGET && !finger.consumed) pulse(Key.TARGET);
         refreshKeys();
     }
 
     private void refreshKeys() {
         for (int i = Key.JUMP.ordinal(); i < Key.values().length; i++) {
             Key key = Key.values()[i];
+            // Target is a tap or hold action. Never cycle a living enemy before a corpse hold.
+            if (key == Key.TARGET || key == Key.CORPSE) continue;
             boolean held = false;
             for (Finger finger : fingers.values()) if (finger.zone.name().equals(key.name())) held = true;
             setKey(key, held);
         }
+    }
+
+    private void pulse(Key key) {
+        sink.key(key, true);
+        sink.key(key, false);
     }
 
     private void setKey(Key key, boolean down) {

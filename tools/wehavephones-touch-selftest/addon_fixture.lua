@@ -1,9 +1,11 @@
-local original = {GamePadEnable="1", InputDeviceInterfaceStyle="1", useUiScale="0", uiScale="0.64"}
+local original = {GamePadEnable="1", InputDeviceInterfaceStyle="1", useUiScale="0", uiScale="0.64",
+    SoftTargetInteract="1", SoftTargetInteractArc="0", SoftTargetIconInteract="0"}
 local values, held, objects, all = {}, {}, {}, {}
 for k,v in pairs(original) do values[k]=v end
 local combat, cursor, layout, notices, actionPage = false, nil, 0, 0, 1
 local extraBars = {false,false,true,false,false,false,false}
 local actions = {[1]={"spell",101}, [61]={"item",500}}
+local targetExists, targetDead = false, false
 WOW_PROJECT_CLASSIC, WOW_PROJECT_ID, BOOKTYPE_SPELL = 2, 2, "spell"
 tinsert, UISpecialFrames, unpack = table.insert, {}, table.unpack or unpack
 VIEWABLE_ACTION_BAR_PAGES = {1,1,1,1,1,1}
@@ -67,6 +69,8 @@ function SetOverrideBinding(_,_,key,action) held[key]=action end
 function SetOverrideBindingClick(_,_,key,name) held[key]=name end
 function ClearOverrideBindings() held={} end
 function InCombatLockdown() return combat end
+function UnitExists() return targetExists end
+function UnitIsDead() return targetDead end
 function GetCursorInfo() if cursor then return cursor[1],cursor[2] end end
 function ClearCursor() cursor=nil end
 function GetActionInfo(slot) if actions[slot] then return unpack(actions[slot]) end end
@@ -149,6 +153,20 @@ assert(UIParent:GetScale()==1.5 and layout==12)
 for i=1,6 do assert(VIEWABLE_ACTION_BAR_PAGES[i],"all six pages accessible through the switcher") end
 assert(not MultiBarBottomLeft.visible and not MultiBarBottomRight.visible,"extra grids do not take camera space")
 assert(held.F9=="WeHavePhonesTouchMenuTrigger" and held.W=="MOVEFORWARD")
+assert(values.SoftTargetInteract=="3" and values.SoftTargetInteractArc=="1" and values.SoftTargetIconInteract=="1",
+    "mouse-based touch enables nearby interaction with a visible front-cone target")
+local corpse=objects.WeHavePhonesTouchCorpseTrigger
+assert(held.F10==corpse.name and corpse.type=="macro" and corpse.macrotext=="/target [@softinteract,exists,dead]",
+    "corpse selection uses a dead-only secure macro with no living-target fallback")
+assert(corpse.scripts.OnClick==nil,"corpse targeting never runs from an insecure click callback")
+local beforeCorpseNotice=notices
+corpse.scripts.PostClick(corpse,"LeftButton",true)
+assert(notices==beforeCorpseNotice,"press phase does not duplicate failure notices")
+corpse.scripts.PostClick(corpse,"LeftButton",false)
+assert(notices==beforeCorpseNotice+1,"missing corpse gives a useful range and facing hint")
+targetExists,targetDead=true,true
+corpse.scripts.PostClick(corpse,"LeftButton",false)
+assert(notices==beforeCorpseNotice+1,"selected corpses need no extra status text")
 assert(objects.WeHavePhonesTouchMenuTrigger.clicks[1]=="AnyUp" and objects.WeHavePhonesTouchMenuTrigger.clicks[2]=="AnyDown",
     "menu accepts bindings dispatched on press or release")
 for i=1,12 do

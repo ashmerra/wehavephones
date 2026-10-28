@@ -456,9 +456,9 @@ World of Warcraft, Warcraft, Battle.net and Blizzard Entertainment are trademark
         <item>Ctrl for the next tap or hold</item>
         <item>Alt for the next tap or hold</item>
         <item>Cancel next modifier</item>
+        <item>Target nearby corpse</item>
     </string-array>
     <string name="wehavephones_touch_target">Target</string>
     <string name="wehavephones_touch_interact">Use</string>
     <string name="wehavephones_touch_jump">Jump</string>
-    <string name="wehavephones_touch_camera">Drag to look</string>
 </resources>

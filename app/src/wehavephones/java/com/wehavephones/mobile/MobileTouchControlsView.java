@@ -168,8 +168,10 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
             canvas.drawText(labels[i], rect.centerX(), rect.centerY() - (paint.ascent() + paint.descent()) / 2, paint);
         }
         paint.setColor(0xB38CC4F7);
-        canvas.drawText(getContext().getString(input.isUiMode() ? R.string.wehavephones_touch_windows : R.string.wehavephones_touch_camera),
-                getWidth() * .70f, getHeight() * .23f, paint);
+        if (input.isUiMode()) {
+            canvas.drawText(getContext().getString(R.string.wehavephones_touch_windows),
+                    getWidth() * .70f, getHeight() * .23f, paint);
+        }
         if (nextModifier != null) {
             String modifier = nextModifier == XKeycode.KEY_SHIFT_L ? "Shift" : nextModifier == XKeycode.KEY_CTRL_L ? "Ctrl" : "Alt";
             canvas.drawText(getContext().getString(R.string.wehavephones_touch_next_modifier, modifier),
@@ -190,6 +192,7 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
             case RIGHT: code = XKeycode.KEY_D; break;
             case JUMP: code = XKeycode.KEY_SPACE; break;
             case TARGET: code = XKeycode.KEY_TAB; break;
+            case CORPSE: code = XKeycode.KEY_F10; break;
             case INTERACT: code = XKeycode.KEY_F; break;
             case BAGS: code = XKeycode.KEY_B; break;
             case MAP: code = XKeycode.KEY_M; break;
@@ -317,6 +320,7 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
             case 10: nextModifier = XKeycode.KEY_CTRL_L; invalidate(); break;
             case 11: nextModifier = XKeycode.KEY_ALT_L; invalidate(); break;
             case 12: nextModifier = null; invalidate(); break;
+            case 13: tap(XKeycode.KEY_F10); break;
             default: tap(XKeycode.KEY_ESC);
         }
     }
