@@ -118,9 +118,10 @@ public class ImeBridgeEditText extends AppCompatEditText {
             public boolean performEditorAction(int actionCode) {
                 if (listener != null) {
                     listener.onEditorAction(actionCode);
+                    // The listener submits to the guest. Consume the action so the default
+                    // EditText handler cannot hide the keyboard or generate another Enter.
+                    return true;
                 }
-                // The listener presses Enter for sign-in text; the default action would hide the keyboard.
-                if (privateInput) return true;
                 return super.performEditorAction(actionCode);
             }
         };
