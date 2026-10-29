@@ -277,6 +277,21 @@ for activity coverage, design choices and validation boundaries.
 
 ## Device validation
 
+### October 29 MoP Classic smoke test
+
+MoP Classic 5.5.4.70631 was tested on the S23+ at 1280×720 and 150%
+interface size after applying the required game patch. Simultaneous movement
+and camera, Jump, release, pinch zoom, target selection, Map, Bags, Character,
+Spellbook and NPC interaction worked. The observer captured zero Lua errors
+and the Android crash buffer was unchanged.
+
+MoP retains its stock HUD. Chat overlaps the stick, the desktop action and
+pet bars remain, and the touch editor and pager are absent. The spellbook
+extends beneath the native toolbar. NPC interaction retains Play over the
+quest window until the player switches to Menus. Offensive casting, combat
+and direct pet commands remain unverified. See the
+[MoP Classic test report](MOP_TOUCH_2026_10_29.md) for evidence and limits.
+
 ### October 29 BC Anniversary smoke test
 
 BC Anniversary 2.5.6.70577 was tested on the S23+ at 1280×720 and 150%
