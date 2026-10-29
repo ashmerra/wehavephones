@@ -332,11 +332,14 @@ Both build paths succeeded. The final Dev package was installed and launched.
 Its crash buffer contained only the older October 27 system crash-dump helper
 entry, with no new Android application crash.
 
-Initial memory samples remain tight. Game PSS plus SwapPss stayed around
-3.7 GiB, with about 0.8 GiB of separately reported Graphics. A same-process
-addon reload comparison does not establish a cold-launch saving or long-session
-stability. The extended run must be assessed separately. Starting-area tests
-do not establish raid, city, vehicle, pet battle or advanced class behavior.
+The [overnight report](RETAIL_TOUCH_OVERNIGHT_2026_10_29.md) records the failed
+intermediate runs, the final 48-cycle exercise phase and the subsequent idle
+observation through 06:00. The final observer captured zero Lua errors.
+Automated inputs were paused after unintended melee appeared, so cycle
+completion does not verify every intended action. RAM remained tight and the
+strict device-wide low-memory-kill criterion failed. No memory saving or
+uninterrupted overnight stability is established. Starting-area tests do not
+establish raid, city, vehicle, pet battle or advanced class behavior.
 
 ### October 28 modes, menu and layout pass
 
