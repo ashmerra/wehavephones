@@ -251,7 +251,7 @@ top-center widgets, shortcuts and trackers on its next login. Temporary binding
 overrides are never saved. Intentional hotbar edits remain ordinary WoW
 changes. Questie's profile is not rewritten.
 
-Classic Era is the layout target. Other editions receive the native modes
+Retail and Classic Era receive the touch layout. Other editions receive the native modes
 and gestures but retain their stock hotbars. Third-party bar replacements,
 raid-style unit frames, party roster changes in combat, simultaneous class
 mechanics and extended combat need separate validation. Unknown addon panels
@@ -298,6 +298,18 @@ in combat did not open the editor. The observer recorded no Lua errors.
 Combat also revealed a stock objective-tracker reanchor over the actions.
 The fix keeps the unprotected Retail tracker fitted during those updates.
 Protected replacement trackers still defer until combat ends.
+
+The overnight retry later captured restricted aura access during a stock
+tracker layout. Retail aura spacing now checks the client's secrecy guards
+before querying aura data and retains its last accessible spacing during
+restrictions or denied queries. The stock aura frame reserves empty rows,
+so its full height does not describe the visible buffs.
+Tracker hooks queue their refit until Blizzard's layout callback returns.
+The regression fixture denies restricted Retail aura queries, checks delayed
+tracker refitting and retains the combat guard for protected replacements.
+The restriction is documented in Blizzard's
+[12.1.5 aura API declarations](https://github.com/Gethe/wow-ui-source/blob/12.1.5/Interface/AddOns/Blizzard_APIDocumentationGenerated/UnitAuraDocumentation.lua)
+and [secrecy predicates](https://github.com/Gethe/wow-ui-source/blob/12.1.5/Interface/AddOns/Blizzard_APIDocumentationGenerated/SecretPredicateAPIDocumentation.lua).
 
 The touch suite passed 251,543 native assertions and 1,353 window and inventory
 scenarios. Retail fixtures remove deprecated globals, exercise spell and

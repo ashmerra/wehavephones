@@ -819,20 +819,45 @@ local function PositionTopHud()
     end
 end
 
-local function BuffCount()
+local retailBuffRows = 1
+local function BuffRows()
+    if retail then
+        -- Restrictions can begin before combat lockdown. Keep the last public
+        -- spacing while aura access is restricted, including on restricted maps.
+        if not C_Secrets or not C_Secrets.ShouldAurasBeSecret or C_Secrets.ShouldAurasBeSecret() then return retailBuffRows end
+        local count = 0
+        for i = 1, 40 do
+            if C_Secrets.ShouldUnitAuraIndexBeSecret and C_Secrets.ShouldUnitAuraIndexBeSecret("player", i, "HELPFUL") then return retailBuffRows end
+            local ok, aura = pcall(C_UnitAuras.GetBuffDataByIndex, "player", i)
+            if not ok or (canaccessvalue and not canaccessvalue(aura)) then return retailBuffRows end
+            if not aura then break end
+            count = count+1
+        end
+        retailBuffRows = math.max(1, math.ceil(count/11))
+        return retailBuffRows
+    end
     local count = 0
     for i = 1, 40 do
-        local aura = retail and C_UnitAuras.GetBuffDataByIndex("player", i) or (UnitBuff and UnitBuff("player", i))
+        local aura = UnitBuff and UnitBuff("player", i)
         if not aura then break end
         count = count+1
     end
-    return count
+    return math.max(1, math.ceil(count/11))
 end
 
 local PositionTracker
-local positioningTracker
+local PositionAuras
+local positioningTracker, trackerQueued, aurasQueued
+local function QueueAuras()
+    if not enabled or aurasQueued then return end
+    aurasQueued = true
+    C_Timer.After(0, function()
+        aurasQueued = false
+        PositionAuras()
+    end)
+end
 -- Auras are not protected. They follow buff changes in combat as well.
-local function PositionAuras()
+PositionAuras = function()
     if not enabled or not SupportedLayout() then return end
     local width, height = UIParent:GetWidth(), UIParent:GetHeight()
     local compact = width/height < COMPACT
@@ -840,7 +865,7 @@ local function PositionAuras()
     -- clear of Target, Use and Jump, which can be wider than the rail.
     local right = compact and math.max((width-LayoutWidth())/2, width*.16)+4 or (MINIMAP_RESERVE+ZONE_GAP)*height
     local top = compact and minimapBottom+4 or TOOLBAR_BAND*height+4
-    local rows = math.max(1, math.ceil(BuffCount()/11))
+    local rows = BuffRows()
     auraLeft, auraBottom = width-right-11*AURA_ICON, top+(rows+1)*AURA_ROW
     for _, aura in ipairs({{"BuffFrame", 0, 0}, {"DebuffFrame", 0, rows*AURA_ROW}}) do
         local object = _G[aura[1]]
@@ -917,8 +942,14 @@ PositionTracker = function()
         if not trackerHooks[object] then
             for _, method in ipairs({"SetPoint", "SetSize", "SetHeight", "SetWidth", "Show"}) do
                 hooksecurefunc(object, method, function()
-                    if positioningTracker then return end
-                    if InCombatLockdown() then PositionTracker() else QueueHud() end
+                    if positioningTracker or trackerQueued then return end
+                    -- Let Blizzard finish its right-frame layout before refitting.
+                    -- Reentering it from SetPoint can run stock aura work tainted.
+                    trackerQueued = true
+                    C_Timer.After(0, function()
+                        trackerQueued = false
+                        PositionTracker()
+                    end)
                 end)
             end
             trackerHooks[object] = true
@@ -1163,8 +1194,12 @@ frame:SetScript("OnEvent", function(_, event)
         UpdatePager()
     elseif event == "UNIT_AURA" then
         -- A new row of buffs moves the debuffs down, in combat as well. The tracker follows after combat.
-        local rows = math.max(1, math.ceil(BuffCount()/11))
-        if enabled and applied and rows ~= buffRows then buffRows = rows PositionAuras() end
+        if retail then
+            QueueAuras()
+        else
+            local rows = BuffRows()
+            if enabled and applied and rows ~= buffRows then buffRows = rows PositionAuras() end
+        end
     elseif event == "PLAYER_REGEN_DISABLED" then
         if editor then editor:Hide() end
         if inventoryStrip then inventoryStrip:Hide() end

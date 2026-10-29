@@ -749,7 +749,15 @@ C_SpellBook={
 }
 C_Item={GetItemInfo=function() return "Retail reagent" end,PickupItem=function(id) cursor={"item",id} end}
 C_Spell={PickupSpell=function(id) cursor={"spell",id} end}
-C_UnitAuras={GetBuffDataByIndex=function(_,i) if i<=buffs then return {} end end}
+local restrictedAuras, secretAuraIndex, deniedAuraAccess, auraQueries = false, false, false, 0
+C_Secrets={ShouldAurasBeSecret=function() return restrictedAuras end,
+    ShouldUnitAuraIndexBeSecret=function() return secretAuraIndex end}
+C_UnitAuras={GetBuffDataByIndex=function(_,i)
+    auraQueries=auraQueries+1
+    assert(not restrictedAuras and not secretAuraIndex,"Retail aura data is restricted to the stock UI")
+    if deniedAuraAccess then error("Aura access became unavailable") end
+    if i<=buffs then return {} end
+end}
 MainActionBar=CreateFrame("Frame","MainActionBar",UIParent)
 for _,name in ipairs({"ActionBarPageNumber","EndCaps","BorderArt"}) do
     MainActionBar[name]=CreateFrame("Frame",nil,MainActionBar)
@@ -861,14 +869,53 @@ assert(ContainerFrame2.visible and not ContainerFrame1.visible and cursor[2]==90
 assert(objects.WeHavePhonesTouchBag5.active,"Retail reagent page is highlighted")
 cursor=nil
 CloseAllBags()
+local immediateAfter, pending = C_Timer.After, {}
+C_Timer.After=function(_,fn) pending[#pending+1]=fn end
+local function flushLayout()
+    local callbacks=pending
+    pending={}
+    for _,fn in ipairs(callbacks) do fn() end
+end
+BuffFrame:SetSize(385,135)
+buffs=12
+active.scripts.OnEvent(active,"UNIT_AURA")
+flushLayout()
+local _,_,_,_,debuffY=DebuffFrame:GetPoint(1)
+close(debuffY,-(900*.14+4+90),"Retail spacing counts accessible buffs rather than the stock frame's empty rows")
+local publicQueries=auraQueries
+restrictedAuras=true
+active.scripts.OnEvent(active,"UNIT_AURA")
+flushLayout()
+assert(auraQueries==publicQueries,"aura restrictions are respected before combat lockdown begins")
+restrictedAuras=false
+secretAuraIndex=true
+active.scripts.OnEvent(active,"UNIT_AURA")
+flushLayout()
+assert(auraQueries==publicQueries,"individually secret auras are never queried")
+secretAuraIndex=false
+deniedAuraAccess=true
+active.scripts.OnEvent(active,"UNIT_AURA")
+flushLayout()
+local _,_,_,_,deniedDebuffY=DebuffFrame:GetPoint(1)
+close(deniedDebuffY,debuffY,"a denied aura query retains the last accessible spacing")
+deniedAuraAccess=false
+restrictedAuras=true
 combat=true
 local beforeRetail=layout
 ObjectiveTrackerFrame:SetPoint("TOPRIGHT",UIParent,"TOPRIGHT",0,-300)
+assert(ObjectiveTrackerFrame.point[3]=="TOPRIGHT","Retail tracker hooks let Blizzard finish its layout first")
+flushLayout()
 assert(ObjectiveTrackerFrame.point[3]=="CENTER","Retail's unprotected tracker stays clear of actions during combat")
 ObjectiveTrackerFrame.protected=true
 ObjectiveTrackerFrame:SetPoint("TOPRIGHT",UIParent,"TOPRIGHT",0,-300)
+flushLayout()
 assert(ObjectiveTrackerFrame.point[3]=="TOPRIGHT","protected replacement trackers defer combat layout")
 ObjectiveTrackerFrame.protected=false
+-- Restricted aura information may arrive before InCombatLockdown becomes true.
+active.scripts.OnEvent(active,"UNIT_AURA")
+flushLayout()
+assert(layout==beforeRetail,"secret aura updates never relayout protected hotbars")
+C_Timer.After=immediateAfter
 pageClick("WeHavePhonesTouchPage2")
 active.scripts.OnEvent(active,"DISPLAY_SIZE_CHANGED")
 assert(actionPage==2 and layout==beforeRetail,"Retail paging stays secure and geometry waits for combat to end")
