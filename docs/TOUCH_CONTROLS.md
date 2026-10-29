@@ -277,6 +277,23 @@ for activity coverage, design choices and validation boundaries.
 
 ## Device validation
 
+### October 29 BC Anniversary smoke test
+
+BC Anniversary 2.5.6.70577 was tested on the S23+ at 1280×720 and 150%
+interface size. Movement and camera worked together, Jump registered, and
+release returned movement to zero with mouselook inactive. Pinch zoom, a
+stock Frost Armor action, Map, Bags, Character, Spellbook and NPC interaction
+worked. The observer captured zero Lua errors and no new Android application
+crash was recorded.
+
+BC still receives the native controls with its stock HUD. Chat overlaps the
+stick, the desktop hotbar remains, and holding a slot does not open the touch
+editor. The touch pager is absent. A quest opened through Use retains Play
+until the player switches to Menus, leaving the stick over its Accept button.
+This is a partial compatibility result. See the
+[BC Anniversary test report](BC_ANNIVERSARY_TOUCH_2026_10_29.md) for evidence,
+excluded attempts and coverage limits.
+
 ### October 28 Retail compatibility pass
 
 Retail 12.1.5.70575 was tested on the S23+ with a 1280×720 game viewport,
