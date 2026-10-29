@@ -311,6 +311,18 @@ The restriction is documented in Blizzard's
 [12.1.5 aura API declarations](https://github.com/Gethe/wow-ui-source/blob/12.1.5/Interface/AddOns/Blizzard_APIDocumentationGenerated/UnitAuraDocumentation.lua)
 and [secrecy predicates](https://github.com/Gethe/wow-ui-source/blob/12.1.5/Interface/AddOns/Blizzard_APIDocumentationGenerated/SecretPredicateAPIDocumentation.lua).
 
+That guard alone did not stop the tracker error in the next 12-cycle run.
+Retail Edit Mode replaces geometry methods with callbacks that can refresh
+other managed frames and their auras. Tracker fits now use the original
+geometry methods saved by Edit Mode, retaining the engine's protection
+checks while avoiding those global layout callbacks. The fixture models
+the overridden methods and rejects their use during aura restrictions.
+See Blizzard's [12.1.5 Edit Mode geometry wrappers](https://github.com/Gethe/wow-ui-source/blob/12.1.5/Interface/AddOns/Blizzard_EditMode/Shared/EditModeSystemTemplates.lua).
+The S23+ then completed a short fight with both combat lockdown and aura
+restrictions active. The observer captured the tracker returning to its
+fitted position after the stock reanchor, with no Lua errors. This focused
+check does not establish long-session stability or raid compatibility.
+
 The touch suite passed 251,543 native assertions and 1,353 window and inventory
 scenarios. Retail fixtures remove deprecated globals, exercise spell and
 item Undo, reagent paging, combined bags, combat guards and restoration, and

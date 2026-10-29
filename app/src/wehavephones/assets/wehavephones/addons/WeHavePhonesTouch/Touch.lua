@@ -78,11 +78,12 @@ local function ActionFit()
     return math.min(1, LayoutWidth()/760)
 end
 
-local function SetRelativeScale(object, scale)
+local function SetRelativeScale(object, scale, setter)
     -- Some stock frames, notably the map, ignore their parent's scale. Use
     -- the observed effective scale instead of assuming a UIParent child inherits it.
     local inherited = object:GetEffectiveScale()/math.max(.001, object:GetScale())
-    object:SetScale(scale*UIParent:GetEffectiveScale()/math.max(.001, inherited))
+    local applyScale = setter or object.SetScale
+    applyScale(object, scale*UIParent:GetEffectiveScale()/math.max(.001, inherited))
 end
 
 local function FitPanel(panel)
@@ -935,9 +936,14 @@ PositionTracker = function()
             and (64+(math.ceil(12/CompactColumns())-1)*54+36*ACTION_SCALE)*ActionFit() or (118+36*ACTION_SCALE)*fit
         local height = math.max(32, top-actionTop-16)
         local scale = math.min(1, LayoutWidth()*.30/math.max(1, object:GetWidth()), height/math.max(1, object:GetHeight()))
-        SetRelativeScale(object, scale)
-        object:ClearAllPoints()
-        object:SetPoint("TOPRIGHT", UIParent, "CENTER", (LayoutWidth()/2-16)/scale,
+        -- Retail Edit Mode wraps these methods with global layout callbacks.
+        -- Those callbacks can refresh secret auras in this addon's tainted call.
+        -- Its saved base methods perform geometry only, with engine protection intact.
+        local clearPoints = retail and object.ClearAllPointsBase or object.ClearAllPoints
+        local setPoint = retail and object.SetPointBase or object.SetPoint
+        SetRelativeScale(object, scale, retail and object.SetScaleBase)
+        clearPoints(object)
+        setPoint(object, "TOPRIGHT", UIParent, "CENTER", (LayoutWidth()/2-16)/scale,
             (top-UIParent:GetHeight()/2)/scale)
         if not trackerHooks[object] then
             for _, method in ipairs({"SetPoint", "SetSize", "SetHeight", "SetWidth", "Show"}) do

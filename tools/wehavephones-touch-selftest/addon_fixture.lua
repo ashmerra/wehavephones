@@ -769,6 +769,24 @@ ObjectiveTrackerFrame=CreateFrame("Frame","ObjectiveTrackerFrame",UIParent)
 ObjectiveTrackerFrame:SetSize(280,400)
 ObjectiveTrackerFrame:SetPoint("TOPRIGHT",UIParent,"TOPRIGHT",-20,-200)
 ObjectiveTrackerFrame:Show()
+-- Retail Edit Mode overrides geometry methods with global layout callbacks.
+-- Those callbacks can query restricted auras when an addon resizes a tracker.
+local stockTrackerLayout
+ObjectiveTrackerFrame.SetScaleBase=methods.SetScale
+ObjectiveTrackerFrame.SetPointBase=methods.SetPoint
+ObjectiveTrackerFrame.ClearAllPointsBase=methods.ClearAllPoints
+for _,method in ipairs({"SetScale","SetPoint","ClearAllPoints"}) do
+    local base=ObjectiveTrackerFrame[method.."Base"]
+    ObjectiveTrackerFrame[method]=function(self,...)
+        assert(stockTrackerLayout or not (combat or restrictedAuras),"Retail Edit Mode layout queried restricted auras")
+        return base(self,...)
+    end
+end
+local function stockTrackerAnchor(...)
+    stockTrackerLayout=true
+    ObjectiveTrackerFrame:SetPoint(...)
+    stockTrackerLayout=false
+end
 QuestWatchFrame=nil
 Questie_BaseFrame=nil
 ContainerFrame1.bags=nil
@@ -902,12 +920,12 @@ deniedAuraAccess=false
 restrictedAuras=true
 combat=true
 local beforeRetail=layout
-ObjectiveTrackerFrame:SetPoint("TOPRIGHT",UIParent,"TOPRIGHT",0,-300)
+stockTrackerAnchor("TOPRIGHT",UIParent,"TOPRIGHT",0,-300)
 assert(ObjectiveTrackerFrame.point[3]=="TOPRIGHT","Retail tracker hooks let Blizzard finish its layout first")
 flushLayout()
 assert(ObjectiveTrackerFrame.point[3]=="CENTER","Retail's unprotected tracker stays clear of actions during combat")
 ObjectiveTrackerFrame.protected=true
-ObjectiveTrackerFrame:SetPoint("TOPRIGHT",UIParent,"TOPRIGHT",0,-300)
+stockTrackerAnchor("TOPRIGHT",UIParent,"TOPRIGHT",0,-300)
 flushLayout()
 assert(ObjectiveTrackerFrame.point[3]=="TOPRIGHT","protected replacement trackers defer combat layout")
 ObjectiveTrackerFrame.protected=false
@@ -923,6 +941,7 @@ active.scripts.OnEvent(active,"PLAYER_REGEN_DISABLED")
 edit(ActionButton1)
 assert(not objects.WeHavePhonesTouchEditor.visible,"Retail editor cannot open in combat")
 combat=false
+restrictedAuras=false
 active.scripts.OnEvent(active,"PLAYER_REGEN_ENABLED")
 boot(false)
 assert(MicroMenu.visible and MainActionBar.EndCaps.visible and MainActionBar.BorderArt.visible,
