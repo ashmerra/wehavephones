@@ -460,7 +460,7 @@ World of Warcraft, Warcraft, Battle.net and Blizzard Entertainment are trademark
     <string name="wehavephones_touch_size_hint">Interface size %1$d%%</string>
     <string name="wehavephones_touch_guide_dismiss">Tap anywhere to continue</string>
     <string name="wehavephones_touch_guide_camera">Drag to look · Pinch to zoom</string>
-    <string name="wehavephones_touch_guide_stick">Move · Slide up onto the runner to auto run</string>
+    <string name="wehavephones_touch_guide_stick">Move · Hold on the runner, then release to auto run</string>
     <string name="wehavephones_touch_guide_target">Tap: next enemy · Hold: nearby corpse</string>
     <string name="wehavephones_touch_guide_use">Talk, loot or interact with your target</string>
     <string name="wehavephones_touch_guide_jump">Hold to swim up</string>
@@ -482,7 +482,7 @@ World of Warcraft, Warcraft, Battle.net and Blizzard Entertainment are trademark
     <string name="wehavephones_touch_cat_touch">Touch controls</string>
     <string name="wehavephones_touch_cat_windows_hint">Opening a window switches to Menus for tapping, dragging and scrolling.</string>
     <string name="wehavephones_touch_cat_targeting_hint">These use WoW\'s own bindings and work in combat. You can also tap unit frames.</string>
-    <string name="wehavephones_touch_cat_movement_hint">Slide the stick up onto the runner to auto run without the menu.</string>
+    <string name="wehavephones_touch_cat_movement_hint">Slide the stick up to the runner. Hold until it turns blue, then release to auto run.</string>
     <string name="wehavephones_touch_cat_typing_hint">Shift, Ctrl and Alt apply to the next tap, hold or drag, for example to split a stack.</string>
     <string name="wehavephones_touch_cat_touch_hint">Interface size applies to every character. Hold a hotbar slot to change its action.</string>
     <string name="wehavephones_touch_act_character">Character</string>

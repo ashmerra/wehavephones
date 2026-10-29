@@ -21,6 +21,9 @@ import android.view.ViewGroup;
 import android.view.WindowInsets;
 import android.widget.FrameLayout;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import com.wehavephones.R;
 import com.wehavephones.XServerDisplayActivity;
 import com.wehavephones.xserver.Pointer;
@@ -77,6 +80,7 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
     private float insetLeft, insetTop, insetRight, insetBottom;
     // Feedback that the finger would otherwise hide: hint banners, tap ripples and completed holds.
     private String bannerTitle, bannerHint;
+    private final Set<String> sessionHints = new HashSet<>();
     private Drawable bannerIcon;
     private long bannerAt = -BANNER_MS, rippleAt = -RIPPLE_MS, pulseAt = -PULSE_MS;
     private float rippleX, rippleY, pulseX, pulseY;
@@ -116,6 +120,8 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
         // Login, realm selection and character creation need the whole screen.
         // Play explicitly returns to movement after entering the world.
         if (show) {
+            sessionHints.clear();
+            bannerAt = -BANNER_MS;
             input.setUiMode(true);
             toolbarCollapsed = true;
             refreshLayout();
@@ -227,7 +233,7 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
                 for (int i = 0; i < event.getPointerCount(); i++) {
                     int pointer = event.getPointerId(i);
                     float x = event.getX(i), y = event.getY(i);
-                    input.move(pointer, x, y, stickX, stickY, radius);
+                    input.move(pointer, x, y, stickX, stickY, radius, SystemClock.uptimeMillis());
                     if (pointer == handlePointer) {
                         handleX += (x - handleLastX) / Math.max(1, getWidth());
                         handleY += (y - handleLastY) / Math.max(1, getHeight());
@@ -246,6 +252,8 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
                 break;
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_POINTER_UP:
+                if (id == stickPointer) input.move(id, event.getX(index), event.getY(index),
+                        stickX, stickY, radius, SystemClock.uptimeMillis());
                 input.advanceTime(SystemClock.uptimeMillis());
                 input.up(id);
                 if (id == handlePointer) handlePointer = -1;
@@ -266,7 +274,8 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
     @Override protected void onDraw(Canvas canvas) {
         if (layout == null) return;
         long now = SystemClock.uptimeMillis();
-        boolean animating = false;
+        input.advanceTime(now);
+        boolean animating = input.isRunLockPending();
         boolean menus = input.isUiMode();
         if (menus && !toolbarCollapsed) drawBrackets(canvas);
         if (!menus && !toolbarCollapsed) drawStick(canvas);
@@ -471,8 +480,8 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
             canvas.drawPath(path, paint);
         }
         if (input.isRunLockShown()) {
-            // Slide past the ring onto the runner and let go to keep running.
-            float cx = stickX, cy = stickY - radius * MobileTouchInput.RUN_LOCK_OFFSET, r = radius * .46f;
+            // Hold on the runner until it turns blue, then release to keep running.
+            float cx = stickX, cy = stickY - radius * MobileTouchInput.RUN_LOCK_OFFSET, r = radius * MobileTouchInput.RUN_LOCK_RADIUS;
             boolean armed = input.isRunLockArmed();
             paint.setStyle(Paint.Style.STROKE);
             paint.setStrokeWidth(2 * density);
@@ -686,6 +695,7 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
     }
 
     private void banner(Drawable icon, String title, String hint) {
+        if (hint != null && !sessionHints.add(hint)) return;
         bannerIcon = icon;
         bannerTitle = title;
         bannerHint = hint;

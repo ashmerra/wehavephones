@@ -50,9 +50,11 @@ public final class MobileTouchInput {
     private float multiDistance, multiY;
     private int multiMode;
     private boolean runReach, runArmed, autoRun;
+    private long runTargetSince = -1;
+    public static final long RUN_LOCK_HOLD_MS = 450;
     public static final long HOLD_MS = 550;
-    /** Auto run target above the stick, in stick radii. Sliding onto it and releasing locks running. */
-    public static final float RUN_LOCK_OFFSET = 1.8f, RUN_LOCK_RADIUS = .6f;
+    /** Auto run target above the stick, in stick radii. Hold on it briefly, then release to lock running. */
+    public static final float RUN_LOCK_OFFSET = 2.4f, RUN_LOCK_RADIUS = .45f;
     private final boolean[] keys = new boolean[Key.values().length];
 
     public MobileTouchInput(Sink sink, float slop) { this.sink = sink; this.slop = slop; }
@@ -124,6 +126,7 @@ public final class MobileTouchInput {
     }
 
     public void advanceTime(long now) {
+        if (runTargetSince >= 0) runArmed = now - runTargetSince >= RUN_LOCK_HOLD_MS;
         if (drag != -1 || multiA != -1) return;
         for (Finger finger : fingers.values()) {
             if (finger.zone == Zone.TARGET && !finger.dragged && !finger.consumed && now - finger.downAt >= HOLD_MS) {
@@ -166,6 +169,7 @@ public final class MobileTouchInput {
     public boolean isRunLockShown() { return runReach || runArmed; }
     /** Releasing now locks auto run. */
     public boolean isRunLockArmed() { return runArmed; }
+    public boolean isRunLockPending() { return runTargetSince >= 0 && !runArmed; }
     /** Auto run started here and no forward or backward input has cancelled it since. */
     public boolean isAutoRunning() { return autoRun; }
     /** Auto run was toggled from a menu. WoW ends it on forward or backward movement. */
@@ -178,7 +182,7 @@ public final class MobileTouchInput {
         if (finger != null) { finger.x = x; finger.y = y; }
     }
 
-    public void move(int id, float x, float y, float stickX, float stickY, float radius) {
+    public void move(int id, float x, float y, float stickX, float stickY, float radius, long now) {
         Finger finger = fingers.get(id);
         if (finger == null) return;
         float dx = x - finger.x, dy = y - finger.y;
@@ -209,7 +213,10 @@ public final class MobileTouchInput {
             setKey(Key.FORWARD, y - stickY < -radius * .24f);
             setKey(Key.BACK, y - stickY > radius * .24f);
             runReach = y - stickY < -radius * .9f && Math.abs(x - stickX) < radius;
-            runArmed = Math.hypot(x - stickX, y - (stickY - radius * RUN_LOCK_OFFSET)) <= radius * RUN_LOCK_RADIUS;
+            boolean onTarget = Math.hypot(x - stickX, y - (stickY - radius * RUN_LOCK_OFFSET)) <= radius * RUN_LOCK_RADIUS;
+            if (!onTarget) runTargetSince = -1;
+            else if (runTargetSince < 0) runTargetSince = now;
+            runArmed = onTarget && now - runTargetSince >= RUN_LOCK_HOLD_MS;
         } else if (inspectMode && finger.zone == Zone.UI) sink.hover(x, y);
         else if (finger.consumed) return;
         else if (id == camera && finger.dragged && (dx != 0 || dy != 0)) {
@@ -247,6 +254,7 @@ public final class MobileTouchInput {
                 autoRun = true;
             }
             runReach = runArmed = false;
+            runTargetSince = -1;
         } else if (id == camera) {
             camera = -1;
             setCamera(false);
@@ -309,6 +317,7 @@ public final class MobileTouchInput {
         fingers.clear();
         stick = camera = drag = multiA = multiB = -1;
         runReach = runArmed = false;
+        runTargetSince = -1;
         setCamera(false);
         for (Key key : Key.values()) setKey(key, false);
     }

@@ -19,8 +19,8 @@ phone and an arrow. Drag it aside if it covers something, and tap it to open
 the toolbar. Tap **Play** after entering the world.
 
 The toolbar ends with one switch: **Play | Menus**. The current mode is the
-blue half. Tapping the other half switches. Tapping the current half repeats
-its hint.
+blue half. Tapping the other half switches. Each mode hint appears only
+once per game session.
 
 | Mode | On screen | Touches |
 | --- | --- | --- |
@@ -29,8 +29,9 @@ its hint.
 | Inspect, part of Menus | The Inspect key turns blue and the brackets turn silver | Touch or slide over anything to read its tooltip without clicking |
 
 Map, Bags, Keyboard and every window opened from the touch menu switch to
-Menus by themselves. Each mode change shows a short hint: over the world in
-Play, and at the bottom in Menus so it never covers a window.
+Menus by themselves. The first use of each mode in a session shows a short
+hint: over the world in Play, and at the bottom in Menus so it never covers
+a window.
 
 The **touch guide** dims the game, outlines every control and the camera
 area, and says what each one does. It appears the first time each mode is
@@ -38,6 +39,9 @@ used, and again from **Menu → Touch controls → Touch guide**. Any tap closes
 it without reaching the game.
 
 ## Feedback
+
+Instructional banners, including auto run and Dive, appear once per game
+session. The touch guide remains available from the menu.
 
 - Keys sink onto their lip and turn blue while pressed.
 - Holding the game shows a ring that fills around the finger. When it
@@ -52,8 +56,9 @@ it without reaching the game.
 ## Moving and auto run
 
 Push the stick past its ring toward the top and a runner appears above it.
-Slide onto the runner and let go to lock auto run, like the sprint lock in
-mobile shooters. The knob then shows the runner. Strafe with the stick or
+Slide farther up onto the runner, hold for just under half a second until
+it turns blue, then let go to lock auto run. A quick slide past it will not
+lock running. The knob then shows the runner. Strafe with the stick or
 drag the world to steer. Pushing forward or backward ends auto run, as it
 does in WoW. **Menu → Movement → Auto run** toggles it as well.
 
@@ -182,7 +187,7 @@ extra bottom bars hide for touch mode and restore on opt-out.
 | Read a tooltip or compare equipment without using it | Menus → Inspect |
 | Change a hotbar action | Hold the slot, then use the picker |
 | Movement | Left stick, including diagonal movement and strafing |
-| Auto run | Slide the stick up onto the runner, or Menu → Movement |
+| Auto run | Hold the stick on the runner until blue and release, or Menu → Movement |
 | Camera turn | Drag in the empty area above or beside the actions |
 | Camera zoom | Pinch with two fingers in the camera area |
 | Drag a window, slider, spellbook entry or bag item | Menus, then drag |
