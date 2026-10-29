@@ -70,7 +70,10 @@ CURATED_VMSTAT = (
     "pswpin", "pswpout", "pgfault", "pgmajfault", "pgscan_kswapd",
     "pgscan_direct", "pgsteal_kswapd", "pgsteal_direct", "oom_kill",
 )
-KILL_PATTERN = re.compile(r"(am_kill|lowmemorykiller|lmkd|am_proc_died)", re.I)
+KILL_PATTERN = re.compile(r"(am_kill|lowmemorykiller|lmkd|am_proc_died|killinfo)", re.I)
+LOW_MEMORY_KILL_PATTERN = re.compile(
+    r"\bkillinfo\s*:|\b(?:lowmemorykiller|lmkd)\s*:\s*(?:Kill(?:ing)?\b|Reclaim\b)|"
+    r"\bam_kill\s*:.*(?:low memory|low_memory|lmkd)", re.I)
 
 SAMPLE_COMMAND = (
     "cat /proc/meminfo; echo ==PSI==; cat /proc/pressure/memory 2>/dev/null; "
@@ -356,14 +359,14 @@ def associate_markers(samples, marks):
     return result
 
 
-def scan_kills(events_path, limit=25):
+def scan_kills(events_path, limit=25, pattern=KILL_PATTERN):
     found = []
     if not events_path.exists():
         return found
     try:
         with events_path.open(errors="replace") as handle:
             for line in handle:
-                if KILL_PATTERN.search(line):
+                if pattern.search(line):
                     found.append(line.rstrip("\n"))
     except OSError:
         return found
@@ -402,6 +405,7 @@ def summarize(samples, marks, events_path, args):
         "meminfo_processes": [],
         "markers": marks,
         "kills": scan_kills(events_path),
+        "lmkd_kills": scan_kills(events_path, pattern=LOW_MEMORY_KILL_PATTERN),
     }
 
     for kind in ("some", "full"):
@@ -459,8 +463,8 @@ def summarize(samples, marks, events_path, args):
         checks.append({"name": "min_swapfree", "ok": floor >= minimum_swap,
                        "detail": "%.0f MB swap floor (target %.0f MB)" % (floor, minimum_swap)})
     if args.fail_on_lmkd_kill:
-        checks.append({"name": "no_lmkd_kills", "ok": not summary["kills"],
-                       "detail": "%d kill/low-memory event lines" % len(summary["kills"])})
+        checks.append({"name": "no_lmkd_kills", "ok": not summary["lmkd_kills"],
+                       "detail": "%d recent low-memory kill event lines" % len(summary["lmkd_kills"])})
     summary["checks"] = checks
     summary["pass"] = all(check["ok"] for check in checks)
     return summary
@@ -891,13 +895,14 @@ unrelated_counter 999
         args = argparse.Namespace(output=output, min_memavailable_mb=600,
                                   min_swapfree_mb=0, fail_on_lmkd_kill=True)
         events = temp / "run.jsonl.events.log"
-        events.write_text("100 1 I am_kill: [0,1234,com.example,900,cached]\n"
+        events.write_text("100 1 I am_kill: [0,1234,com.example,900,low memory]\n"
                           "100 2 I am_proc_died: [0,1234,com.example]\n")
         summary = summarize(samples, marks, events, args)
         check("summary_min", summary["memavailable_kb"]["min"] == 700000, str(summary["memavailable_kb"]))
         check("summary_psi", abs(summary["psi"]["some"]["avg10_max"] - 20.0) < 0.01, str(summary["psi"]))
         check("summary_checks_fail", summary["checks"] and not summary["pass"], str(summary["checks"]))
         check("summary_kills", len(summary["kills"]) == 2, str(summary["kills"]))
+        check("summary_lmkd_kills", len(summary["lmkd_kills"]) == 1, str(summary["lmkd_kills"]))
         check("summary_marker_association",
               summary["markers"][0]["sample_index"] == 1
               and summary["markers"][1]["sample_index"] == 3,
@@ -913,6 +918,20 @@ unrelated_counter 999
         report = format_summary(summary)
         check("format_summary", "WeHavePhones memory summary" in report
               and "Wow-ARM64.exe" in report and "FAIL" in report, report[:200])
+        events.write_text("100 1 I am_proc_died: [0,1234,com.example]\n"
+                          "100 2 I am_kill: [0,1234,com.example,900,cached]\n"
+                          "100 3 D lmkd: No processes to kill with adj score >= 201\n")
+        normal_exit = summarize(samples, marks, events, args)
+        check("normal_exit_is_not_lmkd_kill", normal_exit["pass"] and not normal_exit["lmkd_kills"],
+              str(normal_exit["checks"]))
+        events.write_text("100 1 I killinfo: [1234,10001,900,0,65536]\n")
+        samsung_kill = summarize(samples, marks, events, args)
+        check("samsung_killinfo_fails_verdict", not samsung_kill["pass"]
+              and len(samsung_kill["kills"]) == 1 and len(samsung_kill["lmkd_kills"]) == 1,
+              str(samsung_kill["checks"]))
+        events.write_text("100 1 I lmkd: Kill 'com.example' (1234), uid 10001 to free 65536kB\n"
+                          "100 2 I lmkd: Reclaim 'com.example' (1234), uid 10001 to free 65536kB\n")
+        check("lmkd_kill_and_reclaim", len(scan_kills(events, pattern=LOW_MEMORY_KILL_PATTERN)) == 2)
         summary_path = temp / "summary-out.json"
         summary_path.write_text(json.dumps(summary))
         reloaded = json.loads(summary_path.read_text())
