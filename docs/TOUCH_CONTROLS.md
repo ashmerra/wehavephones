@@ -109,7 +109,7 @@ fractions of the game's height, so neither covers the other on any screen.
 - If keys would be smaller than 40 dp, Map and Bags, or Keyboard and Inspect,
   move into the touch menu. Esc, Menu and the switch always remain.
 
-On wide Classic Era screens, eight stock action buttons form a four-column,
+On wide Classic Era and Retail screens, eight stock action buttons form a four-column,
 two-row grid at the bottom right. Four more sit near the bottom middle.
 Tablet shapes use a four-column, three-row grid. Square shapes use three
 columns and four rows. Both put the page switcher at the lower left. Class,
@@ -156,6 +156,11 @@ stays on the cursor when changing pages, ready for a normal placement click.
 Bag paging is available out of combat. Opening, using and moving items still
 uses the game's stock container buttons and rules.
 
+Retail's separate bags also have a **Reagents** page. Combined inventory keeps
+its stock combined view, fitted alongside any other open window. Retail's
+bank uses its own tabs. **Skills** in the touch menu opens Retail's profession
+book. The spellbook and profession windows fit below the native toolbar.
+
 Touch mode enables stock equipment comparison tooltips and restores the
 prior preference on opt-out. Inspect never uses, equips, casts or drags.
 
@@ -166,6 +171,10 @@ its spell. A picker opens with **Spells**, **Items** and **Macros**. Tap a choic
 to place it in that slot. Passive and unlearned spells are excluded. Spells
 retain their rank. Items come from the player's bags. Macros include account
 and character macros.
+
+Retail uses its current spellbook API. The picker excludes future spells,
+inactive specializations and passive spells, and includes the reagent bag
+in Items. Classic keeps its ranked spellbook behavior.
 
 **Clear slot** removes its action. **Undo** restores the last edited slot.
 **Cancel** leaves the slot unchanged. The picker refuses to open while an item
@@ -267,6 +276,43 @@ See the [interaction audit and mobile MMO research](TOUCH_CONTROL_RESEARCH_2026_
 for activity coverage, design choices and validation boundaries.
 
 ## Device validation
+
+### October 28 Retail compatibility pass
+
+Retail 12.1.5.70575 was tested on the S23+ with a 1280×720 game viewport,
+D3D11 and the existing low graphics settings. Retail previously skipped the
+touch HUD layout entirely. Its desktop bar, oversized chat and minimap
+occupied the native touch regions. The updated layout uses the same action
+rectangles as Classic, with Retail's stock secure buttons and current APIs.
+
+Holding a slot opened the spell picker. Choosing an action and Undo restored
+the original assignment. The stock character, inventory, spellbook and
+profession windows opened from the touch menu and fitted the workspace.
+The profession book needed its own frame name. Retail's bag count excludes
+the reagent bag, which is now included separately in the picker and strip.
+
+A three-pointer movement, camera and jump gesture worked. After release the
+game reported zero movement and inactive mouselook. Native targeting selected
+a living Murloc. Charge and Slam worked in a short fight, and a hotbar hold
+in combat did not open the editor. The observer recorded no Lua errors.
+Combat also revealed a stock objective-tracker reanchor over the actions.
+The fix keeps the unprotected Retail tracker fitted during those updates.
+Protected replacement trackers still defer until combat ends.
+
+The touch suite passed 251,543 native assertions and 1,353 window and inventory
+scenarios. Retail fixtures remove deprecated globals, exercise spell and
+item Undo, reagent paging, combined bags, combat guards and restoration, and
+export Retail geometry across eleven aspect ratios and three UI sizes.
+The launch, runtime, addon, memory, asset, device and gamepad checks passed.
+Both build paths succeeded. The final Dev package was installed and launched.
+Its crash buffer contained only the older October 27 system crash-dump helper
+entry, with no new Android application crash.
+
+Initial memory samples remain tight. Game PSS plus SwapPss stayed around
+3.7 GiB, with about 0.8 GiB of separately reported Graphics. A same-process
+addon reload comparison does not establish a cold-launch saving or long-session
+stability. The extended run must be assessed separately. Starting-area tests
+do not establish raid, city, vehicle, pet battle or advanced class behavior.
 
 ### October 28 modes, menu and layout pass
 

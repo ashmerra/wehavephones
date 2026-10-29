@@ -7,12 +7,12 @@ local extraBars = {false,false,true,false,false,false,false}
 local actions = {[1]={"spell",101}, [61]={"item",500}}
 local targetExists, targetDead = false, false
 local buffs = 0
-WOW_PROJECT_CLASSIC, WOW_PROJECT_ID, BOOKTYPE_SPELL = 2, 2, "spell"
+WOW_PROJECT_MAINLINE, WOW_PROJECT_CLASSIC, WOW_PROJECT_ID, BOOKTYPE_SPELL = 1, 2, 2, "spell"
 tinsert, UISpecialFrames, unpack = table.insert, {}, table.unpack or unpack
 VIEWABLE_ACTION_BAR_PAGES = {1,1,1,1,1,1}
 local methods = {}
 local secureHooks = {}
-function methods:SetScale(value) assert(not combat) self.scale=value end
+function methods:SetScale(value) assert(not combat or self==ObjectiveTrackerFrame and not self:IsProtected()) self.scale=value end
 function methods:GetScale() return self.scale or 1 end
 function methods:GetAlpha() return self.alpha or 1 end
 function methods:SetAlpha(value) self.alpha=value end
@@ -719,10 +719,167 @@ assert(PartyFrame.MemberFrame1.point[2]==PartyFrame and PartyFrame.MemberFrame1.
     and PartyFrame.MemberFrame1:GetScale()==1 and PartyFrame.Background:GetAlpha()==.6,
     "pooled party frames and their original backdrop restore on opt-out")
 assert(next(held)==nil and next(WeHavePhonesTouchDB.cvars)==nil)
-WOW_PROJECT_ID=1
+WOW_PROJECT_ID=3
 boot(true)
 active.scripts.OnEvent(active,"QUEST_LOG_UPDATE")
 assert(MicroMenuContainer.visible and BagsBar.visible and StanceBar:GetScale()==1,
     "other WoW editions retain their stock HUD even after quest events")
 boot(false)
+-- Retail has no legacy spellbook globals, a reagent bag and pooled stock
+-- containers. Exercise the real branch with those old entry points absent.
+WOW_PROJECT_ID=WOW_PROJECT_MAINLINE
+WeHavePhonesTouchDB=nil
+GetNumSpellTabs,GetSpellTabInfo,GetSpellBookItemInfo,IsPassiveSpell=nil,nil,nil,nil
+GetSpellBookItemName,GetSpellBookItemTexture,PickupSpellBookItem=nil,nil,nil
+GetItemInfo,PickupItem,PickupSpell,UnitBuff=nil,nil,nil,nil
+Constants={InventoryConstants={NumBagSlots=4,NumReagentBagSlots=1}}
+Enum={SpellBookSpellBank={Player=0},SpellBookItemType={Spell=1,FutureSpell=2,Flyout=4}}
+local retailPickup
+C_SpellBook={
+    GetNumSpellBookSkillLines=function() return 3 end,
+    GetSpellBookSkillLineInfo=function(tab)
+        return {itemIndexOffset=(tab-1)*5,numSpellBookItems=5,shouldHide=tab==2,offSpecID=tab==3 and 71 or nil}
+    end,
+    GetSpellBookItemInfo=function(slot,bank)
+        assert(bank==0 and slot<=5,"hidden and inactive skill lines are not enumerated")
+        return {itemType=slot==3 and 2 or slot==5 and 4 or 1,name="Retail spell "..slot,iconID=slot,
+            isPassive=slot==2,isOffSpec=slot==4}
+    end,
+    PickupSpellBookItem=function(slot,bank) assert(bank==0) retailPickup=slot cursor={"spell",200+slot} end,
+}
+C_Item={GetItemInfo=function() return "Retail reagent" end,PickupItem=function(id) cursor={"item",id} end}
+C_Spell={PickupSpell=function(id) cursor={"spell",id} end}
+C_UnitAuras={GetBuffDataByIndex=function(_,i) if i<=buffs then return {} end end}
+MainActionBar=CreateFrame("Frame","MainActionBar",UIParent)
+for _,name in ipairs({"ActionBarPageNumber","EndCaps","BorderArt"}) do
+    MainActionBar[name]=CreateFrame("Frame",nil,MainActionBar)
+    MainActionBar[name]:Show()
+end
+MicroMenu=CreateFrame("Frame","MicroMenu",UIParent)
+MicroMenu:Show()
+ObjectiveTrackerFrame=CreateFrame("Frame","ObjectiveTrackerFrame",UIParent)
+ObjectiveTrackerFrame:SetSize(280,400)
+ObjectiveTrackerFrame:SetPoint("TOPRIGHT",UIParent,"TOPRIGHT",-20,-200)
+ObjectiveTrackerFrame:Show()
+QuestWatchFrame=nil
+Questie_BaseFrame=nil
+ContainerFrame1.bags=nil
+KEYRING_CONTAINER=nil
+ContainerFrameCombinedBags=CreateFrame("Frame","ContainerFrameCombinedBags",UIParent)
+ContainerFrameCombinedBags:SetSize(550,500)
+local retailContainers={ContainerFrameCombinedBags,ContainerFrame1,ContainerFrame2}
+ContainerFrameUtil_EnumerateContainerFrames=function() return ipairs(retailContainers) end
+CloseAllBags=function() for _,object in ipairs(retailContainers) do object:Hide() end end
+CloseAllBags()
+OpenBag=function(id)
+    assert(id==5,"reagent bag uses its actual Retail ID")
+    ContainerFrame2.id=id
+    ContainerFrame2:Show()
+    UpdateContainerFrameAnchors()
+end
+OpenAllBags=function() ContainerFrameCombinedBags:Show() UpdateContainerFrameAnchors() end
+C_Container.GetContainerNumSlots=function(bag) return (bag==0 or bag==5) and 1 or 0 end
+C_Container.GetContainerItemInfo=function(bag) if bag==5 then return {itemID=501,iconFileID=56} end end
+C_Container.PickupContainerItem=function(bag,slot) assert(bag==5 and slot==1) cursor={"item",501} end
+for i=1,12 do _G["ActionButton"..i]:SetSize(45,45) end
+for name,size in pairs({PlayerSpellsFrame={1200,650},ProfessionsBookFrame={550,550},ProfessionsFrame={1000,650}}) do
+    local object=CreateFrame("Frame",name,UIParent)
+    object:SetSize(unpack(size))
+    object:SetPoint("TOPLEFT",UIParent,"TOPLEFT",10,-10)
+    panelSizes[name]=size
+end
+actionPage=1
+C_ActionBar.SetActionBarPage(1)
+UIParent:SetSize(1600,900)
+boot(true)
+assert(not MicroMenu.visible and not MainActionBar.EndCaps.visible and not MainActionBar.BorderArt.visible,
+    "Retail desktop shortcuts and art leave the touch workspace free")
+assert(ObjectiveTrackerFrame.point[3]=="CENTER" and PlayerFrame.point[3]=="TOPLEFT",
+    "Retail's tracker and Edit Mode unit frames fit the touch layout")
+close(ActionButton1:GetScale()*45,36*1.35,"Retail actions have the same physical size as Classic actions")
+assert(ActionButton1.scripts.OnMouseUp,"Retail hotbars can be edited by holding")
+assert(held["CTRL-SHIFT-F6"]=="TOGGLEPROFESSIONBOOK","Retail opens its profession book instead of the removed Skills binding")
+if GEOMETRY_PATH then geometry=assert(io.open(GEOMETRY_PATH,"a")) end
+for _,scale in ipairs({1.25,1.5,1.75}) do
+    WeHavePhonesTouchDB.touchScale=scale
+    for _,aspect in ipairs({1,6/5,5/4,4/3,3/2,16/10,16/9,2,19.5/9,21/9,32/9}) do
+        local height=768/scale
+        local width=height*aspect
+        UIParent:SetSize(width,height)
+        active.scripts.OnEvent(active,"DISPLAY_SIZE_CHANGED")
+        for i=1,12 do exportGeometry(_G["ActionButton"..i],width,height,"action") end
+        for _,info in ipairs({{"WeHavePhonesTouchPager","pager"},{"MinimapCluster","minimap"},{"PlayerFrame","unit"},
+            {"TargetFrame","unit"},{"BuffFrame","aura"},{"DebuffFrame","aura"}}) do exportGeometry(_G[info[1]],width,height,info[2]) end
+        local left,_,w=topRect(TargetFrame)
+        local zone=aspect<1.59 and select(1,topRect(MinimapCluster)) or width-(.312+math.max(.42,math.min(.75,aspect-1.1)))*height
+        assert(left+w<=zone,"Retail unit frames cannot reach the toolbar or minimap")
+        for _,name in ipairs({"PlayerSpellsFrame","ProfessionsBookFrame","ProfessionsFrame","WorldMapFrame"}) do
+            checkWorkspace({name},0)
+            workspaceScenarios=workspaceScenarios+1
+        end
+    end
+end
+if geometry then geometry:close() end
+closeWorkspace()
+ContainerFrame1.bags=nil
+UIParent:SetSize(1600,900)
+WeHavePhonesTouchDB.touchScale=1.5
+active.scripts.OnEvent(active,"DISPLAY_SIZE_CHANGED")
+edit(ActionButton1)
+assert(objects.WeHavePhonesTouchChoice1.entry.name=="Retail spell 1" and objects.WeHavePhonesTouchChoice2.entry==nil,
+    "Retail spell picker excludes passive, future, flyout and off-spec entries")
+objects.WeHavePhonesTouchChoice1.scripts.OnClick(objects.WeHavePhonesTouchChoice1)
+assert(retailPickup==1 and actions[1][2]==201 and not cursor,"Retail spells retain their book slot and bank")
+edit(ActionButton1)
+clickText("Undo")
+assert(actions[1][2]==101,"Retail spell Undo uses C_Spell without deprecated globals")
+edit(ActionButton1)
+clickText("Items")
+assert(objects.WeHavePhonesTouchChoice1.entry.name=="Retail reagent","Retail item choices include the reagent bag")
+objects.WeHavePhonesTouchChoice1.scripts.OnClick(objects.WeHavePhonesTouchChoice1)
+assert(actions[1][2]==501)
+edit(ActionButton1)
+clickText("Clear slot")
+edit(ActionButton1)
+clickText("Undo")
+assert(actions[1][2]==501,"Retail item Undo uses C_Item")
+clickText("Cancel")
+ContainerFrameCombinedBags:Show()
+UpdateContainerFrameAnchors()
+assert(ContainerFrameCombinedBags.point[3]=="CENTER" and not objects.WeHavePhonesTouchInventory.visible,
+    "Retail combined inventory is fitted without pretending it is a single bag page")
+CloseAllBags()
+ContainerFrame1.id=0
+ContainerFrame1:Show()
+UpdateContainerFrameAnchors()
+assert(objects.WeHavePhonesTouchBag5 and objects.WeHavePhonesTouchInventory.visible,
+    "Retail separate bags include the reagent page")
+cursor={"item",900}
+objects.WeHavePhonesTouchBag5.scripts.OnClick()
+assert(ContainerFrame2.visible and not ContainerFrame1.visible and cursor[2]==900,
+    "Retail bag paging preserves a carried item")
+assert(objects.WeHavePhonesTouchBag5.active,"Retail reagent page is highlighted")
+cursor=nil
+CloseAllBags()
+combat=true
+local beforeRetail=layout
+ObjectiveTrackerFrame:SetPoint("TOPRIGHT",UIParent,"TOPRIGHT",0,-300)
+assert(ObjectiveTrackerFrame.point[3]=="CENTER","Retail's unprotected tracker stays clear of actions during combat")
+ObjectiveTrackerFrame.protected=true
+ObjectiveTrackerFrame:SetPoint("TOPRIGHT",UIParent,"TOPRIGHT",0,-300)
+assert(ObjectiveTrackerFrame.point[3]=="TOPRIGHT","protected replacement trackers defer combat layout")
+ObjectiveTrackerFrame.protected=false
+pageClick("WeHavePhonesTouchPage2")
+active.scripts.OnEvent(active,"DISPLAY_SIZE_CHANGED")
+assert(actionPage==2 and layout==beforeRetail,"Retail paging stays secure and geometry waits for combat to end")
+active.scripts.OnEvent(active,"PLAYER_REGEN_DISABLED")
+edit(ActionButton1)
+assert(not objects.WeHavePhonesTouchEditor.visible,"Retail editor cannot open in combat")
+combat=false
+active.scripts.OnEvent(active,"PLAYER_REGEN_ENABLED")
+boot(false)
+assert(MicroMenu.visible and MainActionBar.EndCaps.visible and MainActionBar.BorderArt.visible,
+    "Retail stock shortcuts and art restore on opt-out")
+assert(ObjectiveTrackerFrame.point[3]=="TOPRIGHT" and ObjectiveTrackerFrame:GetScale()==1,
+    "Retail tracker geometry restores on opt-out")
 print("Touch addon PASS ("..workspaceScenarios.." window and inventory scenarios, paged actions, editing, combat and restoration)")

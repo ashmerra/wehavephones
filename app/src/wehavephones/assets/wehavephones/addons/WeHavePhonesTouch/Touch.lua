@@ -13,6 +13,13 @@ local ACTION_SCALE = 1.35
 -- native and Lua boundary, whatever the rounding. Keep in step with MobileTouchLayout.
 local COMPACT = 1.59
 local WHITE = "Interface\\Buttons\\WHITE8X8"
+local retail = WOW_PROJECT_ID == WOW_PROJECT_MAINLINE
+local function SupportedLayout()
+    return retail or WOW_PROJECT_ID == WOW_PROJECT_CLASSIC
+end
+local function LastPlayerBag()
+    return retail and (Constants.InventoryConstants.NumBagSlots+Constants.InventoryConstants.NumReagentBagSlots) or 4
+end
 
 -- Overrides last for this UI session and never overwrite saved bindings.
 local bindings = {
@@ -25,7 +32,7 @@ local bindings = {
     F7 = "TOGGLERUN", G = "ASSISTTARGET", F11 = "SITORSTAND",
     -- The touch menu. Modifier chords on function keys stay clear of letters players type.
     ["CTRL-SHIFT-F1"] = "TOGGLECHARACTER0", ["CTRL-SHIFT-F2"] = "TOGGLESPELLBOOK", ["CTRL-SHIFT-F3"] = "TOGGLETALENTS",
-    ["CTRL-SHIFT-F4"] = "TOGGLEQUESTLOG", ["CTRL-SHIFT-F5"] = "TOGGLESOCIAL", ["CTRL-SHIFT-F6"] = "TOGGLECHARACTER1",
+    ["CTRL-SHIFT-F4"] = "TOGGLEQUESTLOG", ["CTRL-SHIFT-F5"] = "TOGGLESOCIAL", ["CTRL-SHIFT-F6"] = retail and "TOGGLEPROFESSIONBOOK" or "TOGGLECHARACTER1",
     ["CTRL-SHIFT-F7"] = "TOGGLECHARACTER2", ["CTRL-SHIFT-F8"] = "TOGGLECHARACTER4", ["CTRL-SHIFT-F9"] = "TOGGLEPETBOOK",
     ["CTRL-SHIFT-F10"] = "TOGGLEGAMEMENU", ["CTRL-SHIFT-F11"] = "FOLLOWTARGET", ["CTRL-SHIFT-F12"] = "REPLY",
     ["SHIFT-F7"] = "NAMEPLATES",
@@ -196,26 +203,43 @@ end
 local function Collect()
     entries = {}
     if category == "Spells" then
-        for tab = 1, GetNumSpellTabs() do
-            local _, _, offset, count = GetSpellTabInfo(tab)
-            for slot = offset + 1, offset + count do
-                local kind = GetSpellBookItemInfo(slot, BOOKTYPE_SPELL)
-                if kind == "SPELL" and not IsPassiveSpell(slot, BOOKTYPE_SPELL) then
-                    local name, rank = GetSpellBookItemName(slot, BOOKTYPE_SPELL)
-                    local bookSlot = slot
-                    if name then tinsert(entries, {name=name .. (rank and rank ~= "" and "\n" .. rank or ""),
-                        icon=GetSpellBookItemTexture(slot, BOOKTYPE_SPELL),
-                        pickup=function() PickupSpellBookItem(bookSlot, BOOKTYPE_SPELL) end}) end
+        if retail then
+            local bank = Enum.SpellBookSpellBank.Player
+            for tab = 1, C_SpellBook.GetNumSpellBookSkillLines() do
+                local line = C_SpellBook.GetSpellBookSkillLineInfo(tab)
+                if line and not line.shouldHide and not line.offSpecID then
+                    for slot = line.itemIndexOffset+1, line.itemIndexOffset+line.numSpellBookItems do
+                        local info = C_SpellBook.GetSpellBookItemInfo(slot, bank)
+                        if info and info.itemType == Enum.SpellBookItemType.Spell and not info.isPassive and not info.isOffSpec then
+                            local bookSlot = slot
+                            tinsert(entries, {name=info.name, icon=info.iconID,
+                                pickup=function() C_SpellBook.PickupSpellBookItem(bookSlot, bank) end})
+                        end
+                    end
+                end
+            end
+        else
+            for tab = 1, GetNumSpellTabs() do
+                local _, _, offset, count = GetSpellTabInfo(tab)
+                for slot = offset + 1, offset + count do
+                    local kind = GetSpellBookItemInfo(slot, BOOKTYPE_SPELL)
+                    if kind == "SPELL" and not IsPassiveSpell(slot, BOOKTYPE_SPELL) then
+                        local name, rank = GetSpellBookItemName(slot, BOOKTYPE_SPELL)
+                        local bookSlot = slot
+                        if name then tinsert(entries, {name=name .. (rank and rank ~= "" and "\n" .. rank or ""),
+                            icon=GetSpellBookItemTexture(slot, BOOKTYPE_SPELL),
+                            pickup=function() PickupSpellBookItem(bookSlot, BOOKTYPE_SPELL) end}) end
+                    end
                 end
             end
         end
     elseif category == "Items" then
-        for bag = 0, 4 do
+        for bag = 0, LastPlayerBag() do
             for slot = 1, C_Container.GetContainerNumSlots(bag) do
                 local info = C_Container.GetContainerItemInfo(bag, slot)
                 if info and not info.isLocked then
                     local bagID, bagSlot = bag, slot
-                    local name = GetItemInfo(info.hyperlink or info.itemID) or "Item"
+                    local name = (retail and C_Item.GetItemInfo or GetItemInfo)(info.hyperlink or info.itemID) or "Item"
                     tinsert(entries, {name=name, icon=info.iconFileID,
                         pickup=function() C_Container.PickupContainerItem(bagID, bagSlot) end})
                 end
@@ -261,8 +285,8 @@ local function Undo()
     if not undo or not CanEdit() then return end
     local previous = Snapshot(undo.slot)
     if not undo.kind then PickupAction(undo.slot)
-    elseif undo.kind == "spell" then PickupSpell(undo.id)
-    elseif undo.kind == "item" then PickupItem(undo.id)
+    elseif undo.kind == "spell" then (retail and C_Spell.PickupSpell or PickupSpell)(undo.id)
+    elseif undo.kind == "item" then (retail and C_Item.PickupItem or PickupItem)(undo.id)
     elseif undo.kind == "macro" then PickupMacro(undo.id)
     else Notice("This action type must be restored from its own game window.") return end
     if undo.kind and not GetCursorInfo() then Notice("That action is no longer available.") return end
@@ -381,6 +405,7 @@ end
 -- decisions remain Blizzard's own buttons and confirmation dialogs.
 local workspaceNames = {
     "CharacterFrame", "SpellBookFrame", "QuestLogFrame", "QuestLogDetailFrame", "QuestLogPopupDetailFrame",
+    "PlayerSpellsFrame", "ProfessionsBookFrame", "ProfessionsFrame",
     "PlayerTalentFrame", "FriendsFrame", "PVPFrame", "PVPParentFrame", "MacroFrame", "InspectFrame", "DressUpFrame",
     "GossipFrame", "QuestFrame", "MerchantFrame", "BankFrame", "MailFrame", "TradeFrame",
     "ClassTrainerFrame", "TradeSkillFrame", "CraftFrame", "AuctionFrame", "AuctionHouseFrame",
@@ -405,7 +430,8 @@ local function ShowBagPage(bag)
 end
 
 local function InventoryStrip(bags)
-    if #bags == 0 or (editor and editor:IsShown()) then
+    -- Retail's combined bag has its own inventory navigation. Preserve that mode.
+    if #bags == 0 or (retail and ContainerFrameCombinedBags and ContainerFrameCombinedBags:IsShown()) or (editor and editor:IsShown()) then
         if inventoryStrip then inventoryStrip:Hide() end
         return 0
     end
@@ -414,12 +440,12 @@ local function InventoryStrip(bags)
         inventoryStrip:SetSize(434, 38)
         inventoryStrip:SetFrameStrata("DIALOG")
         inventoryStrip.bags, inventoryStrip.bank = {}, {}
-        for bag = 0, 4 do
+        for bag = 0, LastPlayerBag() do
             local id = bag
             inventoryStrip.bags[bag+1] = Button(inventoryStrip, "WeHavePhonesTouchBag"..bag,
-                bag == 0 and "Pack" or "Bag "..bag, bag*64, 0, 58, 38, function() ShowBagPage(id) end)
+                bag == 0 and "Pack" or bag == 5 and "Reagents" or "Bag "..bag, bag*64, 0, 58, 38, function() ShowBagPage(id) end)
         end
-        inventoryStrip.all = Button(inventoryStrip, "WeHavePhonesTouchAllBags", "All", 320, 0, 54, 38, function() ShowBagPage() end)
+        inventoryStrip.all = Button(inventoryStrip, "WeHavePhonesTouchAllBags", "All", (LastPlayerBag()+1)*64, 0, 54, 38, function() ShowBagPage() end)
         inventoryStrip.keys = Button(inventoryStrip, "WeHavePhonesTouchKeys", "Keys", 380, 0, 54, 38,
             function() if KEYRING_CONTAINER and ToggleBag then ShowBagPage(KEYRING_CONTAINER) end end)
         for bag = 5, 11 do
@@ -428,10 +454,11 @@ local function InventoryStrip(bags)
                 "Bank "..(bag-4), (bag-5)*54, -44, 50, 38, function() ShowBagPage(id) end)
         end
     end
-    local bank = BankFrame and BankFrame:IsShown()
+    -- Modern banks use their own tabs, rather than Classic's bag IDs 5 through 11.
+    local bank = not retail and BankFrame and BankFrame:IsShown()
     local rows = bank and 2 or 1
     local hasKeyring = KEYRING_CONTAINER ~= nil and ToggleBag ~= nil
-    inventoryStrip:SetWidth(hasKeyring and 434 or 374)
+    inventoryStrip:SetWidth(hasKeyring and 434 or (LastPlayerBag()+1)*64+54)
     inventoryStrip.keys:SetShown(hasKeyring)
     local scale = math.min(1, UIParent:GetWidth()*.94/inventoryStrip:GetWidth())
     SetRelativeScale(inventoryStrip, scale)
@@ -513,7 +540,7 @@ local function RememberHud(name, hide)
     local db = WeHavePhonesTouchDB
     db.hud = db.hud or {}
     if not db.hud[name] then
-        local state = {scale=object:GetScale(), alpha=object:GetAlpha(), points={}}
+        local state = {scale=object.GetScale and object:GetScale(), alpha=object:GetAlpha(), points={}}
         if hide then state.shown = object:IsShown() end
         for i = 1, object:GetNumPoints() do
             local point, relative, relativePoint, x, y = object:GetPoint(i)
@@ -543,7 +570,7 @@ local function RestoreHud()
     for name, state in pairs(states) do
         local object = HudObject(name)
         if object then
-            object:SetScale(state.scale)
+            if state.scale then object:SetScale(state.scale) end
             object:ClearAllPoints()
             for _, point in ipairs(state.points) do
                 object:SetPoint(point[1], HudObject(point[2]) or UIParent, point[3], point[4], point[5])
@@ -567,6 +594,11 @@ local function WorkspaceFrames()
         for _, name in ipairs(ContainerFrame1.bags) do
             local object = _G[name]
             if object and object:IsShown() and not seen[object] then bags[#bags+1] = object seen[object] = true end
+        end
+    end
+    if retail and ContainerFrameUtil_EnumerateContainerFrames then
+        for _, object in ContainerFrameUtil_EnumerateContainerFrames() do
+            if object:IsShown() and not seen[object] then bags[#bags+1] = object seen[object] = true end
         end
     end
     return panels, bags, seen
@@ -596,7 +628,7 @@ local function PackWorkspace(panels, bags, scale, width, height)
 end
 
 LayoutWorkspace = function()
-    if not enabled or WOW_PROJECT_ID ~= WOW_PROJECT_CLASSIC or InCombatLockdown() or positioningWorkspace then return end
+    if not enabled or not SupportedLayout() or InCombatLockdown() or positioningWorkspace then return end
     positioningWorkspace = true
     local panels, bags, visible = WorkspaceFrames()
     for object, state in pairs(workspaceOriginal) do
@@ -631,7 +663,7 @@ QueueWorkspace = function()
 end
 
 local function WatchWorkspace()
-    if WOW_PROJECT_ID ~= WOW_PROJECT_CLASSIC then return end
+    if not SupportedLayout() then return end
     for _, name in ipairs({"ShowUIPanel", "HideUIPanel", "UpdateUIPanelPositions", "UpdateContainerFrameAnchors"}) do
         if _G[name] and not workspaceHooks[name] then
             hooksecurefunc(name, QueueWorkspace)
@@ -644,7 +676,7 @@ end
 -- visibility or dimensions trigger a layout, without a frame-by-frame rewrite.
 local workspaceElapsed = 0
 frame:SetScript("OnUpdate", function(_, elapsed)
-    if not enabled or not applied or InCombatLockdown() then return end
+    if not enabled or not applied or not SupportedLayout() or InCombatLockdown() then return end
     workspaceElapsed = workspaceElapsed+elapsed
     if workspaceElapsed < .2 then return end
     workspaceElapsed = 0
@@ -652,7 +684,7 @@ frame:SetScript("OnUpdate", function(_, elapsed)
     local signature = {UIParent:GetWidth(), UIParent:GetHeight(), editor and editor:IsShown() and 1 or 0}
     for _, group in ipairs({panels, bags}) do
         for _, object in ipairs(group) do
-            signature[#signature+1] = object:GetName()
+            signature[#signature+1] = object:GetName() or tostring(object)
             signature[#signature+1] = object:GetWidth()
             signature[#signature+1] = object:GetHeight()
         end
@@ -757,14 +789,25 @@ local function PositionTopHud()
         local right = compact and minimapLeft-8 or width-(MINIMAP_RESERVE+ZONE_GAP+ToolbarZone())*height-8
         RememberHud("PlayerFrame")
         RememberHud("TargetFrame")
-        ApplyHud("PlayerFrame")
-        ApplyHud("TargetFrame")
-        local edge = TargetFrame:GetRight() and TargetFrame:GetRight()*RelativeScale(TargetFrame)
-            or (232+TargetFrame:GetWidth())*RelativeScale(TargetFrame)
-        local scale = math.max(.4, math.min(1, right/math.max(1, edge)))
-        if scale < 1 then
-            ApplyHud("PlayerFrame", scale)
-            ApplyHud("TargetFrame", scale)
+        if retail then
+            -- Retail's Edit Mode stores screen positions in absolute UI units. Scaling
+            -- the root alone can leave the unit frames in the stick or outside the game.
+            local scale = math.min(1, (right-16)/(PlayerFrame:GetWidth()+TargetFrame:GetWidth()+8))
+            for i, object in ipairs({PlayerFrame, TargetFrame}) do
+                SetRelativeScale(object, scale)
+                object:ClearAllPoints()
+                object:SetPoint("TOPLEFT", UIParent, "TOPLEFT", (8+(i-1)*(PlayerFrame:GetWidth()*scale+8))/scale, -8/scale)
+            end
+        else
+            ApplyHud("PlayerFrame")
+            ApplyHud("TargetFrame")
+            local edge = TargetFrame:GetRight() and TargetFrame:GetRight()*RelativeScale(TargetFrame)
+                or (232+TargetFrame:GetWidth())*RelativeScale(TargetFrame)
+            local scale = math.max(.4, math.min(1, right/math.max(1, edge)))
+            if scale < 1 then
+                ApplyHud("PlayerFrame", scale)
+                ApplyHud("TargetFrame", scale)
+            end
         end
         HookTop(PlayerFrame)
         HookTop(TargetFrame)
@@ -779,16 +822,18 @@ end
 local function BuffCount()
     local count = 0
     for i = 1, 40 do
-        if not (UnitBuff and UnitBuff("player", i)) then break end
+        local aura = retail and C_UnitAuras.GetBuffDataByIndex("player", i) or (UnitBuff and UnitBuff("player", i))
+        if not aura then break end
         count = count+1
     end
     return count
 end
 
 local PositionTracker
+local positioningTracker
 -- Auras are not protected. They follow buff changes in combat as well.
 local function PositionAuras()
-    if not enabled or WOW_PROJECT_ID ~= WOW_PROJECT_CLASSIC then return end
+    if not enabled or not SupportedLayout() then return end
     local width, height = UIParent:GetWidth(), UIParent:GetHeight()
     local compact = width/height < COMPACT
     -- Wide games: right-aligned under the toolbar band. Narrower games: under the minimap,
@@ -847,28 +892,40 @@ LateTracker = function()
 end
 
 PositionTracker = function()
-    local name = Questie_BaseFrame and Questie_BaseFrame:IsShown() and "Questie_BaseFrame" or "QuestWatchFrame"
+    if not enabled or not SupportedLayout() or positioningTracker then return end
+    local name = retail and "ObjectiveTrackerFrame" or Questie_BaseFrame and Questie_BaseFrame:IsShown() and "Questie_BaseFrame" or "QuestWatchFrame"
     local object = _G[name]
     if not object then return end
-    RememberHud(name)
-    if name == "Questie_BaseFrame" then RememberHud("QuestWatchFrame", true) end
-    local fit = math.min(1, LayoutWidth()/760)
-    -- Below the minimap and the player's buffs and debuffs.
-    local top = math.min(UIParent:GetHeight()*.65, UIParent:GetHeight()-math.max(minimapBottom+12, auraBottom+8))
-    local actionTop = UIParent:GetWidth()/UIParent:GetHeight()<COMPACT
-        and (64+(math.ceil(12/CompactColumns())-1)*54+36*ACTION_SCALE)*ActionFit() or (118+36*ACTION_SCALE)*fit
-    local height = math.max(32, top-actionTop-16)
-    local scale = math.min(1, LayoutWidth()*.30/math.max(1, object:GetWidth()), height/math.max(1, object:GetHeight()))
-    SetRelativeScale(object, scale)
-    object:ClearAllPoints()
-    object:SetPoint("TOPRIGHT", UIParent, "CENTER", (LayoutWidth()/2-16)/scale,
-        (top-UIParent:GetHeight()/2)/scale)
-    if not trackerHooks[object] then
-        for _, method in ipairs({"SetPoint", "SetSize", "SetHeight", "SetWidth", "Show"}) do
-            hooksecurefunc(object, method, QueueHud)
+    -- Retail reanchors its unprotected tracker when combat starts. Keep it clear
+    -- of the actions, while leaving protected replacements alone until combat ends.
+    if InCombatLockdown() and (not retail or object:IsProtected()) then return end
+    positioningTracker = true
+    local ok, problem = pcall(function()
+        RememberHud(name)
+        if name == "Questie_BaseFrame" then RememberHud("QuestWatchFrame", true) end
+        local fit = math.min(1, LayoutWidth()/760)
+        -- Below the minimap and the player's buffs and debuffs.
+        local top = math.min(UIParent:GetHeight()*.65, UIParent:GetHeight()-math.max(minimapBottom+12, auraBottom+8))
+        local actionTop = UIParent:GetWidth()/UIParent:GetHeight()<COMPACT
+            and (64+(math.ceil(12/CompactColumns())-1)*54+36*ACTION_SCALE)*ActionFit() or (118+36*ACTION_SCALE)*fit
+        local height = math.max(32, top-actionTop-16)
+        local scale = math.min(1, LayoutWidth()*.30/math.max(1, object:GetWidth()), height/math.max(1, object:GetHeight()))
+        SetRelativeScale(object, scale)
+        object:ClearAllPoints()
+        object:SetPoint("TOPRIGHT", UIParent, "CENTER", (LayoutWidth()/2-16)/scale,
+            (top-UIParent:GetHeight()/2)/scale)
+        if not trackerHooks[object] then
+            for _, method in ipairs({"SetPoint", "SetSize", "SetHeight", "SetWidth", "Show"}) do
+                hooksecurefunc(object, method, function()
+                    if positioningTracker then return end
+                    if InCombatLockdown() then PositionTracker() else QueueHud() end
+                end)
+            end
+            trackerHooks[object] = true
         end
-        trackerHooks[object] = true
-    end
+    end)
+    positioningTracker = false
+    if not ok then geterrorhandler()(problem) end
 end
 
 local function PlaceHud()
@@ -888,8 +945,8 @@ local function PlaceHud()
     end
     PositionClassBars()
     PositionTracker()
-    for _, name in ipairs({"MicroMenuContainer", "BagsBar", "MicroButtonAndBagsBar", "MainMenuBarPerformanceBarFrame"}) do RememberHud(name, true) end
-    if MainActionBar and MainActionBar.ActionBarPageNumber then MainActionBar.ActionBarPageNumber:Hide() end
+    for _, name in ipairs({"MicroMenuContainer", "MicroMenu", "BagsBar", "MicroButtonAndBagsBar", "MainMenuBarPerformanceBarFrame",
+        "MainActionBar.ActionBarPageNumber", "MainActionBar.EndCaps", "MainActionBar.BorderArt"}) do RememberHud(name, true) end
     if StatusTrackingBarManager then
         RememberHud("StatusTrackingBarManager")
         local scale = math.min(.35, LayoutWidth()/math.max(1, StatusTrackingBarManager:GetWidth()))
@@ -900,7 +957,7 @@ local function PlaceHud()
 end
 
 PositionHud = function()
-    if not enabled or WOW_PROJECT_ID ~= WOW_PROJECT_CLASSIC or InCombatLockdown() or positioningHud then return end
+    if not enabled or not SupportedLayout() or InCombatLockdown() or positioningHud then return end
     positioningHud = true
     -- Report an error, but never leave the guard set: that would stop every later layout.
     local ok, problem = pcall(PlaceHud)
@@ -910,9 +967,9 @@ end
 
 Layout = function()
     if not enabled or InCombatLockdown() then return end
-    if WOW_PROJECT_ID ~= WOW_PROJECT_CLASSIC then return end
-    if MultiBarBottomLeft then MultiBarBottomLeft:Hide() end
-    if MultiBarBottomRight then MultiBarBottomRight:Hide() end
+    if not SupportedLayout() then return end
+    RememberHud("MultiBarBottomLeft", true)
+    RememberHud("MultiBarBottomRight", true)
     if VIEWABLE_ACTION_BAR_PAGES then
         for i = 1, 6 do VIEWABLE_ACTION_BAR_PAGES[i] = 1 end
     end
@@ -923,20 +980,23 @@ Layout = function()
     for i = 1, 12 do
         local button = _G["ActionButton" .. i]
         if button then
-            SetRelativeScale(button, ACTION_SCALE*fit)
+            -- Retail and Classic use different stock button sizes. Keep the same
+            -- physical action rectangles and native gesture exclusions for both.
+            local actionScale = ACTION_SCALE*fit*36/math.max(1, button:GetWidth(), button:GetHeight())
+            SetRelativeScale(button, actionScale)
             button:ClearAllPoints()
             -- Compensate local button scale so anchors stay in UIParent units.
             if compact then
                 button:SetPoint("BOTTOMLEFT", UIParent, "CENTER",
-                    (UIParent:GetWidth()*.36+(-(columns==3 and 166 or 228)+((i-1)%columns)*54)*fit)/(ACTION_SCALE*fit),
-                    ((64+(math.ceil(12/columns)-1-math.floor((i-1)/columns))*54)*fit-halfHeight)/(ACTION_SCALE*fit))
+                    (UIParent:GetWidth()*.36+(-(columns==3 and 166 or 228)+((i-1)%columns)*54)*fit)/actionScale,
+                    ((64+(math.ceil(12/columns)-1-math.floor((i-1)/columns))*54)*fit-halfHeight)/actionScale)
             elseif i <= 8 then
                 button:SetPoint("BOTTOMLEFT", UIParent, "CENTER",
-                    (halfWidth+(-228+((i-1)%4)*54)*fit)/(ACTION_SCALE*fit),
-                    ((64+(1-math.floor((i-1)/4))*54)*fit-halfHeight)/(ACTION_SCALE*fit))
+                    (halfWidth+(-228+((i-1)%4)*54)*fit)/actionScale,
+                    ((64+(1-math.floor((i-1)/4))*54)*fit-halfHeight)/actionScale)
             else
                 button:SetPoint("BOTTOMLEFT", UIParent, "CENTER",
-                    (-108+(i-9)*54)/ACTION_SCALE, (64*fit-halfHeight)/(ACTION_SCALE*fit))
+                    (-108+(i-9)*54)*fit/actionScale, (64*fit-halfHeight)/actionScale)
             end
             button:SetAttribute("showgrid", 1)
             button:SetAttribute("type2", "")
