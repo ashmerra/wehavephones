@@ -28,7 +28,7 @@ once per game session.
 | Menus | Esc, Keyboard, Inspect, Menu and the switch. Blue corner brackets around the game | Tap to click. Hold to right-click. Drag items and windows. Two fingers scroll |
 | Inspect, part of Menus | The Inspect key turns blue and the brackets turn silver | Touch or slide over anything to read its tooltip without clicking |
 
-Map, Bags, Keyboard and every window opened from the touch menu switch to
+Use, Map, Bags, Keyboard and every window opened from the touch menu switch to
 Menus by themselves. The first use of each mode in a session shows a short
 hint: over the world in Play, and at the bottom in Menus so it never covers
 a window.
@@ -109,8 +109,9 @@ fractions of the game's height, so neither covers the other on any screen.
 - If keys would be smaller than 40 dp, Map and Bags, or Keyboard and Inspect,
   move into the touch menu. Esc, Menu and the switch always remain.
 
-On wide Classic Era and Retail screens, eight stock action buttons form a four-column,
-two-row grid at the bottom right. Four more sit near the bottom middle.
+On wide Retail, Classic Era, BC Anniversary and MoP Classic screens, eight
+stock action buttons form a four-column, two-row grid at the bottom right.
+Four more sit near the bottom middle.
 Tablet shapes use a four-column, three-row grid. Square shapes use three
 columns and four rows. Both put the page switcher at the lower left. Class,
 pet and possession controls have a separate footer. The XP bar stays below
@@ -174,7 +175,8 @@ and character macros.
 
 Retail uses its current spellbook API. The picker excludes future spells,
 inactive specializations and passive spells, and includes the reagent bag
-in Items. Classic keeps its ranked spellbook behavior.
+in Items. Classic keeps its ranked spellbook behavior. MoP also excludes
+hidden and inactive specialization tabs.
 
 **Clear slot** removes its action. **Undo** restores the last edited slot.
 **Cancel** leaves the slot unchanged. The picker refuses to open while an item
@@ -251,9 +253,9 @@ top-center widgets, shortcuts and trackers on its next login. Temporary binding
 overrides are never saved. Intentional hotbar edits remain ordinary WoW
 changes. Questie's profile is not rewritten.
 
-Retail and Classic Era receive the touch layout. Other editions receive the native modes
-and gestures but retain their stock hotbars. Third-party bar replacements,
-raid-style unit frames, party roster changes in combat, simultaneous class
+Retail, Classic Era, BC Anniversary and MoP Classic receive the touch layout.
+Other editions receive the native modes and gestures but retain their stock
+hotbars. Third-party bar replacements, raid-style unit frames, party roster changes in combat, simultaneous class
 mechanics and extended combat need separate validation. Unknown addon panels
 can use Menus and the movable Controls tab. Addons that move the minimap,
 buffs or unit frames themselves can be moved again by the touch layout. Long trackers can become small
@@ -269,7 +271,10 @@ frames, auras and top-center widgets) and checks them against the native
 keys, the stick and camera hit regions. It also checks that the toolbar stays
 inside the regions the addon keeps free. Coverage includes eleven aspect
 ratios, three UI sizes, four Android densities, safe-area insets and
-letterboxing, plus 1,221 stock window and inventory combinations. The suite uses the host JDK, Python
+letterboxing, plus 1,353 stock window and inventory combinations per Classic
+client fixture.
+The fixtures cover Era, BC Anniversary and MoP Classic, with Retail regression
+checks in each run. The suite uses the host JDK, Python
 and a Lua 5.2 or 5.4 shared library.
 
 See the [interaction audit and mobile MMO research](TOUCH_CONTROL_RESEARCH_2026_10_27.md)
@@ -277,37 +282,22 @@ for activity coverage, design choices and validation boundaries.
 
 ## Device validation
 
-### October 29 MoP Classic smoke test
+### October 29 BC and MoP fixes
 
-MoP Classic 5.5.4.70631 was tested on the S23+ at 1280×720 and 150%
-interface size after applying the required game patch. Simultaneous movement
-and camera, Jump, release, pinch zoom, target selection, Map, Bags, Character,
-Spellbook and NPC interaction worked. The observer captured zero Lua errors
-and the Android crash buffer was unchanged.
+BC Anniversary and MoP Classic now receive the fitted HUD, action editor,
+secure pager and window workspace. Use releases its key and switches to Menus
+for NPC and loot windows. MoP uses a bounded stock tracker and leaves room
+for the spellbook tabs. See the
+[fixes and S23 validation report](BC_MOP_TOUCH_FIXES_2026_10_29.md).
 
-MoP retains its stock HUD. Chat overlaps the stick, the desktop action and
-pet bars remain, and the touch editor and pager are absent. The spellbook
-extends beneath the native toolbar. NPC interaction retains Play over the
-quest window until the player switches to Menus. Offensive casting, combat
-and direct pet commands remain unverified. See the
-[MoP Classic test report](MOP_TOUCH_2026_10_29.md) for evidence and limits.
+### October 29 initial BC and MoP smoke tests
 
-### October 29 BC Anniversary smoke test
-
-BC Anniversary 2.5.6.70577 was tested on the S23+ at 1280×720 and 150%
-interface size. Movement and camera worked together, Jump registered, and
-release returned movement to zero with mouselook inactive. Pinch zoom, a
-stock Frost Armor action, Map, Bags, Character, Spellbook and NPC interaction
-worked. The observer captured zero Lua errors and no new Android application
-crash was recorded.
-
-BC still receives the native controls with its stock HUD. Chat overlaps the
-stick, the desktop hotbar remains, and holding a slot does not open the touch
-editor. The touch pager is absent. A quest opened through Use retains Play
-until the player switches to Menus, leaving the stick over its Accept button.
-This is a partial compatibility result. See the
-[BC Anniversary test report](BC_ANNIVERSARY_TOUCH_2026_10_29.md) for evidence,
-excluded attempts and coverage limits.
+The initial BC and MoP builds passed gesture and basic interaction checks,
+but excluded both projects from the full touch layout. The reports describe
+those earlier gaps and the test boundaries. See the
+[BC baseline](BC_ANNIVERSARY_TOUCH_2026_10_29.md) and
+[MoP baseline](MOP_TOUCH_2026_10_29.md). The fixes above supersede their layout
+compatibility findings.
 
 ### October 28 Retail compatibility pass
 

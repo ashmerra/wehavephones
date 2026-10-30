@@ -16,6 +16,8 @@ local WHITE = "Interface\\Buttons\\WHITE8X8"
 local retail = WOW_PROJECT_ID == WOW_PROJECT_MAINLINE
 local function SupportedLayout()
     return retail or WOW_PROJECT_ID == WOW_PROJECT_CLASSIC
+        or (WOW_PROJECT_BURNING_CRUSADE_CLASSIC and WOW_PROJECT_ID == WOW_PROJECT_BURNING_CRUSADE_CLASSIC)
+        or (WOW_PROJECT_MISTS_CLASSIC and WOW_PROJECT_ID == WOW_PROJECT_MISTS_CLASSIC)
 end
 local function LastPlayerBag()
     return retail and (Constants.InventoryConstants.NumBagSlots+Constants.InventoryConstants.NumReagentBagSlots) or 4
@@ -221,15 +223,17 @@ local function Collect()
             end
         else
             for tab = 1, GetNumSpellTabs() do
-                local _, _, offset, count = GetSpellTabInfo(tab)
-                for slot = offset + 1, offset + count do
-                    local kind = GetSpellBookItemInfo(slot, BOOKTYPE_SPELL)
-                    if kind == "SPELL" and not IsPassiveSpell(slot, BOOKTYPE_SPELL) then
-                        local name, rank = GetSpellBookItemName(slot, BOOKTYPE_SPELL)
-                        local bookSlot = slot
-                        if name then tinsert(entries, {name=name .. (rank and rank ~= "" and "\n" .. rank or ""),
-                            icon=GetSpellBookItemTexture(slot, BOOKTYPE_SPELL),
-                            pickup=function() PickupSpellBookItem(bookSlot, BOOKTYPE_SPELL) end}) end
+                local _, _, offset, count, _, offSpec, hidden = GetSpellTabInfo(tab)
+                if (not offSpec or offSpec == 0) and not hidden then
+                    for slot = offset + 1, offset + count do
+                        local kind = GetSpellBookItemInfo(slot, BOOKTYPE_SPELL)
+                        if kind == "SPELL" and not IsPassiveSpell(slot, BOOKTYPE_SPELL) then
+                            local name, rank = GetSpellBookItemName(slot, BOOKTYPE_SPELL)
+                            local bookSlot = slot
+                            if name then tinsert(entries, {name=name .. (rank and rank ~= "" and "\n" .. rank or ""),
+                                icon=GetSpellBookItemTexture(slot, BOOKTYPE_SPELL),
+                                pickup=function() PickupSpellBookItem(bookSlot, BOOKTYPE_SPELL) end}) end
+                        end
                     end
                 end
             end
@@ -498,7 +502,7 @@ end
 
 local editBoxes = {}
 local function RaiseEditBox(editBox)
-    if not enabled or not editBox or WOW_PROJECT_ID ~= WOW_PROJECT_CLASSIC then return end
+    if not enabled or not editBox or retail or not SupportedLayout() then return end
     -- The Android keyboard covers the lower half. Type just below the unit frames instead.
     if not editBoxes[editBox] then
         local state = RememberGeometry(editBox)
@@ -571,6 +575,7 @@ local function RestoreHud()
     for name, state in pairs(states) do
         local object = HudObject(name)
         if object then
+            if state.parent then object:SetParent(HudObject(state.parent) or UIParent) end
             if state.scale then object:SetScale(state.scale) end
             object:ClearAllPoints()
             for _, point in ipairs(state.points) do
@@ -609,6 +614,9 @@ local function PackWorkspace(panels, bags, scale, width, height)
     local places, x, y, columnWidth = {}, 0, 0, 0
     local function place(object, isBag)
         local w, h = object:GetWidth()*scale, object:GetHeight()*scale
+        -- Classic spellbooks draw school tabs to the right and book tabs
+        -- below their frame. Keep those controls inside the workspace too.
+        if object == SpellBookFrame then w, h = w+48*scale, h+36*scale end
         if isBag then
             if y > 0 and y+h > height then x, y, columnWidth = x+columnWidth+8, 0, 0 end
         else
@@ -847,6 +855,7 @@ local function BuffRows()
 end
 
 local PositionTracker
+local trackerSpace
 local PositionAuras
 local positioningTracker, trackerQueued, aurasQueued
 local function QueueAuras()
@@ -919,7 +928,7 @@ end
 
 PositionTracker = function()
     if not enabled or not SupportedLayout() or positioningTracker then return end
-    local name = retail and "ObjectiveTrackerFrame" or Questie_BaseFrame and Questie_BaseFrame:IsShown() and "Questie_BaseFrame" or "QuestWatchFrame"
+    local name = retail and "ObjectiveTrackerFrame" or Questie_BaseFrame and Questie_BaseFrame:IsShown() and "Questie_BaseFrame" or (WatchFrame and "WatchFrame" or "QuestWatchFrame")
     local object = _G[name]
     if not object then return end
     -- Retail reanchors its unprotected tracker when combat starts. Keep it clear
@@ -928,23 +937,44 @@ PositionTracker = function()
     positioningTracker = true
     local ok, problem = pcall(function()
         RememberHud(name)
-        if name == "Questie_BaseFrame" then RememberHud("QuestWatchFrame", true) end
+        if name == "Questie_BaseFrame" then RememberHud(WatchFrame and "WatchFrame" or "QuestWatchFrame", true) end
         local fit = math.min(1, LayoutWidth()/760)
         -- Below the minimap and the player's buffs and debuffs.
         local top = math.min(UIParent:GetHeight()*.65, UIParent:GetHeight()-math.max(minimapBottom+12, auraBottom+8))
         local actionTop = UIParent:GetWidth()/UIParent:GetHeight()<COMPACT
             and (64+(math.ceil(12/CompactColumns())-1)*54+36*ACTION_SCALE)*ActionFit() or (118+36*ACTION_SCALE)*fit
         local height = math.max(32, top-actionTop-16)
-        local scale = math.min(1, LayoutWidth()*.30/math.max(1, object:GetWidth()), height/math.max(1, object:GetHeight()))
-        -- Retail Edit Mode wraps these methods with global layout callbacks.
-        -- Those callbacks can refresh secret auras in this addon's tainted call.
-        -- Its saved base methods perform geometry only, with engine protection intact.
-        local clearPoints = retail and object.ClearAllPointsBase or object.ClearAllPoints
-        local setPoint = retail and object.SetPointBase or object.SetPoint
-        SetRelativeScale(object, scale, retail and object.SetScaleBase)
-        clearPoints(object)
-        setPoint(object, "TOPRIGHT", UIParent, "CENTER", (LayoutWidth()/2-16)/scale,
-            (top-UIParent:GetHeight()/2)/scale)
+        if name == "WatchFrame" then
+            -- MoP fills the space down to its parent's bottom in WatchFrame_Update.
+            -- Give it a bounded parent with the same effective scale. Scaling the
+            -- tracker alone mixes those coordinates and feeds its growing height
+            -- back into the next fit.
+            local state = WeHavePhonesTouchDB.hud[name]
+            if not state.parent then state.parent = HudName(object:GetParent()) end
+            if not trackerSpace then trackerSpace = CreateFrame("Frame", "WeHavePhonesTouchTrackerSpace", UIParent) end
+            local scale = math.min(1, LayoutWidth()*.30/math.max(1, object:GetWidth()))
+            SetRelativeScale(trackerSpace, scale)
+            trackerSpace:SetSize(object:GetWidth(), height/scale)
+            trackerSpace:ClearAllPoints()
+            trackerSpace:SetPoint("TOPRIGHT", UIParent, "CENTER", (LayoutWidth()/2-16)/scale,
+                (top-UIParent:GetHeight()/2)/scale)
+            if object:GetParent() ~= trackerSpace then object:SetParent(trackerSpace) end
+            object:SetScale(1)
+            object:ClearAllPoints()
+            object:SetPoint("TOPRIGHT", trackerSpace, "TOPRIGHT", 0, 0)
+            object:SetHeight(height/scale)
+        else
+            local scale = math.min(1, LayoutWidth()*.30/math.max(1, object:GetWidth()), height/math.max(1, object:GetHeight()))
+            -- Retail Edit Mode wraps these methods with global layout callbacks.
+            -- Those callbacks can refresh secret auras in this addon's tainted call.
+            -- Its saved base methods perform geometry only, with engine protection intact.
+            local clearPoints = retail and object.ClearAllPointsBase or object.ClearAllPoints
+            local setPoint = retail and object.SetPointBase or object.SetPoint
+            SetRelativeScale(object, scale, retail and object.SetScaleBase)
+            clearPoints(object)
+            setPoint(object, "TOPRIGHT", UIParent, "CENTER", (LayoutWidth()/2-16)/scale,
+                (top-UIParent:GetHeight()/2)/scale)
+        end
         if not trackerHooks[object] then
             for _, method in ipairs({"SetPoint", "SetSize", "SetHeight", "SetWidth", "Show"}) do
                 hooksecurefunc(object, method, function()
@@ -1114,7 +1144,7 @@ local function Apply()
             SaveCVar("alwaysCompareItems", "1")
             -- Nameplates are steadier tap targets than moving creature models.
             SaveCVar("nameplateShowEnemies", "1")
-            if WOW_PROJECT_ID == WOW_PROJECT_CLASSIC and GetActionBarToggles then
+            if not retail and SupportedLayout() and GetActionBarToggles then
                 local toggles = {GetActionBarToggles()}
                 for i = 1, 7 do toggles[i] = toggles[i] == true or toggles[i] == 1 end
                 if not db.actionBars then

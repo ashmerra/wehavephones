@@ -19,14 +19,17 @@ script = Path(__file__).resolve().parents[2] / "app/src/wehavephones/assets/weha
 source = Path(__file__).with_name('addon_fixture.lua').read_text()
 # A Lua long string keeps the actual addon byte-for-byte, without escaping its code.
 geometry = "local GEOMETRY_PATH = [====[" + sys.argv[1] + "]====]\n" if len(sys.argv)>1 else ""
-payload = (geometry + "local ADDON = [====[" + script.read_text() + "]====]\n" + source).encode()
-state = lua.luaL_newstate()
-try:
-    lua.luaL_openlibs(state)
-    status = lua.luaL_loadbufferx(state, payload, len(payload), b"touch-addon-selftest", None)
-    if status == 0:
-        status = lua.lua_pcallk(state, 0, 0, 0, 0, None)
-    if status:
-        raise SystemExit(lua.lua_tolstring(state, -1, None).decode())
-finally:
-    lua.lua_close(state)
+for project in (2, 5, 19):
+    prefix = geometry if project == 2 else ""
+    payload = (prefix + "local FIXTURE_PROJECT = " + str(project) + "\nlocal ADDON = [====["
+               + script.read_text() + "]====]\n" + source).encode()
+    state = lua.luaL_newstate()
+    try:
+        lua.luaL_openlibs(state)
+        status = lua.luaL_loadbufferx(state, payload, len(payload), b"touch-addon-selftest", None)
+        if status == 0:
+            status = lua.lua_pcallk(state, 0, 0, 0, 0, None)
+        if status:
+            raise SystemExit("Project %d: %s" % (project, lua.lua_tolstring(state, -1, None).decode()))
+    finally:
+        lua.lua_close(state)

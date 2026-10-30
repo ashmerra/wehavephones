@@ -7,7 +7,8 @@ local extraBars = {false,false,true,false,false,false,false}
 local actions = {[1]={"spell",101}, [61]={"item",500}}
 local targetExists, targetDead = false, false
 local buffs = 0
-WOW_PROJECT_MAINLINE, WOW_PROJECT_CLASSIC, WOW_PROJECT_ID, BOOKTYPE_SPELL = 1, 2, 2, "spell"
+WOW_PROJECT_MAINLINE, WOW_PROJECT_CLASSIC, WOW_PROJECT_ID, BOOKTYPE_SPELL = 1, 2, FIXTURE_PROJECT or 2, "spell"
+WOW_PROJECT_BURNING_CRUSADE_CLASSIC, WOW_PROJECT_MISTS_CLASSIC = 5, 19
 tinsert, UISpecialFrames, unpack = table.insert, {}, table.unpack or unpack
 VIEWABLE_ACTION_BAR_PAGES = {1,1,1,1,1,1}
 local methods = {}
@@ -50,6 +51,7 @@ function methods:GetPoint() return unpack(self.point or {"BOTTOMLEFT",UIParent,"
 function methods:GetName() return self.name end
 function methods:GetNumPoints() return self.point and 1 or 0 end
 function methods:GetParent() return self.parent end
+function methods:SetParent(parent) assert(not combat) self.parent=parent end
 function methods:IsProtected() return self.protected or false end
 function methods:GetEffectiveScale()
     return self:GetScale()*((not self.ignoreParentScale and self.parent) and self.parent:GetEffectiveScale() or 1)
@@ -158,9 +160,14 @@ function PickupItem(id) cursor={"item",id} end
 function PickupMacro(id) cursor={"macro",id} end
 function PickupSpellBookItem(slot) cursor={"spell",100+slot} end
 function PlaceAction(slot) assert(not combat) actions[slot],cursor=cursor,actions[slot] end
-function GetNumSpellTabs() return 1 end
-function GetSpellTabInfo() return "Test",nil,0,3 end
-function GetSpellBookItemInfo() return "SPELL" end
+function GetNumSpellTabs() return WOW_PROJECT_ID==19 and 3 or 1 end
+function GetSpellTabInfo(tab)
+    if WOW_PROJECT_ID==19 then
+        return "Test",nil,(tab-1)*4,4,nil,tab==2 and 253 or 0,tab==3
+    end
+    return "Test",nil,0,3
+end
+function GetSpellBookItemInfo(slot) return slot==4 and "FUTURESPELL" or "SPELL" end
 function IsPassiveSpell(slot) return slot==2 end
 function GetSpellBookItemName(slot) return "Spell "..slot,"Rank 1" end
 function GetSpellBookItemTexture(slot) return slot end
@@ -194,7 +201,7 @@ for _, name in ipairs({"StanceBar","PetActionBar","PossessActionBar","MicroMenuC
     object:SetPoint("BOTTOMLEFT",UIParent,"BOTTOMLEFT",2,3)
     object:Show()
 end
-QuestWatchFrame=CreateFrame("Frame","QuestWatchFrame",UIParent)
+QuestWatchFrame=CreateFrame("Frame",FIXTURE_PROJECT==19 and "WatchFrame" or "QuestWatchFrame",UIParent)
 QuestWatchFrame:SetSize(280,160)
 QuestWatchFrame:SetPoint("TOPRIGHT",UIParent,"TOPRIGHT",-10,-200)
 QuestWatchFrame:Show()
@@ -304,7 +311,20 @@ assert(values.lootUnderMouse=="0", "loot opens in a fitted panel rather than und
 assert(values.alwaysCompareItems=="1","Inspect can show equipment comparisons without a held modifier")
 assert(not MicroMenuContainer.visible and not BagsBar.visible and not MicroButtonAndBagsBar.visible,
     "menu and bag shortcuts no longer overlap the class controls")
-assert(QuestWatchFrame.point[3]=="CENTER","the stock tracker stays inside the right thumb rail")
+if FIXTURE_PROJECT==19 then
+    local space=objects.WeHavePhonesTouchTrackerSpace
+    assert(WatchFrame:GetParent()==space and WatchFrame:GetScale()==1,
+        "MoP tracker and its bounded parent use the same coordinate scale")
+    local height,scale=space:GetHeight(),space:GetScale()
+    for i=1,50 do
+        WatchFrame:SetHeight(900)
+        UIParent_ManageFramePositions()
+    end
+    assert(space:GetHeight()==height and space:GetScale()==scale and WatchFrame:GetHeight()==height,
+        "stock tracker updates cannot feed a changing height back into its scale")
+else
+    assert(QuestWatchFrame.point[3]=="CENTER","the stock tracker stays inside the right thumb rail")
+end
 assert(PossessActionBar.point[4]==PetActionBar.point[4] and PossessActionBar.point[5]==PetActionBar.point[5],
     "possession retains its secure commands in the pet footer")
 Questie_BaseFrame=CreateFrame("Frame","Questie_BaseFrame",UIParent)
@@ -473,7 +493,7 @@ assert(StanceBar.point[3]=="CENTER" and PetActionBar.point[3]=="CENTER","late st
 WeHavePhonesTouchDB.touchScale=1.5
 UIParent:SetSize(1600,900)
 active.scripts.OnEvent(active,"DISPLAY_SIZE_CHANGED")
-local panelSizes={CharacterFrame={384,512},SpellBookFrame={384,512},QuestLogFrame={384,512},
+local panelSizes={CharacterFrame={384,512},SpellBookFrame={WOW_PROJECT_ID==19 and 650 or 384,512},QuestLogFrame={384,512},
     MerchantFrame={384,512},BankFrame={384,512},MailFrame={384,512},TradeFrame={384,512},
     AuctionFrame={840,512},TradeSkillFrame={384,512},CraftFrame={384,512},
     GossipFrame={384,512},QuestFrame={384,512},ClassTrainerFrame={384,512},
@@ -516,6 +536,7 @@ local function checkWorkspace(panelNames,bagCount)
         local left=UIParent:GetWidth()/2+object.point[4]*s
         local top=UIParent:GetHeight()/2+object.point[5]*s
         local right,bottom=left+object:GetWidth()*s,top-object:GetHeight()*s
+        if object==SpellBookFrame then right,bottom=right+48*s,bottom-36*s end
         assert(left>=-0.001 and right<=UIParent:GetWidth()+.001 and bottom>=UIParent:GetHeight()*.019,
             "all menu controls remain on screen")
         assert(top<=UIParent:GetHeight()*.801,"large windows stay below the native utility toolbar")
@@ -621,6 +642,7 @@ edit(ActionButton1)
 assert(objects.WeHavePhonesTouchEditor.visible and actions[1][2]==101)
 assert(objects.WeHavePhonesTouchChoice1.entry.name:find("Spell 1"))
 assert(objects.WeHavePhonesTouchChoice2.entry.name:find("Spell 3"),"passives excluded")
+assert(not objects.WeHavePhonesTouchChoice3.visible,"future spells and hidden or inactive skill lines are excluded")
 objects.WeHavePhonesTouchChoice2.scripts.OnClick(objects.WeHavePhonesTouchChoice2)
 assert(actions[1][2]==103 and not cursor,"selection changes only the selected slot")
 edit(ActionButton1)
@@ -715,6 +737,7 @@ assert(StanceBar:GetScale()==1 and PetActionBar:GetScale()==1 and StatusTracking
 assert(MicroMenuContainer.visible and BagsBar.visible and MicroButtonAndBagsBar.visible,"stock shortcuts restore on opt-out")
 assert(QuestWatchFrame.visible and Questie_BaseFrame:GetScale()==1 and Questie_BaseFrame.point[3]=="TOPRIGHT",
     "opting out restores stock and Questie tracker geometry and visibility")
+assert(QuestWatchFrame:GetParent()==UIParent,"opting out restores MoP's stock tracker parent")
 assert(PartyFrame.MemberFrame1.point[2]==PartyFrame and PartyFrame.MemberFrame1.point[3]=="TOPLEFT"
     and PartyFrame.MemberFrame1:GetScale()==1 and PartyFrame.Background:GetAlpha()==.6,
     "pooled party frames and their original backdrop restore on opt-out")
