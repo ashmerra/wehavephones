@@ -783,10 +783,10 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
         }
         if (down) xServer.injectKeyPress(code);
         else xServer.injectKeyRelease(code);
-        // Interactions open quest, vendor and loot windows. Release F before
-        // removing the thumb controls so the window can receive ordinary taps.
-        if (!down && (key == MobileTouchInput.Key.MAP || key == MobileTouchInput.Key.BAGS
-                || key == MobileTouchInput.Key.INTERACT)) post(() -> setWindows(true));
+        // Use also loots corpses. Keep the current mode so movement and camera
+        // controls stay available between interactions.
+        if (!down && (key == MobileTouchInput.Key.MAP || key == MobileTouchInput.Key.BAGS))
+            post(() -> setWindows(true));
     }
 
     @Override public void click(float x, float y) {

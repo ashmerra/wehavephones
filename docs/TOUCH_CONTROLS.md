@@ -28,10 +28,11 @@ once per game session.
 | Menus | Esc, Keyboard, Inspect, Menu and the switch. Blue corner brackets around the game | Tap to click. Hold to right-click. Drag items and windows. Two fingers scroll |
 | Inspect, part of Menus | The Inspect key turns blue and the brackets turn silver | Touch or slide over anything to read its tooltip without clicking |
 
-Use, Map, Bags, Keyboard and every window opened from the touch menu switch to
-Menus by themselves. The first use of each mode in a session shows a short
-hint: over the world in Play, and at the bottom in Menus so it never covers
-a window.
+Use keeps the current mode, including when looting a corpse. Tap Menus when
+you need to drag or scroll an interaction window. Map, Bags, Keyboard and
+every window opened from the touch menu switch to Menus by themselves.
+The first use of each mode in a session shows a short hint: over the world
+in Play, and at the bottom in Menus so it never covers a window.
 
 The **touch guide** dims the game, outlines every control and the camera
 area, and says what each one does. It appears the first time each mode is
