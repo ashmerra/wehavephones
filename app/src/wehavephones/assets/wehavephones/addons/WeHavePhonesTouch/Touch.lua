@@ -389,8 +389,18 @@ local function PositionChat()
     positioningChat = false
 end
 
+local actionTooltips = false
+local function SetActionTooltips(show)
+    actionTooltips = show
+    if not show and buttons[GameTooltip:GetOwner()] then GameTooltip:Hide() end
+end
+
 local function PositionActionTooltip(button)
-    if not enabled or not ChatFrame1 or not GameTooltip:IsOwned(button) then return end
+    if not enabled or not GameTooltip:IsOwned(button) then return end
+    -- A touch leaves the mouse over the spell, including during cooldown refreshes.
+    -- Only the native Inspect mode requests hotbar tooltips.
+    if not actionTooltips then GameTooltip:Hide() return end
+    if not ChatFrame1 then return end
     -- Keep the owner and spell contents while replacing WoW's corner anchor.
     GameTooltip:SetAnchorType("ANCHOR_NONE")
     GameTooltip:ClearAllPoints()
@@ -1154,7 +1164,9 @@ local function Apply()
                     if InCombatLockdown() then Notice("Macros can be opened after combat.") else ShowMacroFrame() end
                 end, ["SHIFT-F2"] = function() ToggleHelpFrame() end, ["SHIFT-F3"] = Undo,
                 ["SHIFT-F4"] = function() SetTouchScale(1.25) end, ["SHIFT-F5"] = function() SetTouchScale(1.5) end,
-                ["SHIFT-F6"] = function() SetTouchScale(1.75) end}) do
+                ["SHIFT-F6"] = function() SetTouchScale(1.75) end,
+                ["SHIFT-F8"] = function() SetActionTooltips(true) end,
+                ["SHIFT-F9"] = function() SetActionTooltips(false) end}) do
                 local name = "WeHavePhonesTouchMenu" .. key:gsub("%-", "")
                 local trigger = _G[name] or CreateFrame("Button", name, UIParent)
                 trigger:RegisterForClicks("AnyUp", "AnyDown")

@@ -125,7 +125,8 @@ above chat and movement, retaining their own targeting, pet and aura
 behavior. Group chat and its utility buttons fit below that row, then regain
 their normal size when solo. Stock chat retains its touch anchor during
 combat. Protected replacement chat frames defer their layout until combat
-ends. Action and default world tooltips appear over chat.
+ends. Hotbar tooltips appear only in Inspect, so casting leaves the screen
+clear. Inspect and default world tooltips appear over chat.
 
 The stock quest tracker fits above the right actions and below the minimap
 and buffs. Addon trackers keep their own position, size and visibility.

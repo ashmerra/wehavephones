@@ -123,6 +123,7 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
             sessionHints.clear();
             bannerAt = -BANNER_MS;
             input.setUiMode(true);
+            chord(XKeycode.KEY_SHIFT_L, XKeycode.KEY_F9);
             toolbarCollapsed = true;
             refreshLayout();
             if (!WeHavePhonesConfig.isMobileTouchGuideSeen(getContext(), "menus")) {
@@ -1002,6 +1003,7 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
         boolean changed = enabled != input.isUiMode() || input.isInspectMode() || toolbarCollapsed;
         cancelTouches();
         input.setUiMode(enabled);
+        chord(XKeycode.KEY_SHIFT_L, XKeycode.KEY_F9);
         toolbarCollapsed = false;
         refreshLayout();
         if (changed) {
@@ -1014,6 +1016,9 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
         cancelTouches();
         if (enabled) {
             input.setInspectMode(true);
+            chord(XKeycode.KEY_SHIFT_L, XKeycode.KEY_F8);
+            // Leave the last cast button so inspecting that same spell triggers a fresh hover.
+            xServer.injectPointerMove(0, xServer.screenInfo.height - 1);
             nextModifier = null;
             toolbarCollapsed = false;
             refreshLayout();

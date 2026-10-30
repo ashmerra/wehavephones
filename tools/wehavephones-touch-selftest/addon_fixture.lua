@@ -75,6 +75,7 @@ function methods:CreateLine() return CreateFrame("Line") end
 function methods:GetHighlightTexture() return self.highlight end
 function methods:SetHighlightTexture() self.highlight=CreateFrame("Texture") end
 function methods:IsOwned(owner) return self.owner==owner end
+function methods:GetOwner() return self.owner end
 function methods:SetAnchorType(anchor) self.anchor=anchor end
 for _,name in ipairs({"RegisterEvent","RegisterUnitEvent","ClearAllPoints","SetFrameStrata","EnableMouse","SetClampedToScreen","SetBackdrop",
     "SetTexture","SetJustifyH","SetBackdropColor","SetBackdropBorderColor","SetGradient","SetThickness",
@@ -189,6 +190,7 @@ for i=1,12 do
         GameTooltip.contents="Action "..self.action
         GameTooltip.anchor="ANCHOR_RIGHT"
         GameTooltip:SetPoint("BOTTOMRIGHT",UIParent,"BOTTOMRIGHT",0,0)
+        GameTooltip:Show()
     end
     local extra=CreateFrame("Button","MultiBarBottomLeftButton"..i)
     extra.action=60+i
@@ -642,9 +644,21 @@ assert(ChatFrame1.point[3]=="CENTER" and ChatFrame1.detached, "late Edit Mode ch
 ChatFrame1:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", 0, 0)
 assert(ChatFrame1.point[3]=="CENTER", "panel-driven anchor changes cannot cover the joystick")
 ActionButton1:SetTooltip()
+assert(not GameTooltip.visible,"casting leaves no persistent hotbar tooltip")
+ActionButton1:SetTooltip()
+assert(not GameTooltip.visible,"cooldown refreshes cannot bring the cast tooltip back")
+menuChord("SHIFT-F8")
+ActionButton1:SetTooltip()
+assert(GameTooltip.visible,"Inspect enables hotbar spell descriptions")
 assert(GameTooltip.point[2]==ChatFrame1 and GameTooltip.point[3]=="BOTTOMLEFT","action tooltips cover the chat area")
 assert(GameTooltip.anchor=="ANCHOR_NONE" and GameTooltip.contents=="Action 1" and GameTooltip.owner==ActionButton1,
     "tooltip relocation preserves the action text and owner")
+menuChord("SHIFT-F9")
+assert(not GameTooltip.visible,"leaving Inspect dismisses the current hotbar tooltip immediately")
+GameTooltip.owner=CharacterFrame
+GameTooltip:Show()
+menuChord("SHIFT-F9")
+assert(GameTooltip.visible,"hotbar tooltip suppression leaves inventory and world tooltips available")
 GameTooltip_SetDefaultAnchor(GameTooltip)
 assert(GameTooltip.point[2]==ChatFrame1,"default world and experience tooltips cannot cover the thumb controls")
 edit(ActionButton1)
@@ -712,7 +726,13 @@ assert(ChatFrame1.point[3]=="BOTTOMLEFT","protected replacement chat frames rema
 ChatFrame1.protected=false
 ChatFrame1:ApplySystemAnchor()
 ActionButton1:SetTooltip()
-assert(GameTooltip.point[2]==ChatFrame1,"action tooltips stay over chat in combat")
+assert(not GameTooltip.visible,"combat casting never opens hotbar tooltips")
+menuChord("SHIFT-F8")
+ActionButton1:SetTooltip()
+assert(GameTooltip.visible and GameTooltip.point[2]==ChatFrame1,"Inspect can read action tooltips in combat")
+menuChord("SHIFT-F9")
+ActionButton1:SetTooltip()
+assert(not GameTooltip.visible,"returning from combat Inspect suppresses later tooltip refreshes")
 active.scripts.OnEvent(active,"PLAYER_REGEN_DISABLED")
 assert(not objects.WeHavePhonesTouchEditor.visible,"combat closes the editor")
 local debuffY=DebuffFrame.point[5]
@@ -754,6 +774,8 @@ assert(PartyFrame.MemberFrame1.point[2]==PartyFrame and PartyFrame.MemberFrame1.
     and PartyFrame.MemberFrame1:GetScale()==1 and PartyFrame.Background:GetAlpha()==.6,
     "pooled party frames and their original backdrop restore on opt-out")
 assert(next(held)==nil and next(WeHavePhonesTouchDB.cvars)==nil)
+ActionButton1:SetTooltip()
+assert(GameTooltip.visible,"opting out restores normal hotbar tooltips")
 WOW_PROJECT_ID=3
 boot(true)
 active.scripts.OnEvent(active,"QUEST_LOG_UPDATE")
