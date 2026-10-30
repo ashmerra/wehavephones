@@ -329,20 +329,29 @@ assert(PossessActionBar.point[4]==PetActionBar.point[4] and PossessActionBar.poi
     "possession retains its secure commands in the pet footer")
 Questie_BaseFrame=CreateFrame("Frame","Questie_BaseFrame",UIParent)
 Questie_BaseFrame:SetSize(300,180)
+Questie_BaseFrame:SetScale(.85)
 Questie_BaseFrame:SetPoint("TOPRIGHT",UIParent,"TOPRIGHT",-2,-200)
 Questie_BaseFrame:Show()
 active.scripts.OnUpdate(active,.3)
-assert(Questie_BaseFrame.point[3]=="CENTER","a Questie tracker shown after login is fitted without a quest event")
-assert(not QuestWatchFrame.visible and Questie_BaseFrame.point[3]=="CENTER",
-    "late Questie initialization removes the duplicate stock tracker without changing Questie settings")
-Questie_BaseFrame:SetPoint("TOPRIGHT",UIParent,"TOPRIGHT",-2,-200)
-assert(Questie_BaseFrame.point[3]=="CENTER","late tracker layout cannot move quests back over Target")
+Questie_BaseFrame:SetPoint("TOPLEFT",UIParent,"TOPLEFT",120,-240)
+Questie_BaseFrame:SetSize(320,200)
+active.scripts.OnEvent(active,"QUEST_LOG_UPDATE")
+assert(Questie_BaseFrame.point[3]=="TOPLEFT" and Questie_BaseFrame.point[4]==120
+    and Questie_BaseFrame.point[5]==-240 and Questie_BaseFrame:GetScale()==.85
+    and Questie_BaseFrame:GetWidth()==320 and Questie_BaseFrame:GetHeight()==200,
+    "addon tracker movement and size remain under the player's control")
+assert(QuestWatchFrame.visible and not WeHavePhonesTouchDB.hud.Questie_BaseFrame,
+    "addon trackers never hide the stock tracker or enter the touch layout's saved state")
+for _,hook in ipairs(secureHooks) do
+    assert(hook[1]~=Questie_BaseFrame,"addon trackers have no touch layout hooks")
+end
 local getRight=TargetFrame.GetRight
 TargetFrame.GetRight=function() error("fixture layout failure") end
 assert(not pcall(active.scripts.OnEvent,active,"GROUP_ROSTER_UPDATE"),"layout errors are still reported")
 TargetFrame.GetRight=getRight
-Questie_BaseFrame:SetPoint("TOPRIGHT",UIParent,"TOPRIGHT",-2,-200)
-assert(Questie_BaseFrame.point[3]=="CENTER","one failed layout never blocks the next one")
+active.scripts.OnEvent(active,"GROUP_ROSTER_UPDATE")
+assert(QuestWatchFrame.point[3]==(FIXTURE_PROJECT==19 and "TOPRIGHT" or "CENTER"),
+    "one failed layout never blocks the next stock tracker layout")
 assert(values.SoftTargetInteract=="3" and values.SoftTargetInteractArc=="1" and values.SoftTargetIconInteract=="1",
     "mouse-based touch enables nearby interaction with a visible front-cone target")
 local corpse=objects.WeHavePhonesTouchCorpseTrigger
@@ -735,8 +744,11 @@ assert(ChatFrame1.width==300 and ChatFrame1.height==150,"chat geometry restored"
 assert(StanceBar:GetScale()==1 and PetActionBar:GetScale()==1 and StatusTrackingBarManager:GetScale()==1,
     "class and experience scaling restore on opt-out")
 assert(MicroMenuContainer.visible and BagsBar.visible and MicroButtonAndBagsBar.visible,"stock shortcuts restore on opt-out")
-assert(QuestWatchFrame.visible and Questie_BaseFrame:GetScale()==1 and Questie_BaseFrame.point[3]=="TOPRIGHT",
-    "opting out restores stock and Questie tracker geometry and visibility")
+assert(QuestWatchFrame.visible and QuestWatchFrame:GetScale()==1 and QuestWatchFrame.point[3]=="TOPRIGHT",
+    "opting out restores stock tracker geometry and visibility")
+assert(Questie_BaseFrame:GetScale()==.85 and Questie_BaseFrame.point[3]=="TOPLEFT"
+    and Questie_BaseFrame.point[4]==120 and Questie_BaseFrame.point[5]==-240,
+    "opting out leaves addon tracker geometry untouched")
 assert(QuestWatchFrame:GetParent()==UIParent,"opting out restores MoP's stock tracker parent")
 assert(PartyFrame.MemberFrame1.point[2]==PartyFrame and PartyFrame.MemberFrame1.point[3]=="TOPLEFT"
     and PartyFrame.MemberFrame1:GetScale()==1 and PartyFrame.Background:GetAlpha()==.6,

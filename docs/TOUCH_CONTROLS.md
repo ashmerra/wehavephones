@@ -127,11 +127,10 @@ their normal size when solo. Stock chat retains its touch anchor during
 combat. Protected replacement chat frames defer their layout until combat
 ends. Action and default world tooltips appear over chat.
 
-The stock quest tracker and an existing Questie tracker fit above the right
-actions and below the minimap and buffs, with the duplicate stock tracker
-hidden while Questie is shown. A Questie tracker that appears after login is
-fitted as soon as it shows. A new row of buffs moves the debuffs down, in
-combat as well. The tracker follows after combat.
+The stock quest tracker fits above the right actions and below the minimap
+and buffs. Addon trackers keep their own position, size and visibility.
+A new row of buffs moves the debuffs down, in combat as well. The stock
+tracker follows after combat.
 
 Typing in chat, from **Menu → Typing and items → Chat** or **Reply** or from
 WoW itself, raises the chat box to just below the unit frames. The renderer
@@ -252,7 +251,7 @@ character can restore saved CVars (including nameplates), root scale, extra
 bars, chat, class and party controls, the minimap, unit frames, auras,
 top-center widgets, shortcuts and trackers on its next login. Temporary binding
 overrides are never saved. Intentional hotbar edits remain ordinary WoW
-changes. Questie's profile is not rewritten.
+changes.
 
 Retail, Classic Era, BC Anniversary and MoP Classic receive the touch layout.
 Other editions receive the native modes and gestures but retain their stock

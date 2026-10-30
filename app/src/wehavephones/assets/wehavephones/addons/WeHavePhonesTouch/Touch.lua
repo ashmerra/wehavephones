@@ -7,7 +7,7 @@ local undo
 -- Bottom of the player and target frames, kept free of the native toolbar.
 local unitBottom = 100
 local buttons = {}
-local Layout, OpenEditor, RefreshEditor, LayoutWorkspace, QueueWorkspace, LateTracker
+local Layout, OpenEditor, RefreshEditor, LayoutWorkspace, QueueWorkspace
 local ACTION_SCALE = 1.35
 -- Taller action grids below this aspect ratio. 16:10 is wide on both sides of the
 -- native and Lua boundary, whatever the rounding. Keep in step with MobileTouchLayout.
@@ -700,7 +700,6 @@ frame:SetScript("OnUpdate", function(_, elapsed)
     end
     signature = table.concat(signature, ":")
     if signature ~= workspaceSignature then workspaceSignature = signature QueueWorkspace() end
-    if LateTracker then LateTracker() end
 end)
 
 local positioningClassBars
@@ -921,14 +920,9 @@ local function PositionParty()
     PositionChat()
 end
 
--- Questie can show its tracker after the first layout. Fit it once it appears.
-LateTracker = function()
-    if Questie_BaseFrame and Questie_BaseFrame:IsShown() and not trackerHooks[Questie_BaseFrame] then QueueHud() end
-end
-
 PositionTracker = function()
     if not enabled or not SupportedLayout() or positioningTracker then return end
-    local name = retail and "ObjectiveTrackerFrame" or Questie_BaseFrame and Questie_BaseFrame:IsShown() and "Questie_BaseFrame" or (WatchFrame and "WatchFrame" or "QuestWatchFrame")
+    local name = retail and "ObjectiveTrackerFrame" or (WatchFrame and "WatchFrame" or "QuestWatchFrame")
     local object = _G[name]
     if not object then return end
     -- Retail reanchors its unprotected tracker when combat starts. Keep it clear
@@ -937,7 +931,6 @@ PositionTracker = function()
     positioningTracker = true
     local ok, problem = pcall(function()
         RememberHud(name)
-        if name == "Questie_BaseFrame" then RememberHud(WatchFrame and "WatchFrame" or "QuestWatchFrame", true) end
         local fit = math.min(1, LayoutWidth()/760)
         -- Below the minimap and the player's buffs and debuffs.
         local top = math.min(UIParent:GetHeight()*.65, UIParent:GetHeight()-math.max(minimapBottom+12, auraBottom+8))
