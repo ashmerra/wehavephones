@@ -8,6 +8,8 @@
 #      (local.env, the environment, the only attached device, and the guidance
 #      when there is none or several) against the fake adb shim in
 #      tools/wehavephones-memory-selftest.
+#   4. Executes the renderer trim methods with a host drawable tree and GL queue.
+#      Hardware-backed window data must survive trimming unmapped textures.
 #
 # Exits non-zero when any check fails. Prints the exact output of each step.
 set -euo pipefail
@@ -136,6 +138,11 @@ assert_contains "$WORK_DIR/select-several.log" "203.0.113.5:5555, 203.0.113.6:55
 echo
 echo "[test-wehavephones-memory] fake adb invocations:"
 cat "$FAKE_LOG"
+
+echo
+echo "[test-wehavephones-memory] == 5. renderer trim and hardware-backed window data =="
+"$PYTHON" "$ROOT_DIR/tools/wehavephones-memory-selftest/renderer_trim_selftest.py" \
+  "$JAVAC" "$JAVA" "$WORK_DIR/renderer-trim" || fail "renderer trim self-test"
 
 rm -rf "$WORK_DIR"
 

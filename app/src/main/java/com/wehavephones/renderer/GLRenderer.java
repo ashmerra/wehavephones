@@ -7,6 +7,7 @@ import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.util.Log;
 
+import com.wehavephones.BuildConfig;
 import com.wehavephones.R;
 import com.wehavephones.XrActivity;
 import com.wehavephones.math.Mathf;
@@ -55,6 +56,7 @@ public class GLRenderer implements GLSurfaceView.Renderer, WindowManager.OnWindo
     public int surfaceWidth;
     public int surfaceHeight;
     private final EffectComposer effectComposer;
+    private long completedMemoryTrims;
     // Optional callback invoked once per rendered frame (GL thread).
     private Runnable onFrameRendered;
 
@@ -492,25 +494,38 @@ public class GLRenderer implements GLSurfaceView.Renderer, WindowManager.OnWindo
 
     /**
      * Release renderer caches that are cheap to recreate: the effect-composer
-     * render targets and the GL textures of unmapped windows. Runs on the GL
-     * thread; the next mapping/draw re-allocates destroyed textures lazily via
+     * render targets and ordinary GL textures of unmapped windows. Hardware
+     * images retain their shared backing because a drawable can still use it.
+     * Runs on the GL thread. The next draw recreates ordinary textures through
      * {@link Texture#updateFromDrawable(Drawable)}.
      */
     public void trimMemory() {
         xServerView.queueEvent(() -> {
+            long started = System.nanoTime();
+            int[] textureCounts = new int[2];
             effectComposer.releaseBuffers();
             try (XLock lock = xServer.lock(XServer.Lockable.WINDOW_MANAGER, XServer.Lockable.DRAWABLE_MANAGER)) {
-                releaseUnmappedTextures(xServer.windowManager.rootWindow);
+                releaseUnmappedTextures(xServer.windowManager.rootWindow, textureCounts);
             }
+            completedMemoryTrims++;
+            if (BuildConfig.DEBUG) Log.i("WeHavePhonesTrim", "completed=" + completedMemoryTrims
+                    + " releasedTextures=" + textureCounts[0] + " retainedHardwareImages=" + textureCounts[1]
+                    + " elapsedUs=" + (System.nanoTime() - started) / 1000);
             xServerView.requestRender();
         });
     }
 
-    private void releaseUnmappedTextures(Window window) {
+    private void releaseUnmappedTextures(Window window, int[] counts) {
         if (window == null) return;
         if (!window.attributes.isMapped() && window.getContent() != null) {
-            window.getContent().getTexture().destroy();
+            Texture texture = window.getContent().getTexture();
+            if (texture instanceof GPUImage) {
+                counts[1]++;
+            } else if (texture != null && texture.isAllocated()) {
+                texture.destroy();
+                counts[0]++;
+            }
         }
-        for (Window child : window.getChildren()) releaseUnmappedTextures(child);
+        for (Window child : window.getChildren()) releaseUnmappedTextures(child, counts);
     }
 }
