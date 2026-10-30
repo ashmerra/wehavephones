@@ -78,8 +78,10 @@ public final class MemoryLogicSelfTest {
     private static void testConfigWtf() {
         String original = "SET locale \"enUS\"\r\nSET GxWindowedResolution \"1920x1080\"\r\nSET RenderScale \"0.5\"\r\n"
                 + "SET GxMaximize \"0\"\r\n"
+                + "SET preloadPlayerModels \"1\"\r\nSET PRELOADPLAYERMODELS \"1\"\r\n"
                 + "SET sound_NumSoundChannels \"64\"\r\n";
         LinkedHashMap<String, String> settings = MemoryTransforms.resolutionCvars("1024x576");
+        settings.putAll(MemoryTransforms.memoryCvars());
         String edited = MemoryTransforms.editConfigWtf(original, settings);
         check("wtf_crlf_preserved", edited.contains("\r\n") && !edited.contains("\n\r"), "");
         check("wtf_unrelated_first", edited.startsWith("SET locale \"enUS\"\r\n"), edited);
@@ -88,6 +90,8 @@ public final class MemoryLogicSelfTest {
         check("wtf_replaced_value", !edited.contains("1920x1080")
                 && edited.contains("SET GxWindowedResolution \"1024x576\""), edited);
         check("wtf_maximized", edited.contains("SET GxMaximize \"1\"") && !edited.contains("GxMaximize \"0\""), edited);
+        check("wtf_model_preload_disabled", "0".equals(MemoryTransforms.parseWtfSettings(edited).get("preloadplayermodels")), edited);
+        check("wtf_model_preload_duplicates_removed", edited.toLowerCase(java.util.Locale.ROOT).split("preloadplayermodels", -1).length == 2, edited);
         check("wtf_contains_all", MemoryTransforms.configWtfContains(edited, settings), edited);
         check("wtf_idempotent", edited.equals(MemoryTransforms.editConfigWtf(edited, settings)), "");
         check("wtf_parse", "1024x576".equals(MemoryTransforms.parseWtfSettings(edited).get("gxwindowedresolution")), "");
@@ -98,6 +102,8 @@ public final class MemoryLogicSelfTest {
         check("wtf_empty_file", MemoryTransforms.editConfigWtf("", settings).contains("SET GxWindowedResolution \"1024x576\""), "");
         check("wtf_contains_detects_missing",
                 !MemoryTransforms.configWtfContains(lfEdited, MemoryTransforms.resolutionCvars("1280x720")), "");
+        check("wtf_contains_detects_old_preload",
+                !MemoryTransforms.configWtfContains(original, MemoryTransforms.memoryCvars()), "");
     }
 
     private static void testScreenSize() {

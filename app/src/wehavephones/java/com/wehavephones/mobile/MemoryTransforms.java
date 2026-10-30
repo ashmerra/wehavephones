@@ -177,6 +177,13 @@ public final class MemoryTransforms {
         return settings;
     }
 
+    /** WoW memory settings enforced for every client and device at launch. */
+    public static LinkedHashMap<String, String> memoryCvars() {
+        LinkedHashMap<String, String> settings = new LinkedHashMap<>();
+        settings.put("preloadPlayerModels", "0");
+        return settings;
+    }
+
     /** Parse "KEY=value KEY2=value2" into a map; invalid tokens are ignored. */
     public static LinkedHashMap<String, String> parseEnv(String envVars) {
         LinkedHashMap<String, String> values = new LinkedHashMap<>();

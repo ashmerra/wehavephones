@@ -150,7 +150,7 @@ if [[ -n "$JAVAC" && -n "$JAVA" ]]; then
   rm -rf "$WORK_DIR"
   mkdir -p "$WORK_DIR"
   if "$JAVAC" -encoding UTF-8 -d "$WORK_DIR" "$SRC_DIR/WowClientFiles.java" "$SRC_DIR/MemoryTransforms.java" \
-      "$SRC_DIR/WowFirstBoot.java" "$SELF_TEST_DIR/WowClientFilesSelfTest.java"; then
+      "$SRC_DIR/WowFlavor.java" "$SRC_DIR/WowFirstBoot.java" "$SELF_TEST_DIR/WowClientFilesSelfTest.java"; then
     "$JAVA" -cp "$WORK_DIR" com.wehavephones.mobile.WowClientFilesSelfTest || fail "WowClientFilesSelfTest"
   else
     fail "javac failed for WowClientFilesSelfTest"

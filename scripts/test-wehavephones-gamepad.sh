@@ -16,7 +16,8 @@ mapfile -t STUBS < <(find "$TEST_DIR/stubs" -name '*.java' | sort)
 "${JAVA_HOME:+$JAVA_HOME/bin/}javac" -encoding UTF-8 -cp "$JSON_JAR:$ANDROID_JAR" -d "$WORK_DIR" \
   "${STUBS[@]}" "$TEST_DIR/GamepadSelfTest.java" \
   "$WEHAVEPHONES/VirtualGamepadController.java" "$WEHAVEPHONES/WeHavePhonesConfig.java" \
-  "$WEHAVEPHONES/MemoryTransforms.java" "$WEHAVEPHONES/WowFirstBoot.java" "$WEHAVEPHONES/WowClientFiles.java" \
+  "$WEHAVEPHONES/MemoryTransforms.java" "$WEHAVEPHONES/WowFlavor.java" \
+  "$WEHAVEPHONES/WowFirstBoot.java" "$WEHAVEPHONES/WowClientFiles.java" \
   "$MAIN/inputcontrols/GamepadState.java" "$MAIN/inputcontrols/FakeGamepadWriter.java" \
   "$MAIN/winhandler/WinHandler.java" "$MAIN/winhandler/RequestCodes.java" \
   "$MAIN/winhandler/OnImeFocusListener.java" "$MAIN/winhandler/MouseEventFlags.java" \

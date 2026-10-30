@@ -88,6 +88,7 @@ public final class WeHavePhonesMemoryOverrides {
         // Only existing files: the game writes a full Config.wtf on its first run.
         ArrayList<ConfigPlan> plans = new ArrayList<>();
         LinkedHashMap<String, String> settings = MemoryTransforms.resolutionCvars(afterScreen);
+        settings.putAll(MemoryTransforms.memoryCvars());
         for (WowProduct product : WowInstallationScanner.scan(container)) {
             File configFile = new File(new File(product.directory, "WTF"), "Config.wtf");
             if (!configFile.isFile()) continue;
@@ -164,7 +165,7 @@ public final class WeHavePhonesMemoryOverrides {
                     rollback(result, container, containerBefore, containerWritten, dxvkFile, dxvkBefore, plans);
                     return result;
                 }
-                result.step("Game resolution " + afterScreen + " set for " + plan.product.directoryName);
+                result.step("Game resolution " + afterScreen + " and memory settings applied to " + plan.product.directoryName);
             }
         }
         catch (Exception e) {
@@ -182,6 +183,9 @@ public final class WeHavePhonesMemoryOverrides {
         }
         labels.add("env " + MemoryTransforms.ENV_DXVK_HUD + " removed");
         labels.add("Game resolution " + WeHavePhonesConfig.getGameScreenSize(context) + " (screenSize + GxMaximize + GxWindowedResolution)");
+        for (Map.Entry<String, String> entry : MemoryTransforms.memoryCvars().entrySet()) {
+            labels.add("Game " + entry.getKey() + "=" + entry.getValue());
+        }
         labels.add("Battle.net auto-close after WoW starts");
         if (container != null) {
             labels.add("container screenSize=" + container.getScreenSize());

@@ -60,16 +60,67 @@ public final class WowClientFilesSelfTest {
         check("gamepad UI seed replaces mouse UI", "1".equals(WowClientFiles.cvarValue(WowFirstBoot.configure(
                 "SET InputDeviceInterfaceStyle \"0\"\n", "us", false, "1024x576", false, null, true), WowFirstBoot.GAMEPAD_UI_CVAR)));
 
+        // Every flavor uses the same policy, independent of its device API or UI.
+        for (boolean retailClient : new boolean[]{true, false}) {
+            for (String api : new String[]{null, "-d3d11", "-d3d12"}) {
+                for (boolean gamepadUi : new boolean[]{false, true}) {
+                    for (String prior : new String[]{"", "SET preloadPlayerModels \"1\"\nSET PRELOADPLAYERMODELS \"1\"\n"}) {
+                        String existing = prior + "SET GxWindowedResolution \"1600x900\"\nSET graphicsQuality \"7\"\nSET textLocale \"deDE\"\n";
+                        String configured = WowFirstBoot.configure(existing, "us", retailClient, "1024x576", false, api, gamepadUi);
+                        String scope = " retail=" + retailClient + " api=" + api + " gamepad=" + gamepadUi + " existing=" + !prior.isEmpty();
+                        check("model preloading disabled" + scope, "0".equals(WowClientFiles.cvarValue(configured, "preloadPlayerModels")));
+                        check("model preload duplicates removed" + scope, configured.toLowerCase(java.util.Locale.ROOT).split("preloadplayermodels", -1).length == 2);
+                        check("memory policy preserves graphics and language" + scope,
+                                "1600x900".equals(WowClientFiles.cvarValue(configured, "GxWindowedResolution"))
+                                && "7".equals(WowClientFiles.cvarValue(configured, "graphicsQuality"))
+                                && "deDE".equals(WowClientFiles.cvarValue(configured, "textLocale")));
+                        check("memory policy is idempotent" + scope, configured.equals(
+                                WowFirstBoot.configure(configured, "us", retailClient, "1024x576", false, api, gamepadUi)));
+                    }
+                }
+            }
+        }
+
+        File root = Files.createTempDirectory("wow-memory-seeds").toFile();
+        try {
+            File missing = new File(root, "missing-root");
+            check("memory seed leaves a missing install root absent", !WowFirstBoot.prepareBattleNetMemory(missing) && !missing.exists());
+            File unknown = new File(root, "_future_/WTF/Config.wtf");
+            unknown.getParentFile().mkdirs();
+            String previous = "SET graphicsQuality \"7\"\r\nSET preloadPlayerModels \"1\"\r\n";
+            Files.write(unknown.toPath(), previous.getBytes(StandardCharsets.UTF_8));
+            check("Battle.net memory seed changes established root", WowFirstBoot.prepareBattleNetMemory(root));
+            for (WowFlavor flavor : WowFlavor.values()) {
+                if (flavor.directoryName.isEmpty()) continue;
+                File config = new File(root, flavor.directoryName + "/WTF/Config.wtf");
+                String data = new String(Files.readAllBytes(config.toPath()), StandardCharsets.UTF_8);
+                check("Battle.net memory-only seed " + flavor, data.equals("SET preloadPlayerModels \"0\"\n"));
+            }
+            check("Battle.net memory seed is idempotent", !WowFirstBoot.prepareBattleNetMemory(root));
+            check("unknown product memory seed keeps other settings", new String(Files.readAllBytes(unknown.toPath()), StandardCharsets.UTF_8)
+                    .equals("SET graphicsQuality \"7\"\r\nSET preloadPlayerModels \"0\"\r\n"));
+            check("Battle.net memory seed preserves original backup", previous.equals(new String(Files.readAllBytes(
+                    new File(unknown.getPath() + ".wehavephones-firstboot-backup").toPath()), StandardCharsets.UTF_8)));
+        }
+        finally {
+            try (java.util.stream.Stream<java.nio.file.Path> files = Files.walk(root.toPath())) {
+                for (java.nio.file.Path file : (Iterable<java.nio.file.Path>) files.sorted(java.util.Comparator.reverseOrder())::iterator) Files.delete(file);
+            }
+        }
+
         File dir = Files.createTempDirectory("wow-client-files").toFile();
         try {
             File config = new File(new File(dir, "WTF"), "Config.wtf");
             config.getParentFile().mkdirs();
-            Files.write(config.toPath(), "SET accountName \"a@b.c\"\r\n".getBytes(StandardCharsets.UTF_8));
+            String previousConfig = "SET accountName \"a@b.c\"\r\nSET preloadPlayerModels \"1\"\r\n";
+            Files.write(config.toPath(), previousConfig.getBytes(StandardCharsets.UTF_8));
 
             check("first boot writes a fresh config", WowFirstBoot.prepare(dir, "us", true, "1024x576"));
             File backup = new File(config.getPath() + ".wehavephones-firstboot-backup");
             String original = new String(Files.readAllBytes(backup.toPath()), StandardCharsets.UTF_8);
-            check("first boot backup preserves account config", original.equals("SET accountName \"a@b.c\"\r\n"));
+            check("first boot backup preserves account and model preload config", original.equals(previousConfig));
+            check("first boot file disables model preloading", "0".equals(WowClientFiles.cvarValue(
+                    new String(Files.readAllBytes(config.toPath()), StandardCharsets.UTF_8), "preloadPlayerModels")));
             check("first boot file write is idempotent", !WowFirstBoot.prepare(dir, "eu", true, "1024x576"));
             check("original backup remains unchanged", original.equals(new String(Files.readAllBytes(backup.toPath()), StandardCharsets.UTF_8)));
             check("explicit region change writes existing game config", WowFirstBoot.prepare(dir, "eu", true, "1024x576", true));

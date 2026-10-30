@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 
 /** First-load settings verified against Blizzard's 12.1.0.69933 Glue UI. */
 public final class WowFirstBoot {
@@ -79,6 +80,7 @@ public final class WowFirstBoot {
         if (gamepadUi && !GAMEPAD_UI.equals(WowClientFiles.cvarValue(existing, GAMEPAD_UI_CVAR))) {
             settings.put(GAMEPAD_UI_CVAR, GAMEPAD_UI);
         }
+        settings.putAll(MemoryTransforms.memoryCvars());
         return MemoryTransforms.editConfigWtf(existing, settings);
     }
 
@@ -92,6 +94,36 @@ public final class WowFirstBoot {
     private static void addMissing(LinkedHashMap<String, String> settings, String existing, String name, String value) {
         String current = WowClientFiles.cvarValue(existing, name);
         if (current == null || current.isEmpty()) settings.put(name, value);
+    }
+
+    /**
+     * Seed memory settings before Battle.net can launch an unplayed client or
+     * install another edition in the same root. Never create an install root,
+     * which would interfere with import and alternate-drive discovery.
+     */
+    public static boolean prepareBattleNetMemory(File wowRoot) throws IOException {
+        if (!wowRoot.isDirectory()) return false;
+        LinkedHashSet<File> products = new LinkedHashSet<>();
+        for (WowFlavor flavor : WowFlavor.values()) {
+            if (!flavor.directoryName.isEmpty()) products.add(new File(wowRoot, flavor.directoryName));
+        }
+        File[] children = wowRoot.listFiles();
+        if (children != null) {
+            for (File child : children) {
+                if (child.isDirectory() && child.getName().matches("_[A-Za-z0-9_]+_")) products.add(child);
+            }
+        }
+        boolean changed = false;
+        for (File product : products) {
+            File config = new File(product, "WTF/Config.wtf");
+            String existing = config.isFile() ? new String(Files.readAllBytes(config.toPath()), StandardCharsets.UTF_8) : "";
+            String updated = MemoryTransforms.editConfigWtf(existing, MemoryTransforms.memoryCvars());
+            if (!updated.equals(existing)) {
+                write(config, updated);
+                changed = true;
+            }
+        }
+        return changed;
     }
 
     public static boolean prepare(File productDir, String region, boolean retail, String screenSize) throws IOException {

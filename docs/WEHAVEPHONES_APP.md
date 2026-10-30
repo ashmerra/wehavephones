@@ -776,6 +776,19 @@ The opt-in LOW memory mode is gone. What remains is default behavior:
   `Config.wtf` files) after every profile apply, with a snapshot and
   read-back. It also removes the old LOW `wehavephones-dxvk.conf` and its
   `DXVK_CONFIG_FILE` entry. It no longer writes the LOW CVar preset.
+- `MemoryTransforms.memoryCvars()` enforces `preloadPlayerModels=0` for every
+  game edition and device. Profile apply updates existing product configs, and
+  `WowFirstBoot` applies the same policy to new and selected clients on launch,
+  replacing a saved value of 1. Player models load on demand with the same
+  graphics settings, which can defer work until a model is first encountered.
+  The [S23+ Retail trials](RETAIL_MEMORY_TRIALS_2026_10_29.md) measured about
+  0.88 GiB less game backing, including swapped pages. Savings and first-encounter
+  behavior have not been measured across other clients, devices or busy scenes.
+  Before Battle.net opens, known edition directories and existing product
+  directories in an established install root also receive memory-only configs.
+  This covers a never-played client and another edition installed into that
+  root during the session. No absent install root is created. A first install
+  or an install into a different root receives the policy through the app's Play.
 - DXVK 2.3 suballocates GPU memory from 256 MB chunks by default. In Forever
   on the S23 (D3D11, Elwynn Forest) DXVK held 1524 MB for 1155 MB of
   resources, and the game process held about 370 MB more outside DXVK. With

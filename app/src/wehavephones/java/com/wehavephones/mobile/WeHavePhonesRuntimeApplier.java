@@ -117,6 +117,14 @@ public final class WeHavePhonesRuntimeApplier {
         }
 
         if (stage != Stage.WOW) {
+            try {
+                if (WowFirstBoot.prepareBattleNetMemory(WeHavePhonesPaths.wowRootFor(container))) {
+                    result.step("Player-model memory settings prepared for Battle.net launches");
+                }
+            }
+            catch (java.io.IOException e) {
+                result.fail("Could not prepare game memory settings: " + e.getMessage());
+            }
             writeBat(WeHavePhonesPaths.bnetBat(container), profiles.buildBnetBat(profile).getBytes(StandardCharsets.UTF_8), "bnet.bat", result);
         }
         if (stage != Stage.BATTLE_NET) {
