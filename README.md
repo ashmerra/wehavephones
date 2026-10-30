@@ -69,6 +69,12 @@ The APK is written to `app/build/outputs/apk/wehavephones/debug/app-wehavephones
 - [Tested devices and graphics drivers](docs/TESTED_DEVICES.md)
 - [Build assets](docs/BUILD_ASSETS.md)
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development and documentation rules.
+Internal investigation notes and test reports stay local under the gitignored
+`out/investigations/` directory.
+
 ## Support the project
 
 WeHavePhones is free and open source. If it helps you play, you can

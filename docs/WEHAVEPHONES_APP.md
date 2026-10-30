@@ -781,22 +781,17 @@ The opt-in LOW memory mode is gone. What remains is default behavior:
   `WowFirstBoot` applies the same policy to new and selected clients on launch,
   replacing a saved value of 1. Player models load on demand with the same
   graphics settings, which can defer work until a model is first encountered.
-  The [S23+ Retail trials](RETAIL_MEMORY_TRIALS_2026_10_29.md) measured about
-  0.88 GiB less game backing, including swapped pages. Savings and first-encounter
-  behavior have not been measured across other clients, devices or busy scenes.
+  The memory benefit depends on the client and the models encountered.
   Before Battle.net opens, known edition directories and existing product
   directories in an established install root also receive memory-only configs.
   This covers a never-played client and another edition installed into that
   root during the session. No absent install root is created. A first install
   or an install into a different root receives the policy through the app's Play.
-- DXVK 2.3 suballocates GPU memory from 256 MB chunks by default. In Forever
-  on the S23 (D3D11, Elwynn Forest) DXVK held 1524 MB for 1155 MB of
-  resources, and the game process held about 370 MB more outside DXVK. With
-  32 MB chunks DXVK held 1332 to 1347 MB for the same use (16 MB chunks:
-  1286 MB). On phones GPU memory is system RAM.
+- DXVK uses 32 MB allocation chunks to limit unused memory held by the
+  graphics runtime. On phones GPU memory shares system RAM.
 - `ProcessScanner.leftoverProcesses` also matches a zombie leader whose comm
   was renamed (Battle.net shows `Main`) by the command line its remaining
-  threads report. One such Battle.net held 396 MB of swap across sessions.
+  threads report.
 - `WeHavePhonesLauncherReaper` closes Battle.net/Agent/CEF on every launch path
   when Battle.net has not closed itself within 60 s of the game starting.
   `WeHavePhonesMemoryDiagnostics` feeds the diagnostics panel and the JSONL report.
