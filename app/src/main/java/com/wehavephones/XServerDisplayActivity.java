@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -962,7 +963,8 @@ import java.util.concurrent.Executors;
                 renderer.setScreenOffsetYRelativeToCursor(visible);
             }
 
-            if (!visible) {
+            // A hardware IME can compose text with no on-screen keyboard at all.
+            if (!visible && getResources().getConfiguration().keyboard != Configuration.KEYBOARD_QWERTY) {
                 destroyImeBridgeView("keyboard_hidden", true);
             }
         });
@@ -997,13 +999,14 @@ import java.util.concurrent.Executors;
 
             @Override
             public void onDeleteSurroundingText(int beforeLength, int afterLength) {
-                if (view.isPrivateInput() && xServer != null) pressKey(XKeycode.KEY_BKSP, Math.min(beforeLength, 64));
+                if (xServer != null) pressKey(XKeycode.KEY_BKSP, Math.min(beforeLength, 64));
             }
 
             @Override
             public void onSendKeyEvent(KeyEvent event) {
                 if (event == null) return;
-                // IME private key events (especially DEL during composition) must not be forwarded to X11.
+                // Only non-text navigation is sent here. Text and composition stay in the editor.
+                if (xServer != null) xServer.keyboard.onKeyEvent(event);
             }
 
             @Override
@@ -1119,6 +1122,13 @@ import java.util.concurrent.Executors;
             signInKeyboardPending = false;
             if (battleNetSignInShown && !wowImeFocused) showSoftKeyboard("battle_net_sign_in");
         }
+        if (hasFocus && imeBridgeView != null && imeBridgeView.hasFocus()) requestImeKeyboard(imeBridgeView);
+    }
+
+    @Override
+    public void onConfigurationChanged(@NonNull Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        if (imeBridgeView != null && imeBridgeView.hasFocus()) requestImeKeyboard(imeBridgeView);
     }
 
     private void sendImeTextToBridge(String text, boolean submit) {
@@ -1146,9 +1156,7 @@ import java.util.concurrent.Executors;
             return;
         }
 
-        if (imeBridgeView.getText() != null) {
-            imeBridgeView.getText().clear();
-        }
+        imeBridgeView.resetText();
         boolean privateInput = battleNetSignInShown && !wowImeFocused;
         boolean modeChanged = imeBridgeView.isPrivateInput() != privateInput;
         if (modeChanged) imeBridgeView.setPrivateInput(privateInput);
@@ -1157,9 +1165,20 @@ import java.util.concurrent.Executors;
         imeBridgeView.requestFocus();
         InputMethodManager imm = (InputMethodManager)getSystemService(INPUT_METHOD_SERVICE);
         if (imm != null && modeChanged) imm.restartInput(imeBridgeView);
-        if (imm == null || !imm.showSoftInput(imeBridgeView, InputMethodManager.SHOW_IMPLICIT)) {
-            AppUtils.showKeyboard(this);
-        }
+        requestImeKeyboard(imeBridgeView);
+    }
+
+    private void requestImeKeyboard(ImeBridgeEditText view) {
+        // Wait for the focused editor to be served, including after DeX changes window focus.
+        view.post(() -> {
+            if (view != imeBridgeView || !view.hasFocus() || !hasWindowFocus()) return;
+            InputMethodManager imm = (InputMethodManager)getSystemService(INPUT_METHOD_SERVICE);
+            if (imm != null) imm.showSoftInput(view, 0);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                WindowInsetsController controller = view.getWindowInsetsController();
+                if (controller != null) controller.show(WindowInsets.Type.ime());
+            }
+        });
     }
 
     private void hideSoftKeyboard() {
@@ -1584,6 +1603,12 @@ import java.util.concurrent.Executors;
 
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
+        if (imeBridgeView != null && imeBridgeView.hasFocus()
+                && !ExternalController.isGameController(event.getDevice())) {
+            // Android's editor owns text keys while composing. Injecting them into X11 as well
+            // leaks Latin keys and can submit chat before the last Korean syllable is committed.
+            return super.dispatchKeyEvent(event);
+        }
         boolean handledByInputControls = inputControlsView.onKeyEvent(event);
         boolean handledByWinHandler = !handledByInputControls && winHandler.onKeyEvent(event);
         if (handledByWinHandler) SessionInputExtras.onControllerInput(this);

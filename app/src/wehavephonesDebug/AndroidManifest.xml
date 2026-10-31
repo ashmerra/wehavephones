@@ -2,6 +2,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- ADB-only native screen validation; excluded from release builds. -->
     <instrumentation
+        android:name="com.wehavephones.mobile.ImeBridgeValidation"
+        android:targetPackage="${applicationId}"
+        android:label="WeHavePhones Korean and hardware input regression" />
+    <instrumentation
         android:name="com.wehavephones.mobile.WowImportValidation"
         android:targetPackage="${applicationId}"
         android:label="WeHavePhones file import validation" />

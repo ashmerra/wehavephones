@@ -226,6 +226,15 @@ public abstract class AppUtils {
     public static void observeSoftKeyboardVisibility(View rootView, Callback<Boolean> callback) {
         final boolean[] visible = {false};
         rootView.getViewTreeObserver().addOnGlobalLayoutListener(() -> {
+            WindowInsets insets = rootView.getRootWindowInsets();
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && insets != null) {
+                boolean imeVisible = insets.isVisible(WindowInsets.Type.ime());
+                if (visible[0] != imeVisible) {
+                    visible[0] = imeVisible;
+                    callback.call(imeVisible);
+                }
+                return;
+            }
             Rect rect = new Rect();
             rootView.getWindowVisibleDisplayFrame(rect);
             int screenHeight = rootView.getRootView().getHeight();
