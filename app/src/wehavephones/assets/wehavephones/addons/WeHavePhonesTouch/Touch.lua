@@ -374,6 +374,23 @@ end
 -- view for reading, which stops above the movement stick.
 local CHAT_ROWS = 4
 local chatLarge, chatSize, FitChatButtons
+-- Phosphor arrows-out-simple, then arrows-in-simple, as line segments in its 256-unit grid.
+local CHAT_ICONS = {
+    out = {{144, 112, 208, 48}, {160, 48, 208, 48}, {208, 48, 208, 96},
+        {112, 144, 48, 208}, {96, 208, 48, 208}, {48, 208, 48, 160}},
+    ["in"] = {{208, 48, 144, 112}, {144, 64, 144, 112}, {192, 112, 144, 112},
+        {48, 208, 112, 144}, {112, 192, 112, 144}, {64, 144, 112, 144}},
+}
+
+local function PaintChatSize()
+    if not chatSize.lines then chatSize:SetText(chatLarge and "-" or "+") return end
+    local unit = 16/256
+    for i, segment in ipairs(CHAT_ICONS[chatLarge and "in" or "out"]) do
+        local line = chatSize.lines[i]
+        line:SetStartPoint("CENTER", chatSize, (segment[1]-128)*unit, (128-segment[2])*unit)
+        line:SetEndPoint("CENTER", chatSize, (segment[3]-128)*unit, (128-segment[4])*unit)
+    end
+end
 
 local function ChatRows(rows)
     local size = ChatFrame1.GetFont and select(2, ChatFrame1:GetFont())
@@ -406,8 +423,7 @@ local function PositionChat()
     ChatFrame1:SetPoint("TOPLEFT", UIParent, "CENTER", -LayoutWidth()/2+16, top)
     ChatFrame1:SetSize(width, chatHeight)
     if chatSize then
-        chatSize:SetText(chatLarge and "Smaller" or "Larger")
-        PaintKey(chatSize, chatLarge)
+        PaintChatSize()
         chatSize:Show()
     end
     positioningChat = false
@@ -1040,10 +1056,26 @@ end
 local function CreateChatSize()
     if chatSize or not ChatFrame1 then return end
     -- Docked tabs such as the combat log hide ChatFrame1. Keep the key on UIParent.
-    chatSize = Button(UIParent, "WeHavePhonesTouchChatSize", "Larger", 0, 0, 76, 28,
-        function() SetChatLarge(not chatLarge) end)
-    chatSize:ClearAllPoints()
+    chatSize = CreateFrame("Button", "WeHavePhonesTouchChatSize", UIParent)
+    chatSize:SetSize(24, 24)
+    -- A small icon with a finger-sized touch area around it.
+    chatSize:SetHitRectInsets(-10, -10, -10, -10)
     chatSize:SetPoint("TOPLEFT", ChatFrame1, "TOPRIGHT", 6, 0)
+    local face = chatSize:CreateTexture(nil, "BACKGROUND")
+    face:SetAllPoints()
+    face:SetColorTexture(.035, .086, .157, .55)
+    chatSize:SetHighlightTexture(WHITE)
+    chatSize:GetHighlightTexture():SetVertexColor(.55, .77, .97, .22)
+    if chatSize.CreateLine then
+        chatSize.lines = {}
+        for i = 1, #CHAT_ICONS.out do
+            local line = chatSize:CreateLine(nil, "OVERLAY")
+            line:SetThickness(2)
+            line:SetColorTexture(.93, .96, 1, .9)
+            chatSize.lines[i] = line
+        end
+    end
+    chatSize:SetScript("OnClick", function() SetChatLarge(not chatLarge) end)
 end
 
 local function PlaceHud()

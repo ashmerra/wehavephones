@@ -82,7 +82,9 @@ function methods:GetOwner() return self.owner end
 function methods:SetAnchorType(anchor) self.anchor=anchor end
 for _,name in ipairs({"RegisterEvent","RegisterUnitEvent","ClearAllPoints","SetFrameStrata","EnableMouse","SetClampedToScreen","SetBackdrop",
     "SetTexture","SetJustifyH","SetBackdropColor","SetBackdropBorderColor","SetGradient","SetThickness",
-    "SetColorTexture","SetStartPoint","SetEndPoint"}) do methods[name]=function() end end
+    "SetColorTexture","SetAllPoints","SetHitRectInsets"}) do methods[name]=function() end end
+function methods:SetStartPoint(...) self.start={...} end
+function methods:SetEndPoint(...) self.finish={...} end
 function CreateColor(r,g,b,a) return {r=r,g=g,b=b,a=a} end
 function UnitBuff(_,i) if i<=buffs then return "Buff "..i end end
 function CreateFrame(_,name,parent)
@@ -253,6 +255,11 @@ function UIParent_ManageFramePositions()
     PetActionBar:SetPoint("BOTTOMLEFT",UIParent,"BOTTOMLEFT",0,0)
 end
 local active
+-- The chat size icon: arrows pointing out to the corners, or in toward the center.
+local function chatIcon()
+    local line=objects.WeHavePhonesTouchChatSize.lines[1]
+    return line.finish[3]>line.start[3] and "out" or "in"
+end
 local function boot(enabled, scale)
     -- Reloading WoW discards the previous Lua runtime and its secure hooks.
     -- Keep the DB and frame geometry here, but never run old enabled callbacks
@@ -503,8 +510,8 @@ for _,scale in ipairs({1.25,1.5,1.75}) do
         -- Four rows of the 14-point chat font, with the tabs where they were.
         assert(ChatFrame1:GetHeight()==60 and ChatFrame1.point[5]==128,"solo chat shows a few rows below the unit frames")
         local sizeKey=objects.WeHavePhonesTouchChatSize
-        assert(sizeKey.visible and sizeKey.text=="Larger" and sizeKey.point[2]==ChatFrame1 and sizeKey.point[3]=="TOPRIGHT",
-            "the chat size key sits beside the chat tabs")
+        assert(sizeKey.visible and chatIcon()=="out" and sizeKey.point[2]==ChatFrame1 and sizeKey.point[3]=="TOPRIGHT",
+            "the chat size icon sits beside the chat tabs")
         local compactWidth=ChatFrame1:GetWidth()
         sizeKey.scripts.OnClick(sizeKey)
         local largeBottom=height/2+ChatFrame1.point[5]-ChatFrame1:GetHeight()
@@ -513,10 +520,10 @@ for _,scale in ipairs({1.25,1.5,1.75}) do
             "the larger chat keeps its top edge and grows")
         assert(height-largeBottom<=height*(aspect<1.6 and .68 or .70)-radius,"the larger chat stops above the movement stick")
         assert(ChatFrame1.point[4]+ChatFrame1:GetWidth()<=0,"the larger chat leaves the character in the center clear")
-        assert(sizeKey.text=="Smaller" and sizeKey.active and ChatFrame1ButtonFrame:GetScale()>=.95,
+        assert(chatIcon()=="in" and ChatFrame1ButtonFrame:GetScale()>=.95,
             "the larger chat restores the stock button column to about its own size")
         sizeKey.scripts.OnClick(sizeKey)
-        assert(ChatFrame1:GetHeight()==60 and sizeKey.text=="Larger" and not sizeKey.active,"the size key returns chat to a few rows")
+        assert(ChatFrame1:GetHeight()==60 and chatIcon()=="out","the size icon returns chat to a few rows")
     end
 end
 if geometry then geometry:close() end
@@ -758,7 +765,7 @@ objects.WeHavePhonesTouchChatSize.scripts.OnClick(objects.WeHavePhonesTouchChatS
 assert(ChatFrame1:GetHeight()>60,"unprotected stock chat can open its larger view during combat")
 active.scripts.OnEvent(active,"PLAYER_REGEN_DISABLED")
 assert(not objects.WeHavePhonesTouchEditor.visible,"combat closes the editor")
-assert(ChatFrame1:GetHeight()==60 and objects.WeHavePhonesTouchChatSize.text=="Larger","combat returns chat to a few rows")
+assert(ChatFrame1:GetHeight()==60 and chatIcon()=="out","combat returns chat to a few rows")
 local debuffY=DebuffFrame.point[5]
 buffs=12
 active.scripts.OnEvent(active,"UNIT_AURA")

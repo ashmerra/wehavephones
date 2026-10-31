@@ -125,10 +125,11 @@ above chat and movement, retaining their own targeting, pet and aura
 behavior. Group chat fits below that row.
 
 Chat shows four rows below the unit frames, so the world stays in view. Its
-stock utility buttons shrink to fit beside them. The **Larger** key next to
-chat opens a wider and taller view, with about eleven rows when solo and the
-utility buttons at their normal size. It stops above the movement stick.
-**Smaller** returns chat to four rows, and so does the start of combat. Stock
+stock utility buttons shrink to fit beside them. The small arrows icon next
+to chat opens a wider and taller view, with about eleven rows when solo and
+the utility buttons at their normal size. It stops above the movement stick.
+The icon then points inward. Tap it again to return chat to four rows. The
+start of combat does the same. Stock
 chat retains its touch anchor during combat. Protected replacement chat frames
 defer their layout until combat ends. Hotbar tooltips appear only in Inspect,
 so casting leaves the screen clear. Inspect and default world tooltips appear
