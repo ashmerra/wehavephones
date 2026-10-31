@@ -122,11 +122,17 @@ The layout reserves space for native thumb controls and caps its width on
 ultrawide screens. Camera gestures follow the actual guest viewport,
 including letterboxing and stretching. The stock party frames form a row
 above chat and movement, retaining their own targeting, pet and aura
-behavior. Group chat and its utility buttons fit below that row, then regain
-their normal size when solo. Stock chat retains its touch anchor during
-combat. Protected replacement chat frames defer their layout until combat
-ends. Hotbar tooltips appear only in Inspect, so casting leaves the screen
-clear. Inspect and default world tooltips appear over chat.
+behavior. Group chat fits below that row.
+
+Chat shows four rows below the unit frames, so the world stays in view. Its
+stock utility buttons shrink to fit beside them. The **Larger** key next to
+chat opens a wider and taller view, with about eleven rows when solo and the
+utility buttons at their normal size. It stops above the movement stick.
+**Smaller** returns chat to four rows, and so does the start of combat. Stock
+chat retains its touch anchor during combat. Protected replacement chat frames
+defer their layout until combat ends. Hotbar tooltips appear only in Inspect,
+so casting leaves the screen clear. Inspect and default world tooltips appear
+over chat.
 
 The stock quest tracker fits above the right actions and below the minimap
 and buffs. Addon trackers keep their own position, size and visibility.

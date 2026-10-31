@@ -370,6 +370,17 @@ local function SetTouchScale(scale)
     Layout()
 end
 
+-- Chat shows a few rows so the world stays in view. Its size key opens a larger
+-- view for reading, which stops above the movement stick.
+local CHAT_ROWS = 4
+local chatLarge, chatSize, FitChatButtons
+
+local function ChatRows(rows)
+    local size = ChatFrame1.GetFont and select(2, ChatFrame1:GetFont())
+    local spacing = ChatFrame1.GetSpacing and ChatFrame1:GetSpacing() or 0
+    return rows*((tonumber(size) or 14)+spacing)+4
+end
+
 local function PositionChat()
     if not enabled or not ChatFrame1 or positioningChat then return end
     if InCombatLockdown() and ChatFrame1:IsProtected() then return end
@@ -382,10 +393,23 @@ local function PositionChat()
     end
     if not InCombatLockdown() and ChatFrame1.BreakFromFrameManager then ChatFrame1:BreakFromFrameManager() end
     ChatFrame1:ClearAllPoints()
+    local height = UIParent:GetHeight()
     local party = PartyFrame and PartyFrame.MemberFrame1 and PartyFrame.MemberFrame1:IsShown()
-    ChatFrame1:SetPoint("BOTTOMLEFT", UIParent, "CENTER", -LayoutWidth()/2+16,
-        party and -UIParent:GetHeight()*.02 or 36)
-    ChatFrame1:SetSize(math.min(300, LayoutWidth()*.34), party and math.min(92, UIParent:GetHeight()*.10) or 92)
+    -- The top edge stays below the unit frames, or the party row, in both sizes.
+    local top = party and height*.08 or 128
+    local width = math.min(300, LayoutWidth()*.34)
+    local chatHeight = math.min(ChatRows(CHAT_ROWS), party and height*.10 or 92)
+    if chatLarge then
+        width = math.max(width, math.min(480, LayoutWidth()*.42))
+        chatHeight = math.max(chatHeight, top+height*.05)
+    end
+    ChatFrame1:SetPoint("TOPLEFT", UIParent, "CENTER", -LayoutWidth()/2+16, top)
+    ChatFrame1:SetSize(width, chatHeight)
+    if chatSize then
+        chatSize:SetText(chatLarge and "Smaller" or "Larger")
+        PaintKey(chatSize, chatLarge)
+        chatSize:Show()
+    end
     positioningChat = false
 end
 
@@ -998,16 +1022,36 @@ PositionTracker = function()
     if not ok then geterrorhandler()(problem) end
 end
 
+-- The stock chat buttons rise from the chat's bottom edge. Fit them beside its rows and tabs.
+FitChatButtons = function()
+    if not ChatFrame1ButtonFrame or ChatFrame1ButtonFrame:IsProtected() then return end
+    RememberHud("ChatFrame1ButtonFrame")
+    local fit = (ChatFrame1:GetHeight()+32)/math.max(1, ChatFrame1ButtonFrame:GetHeight())
+    if fit < 1 then SetRelativeScale(ChatFrame1ButtonFrame, fit)
+    else ChatFrame1ButtonFrame:SetScale(WeHavePhonesTouchDB.hud.ChatFrame1ButtonFrame.scale) end
+end
+
+local function SetChatLarge(large)
+    chatLarge = large
+    PositionChat()
+    FitChatButtons()
+end
+
+local function CreateChatSize()
+    if chatSize or not ChatFrame1 then return end
+    -- Docked tabs such as the combat log hide ChatFrame1. Keep the key on UIParent.
+    chatSize = Button(UIParent, "WeHavePhonesTouchChatSize", "Larger", 0, 0, 76, 28,
+        function() SetChatLarge(not chatLarge) end)
+    chatSize:ClearAllPoints()
+    chatSize:SetPoint("TOPLEFT", ChatFrame1, "TOPRIGHT", 6, 0)
+end
+
 local function PlaceHud()
     PositionTopHud()
     PositionAuras()
     PositionParty()
     if ChatFrame1ButtonFrame then
-        RememberHud("ChatFrame1ButtonFrame")
-        local party = PartyFrame and PartyFrame.MemberFrame1 and PartyFrame.MemberFrame1:IsShown()
-        if party then
-            SetRelativeScale(ChatFrame1ButtonFrame, math.min(1, UIParent:GetHeight()*.16/math.max(1, ChatFrame1ButtonFrame:GetHeight())))
-        else ChatFrame1ButtonFrame:SetScale(WeHavePhonesTouchDB.hud.ChatFrame1ButtonFrame.scale) end
+        FitChatButtons()
         if not chatButtonsHooked and ChatFrame1ButtonFrame.Layout then
             hooksecurefunc(ChatFrame1ButtonFrame, "Layout", QueueHud)
             chatButtonsHooked = true
@@ -1093,6 +1137,7 @@ Layout = function()
         "MainMenuBarTexture3", "MainMenuBarLeftEndCap", "MainMenuBarRightEndCap"}) do
         if _G[name] then _G[name]:SetAlpha(0) end
     end
+    CreateChatSize()
     PositionChat()
     if not tooltipHooked and GameTooltip_SetDefaultAnchor then
         hooksecurefunc("GameTooltip_SetDefaultAnchor", PositionDefaultTooltip)
@@ -1243,6 +1288,8 @@ frame:SetScript("OnEvent", function(_, event)
         end
     elseif event == "PLAYER_REGEN_DISABLED" then
         if editor then editor:Hide() end
+        -- Combat returns chat to its few rows, out of the way of the fight.
+        if chatLarge then SetChatLarge(false) end
         if inventoryStrip then inventoryStrip:Hide() end
     elseif event == "UI_SCALE_CHANGED" or event == "DISPLAY_SIZE_CHANGED" then
         C_Timer.After(0, function() if enabled and applied then UniformScale() Layout() end end)

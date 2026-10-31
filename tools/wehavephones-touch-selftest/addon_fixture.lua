@@ -13,7 +13,10 @@ tinsert, UISpecialFrames, unpack = table.insert, {}, table.unpack or unpack
 VIEWABLE_ACTION_BAR_PAGES = {1,1,1,1,1,1}
 local methods = {}
 local secureHooks = {}
-function methods:SetScale(value) assert(not combat or self==ObjectiveTrackerFrame and not self:IsProtected()) self.scale=value end
+function methods:SetScale(value)
+    assert(not combat or (self==ObjectiveTrackerFrame or self==ChatFrame1ButtonFrame) and not self:IsProtected())
+    self.scale=value
+end
 function methods:GetScale() return self.scale or 1 end
 function methods:GetAlpha() return self.alpha or 1 end
 function methods:SetAlpha(value) self.alpha=value end
@@ -93,6 +96,7 @@ function methods:CreateTexture() return CreateFrame("Texture") end
 UIParent=CreateFrame("Frame","UIParent")
 ChatFrame1=CreateFrame("Frame","ChatFrame1",UIParent)
 ChatFrame1:SetSize(300,150)
+function ChatFrame1:GetFont() return "Fonts\\ARIALN.TTF",14 end
 ChatFrame1ButtonFrame=CreateFrame("Frame","ChatFrame1ButtonFrame",ChatFrame1)
 ChatFrame1ButtonFrame:SetSize(29,184)
 function ChatFrame1ButtonFrame:Layout() end
@@ -480,22 +484,39 @@ for _,scale in ipairs({1.25,1.5,1.75}) do
             exportGeometry(member,width,height,"party",104)
             lastRight=x+128*s
         end
-        close(ChatFrame1.point[5],-height*.02,"group chat stays below the party row and above the stick")
-        local chatTop=height*.48+ChatFrame1:GetHeight()
-        local chatButtonsTop=height*.48+ChatFrame1ButtonFrame:GetHeight()*ChatFrame1ButtonFrame:GetEffectiveScale()/UIParent:GetEffectiveScale()
-        assert(chatTop+32<=height*.694 and chatButtonsTop<=height*.694,
+        local chatBottom=height/2+ChatFrame1.point[5]-ChatFrame1:GetHeight()
+        assert(ChatFrame1.point[1]=="TOPLEFT" and ChatFrame1.point[3]=="CENTER" and chatBottom>=height*.48-.01,
+            "group chat stays below the party row and above the stick")
+        local chatTop=height/2+ChatFrame1.point[5]
+        local chatButtonsTop=chatBottom+ChatFrame1ButtonFrame:GetHeight()*ChatFrame1ButtonFrame:GetEffectiveScale()/UIParent:GetEffectiveScale()
+        assert(chatTop+32<=height*.694 and chatButtonsTop<=chatTop+32.01,
             "chat tabs and the complete stock button column stay below party pets and auras")
         ChatFrame1ButtonFrame:SetHeight(220)
         ChatFrame1ButtonFrame:Layout()
-        assert(height*.48+220*ChatFrame1ButtonFrame:GetEffectiveScale()/UIParent:GetEffectiveScale()<=height*.694,
+        assert(chatBottom+220*ChatFrame1ButtonFrame:GetEffectiveScale()/UIParent:GetEffectiveScale()<=height*.694,
             "late chat utility buttons cannot grow into party controls")
         ChatFrame1ButtonFrame:SetHeight(184)
         PartyFrame:Layout()
         assert(PartyFrame.MemberFrame1.point[3]=="CENTER","stock party layout updates cannot cover the movement stick")
         for i=1,4 do PartyFrame["MemberFrame"..i]:Hide() end
         active.scripts.OnEvent(active,"GROUP_ROSTER_UPDATE")
-        assert(ChatFrame1:GetHeight()==92 and ChatFrame1ButtonFrame:GetScale()==1,
-            "solo chat regains its original utility button scale")
+        -- Four rows of the 14-point chat font, with the tabs where they were.
+        assert(ChatFrame1:GetHeight()==60 and ChatFrame1.point[5]==128,"solo chat shows a few rows below the unit frames")
+        local sizeKey=objects.WeHavePhonesTouchChatSize
+        assert(sizeKey.visible and sizeKey.text=="Larger" and sizeKey.point[2]==ChatFrame1 and sizeKey.point[3]=="TOPRIGHT",
+            "the chat size key sits beside the chat tabs")
+        local compactWidth=ChatFrame1:GetWidth()
+        sizeKey.scripts.OnClick(sizeKey)
+        local largeBottom=height/2+ChatFrame1.point[5]-ChatFrame1:GetHeight()
+        local radius=math.min(height*(aspect<1.6 and .12 or .13),width*.13)
+        assert(ChatFrame1:GetHeight()>=2*60 and ChatFrame1:GetWidth()>compactWidth and ChatFrame1.point[5]==128,
+            "the larger chat keeps its top edge and grows")
+        assert(height-largeBottom<=height*(aspect<1.6 and .68 or .70)-radius,"the larger chat stops above the movement stick")
+        assert(ChatFrame1.point[4]+ChatFrame1:GetWidth()<=0,"the larger chat leaves the character in the center clear")
+        assert(sizeKey.text=="Smaller" and sizeKey.active and ChatFrame1ButtonFrame:GetScale()>=.95,
+            "the larger chat restores the stock button column to about its own size")
+        sizeKey.scripts.OnClick(sizeKey)
+        assert(ChatFrame1:GetHeight()==60 and sizeKey.text=="Larger" and not sizeKey.active,"the size key returns chat to a few rows")
     end
 end
 if geometry then geometry:close() end
@@ -719,7 +740,7 @@ combat=true
 ChatFrame1:ApplySystemAnchor()
 assert(ChatFrame1.point[3]=="CENTER","unprotected stock chat cannot move over the stick during combat")
 ChatFrame1:SetSize(900,400)
-assert(ChatFrame1:GetWidth()<=300 and ChatFrame1:GetHeight()==92,"combat chat resizing cannot cover movement or party controls")
+assert(ChatFrame1:GetWidth()<=300 and ChatFrame1:GetHeight()==60,"combat chat resizing cannot cover movement or party controls")
 ChatFrame1.protected=true
 ChatFrame1:ApplySystemAnchor()
 assert(ChatFrame1.point[3]=="BOTTOMLEFT","protected replacement chat frames remain untouched during combat")
@@ -733,8 +754,11 @@ assert(GameTooltip.visible and GameTooltip.point[2]==ChatFrame1,"Inspect can rea
 menuChord("SHIFT-F9")
 ActionButton1:SetTooltip()
 assert(not GameTooltip.visible,"returning from combat Inspect suppresses later tooltip refreshes")
+objects.WeHavePhonesTouchChatSize.scripts.OnClick(objects.WeHavePhonesTouchChatSize)
+assert(ChatFrame1:GetHeight()>60,"unprotected stock chat can open its larger view during combat")
 active.scripts.OnEvent(active,"PLAYER_REGEN_DISABLED")
 assert(not objects.WeHavePhonesTouchEditor.visible,"combat closes the editor")
+assert(ChatFrame1:GetHeight()==60 and objects.WeHavePhonesTouchChatSize.text=="Larger","combat returns chat to a few rows")
 local debuffY=DebuffFrame.point[5]
 buffs=12
 active.scripts.OnEvent(active,"UNIT_AURA")
