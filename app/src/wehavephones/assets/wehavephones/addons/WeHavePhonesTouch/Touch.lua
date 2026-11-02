@@ -1038,9 +1038,65 @@ PositionTracker = function()
     if not ok then geterrorhandler()(problem) end
 end
 
+-- Retail spans its button frame over the chat's full height, with the channel and
+-- voice buttons hanging from the top and the menu at the bottom. The social and
+-- text to speech buttons stack in ChatAlertFrame above it. Several of these are
+-- UIParent children, so scaling the button frame alone leaves them full size.
+-- Stack the whole column beside the rows and tabs at one shared scale.
+local RETAIL_CHAT_STACK = {"ChatFrameChannelButton", "ChatFrameToggleVoiceDeafenButton", "ChatFrameToggleVoiceMuteButton"}
+local RETAIL_CHAT_ALERTS = {"QuickJoinToastButton", "TextToSpeechButtonFrame"}
+local retailChatHooks = {}
+local function FitRetailChatButtons()
+    local frame = ChatFrame1ButtonFrame
+    local function Shown(name) local object = _G[name] return object and object:IsShown() and object end
+    local stack = 2
+    for _, name in ipairs(RETAIL_CHAT_STACK) do
+        local object = Shown(name)
+        if object then stack = stack+object:GetHeight()+2 end
+    end
+    if ChatFrameMenuButton and ChatFrameMenuButton:IsShown() then stack = stack+ChatFrameMenuButton:GetHeight() end
+    -- ChatAlertFrame sits 27 units above the button frame and grows upward.
+    local alerts = 0
+    for _, name in ipairs(RETAIL_CHAT_ALERTS) do
+        local object = Shown(name)
+        if object then alerts = alerts+object:GetHeight()+2 end
+    end
+    if alerts > 0 then alerts = alerts+27 end
+    local column = ChatFrame1:GetHeight()+32
+    local scale = math.min(1, column/math.max(1, stack+alerts))
+    RememberHud("ChatFrame1ButtonFrame")
+    SetRelativeScale(frame, scale)
+    frame:ClearAllPoints()
+    -- The column's top meets the tab row. Its left edge stays clear of the chat background.
+    frame:SetPoint("TOPRIGHT", ChatFrame1, "TOPLEFT", -5/scale, 32/scale-alerts)
+    frame:SetHeight(stack)
+    for _, name in ipairs({"ChatAlertFrame", "ChatFrameToggleVoiceDeafenButton", "ChatFrameToggleVoiceMuteButton",
+        unpack(RETAIL_CHAT_ALERTS)}) do
+        local object = _G[name]
+        if object then
+            RememberHud(name)
+            SetRelativeScale(object, scale)
+        end
+    end
+    -- Voice, text to speech and button side changes show or move these after login.
+    for _, name in ipairs({"ChatFrameToggleVoiceDeafenButton", "ChatFrameToggleVoiceMuteButton", unpack(RETAIL_CHAT_ALERTS)}) do
+        local object = _G[name]
+        if object and not retailChatHooks[object] then
+            object:HookScript("OnShow", QueueHud)
+            object:HookScript("OnHide", QueueHud)
+            retailChatHooks[object] = true
+        end
+    end
+    if not retailChatHooks.side and FCF_SetButtonSide then
+        hooksecurefunc("FCF_SetButtonSide", QueueHud)
+        retailChatHooks.side = true
+    end
+end
+
 -- The stock chat buttons rise from the chat's bottom edge. Fit them beside its rows and tabs.
 FitChatButtons = function()
     if not ChatFrame1ButtonFrame or ChatFrame1ButtonFrame:IsProtected() then return end
+    if retail then FitRetailChatButtons() return end
     RememberHud("ChatFrame1ButtonFrame")
     local fit = (ChatFrame1:GetHeight()+32)/math.max(1, ChatFrame1ButtonFrame:GetHeight())
     if fit < 1 then SetRelativeScale(ChatFrame1ButtonFrame, fit)
