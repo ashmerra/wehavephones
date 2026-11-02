@@ -15,7 +15,9 @@ No startup prefetch or automatic fallback tries these additions. A first draft, 
   `adreno-8xx` and `adreno-84x`.
 - Four [The412Banner](https://github.com/The412Banner/Banners-Turnip/releases) Android A8xx builds,
   `turnip-banner-27.0.0-<build>-a8xx`: `20261021-r6`, `20261023-r4`, `20261024-r7` and `20261027-r3`.
-  Optional in `adreno-8xx` and `adreno-84x`.
+  Optional in `adreno-8xx` and `adreno-84x`. Rules v13 also offers plain V38 in `adreno-7xx`
+  at a player's request. Its chip table lists the A740 and A750. On the Galaxy S23 (A740) WoW
+  Retail ran with it but drew a black screen.
 - `turnip-banner-a8xx-850-845-pre1`:
   [Banner prerelease](https://github.com/The412Banner/Banners-Turnip/releases/tag/a8xx-850-845-pre1)
   with basic Adreno 850/845 support from Mesa MR 45384. Optional only in `adreno-84x`, the profile

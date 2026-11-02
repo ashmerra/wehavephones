@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "rulesVersion": 12,
+  "rulesVersion": 13,
   "minAppVersionCode": 1,
   "updatedAt": "2026-11-02",
   "drivers": {
@@ -215,13 +215,13 @@
     },
     "turnip-gen8-stevenmxz-v38": {
       "type": "adrenotools",
-      "description": "Experimental. Compatibility and WoW Retail unverified. Android 9+.",
+      "description": "Experimental. Compatibility and WoW Retail unverified. Drew a black screen in WoW on an Adreno 740. Android 9+.",
       "asset": null,
       "url": "https://github.com/StevenMXZ/Adreno-Tools-Drivers/releases/download/v27.0.0-R1/Turnip_Gen8_V38.zip",
       "sha256": "642cb514534dc6b712ce0fb16aa76db566359b6c8542f0577f8ba6dd3aff8674",
       "libraryName": "libvulkan_freedreno.so",
       "librarySha256": "41da037364520e0fe1a2e2fb6d9aa7c0116110daa0ec0c94cbfa6c08a52fd013",
-      "source": "StevenMXZ Gen8 V38, release v27.0.0-R1, published 2026-10-19. Package calls itself Turnip Gen8 V38, Mesa 27.0.0 f28352d117 (the same Mesa revision as The412Banner v27.0.0-20261019). Upstream: whitebelyash turnip/gen8 plus Mesa upstream for A840/A830/A829/A825/A810. Chip-table inspection finds A810, A812, A825, A829, A830 and both A840 entries (0xffff44050A31 and 0xffff44050A21). No demonstrated WoW Retail or OnePlus 15 improvement. Verified archive, metadata and library on 2026-10-27. See graphics/turnip-optional-20261027.json and docs/TURNIP_OPTIONAL_2026_10_27.md."
+      "source": "StevenMXZ Gen8 V38, release v27.0.0-R1, published 2026-10-19. Package calls itself Turnip Gen8 V38, Mesa 27.0.0 f28352d117 (the same Mesa revision as The412Banner v27.0.0-20261019). Upstream: whitebelyash turnip/gen8 plus Mesa upstream for A840/A830/A829/A825/A810. Chip-table inspection finds A810, A812, A825, A829, A830 and both A840 entries (0xffff44050A31 and 0xffff44050A21). No demonstrated WoW Retail or OnePlus 15 improvement. Verified archive, metadata and library on 2026-10-27. See graphics/turnip-optional-20261027.json and docs/TURNIP_OPTIONAL_2026_10_27.md. Optional on Adreno 7xx since rules v13 at a player's request (issue 31). Its chip table lists the A740 and A750. On the Galaxy S23 (A740) WoW Retail ran but drew a black screen."
     },
     "turnip-gen8-stevenmxz-v38-patched": {
       "type": "adrenotools",
@@ -296,7 +296,8 @@
       "wowApiArg": "-d3d11",
       "notes": "Adreno 7xx (Galaxy S23, Adreno 740): the pinned Turnip with D3D11 through DXVK. In WoW Forever on the S23, D3D11 needed about 20% fewer GPU cycles per frame than D3D12 through vkd3d-proton, so the thermally limited GPU draws more frames.",
       "choices": [
-        "turnip-gamesir-rutabaga-v3"
+        "turnip-gamesir-rutabaga-v3",
+        "turnip-gen8-stevenmxz-v38"
       ]
     },
     "adreno-6xx": {

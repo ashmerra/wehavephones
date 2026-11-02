@@ -30,7 +30,9 @@ and D3D12 through vkd3d-proton fails on Mali.
 Players can also pick a driver themselves on the Play screen (see [Driver picker](#driver-picker)).
 Adreno 840 phones are offered 30 drivers and other Adreno 8xx phones 27: the profile's own, plus
 other public Turnip builds and Qualcomm driver builds that the rules list as `choices`.
-Adreno 6xx and 7xx profiles also offer Gamesir Rutabaga v3 as an optional choice.
+Adreno 6xx and 7xx profiles also offer Gamesir Rutabaga v3 as an optional choice. Since rules v13
+the Adreno 7xx profile also offers StevenMXZ Gen8 V38, which a player asked for (issue 31). On the
+Galaxy S23 (Adreno 740) WoW Retail ran with it but drew a black screen, so it stays picker-only.
 The [October 16](TURNIP_OPTIONAL_2026_10_16.md) and [October 27](TURNIP_OPTIONAL_2026_10_27.md)
 optional Turnip catalogs record the 14 added choices, chip-table limits, package provenance and
 validation. Every automatic driver order, rule, environment, compatibility setting and graphics

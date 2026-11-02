@@ -82,7 +82,8 @@
       "elfBuildId": "0ec23e01875ca07cf117899992683bb939e25e9f",
       "profiles": [
         "adreno-8xx",
-        "adreno-84x"
+        "adreno-84x",
+        "adreno-7xx"
       ]
     },
     "turnip-gen8-stevenmxz-v38-patched": {

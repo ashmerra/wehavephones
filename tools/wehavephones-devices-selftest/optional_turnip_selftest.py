@@ -68,6 +68,7 @@ def main():
         batch = [d for d in expected_ids("turnip-optional-20261027.json", BATCH_20261027)
                  if profile in rules_profiles(rules, d)]
         assert choices[-len(batch):] == batch, (profile, "new choices appended in order")
+    assert rules["profiles"]["adreno-7xx"]["choices"][-1] == "turnip-gen8-stevenmxz-v38", "V38 appended on Adreno 7xx"
     total = sum(len(expected_ids(n, t)) for n, t in MANIFESTS.items())
     assert len(archive_hashes) == total and len(library_hashes) == total, "no byte-identical releases to deduplicate"
     if args.archives is not None and not checked:
@@ -100,7 +101,9 @@ def check_driver(rules, driver_id, provenance, tags, archives):
     elif driver_id in V38:
         assert provenance["url"].endswith("/v27.0.0-R1/" + V38[driver_id][0]), driver_id
         assert meta["name"] == V38[driver_id][1], driver_id
-        assert profiles == set(A8XX), driver_id
+        # Rules v13 also offers plain V38 on Adreno 7xx (issue 31). Its chip table lists the A740/A750.
+        expected = set(A8XX) | ({"adreno-7xx"} if driver_id == "turnip-gen8-stevenmxz-v38" else set())
+        assert profiles == expected, driver_id
     elif driver_id == "turnip-banner-" + PRE:
         assert provenance["url"].endswith(f"/{PRE}/Turnip-{PRE}-A8xx.zip")
         assert meta["name"] == "Mesa Turnip A8xx 850-845 test pre1"

@@ -351,6 +351,8 @@ public final class DeviceRulesSelfTest {
             ArrayList<String> expected = new ArrayList<>(ids(oldP.pickerDrivers()));
             boolean a8xx = name.equals("adreno-8xx") || name.equals("adreno-84x");
             if (a8xx || name.equals("adreno-6xx") || name.equals("adreno-7xx")) expected.add(RUTABAGA);
+            // Rules v13: plain V38 is optional on Adreno 7xx at a player's request (issue 31).
+            if (name.equals("adreno-7xx")) expected.add(GEN8_V38[0]);
             if (a8xx) {
                 java.util.Collections.addAll(expected, BANNERS);
                 java.util.Collections.addAll(expected, GEN8_V38);
