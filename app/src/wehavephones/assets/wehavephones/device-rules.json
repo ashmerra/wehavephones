@@ -1,8 +1,8 @@
 {
   "schema": 1,
-  "rulesVersion": 11,
+  "rulesVersion": 12,
   "minAppVersionCode": 1,
-  "updatedAt": "2026-10-27",
+  "updatedAt": "2026-11-02",
   "drivers": {
     "system": {
       "type": "system",
@@ -111,10 +111,10 @@
       "type": "adrenotools",
       "asset": null,
       "url": "https://github.com/StevenMXZ/freedreno_turnip-CI/releases/download/v891.7/v891.7.zip",
-      "sha256": "2ddf93b839db165db82a76a440564f73694c6f6e3c84097e56abb95075d469e7",
+      "sha256": "177453b85cfc1348b8a1f7e463373ec2e18f8b87280443b0a348aa6e89559fe4",
       "libraryName": "vulkan.ad891.so",
       "librarySha256": "b2c6e92a05d4e6388250f5ec6f94408f2e693cb7fd26274382913ddcb6586108",
-      "source": "Qualcomm Adreno driver v891.7 for Adreno 8xx, extracted from Honor firmware (github.com/StevenMXZ/freedreno_turnip-CI release v891.7, 2026-10-05)."
+      "source": "Qualcomm Adreno driver v891.7 for Adreno 8xx, extracted from Honor firmware (github.com/StevenMXZ/freedreno_turnip-CI release v891.7, 2026-10-05). The release archive was replaced on 2026-10-20 with an unchanged vulkan.ad891.so, so rules v12 updates the archive hash."
     },
     "qualcomm-863.1": {
       "type": "adrenotools",

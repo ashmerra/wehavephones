@@ -56,6 +56,8 @@ public final class DeviceRulesSelfTest {
     // One build per stretch of Turnip-relevant Mesa changes from October 16 r5 to October 27 r3, plus the latest.
     private static final String[] BANNERS_20261027 = banners("20261021-r6", "20261023-r4", "20261024-r7", "20261027-r3");
     private static final String BANNER_850_845 = "turnip-banner-a8xx-850-845-pre1";
+    private static final String QUALCOMM_891 = "qualcomm-891.7";
+    private static final String QUALCOMM_891_ARCHIVE = "177453b85cfc1348b8a1f7e463373ec2e18f8b87280443b0a348aa6e89559fe4";
 
     private static String[] banners(String... builds) {
         String[] ids = new String[builds.length];
@@ -304,7 +306,17 @@ public final class DeviceRulesSelfTest {
         JSONObject oldDrivers = before.getJSONObject("drivers");
         JSONObject newDrivers = after.getJSONObject("drivers");
         for (String id : oldDrivers.keySet()) {
-            check(oldDrivers.getJSONObject(id).similar(newDrivers.getJSONObject(id)), "existing driver unchanged: " + id);
+            JSONObject oldDriver = new JSONObject(oldDrivers.getJSONObject(id).toString());
+            JSONObject newDriver = new JSONObject(newDrivers.getJSONObject(id).toString());
+            if (id.equals(QUALCOMM_891)) {
+                // Upstream replaced the release archive on 2026-10-20. The library inside is unchanged.
+                eq(QUALCOMM_891_ARCHIVE, newDriver.getString("sha256"), "v891.7 archive hash follows the replaced release");
+                for (String key : new String[] {"sha256", "source"}) {
+                    oldDriver.remove(key);
+                    newDriver.remove(key);
+                }
+            }
+            check(oldDriver.similar(newDriver), "existing driver unchanged: " + id);
         }
         int added = 1 + BANNERS.length + GEN8_V38.length + BANNERS_20261027.length + 1;
         eq(oldDrivers.length() + added, newDrivers.length(), "exactly the requested releases added");
