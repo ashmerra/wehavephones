@@ -28,13 +28,13 @@ public final class SessionInputExtras {
         }
         gamepad = new VirtualGamepadController(activity);
         // Session creation precedes setupUI. The poller's refresh runs after the input view exists.
-        gamepad.setGameRunningListener(running -> {
+        gamepad.setTouchOverlayListener(show -> {
             if (touch == null) {
                 touch = new MobileTouchControlsView(activity);
                 ViewGroup root = (ViewGroup) activity.getInputControlsView().getParent();
                 root.addView(touch, root.indexOfChild(activity.getInputControlsView()) + 1);
             }
-            touch.showForGame(running);
+            touch.showForGame(show);
         });
         gamepad.start();
         GlueControllerBridge.start(activity);

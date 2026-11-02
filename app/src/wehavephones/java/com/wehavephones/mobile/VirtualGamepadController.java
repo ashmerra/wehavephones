@@ -37,7 +37,9 @@ public final class VirtualGamepadController implements InputManager.InputDeviceL
     private boolean gameRunning;
     private ControlsProfile virtualProfile;
     private boolean manual;
-    private java.util.function.Consumer<Boolean> gameRunningListener;
+    /** Touch mode the running game was prepared with, or null while no game runs. */
+    private Boolean gameTouchMode;
+    private java.util.function.Consumer<Boolean> touchOverlayListener;
     // Persisted because the app process restarts when a session ends, before diagnostics are read.
     private static final String KEY_STATE = "wehavephones_controls_state";
     private static final String KEY_LAST_CHANGE = "wehavephones_controls_last_change";
@@ -51,8 +53,20 @@ public final class VirtualGamepadController implements InputManager.InputDeviceL
 
     public boolean isFor(XServerDisplayActivity activity) { return this.activity == activity; }
 
-    public void setGameRunningListener(java.util.function.Consumer<Boolean> listener) {
-        gameRunningListener = listener;
+    /** Receives whether the mobile touch overlay should show: the game runs in touch mode. */
+    public void setTouchOverlayListener(java.util.function.Consumer<Boolean> listener) {
+        touchOverlayListener = listener;
+    }
+
+    /**
+     * Launch prepares ConsolePort and the touch addon for the selected mode, and
+     * they cannot change while WoW runs. A setting changed mid-game applies at the
+     * next launch, so the overlay keeps the mode the game started with. Otherwise
+     * turning touch mode off would show a controller whose character select keys
+     * stay off, because ConsolePort is still disabled.
+     */
+    private boolean touchMode() {
+        return gameTouchMode != null ? gameTouchMode : WeHavePhonesConfig.isMobileTouchEnabled(activity);
     }
 
     public void start() {
@@ -65,6 +79,8 @@ public final class VirtualGamepadController implements InputManager.InputDeviceL
                 while (!Thread.currentThread().isInterrupted()) {
                     boolean running = ProcessScanner.findWowProcess() != null;
                     handler.post(() -> {
+                        if (running && gameTouchMode == null) gameTouchMode = WeHavePhonesConfig.isMobileTouchEnabled(activity);
+                        else if (!running) gameTouchMode = null;
                         gameRunning = running;
                         refresh();
                     });
@@ -87,8 +103,9 @@ public final class VirtualGamepadController implements InputManager.InputDeviceL
     public void refresh() {
         InputControlsView view = activity.getInputControlsView();
         if (stopped || activity.isFinishing() || activity.isDestroyed() || view == null) return;
-        if (gameRunningListener != null) gameRunningListener.accept(gameRunning);
-        if (WeHavePhonesConfig.isMobileTouchEnabled(activity)) {
+        boolean touch = touchMode();
+        if (touchOverlayListener != null) touchOverlayListener.accept(gameRunning && touch);
+        if (touch) {
             if (view.getProfile() != null) {
                 release(view.getProfile(), view);
                 activity.hideInputControls();
@@ -96,7 +113,7 @@ public final class VirtualGamepadController implements InputManager.InputDeviceL
         } else if (!manual) applyAutomatic(view);
         activity.getWinHandler().refreshGamepadController();
         String state = "Mode: " + (manual ? "manual (picked in Input Controls)" : "automatic")
-                + "\nOverlay: " + (WeHavePhonesConfig.isMobileTouchEnabled(activity)
+                + "\nOverlay: " + (touch
                     ? "mobile touch (" + (gameRunning ? "visible" : "waiting for WoW") + ")"
                     : describe(view.getProfile(), view))
                 + "\nWoW running: " + (gameRunning ? "yes" : "no") + "\n";

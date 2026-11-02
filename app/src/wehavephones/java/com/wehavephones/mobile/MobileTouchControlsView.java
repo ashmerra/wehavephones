@@ -111,8 +111,8 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
         setVisibility(GONE);
     }
 
-    public void showForGame(boolean running) {
-        boolean show = running && WeHavePhonesConfig.isMobileTouchEnabled(getContext());
+    /** {@code show} is true while a game prepared for touch mode runs. */
+    public void showForGame(boolean show) {
         if (show == (getVisibility() == VISIBLE)) return;
         cancelTouches();
         nextModifier = null;
