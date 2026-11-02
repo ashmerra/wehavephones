@@ -12,6 +12,8 @@ Built-in addon manager, with optional CurseForge and WowUp apps.
 
 [![WeHavePhones demo video](website/assets/gameplay-60s.jpg)](https://www.youtube.com/watch?v=4wet8as_QfA)
 
+![World of Warcraft Retail running on the Galaxy S23+ with touch controls](website/assets/retail-touch-controls.png)
+
 ## Tested on
 
 All WoW versions have been tested and confirmed playable on the **Samsung Galaxy S23+**: Forever, Classic Era, BC Anniversary, MOP Classic, and Retail.
