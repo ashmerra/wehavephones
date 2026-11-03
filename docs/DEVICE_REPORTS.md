@@ -10,6 +10,11 @@ files reports from other sites should include.
    text block, `== WeHavePhones device report ==` (model, GPU, rule, profile, driver, the driver
    picked in Diagnostics and probe results. No account names, emails or serial numbers). Report a problem opens a prefilled
    issue form in the browser (see below). Copy lets the user paste the block into any issue.
+   On Android 11 and later, `last_exits` lists why Android ended the app's main process the last
+   three times, newest first, for example `low-memory 11-03 14:20 pss 2100 MB`. A Wine session ends
+   with that process, so this separates a low-memory kill (`low-memory`, `other`) from a crash
+   (`crash`, `crash-native signal 11`, `anr`). `user-requested` means the app was swiped away or
+   force stopped.
 2. **Issue form.** `.github/ISSUE_TEMPLATE/bug_report.yml` asks for version, phone, chipset,
    Android version, game, a free-text description and an optional `Device report` field.
 3. **External reports.** A separate bot files issues for problems people post elsewhere (Reddit and

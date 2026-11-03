@@ -58,6 +58,14 @@ public final class DeviceReportSelfTest {
         url = DeviceReport.issueUrl(fields, "0.0.1", "OnePlus CPH2747", "Adreno (TM) 840", "16");
         check(url.length() <= DeviceReport.MAX_URL_LENGTH && url.contains("&source=In%20the%20app"), "falls back to a link without the report");
 
+        check("low-memory 11-03 14:20 pss 2100 MB (lmk)".equals(DeviceReport.exitReason(3, 0, "11-03 14:20", 2100 * 1024, "lmk")),
+                "low-memory exit");
+        check("crash-native signal 11 11-03 14:18".equals(DeviceReport.exitReason(5, 11, "11-03 14:18", 0, null)),
+                "native crash shows its signal");
+        check("reason-99 11-03 14:18".equals(DeviceReport.exitReason(99, 0, "11-03 14:18", 0, "")), "unknown reason code");
+        String exit = DeviceReport.exitReason(13, 0, "", 0, "stop a; b\n" + repeat("x", 80));
+        check(exit.startsWith("other (stop a, b ") && exit.endsWith("...)") && exit.length() < 70, "description is one bounded line");
+
         if (failures > 0) {
             System.out.println("DeviceReportSelfTest: " + failures + " failure(s)");
             System.exit(1);

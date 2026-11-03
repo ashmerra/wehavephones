@@ -31,6 +31,30 @@ public final class DeviceReport {
         return text.toString().replace('\n', ' ').trim();
     }
 
+    /** ApplicationExitInfo reason codes, indexed by value, as short report words. */
+    private static final String[] EXIT_REASONS = {
+            "unknown", "exit-self", "signaled", "low-memory", "crash", "crash-native", "anr",
+            "init-failure", "permission-change", "excessive-resource-use", "user-requested", "user-stopped",
+            "dependency-died", "other", "freezer", "package-state-change", "package-updated"};
+    private static final int MAX_EXIT_DESCRIPTION = 48;
+
+    /**
+     * One app process exit, as recorded by Android: "low-memory 11-03 14:20 pss 2100 MB (lmk)".
+     * {@code status} is the signal or exit code, shown for signaled, native-crash and self exits.
+     * {@code time} is "MM-dd HH:mm" in local time, {@code pssKb} 0 when unknown.
+     */
+    public static String exitReason(int reason, int status, String time, long pssKb, String description) {
+        StringBuilder text = new StringBuilder(reason >= 0 && reason < EXIT_REASONS.length
+                ? EXIT_REASONS[reason] : "reason-" + reason);
+        if (reason == 1 || reason == 2 || reason == 5) text.append(reason == 1 ? " code " : " signal ").append(status);
+        if (time != null && !time.isEmpty()) text.append(' ').append(time);
+        if (pssKb > 0) text.append(" pss ").append(pssKb / 1024).append(" MB");
+        String detail = description == null ? "" : description.replace('\r', ' ').replace('\n', ' ').replace(';', ',').trim();
+        if (detail.length() > MAX_EXIT_DESCRIPTION) detail = detail.substring(0, MAX_EXIT_DESCRIPTION).trim() + "...";
+        if (!detail.isEmpty()) text.append(" (").append(detail).append(')');
+        return text.toString();
+    }
+
     /** Adds the "key: value" lines of {@code text} (for example DeviceIdentity.toReportText()) to {@code fields}. */
     public static void putLines(Map<String, String> fields, String text) {
         for (String line : text.split("\n")) {

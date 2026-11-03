@@ -163,7 +163,36 @@ public final class WeHavePhonesDiagnostics {
         }
         DeviceReport.putLines(fields, identity.toReportText());
         fields.put("vk_device", vkDevice);
+        fields.put("last_exits", lastExits(context));
         return fields;
+    }
+
+    private static final int REPORTED_EXITS = 3;
+
+    /**
+     * Why Android ended the app's main process the last few times, newest first. A Wine session
+     * dies with that process, so this tells a low-memory kill from a crash. Android 11 and later.
+     */
+    static String lastExits(Context context) {
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.R) return "";
+        try {
+            android.app.ActivityManager manager = context.getSystemService(android.app.ActivityManager.class);
+            if (manager == null) return "";
+            java.text.SimpleDateFormat format = new java.text.SimpleDateFormat("MM-dd HH:mm", java.util.Locale.US);
+            StringBuilder text = new StringBuilder();
+            int count = 0;
+            for (android.app.ApplicationExitInfo exit : manager.getHistoricalProcessExitReasons(context.getPackageName(), 0, 0)) {
+                if (!context.getPackageName().equals(exit.getProcessName())) continue;
+                if (text.length() > 0) text.append("; ");
+                text.append(DeviceReport.exitReason(exit.getReason(), exit.getStatus(),
+                        format.format(new java.util.Date(exit.getTimestamp())), exit.getPss(), exit.getDescription()));
+                if (++count == REPORTED_EXITS) break;
+            }
+            return text.toString();
+        }
+        catch (RuntimeException e) {
+            return "";
+        }
     }
 
     /** The opt-out, every device counted as a game controller and the session's on-screen controls. */
