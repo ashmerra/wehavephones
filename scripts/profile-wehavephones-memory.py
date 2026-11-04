@@ -437,7 +437,7 @@ def summarize(samples, marks, events_path, args):
             entry["max_rss_kb"] = max(entry["max_rss_kb"], row["rss_kb"])
             entry["sum_rss_kb"] += row["rss_kb"]
             entry["last_rss_kb"] = row["rss_kb"]
-    for name, entry in per_name.items():
+    for entry in per_name.values():
         entry["mean_rss_kb"] = entry["sum_rss_kb"] // max(1, entry["samples"])
     summary["processes"] = sorted(per_name.items(), key=lambda item: -item[1]["max_rss_kb"])
 

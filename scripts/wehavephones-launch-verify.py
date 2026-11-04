@@ -25,7 +25,6 @@ import json
 import pathlib
 import re
 import shlex
-import subprocess
 import sys
 import time
 

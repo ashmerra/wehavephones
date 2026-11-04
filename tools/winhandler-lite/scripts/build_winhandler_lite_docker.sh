@@ -3,7 +3,6 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJ_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
-SRC="${PROJ_DIR}/src/winhandler-lite.c"
 OUT_DIR="${PROJ_DIR}/out"
 OUT_EXE="${OUT_DIR}/winhandler-lite.exe"
 

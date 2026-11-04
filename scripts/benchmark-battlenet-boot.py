@@ -19,7 +19,7 @@ import subprocess
 import time
 import xml.etree.ElementTree as ET
 
-from PIL import Image, ImageDraw, ImageStat
+from PIL import Image, ImageStat
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location('device', ROOT / 'scripts/wehavephones-device.py')

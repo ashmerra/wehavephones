@@ -102,6 +102,7 @@ load_release_signing() {
     } >&2
     return 1
   fi
+  # shellcheck disable=SC2088 # match a literal ~/ prefix, then expand it
   case "$WEHAVEPHONES_KEYSTORE" in
     "~/"*) WEHAVEPHONES_KEYSTORE="$HOME/${WEHAVEPHONES_KEYSTORE#"~/"}" ;;
     /*) ;;
@@ -204,7 +205,8 @@ if [[ -z "${JAVA_HOME:-}" ]]; then
   if [[ -d "$DEFAULT_JAVA17" ]]; then
     export JAVA_HOME="$DEFAULT_JAVA17"
   elif command -v /usr/libexec/java_home >/dev/null 2>&1; then
-    export JAVA_HOME="$(/usr/libexec/java_home -v 17)"
+    JAVA_HOME="$(/usr/libexec/java_home -v 17)"
+    export JAVA_HOME
   else
     echo "[build-wehavephones] Could not find JDK 17. Run scripts/setup-dev.sh or set JAVA_HOME." >&2
     exit 1
