@@ -4,6 +4,15 @@ Keep changes focused and use the project helpers in `scripts/` to build and
 run the relevant checks. Include a brief description of the behavior change
 and the checks performed in the commit or pull request.
 
+## Linting
+
+Run `scripts/lint-wehavephones.sh` before committing. Install its pinned
+ShellCheck and Ruff with `scripts/install-lint-tools.sh`. Options such as
+`--shell`, `--python` or `--android` run a single linter. Fix new findings
+rather than adding them to `app/lint-baseline.xml`. Regenerate the baseline
+only when an AGP or lint upgrade changes existing findings. Delete the file
+and run `./gradlew :app:lintWehavephonesDebug` twice to recreate it.
+
 ## Documentation and investigation notes
 
 `docs/` contains durable public documentation for using, building and

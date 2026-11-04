@@ -1,0 +1,19 @@
+# Ruff settings for the project's own Python scripts (scripts/lint-wehavephones.sh).
+target-version = "py310"
+line-length = 120
+extend-exclude = [
+  # Vendored upstream sources are linted by their own projects.
+  "app/src/main/cpp",
+  "out",
+  "release-staging",
+]
+
+[lint]
+# Real bugs only: syntax/import errors, undefined or unused names, and
+# bugbear's likely-mistake checks. Style rules stay off.
+select = ["E4", "E7", "E9", "F", "B"]
+ignore = [
+  "E701", "E702",  # compact one-line statements are a style choice here
+  "E741",          # short names such as `l` in comprehensions
+  "B905",          # zip() truncation is intended where used
+]

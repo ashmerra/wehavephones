@@ -50,8 +50,11 @@ android {
         }
     }
 
-    lintOptions {
+    lint {
         checkReleaseBuilds false
+        // Existing findings from the inherited code live in the baseline, so
+        // scripts/lint-wehavephones.sh fails only on new problems.
+        baseline = file('lint-baseline.xml')
     }
 
     ndkVersion '22.1.7171670'

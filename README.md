@@ -59,6 +59,8 @@ scripts/build-wehavephones.sh  # fetches pinned assets, builds the APK
 
 The APK is written to `app/build/outputs/apk/wehavephones/debug/app-wehavephones-debug.apk`. A debug build installs as a separate app, WeHavePhones Dev (`com.wehavephones.dev`), next to an official release. `scripts/deploy-wehavephones.sh` builds it, installs it and launches it over adb. Set `ANDROID_DEVICE` in a gitignored `local.env` or pass `--serial`. Large prebuilt assets are pinned by SHA-256. See [docs/BUILD_ASSETS.md](docs/BUILD_ASSETS.md).
 
+Run `scripts/lint-wehavephones.sh` before sending a change. It runs ShellCheck on the shell scripts, Ruff on the Python scripts and Android Lint on the app. Install the pinned ShellCheck and Ruff once with `scripts/install-lint-tools.sh`. Android Lint reports only findings that are not already in `app/lint-baseline.xml`.
+
 ## Documentation
 
 - [Reuse existing WoW game files](docs/REUSE_WOW_FILES.md)

@@ -1,0 +1,3 @@
+# ShellCheck settings for scripts/lint-wehavephones.sh.
+# Follow sourced files such as scripts/local-env.sh.
+external-sources=true
