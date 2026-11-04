@@ -3,6 +3,7 @@ package com.wehavephones.mobile;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Host test for InputBridgeCompanion: the default Input Bridge installer
@@ -51,6 +52,16 @@ public final class InputBridgeCompanionSelfTest {
 
         check("space refused", null, InputBridgeCompanion.guestPath(
                 new File("/storage/emulated/0/Download/Input Bridge/ib.exe"), defaults));
+
+        // A Turkish default locale must not upper-case drive i to a dotted İ.
+        Locale previous = Locale.getDefault();
+        Locale.setDefault(Locale.forLanguageTag("tr-TR"));
+        try {
+            check("drive letter ignores the default locale", "I:\\ib.exe", InputBridgeCompanion.guestPath(exe,
+                    drives("i", "/storage/emulated/0/Download/InputBridge/Installer")));
+        } finally {
+            Locale.setDefault(previous);
+        }
 
         if (failures > 0) {
             System.out.println(failures + " InputBridgeCompanion check(s) failed");

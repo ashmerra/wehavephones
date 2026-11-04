@@ -1,6 +1,7 @@
 package com.wehavephones.mobile;
 
 import java.io.File;
+import java.util.Locale;
 
 /**
  * Settings > Start Input Bridge: starts the user's own copy of
@@ -36,7 +37,7 @@ public final class InputBridgeCompanion {
         for (String[] drive : drives) {
             String root = trimSlashes(drive[1]);
             if (root.isEmpty() || root.length() <= bestLength || !host.startsWith(root + "/")) continue;
-            best = drive[0].toUpperCase() + ":\\" + host.substring(root.length() + 1).replace('/', '\\');
+            best = drive[0].toUpperCase(Locale.ROOT) + ":\\" + host.substring(root.length() + 1).replace('/', '\\');
             bestLength = root.length();
         }
         return best != null && best.indexOf(' ') < 0 ? best : null;

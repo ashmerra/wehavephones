@@ -79,17 +79,6 @@
     </issue>
 
     <issue
-        id="DefaultLocale"
-        message="Implicitly using the default locale is a common source of bugs: Use `toUpperCase(Locale)` instead. For strings meant to be internal use `Locale.ROOT`, otherwise `Locale.getDefault()`."
-        errorLine1="            best = drive[0].toUpperCase() + &quot;:\\&quot; + host.substring(root.length() + 1).replace(&apos;/&apos;, &apos;\\&apos;);"
-        errorLine2="                            ~~~~~~~~~~~">
-        <location
-            file="src/wehavephones/java/com/wehavephones/mobile/InputBridgeCompanion.java"
-            line="39"
-            column="29"/>
-    </issue>
-
-    <issue
         id="NewApi"
         message="Call requires API level 28 (current min is 26): `android.app.Instrumentation#startActivitySync`"
         errorLine1="            activity = (WeHavePhonesActivity)startActivitySync(intent, options.toBundle());"
@@ -4003,17 +3992,6 @@
             file="src/main/res/layout/wine_install_options_dialog.xml"
             line="17"
             column="10"/>
-    </issue>
-
-    <issue
-        id="ByteOrderMark"
-        message="Found byte-order-mark in the middle of a file"
-        errorLine1="            return new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8).replace(&quot;﻿&quot;, &quot;&quot;);"
-        errorLine2="                                                                                                  ~">
-        <location
-            file="src/wehavephones/java/com/wehavephones/mobile/BattleNetBuildInfo.java"
-            line="106"
-            column="99"/>
     </issue>
 
     <issue

@@ -103,7 +103,7 @@ public final class BattleNetBuildInfo {
     private static String readText(File file) {
         if (file == null || !file.isFile()) return null;
         try {
-            return new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8).replace("﻿", "");
+            return new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8).replace("\uFEFF", "");
         }
         catch (IOException e) {
             return null;
