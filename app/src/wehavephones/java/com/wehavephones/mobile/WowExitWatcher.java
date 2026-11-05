@@ -12,7 +12,9 @@ import com.wehavephones.XServerDisplayActivity;
  * Returns to the WeHavePhones menu when the game closes: polls for the WoW
  * process during a Wine session and, once {@link WowExitDetector} says it is
  * gone for good, ends the session like the side menu's Exit (Battle.net and
- * Wine are stopped, the app restarts on the menu).
+ * Wine are stopped, the app restarts on the menu). Until WoW first starts,
+ * the session is held to 30 FPS, so Battle.net and the game's
+ * launch do not render at full speed. The cap lifts for good once WoW runs.
  */
 public final class WowExitWatcher {
     private static final String TAG = "WeHavePhonesExitWatcher";
@@ -34,11 +36,18 @@ public final class WowExitWatcher {
     private static void poll(Context context, XServerDisplayActivity activity) {
         WowExitDetector detector = new WowExitDetector();
         WowExitDetector.State last = WowExitDetector.State.WAITING;
+        boolean bootFrameCap = true;
+        activity.setBootFrameCap(true);
         try {
             while (!Thread.currentThread().isInterrupted() && XServerDisplayActivity.getActiveInstance() == activity
                     && !activity.isFinishing() && !activity.isDestroyed()) {
                 boolean paused = !activity.isSessionActive() || RuntimeStageController.isRunning();
                 boolean running = !paused && ProcessScanner.findWowProcess() != null;
+                if (running && bootFrameCap) {
+                    bootFrameCap = false;
+                    activity.setBootFrameCap(false);
+                    Log.i(TAG, "WoW started; boot frame cap lifted");
+                }
                 WowExitDetector.State state = detector.onScan(SystemClock.elapsedRealtime(), running, paused);
                 if (state != last) Log.i(TAG, last + " -> " + state);
                 if (state == WowExitDetector.State.CLOSING && last != WowExitDetector.State.CLOSING) {

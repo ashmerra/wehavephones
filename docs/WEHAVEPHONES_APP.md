@@ -694,6 +694,19 @@ Keep running in the background (2026-09-28):
     which holds the swapchain to 5 FPS. Host test:
     `scripts/test-wehavephones-runtime.sh` §3.
 
+Boot frame cap (2026-11-04):
+
+12. Until WoW first starts, a session runs at no more than 30 FPS, so
+    Battle.net, the launch overlay and the boot do not render
+    at full speed. `WowExitWatcher` calls
+    `XServerDisplayActivity.setBootFrameCap(true)` when the session starts
+    and lifts the cap for the rest of the session the first time it finds
+    the WoW process. The cap spaces host frames 33 ms apart
+    (`GLRenderer.setMinFrameIntervalMs`) and Present notifications the same
+    way (`PresentExtension.setBootFrameCap`). The hidden 5 FPS pacing wins
+    while the session is in the background. WoW itself is never capped by
+    this.
+
 Everything else reuses existing public APIs: `ImageFs`, `ContainerManager`,
 `Container`, `Shortcut`, `WinHandler`, `ProcessHelper`, `HttpUtils`.
 

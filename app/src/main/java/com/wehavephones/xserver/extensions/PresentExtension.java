@@ -34,12 +34,15 @@ public class PresentExtension implements Extension {
     public static final byte MAJOR_OPCODE = -103;
     private static final int FAKE_INTERVAL = 1000000 / 60;
     private static final long HIDDEN_FRAME_INTERVAL_MS = 200;
+    private static final long BOOT_FRAME_INTERVAL_MS = 1000 / 30;
     public enum Kind {PIXMAP, MSC_NOTIFY}
     public enum Mode {COPY, FLIP, SKIP}
     private final SparseArray<Event> events = new SparseArray<>();
     private SyncExtension syncExtension;
     private final PresentPacer pacer = new PresentPacer();
     private ScheduledExecutorService pacingExecutor;
+    private boolean hidden;
+    private boolean bootFrameCap;
 
     private static abstract class ClientOpcodes {
         private static final byte QUERY_VERSION = 0;
@@ -55,8 +58,19 @@ public class PresentExtension implements Extension {
     }
 
     /** While the session is hidden, holds presenting clients to 5 FPS; nothing is on screen. */
-    public void setHidden(boolean hidden) {
-        pacer.setIntervalMs(hidden ? HIDDEN_FRAME_INTERVAL_MS : 0);
+    public synchronized void setHidden(boolean hidden) {
+        this.hidden = hidden;
+        updatePacing();
+    }
+
+    /** Holds presenting clients to 30 FPS while on screen (the session's boot frame cap). */
+    public synchronized void setBootFrameCap(boolean bootFrameCap) {
+        this.bootFrameCap = bootFrameCap;
+        updatePacing();
+    }
+
+    private void updatePacing() {
+        pacer.setIntervalMs(hidden ? HIDDEN_FRAME_INTERVAL_MS : bootFrameCap ? BOOT_FRAME_INTERVAL_MS : 0);
     }
 
     @Override

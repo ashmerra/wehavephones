@@ -135,6 +135,8 @@ import java.util.concurrent.Executors;
         return memoryTrimListener;
     }
     private static final int ROOTFS_UTILS_PATCH_VERSION = 4;
+    /** Frame interval of the 30 FPS cap held until WoW starts (see setBootFrameCap). */
+    private static final long BOOT_FRAME_INTERVAL_MS = 1000 / 30;
     private static final String WINHANDLER_LITE_ASSET = "winhandler/winhandler-lite.exe";
     private static final String WINHANDLER_LITE_GUEST_PATH = "C:\\windows\\winhandler-lite.exe";
     private static final String OPEN_URL_ASSET = "winhandler/openurl.exe";
@@ -147,6 +149,7 @@ import java.util.concurrent.Executors;
     // so existing containers re-apply patches without requiring appVersion/imgVersion changes.
     private static final int GENERAL_PATCH_VERSION = 6;
     private XServerView xServerView;
+    private volatile boolean bootFrameCap;
     private InputControlsView inputControlsView;
     private TouchpadView touchpadView;
     private XEnvironment environment;
@@ -360,6 +363,7 @@ import java.util.concurrent.Executors;
         });
 
         setupUI();
+        applyBootFrameCap();
 
         keepRunningInBackground = SessionLaunchExtras.keepRunningInBackground(this);
         if (keepRunningInBackground) SessionKeepAliveService.start(this);
@@ -411,6 +415,26 @@ import java.util.concurrent.Executors;
     private void setHiddenFramePacing(boolean hidden) {
         PresentExtension presentExtension = xServer.getExtension(PresentExtension.MAJOR_OPCODE);
         if (presentExtension != null) presentExtension.setHidden(hidden);
+    }
+
+    /**
+     * Caps the session at 30 FPS on screen (host frames and presenting
+     * clients) or lifts the cap. Any thread. A request made before the
+     * X server and its view exist is applied once they do.
+     */
+    public void setBootFrameCap(boolean capped) {
+        bootFrameCap = capped;
+        applyBootFrameCap();
+    }
+
+    private synchronized void applyBootFrameCap() {
+        XServer server = xServer;
+        XServerView view = xServerView;
+        if (server == null || view == null) return;
+        boolean capped = bootFrameCap;
+        PresentExtension presentExtension = server.getExtension(PresentExtension.MAJOR_OPCODE);
+        if (presentExtension != null) presentExtension.setBootFrameCap(capped);
+        view.getRenderer().setMinFrameIntervalMs(capped ? BOOT_FRAME_INTERVAL_MS : 0);
     }
 
     @Override

@@ -5,6 +5,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
+import android.os.SystemClock;
 import android.util.Log;
 
 import com.wehavephones.BuildConfig;
@@ -59,6 +60,8 @@ public class GLRenderer implements GLSurfaceView.Renderer, WindowManager.OnWindo
     private long completedMemoryTrims;
     // Optional callback invoked once per rendered frame (GL thread).
     private Runnable onFrameRendered;
+    private volatile long minFrameIntervalMs;
+    private long lastFrameUptimeMs;
 
     public GLRenderer(XServerView xServerView, XServer xServer) {
         this.xServerView = xServerView;
@@ -111,6 +114,14 @@ public class GLRenderer implements GLSurfaceView.Renderer, WindowManager.OnWindo
 
     @Override
     public void onDrawFrame(GL10 gl) {
+        long interval = minFrameIntervalMs;
+        if (interval > 0) {
+            // Requests coalesce while the GL thread waits, so this caps the host frame rate.
+            long wait = lastFrameUptimeMs + interval - SystemClock.uptimeMillis();
+            if (wait > 0) SystemClock.sleep(Math.min(wait, interval));
+        }
+        lastFrameUptimeMs = SystemClock.uptimeMillis();
+
         if (toggleFullscreen) {
             fullscreen = !fullscreen;
             toggleFullscreen = false;
@@ -337,6 +348,12 @@ public class GLRenderer implements GLSurfaceView.Renderer, WindowManager.OnWindo
     // Compatibility API used by XServerDisplayActivity (host-side fullscreen forcing).
     public void setForceFullscreenWMClass(String wmClass) {
         this.forceFullscreenWMClass = wmClass;
+    }
+
+    /** Minimum time between two host frames; 0 draws every requested frame. */
+    public void setMinFrameIntervalMs(long intervalMs) {
+        minFrameIntervalMs = Math.max(0, intervalMs);
+        xServerView.requestRender();
     }
 
     // Compatibility API used by FrameRating (host-side FPS overlay).
