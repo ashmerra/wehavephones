@@ -1039,11 +1039,71 @@ assert(ObjectiveTrackerFrame.point[3]=="TOPRIGHT" and ObjectiveTrackerFrame:GetS
 -- Forever reports its own project with the Retail UI and none of the Classic globals.
 WOW_PROJECT_CAMELOT=18
 WOW_PROJECT_ID=WOW_PROJECT_CAMELOT
+-- Edit Mode systems wrap their geometry methods in Lua that tracks snapped bars.
+-- Running those wrappers from the addon taints MainActionBar's combat layout.
+local editModeCalls=0
+for _,object in ipairs({PlayerFrame,TargetFrame,MinimapCluster,BuffFrame,DebuffFrame,StanceBar,PetActionBar,ChatFrame1,
+    MicroMenu,MultiBarBottomLeft,MultiBarBottomRight}) do
+    for _,method in ipairs({"SetPoint","ClearAllPoints","SetScale","Hide","SetShown"}) do
+        object[method.."Base"]=methods[method]
+        object[method]=function(self,...) editModeCalls=editModeCalls+1 return methods[method](self,...) end
+    end
+end
 boot(true)
+active.scripts.OnEvent(active,"DISPLAY_SIZE_CHANGED")
+assert(editModeCalls==0,"Forever's Edit Mode frames move through their Base methods")
 assert(not MicroMenu.visible and not MainActionBar.EndCaps.visible,"Forever gets the Retail touch layout")
 assert(ObjectiveTrackerFrame.point[3]=="CENTER" and PlayerFrame.point[3]=="TOPLEFT",
     "Forever's tracker and Edit Mode unit frames fit the touch layout")
 assert(held["CTRL-SHIFT-F6"]=="TOGGLEPROFESSIONBOOK","Forever opens its profession book")
+-- Forever keeps Classic's keyring, as bag -1, beside Retail's reagent bag.
+KEYRING_CONTAINER=-1
+local stockSlots,stockItem=C_Container.GetContainerNumSlots,C_Container.GetContainerItemInfo
+local keyCount=1
+C_Container.GetContainerNumSlots=function(bag) if bag==-1 then return 32 end return stockSlots(bag) end
+C_Container.GetContainerItemInfo=function(bag,slot)
+    if bag==-1 then return slot<=keyCount and {itemID=600} or nil end
+    return stockItem(bag,slot)
+end
+ContainerFrame1.id=0
+ContainerFrame1:Show()
+UpdateContainerFrameAnchors()
+local keys,allBags=objects.WeHavePhonesTouchKeys,objects.WeHavePhonesTouchAllBags
+assert(objects.WeHavePhonesTouchBag5 and keys.visible and keys.point[2]>=allBags.point[2]+54
+    and objects.WeHavePhonesTouchInventory:GetWidth()>=keys.point[2]+54,"Forever's Keys page sits after All")
+-- Forever never opens its keyring while it is empty. Bags stay on screen instead.
+IsBagOpen=function() return false end
+ContainerFrame1.bags={}
+keys.scripts.OnClick()
+assert(ContainerFrameCombinedBags.visible,"a keyring that does not open falls back to every bag")
+IsBagOpen,ContainerFrame1.bags=nil,nil
+CloseAllBags()
+keyCount=0
+ContainerFrame1:Show()
+UpdateContainerFrameAnchors()
+assert(not keys.visible,"an empty keyring has no Keys page")
+CloseAllBags()
+C_Container.GetContainerNumSlots,C_Container.GetContainerItemInfo=stockSlots,stockItem
+KEYRING_CONTAINER=nil
+-- Forever's Social window is SocialUIFrame, with side tabs past its right edge.
+SocialUIFrame=CreateFrame("Frame","SocialUIFrame",UIParent)
+SocialUIFrame:SetSize(385,424)
+SocialUIFrame:SetPoint("TOPLEFT",UIParent,"TOPLEFT",0,0)
+local socialTabs=CreateFrame("Frame",nil,SocialUIFrame)
+socialTabs:Show()
+function socialTabs:GetRight() local right=SocialUIFrame:GetRight() return right and right+55 end
+function SocialUIFrame:GetChildren() return socialTabs end
+SocialUIFrame:Show()
+ContainerFrame1.id=0
+ContainerFrame1:Show()
+UpdateContainerFrameAnchors()
+local socialLeft,_,socialWidth=topRect(SocialUIFrame)
+local socialScale=SocialUIFrame:GetEffectiveScale()/UIParent:GetEffectiveScale()
+assert(SocialUIFrame.point[3]=="CENTER","Forever's Social window is fitted like other windows")
+assert(topRect(ContainerFrame1)>=socialLeft+socialWidth+55*socialScale,"bags stay clear of Forever's Social side tabs")
+SocialUIFrame:Hide()
+CloseAllBags()
 boot(false)
 assert(MicroMenu.visible and ObjectiveTrackerFrame.point[3]=="TOPRIGHT","Forever restores its stock HUD on opt-out")
+assert(editModeCalls==0,"Forever's Edit Mode frames move, hide and restore through their Base methods")
 print("Touch addon PASS ("..workspaceScenarios.." window and inventory scenarios, paged actions, editing, combat and restoration)")

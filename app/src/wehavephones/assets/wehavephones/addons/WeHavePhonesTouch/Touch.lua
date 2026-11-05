@@ -83,11 +83,22 @@ local function ActionFit()
     return math.min(1, LayoutWidth()/760)
 end
 
+-- Retail and Forever replace SetPoint, ClearAllPoints and SetScale on Edit Mode
+-- frames with Lua that also updates snapping between bars. Running that Lua from
+-- the addon taints the bars it touches, and Blizzard's own combat layout of the
+-- main action bar is then blocked. The Base methods move a frame without it.
+local function Anchor(object, ...) (object.SetPointBase or object.SetPoint)(object, ...) end
+local function Unanchor(object) (object.ClearAllPointsBase or object.ClearAllPoints)(object) end
+local function Rescale(object, scale) (object.SetScaleBase or object.SetScale)(object, scale) end
+-- Action bars also replace Hide and SetShown with Edit Mode layout code.
+local function Conceal(object) (object.HideBase or object.Hide)(object) end
+local function Reveal(object, shown) (object.SetShownBase or object.SetShown)(object, shown) end
+
 local function SetRelativeScale(object, scale, setter)
     -- Some stock frames, notably the map, ignore their parent's scale. Use
     -- the observed effective scale instead of assuming a UIParent child inherits it.
     local inherited = object:GetEffectiveScale()/math.max(.001, object:GetScale())
-    local applyScale = setter or object.SetScale
+    local applyScale = setter or object.SetScaleBase or object.SetScale
     applyScale(object, scale*UIParent:GetEffectiveScale()/math.max(.001, inherited))
 end
 
@@ -412,7 +423,7 @@ local function PositionChat()
             x=x, y=y, width=ChatFrame1:GetWidth(), height=ChatFrame1:GetHeight()}
     end
     if not InCombatLockdown() and ChatFrame1.BreakFromFrameManager then ChatFrame1:BreakFromFrameManager() end
-    ChatFrame1:ClearAllPoints()
+    Unanchor(ChatFrame1)
     local height = UIParent:GetHeight()
     local party = PartyFrame and PartyFrame.MemberFrame1 and PartyFrame.MemberFrame1:IsShown()
     -- The top edge stays below the unit frames, or the party row, in both sizes.
@@ -423,7 +434,7 @@ local function PositionChat()
         width = math.max(width, math.min(480, LayoutWidth()*.42))
         chatHeight = math.max(chatHeight, top+height*.05)
     end
-    ChatFrame1:SetPoint("TOPLEFT", UIParent, "CENTER", -LayoutWidth()/2+16, top)
+    Anchor(ChatFrame1, "TOPLEFT", UIParent, "CENTER", -LayoutWidth()/2+16, top)
     ChatFrame1:SetSize(width, chatHeight)
     if chatSize then
         PaintChatSize()
@@ -464,7 +475,7 @@ end
 local workspaceNames = {
     "CharacterFrame", "SpellBookFrame", "QuestLogFrame", "QuestLogDetailFrame", "QuestLogPopupDetailFrame",
     "PlayerSpellsFrame", "ProfessionsBookFrame", "ProfessionsFrame",
-    "PlayerTalentFrame", "FriendsFrame", "PVPFrame", "PVPParentFrame", "MacroFrame", "InspectFrame", "DressUpFrame",
+    "PlayerTalentFrame", "FriendsFrame", "SocialUIFrame", "PVPFrame", "PVPParentFrame", "MacroFrame", "InspectFrame", "DressUpFrame",
     "GossipFrame", "QuestFrame", "MerchantFrame", "BankFrame", "MailFrame", "TradeFrame",
     "ClassTrainerFrame", "TradeSkillFrame", "CraftFrame", "AuctionFrame", "AuctionHouseFrame",
     "ItemTextFrame", "PetStableFrame", "TabardFrame", "GuildRegistrarFrame", "PetitionFrame", "TaxiFrame", "LootFrame", "WorldMapFrame", "StackSplitFrame",
@@ -482,9 +493,20 @@ local function ShowBagPage(bag)
     CloseAllBags()
     if KEYRING_CONTAINER and CloseBag then CloseBag(KEYRING_CONTAINER) end
     if bag == nil then OpenAllBags()
-    elseif keyring then ToggleBag(bag)
+    elseif keyring then
+        ToggleBag(bag)
+        -- Forever never opens an empty keyring. Keep the player's bags on screen.
+        if IsBagOpen and not IsBagOpen(bag) then OpenAllBags() end
     else OpenBag(bag) end
     QueueWorkspace()
+end
+
+local function KeyringHasItems()
+    if not KEYRING_CONTAINER or not ToggleBag then return false end
+    for slot = 1, C_Container.GetContainerNumSlots(KEYRING_CONTAINER) do
+        if C_Container.GetContainerItemInfo(KEYRING_CONTAINER, slot) then return true end
+    end
+    return false
 end
 
 local function InventoryStrip(bags)
@@ -503,8 +525,10 @@ local function InventoryStrip(bags)
             inventoryStrip.bags[bag+1] = Button(inventoryStrip, "WeHavePhonesTouchBag"..bag,
                 bag == 0 and "Pack" or bag == 5 and "Reagents" or "Bag "..bag, bag*64, 0, 58, 38, function() ShowBagPage(id) end)
         end
-        inventoryStrip.all = Button(inventoryStrip, "WeHavePhonesTouchAllBags", "All", (LastPlayerBag()+1)*64, 0, 54, 38, function() ShowBagPage() end)
-        inventoryStrip.keys = Button(inventoryStrip, "WeHavePhonesTouchKeys", "Keys", 380, 0, 54, 38,
+        -- Forever has both the reagent bag and the keyring, so Keys follows All.
+        local allX = (LastPlayerBag()+1)*64
+        inventoryStrip.all = Button(inventoryStrip, "WeHavePhonesTouchAllBags", "All", allX, 0, 54, 38, function() ShowBagPage() end)
+        inventoryStrip.keys = Button(inventoryStrip, "WeHavePhonesTouchKeys", "Keys", allX+60, 0, 54, 38,
             function() if KEYRING_CONTAINER and ToggleBag then ShowBagPage(KEYRING_CONTAINER) end end)
         for bag = 5, 11 do
             local id = bag
@@ -515,8 +539,8 @@ local function InventoryStrip(bags)
     -- Modern banks use their own tabs, rather than Classic's bag IDs 5 through 11.
     local bank = not retail and BankFrame and BankFrame:IsShown()
     local rows = bank and 2 or 1
-    local hasKeyring = KEYRING_CONTAINER ~= nil and ToggleBag ~= nil
-    inventoryStrip:SetWidth(hasKeyring and 434 or (LastPlayerBag()+1)*64+54)
+    local hasKeyring = KeyringHasItems()
+    inventoryStrip:SetWidth((LastPlayerBag()+1)*64+(hasKeyring and 114 or 54))
     inventoryStrip.keys:SetShown(hasKeyring)
     local scale = math.min(1, UIParent:GetWidth()*.94/inventoryStrip:GetWidth())
     SetRelativeScale(inventoryStrip, scale)
@@ -548,9 +572,9 @@ local function RememberGeometry(object)
 end
 
 local function RestoreGeometry(object, state)
-    object:SetScale(state.scale)
-    object:ClearAllPoints()
-    for _, point in ipairs(state.points) do object:SetPoint(unpack(point)) end
+    Rescale(object, state.scale)
+    Unanchor(object)
+    for _, point in ipairs(state.points) do Anchor(object, unpack(point)) end
 end
 
 local editBoxes = {}
@@ -608,7 +632,7 @@ local function RememberHud(name, hide)
     end
     if hide then
         if db.hud[name].shown == nil then db.hud[name].shown = object:IsShown() end
-        object:Hide()
+        Conceal(object)
     end
 end
 
@@ -616,10 +640,10 @@ end
 local function ApplyHud(name, scale)
     local object, state = HudObject(name), WeHavePhonesTouchDB.hud and WeHavePhonesTouchDB.hud[name]
     if not object or not state then return end
-    object:SetScale(state.scale*(scale or 1))
-    object:ClearAllPoints()
+    Rescale(object, state.scale*(scale or 1))
+    Unanchor(object)
     for _, point in ipairs(state.points) do
-        object:SetPoint(point[1], HudObject(point[2]) or UIParent, point[3], point[4], point[5])
+        Anchor(object, point[1], HudObject(point[2]) or UIParent, point[3], point[4], point[5])
     end
 end
 
@@ -629,12 +653,12 @@ local function RestoreHud()
         local object = HudObject(name)
         if object then
             if state.parent then object:SetParent(HudObject(state.parent) or UIParent) end
-            if state.scale then object:SetScale(state.scale) end
-            object:ClearAllPoints()
+            if state.scale then Rescale(object, state.scale) end
+            Unanchor(object)
             for _, point in ipairs(state.points) do
-                object:SetPoint(point[1], HudObject(point[2]) or UIParent, point[3], point[4], point[5])
+                Anchor(object, point[1], HudObject(point[2]) or UIParent, point[3], point[4], point[5])
             end
-            if state.shown ~= nil then object:SetShown(state.shown) end
+            if state.shown ~= nil then Reveal(object, state.shown) end
             if state.alpha ~= nil then object:SetAlpha(state.alpha) end
         end
         -- Missing frames have not been changed in this fresh UI session.
@@ -663,13 +687,27 @@ local function WorkspaceFrames()
     return panels, bags, seen
 end
 
+-- Forever's Character and Social windows draw their side tabs past their right
+-- edge. Reserve that strip so the next window or bag never covers the tabs.
+local function RightOverhang(object)
+    local right = object:GetRight()
+    if not right or not object.GetChildren then return 0 end
+    local extra = 0
+    for _, child in ipairs({object:GetChildren()}) do
+        local childRight = child:IsShown() and child:GetRight()
+        if childRight then extra = math.max(extra, childRight-right) end
+    end
+    return math.min(extra, 96)
+end
+
 local function PackWorkspace(panels, bags, scale, width, height)
     local places, x, y, columnWidth = {}, 0, 0, 0
     local function place(object, isBag)
         local w, h = object:GetWidth()*scale, object:GetHeight()*scale
         -- Classic spellbooks draw school tabs to the right and book tabs
         -- below their frame. Keep those controls inside the workspace too.
-        if object == SpellBookFrame then w, h = w+48*scale, h+36*scale end
+        if object == SpellBookFrame then w, h = w+48*scale, h+36*scale
+        elseif not isBag then w = w+RightOverhang(object)*scale end
         if isBag then
             if y > 0 and y+h > height then x, y, columnWidth = x+columnWidth+8, 0, 0 end
         else
@@ -709,8 +747,8 @@ LayoutWorkspace = function()
             local object = place.object
             if not workspaceOriginal[object] then workspaceOriginal[object] = RememberGeometry(object) end
             SetRelativeScale(object, scale)
-            object:ClearAllPoints()
-            object:SetPoint("TOPLEFT", UIParent, "CENTER", (place.x-used/2)/scale,
+            Unanchor(object)
+            Anchor(object, "TOPLEFT", UIParent, "CENTER", (place.x-used/2)/scale,
                 (UIParent:GetHeight()*.30-stripHeight-place.y)/scale)
         end
     end
@@ -773,8 +811,8 @@ local function PositionClassBars()
     local x = -LayoutWidth()/2+16+reserved
     for _, object in ipairs(bars) do
         SetRelativeScale(object, scale)
-        object:ClearAllPoints()
-        object:SetPoint("BOTTOMLEFT", UIParent, "CENTER", x/scale,
+        Unanchor(object)
+        Anchor(object, "BOTTOMLEFT", UIParent, "CENTER", x/scale,
             (math.max(12, 18*math.min(1, LayoutWidth()/760))-UIParent:GetHeight()/2)/scale)
         x = x+object:GetWidth()*scale+12
     end
@@ -784,8 +822,8 @@ local function PositionClassBars()
         RememberHud("PossessActionBar")
         local _, _, _, petX, petY = PetActionBar:GetPoint(1)
         SetRelativeScale(PossessActionBar, scale)
-        PossessActionBar:ClearAllPoints()
-        PossessActionBar:SetPoint("BOTTOMLEFT", UIParent, "CENTER", petX, petY)
+        Unanchor(PossessActionBar)
+        Anchor(PossessActionBar, "BOTTOMLEFT", UIParent, "CENTER", petX, petY)
     end
     positioningClassBars = false
 end
@@ -830,8 +868,8 @@ local function PositionTopHud()
         RememberHud("MinimapCluster")
         local scale = math.min(1, MINIMAP_RESERVE*height/math.max(1, MinimapCluster:GetWidth(), MinimapCluster:GetHeight()))
         SetRelativeScale(MinimapCluster, scale)
-        MinimapCluster:ClearAllPoints()
-        MinimapCluster:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -rail/scale, 0)
+        Unanchor(MinimapCluster)
+        Anchor(MinimapCluster, "TOPRIGHT", UIParent, "TOPRIGHT", -rail/scale, 0)
         minimapLeft = width-rail-MinimapCluster:GetWidth()*scale
         minimapBottom = MinimapCluster:GetHeight()*scale
         HookTop(MinimapCluster)
@@ -839,8 +877,8 @@ local function PositionTopHud()
     if not compact and UIWidgetTopCenterContainerFrame then
         -- Battleground scores and other top-center widgets start below the toolbar band.
         RememberHud("UIWidgetTopCenterContainerFrame")
-        UIWidgetTopCenterContainerFrame:ClearAllPoints()
-        UIWidgetTopCenterContainerFrame:SetPoint("TOP", UIParent, "TOP", 0,
+        Unanchor(UIWidgetTopCenterContainerFrame)
+        Anchor(UIWidgetTopCenterContainerFrame, "TOP", UIParent, "TOP", 0,
             -(TOOLBAR_BAND*height+4)/RelativeScale(UIWidgetTopCenterContainerFrame))
         HookTop(UIWidgetTopCenterContainerFrame)
     end
@@ -856,8 +894,8 @@ local function PositionTopHud()
             local scale = math.min(1, (right-16)/(PlayerFrame:GetWidth()+TargetFrame:GetWidth()+8))
             for i, object in ipairs({PlayerFrame, TargetFrame}) do
                 SetRelativeScale(object, scale)
-                object:ClearAllPoints()
-                object:SetPoint("TOPLEFT", UIParent, "TOPLEFT", (8+(i-1)*(PlayerFrame:GetWidth()*scale+8))/scale, -8/scale)
+                Unanchor(object)
+                Anchor(object, "TOPLEFT", UIParent, "TOPLEFT", (8+(i-1)*(PlayerFrame:GetWidth()*scale+8))/scale, -8/scale)
             end
         else
             ApplyHud("PlayerFrame")
@@ -934,8 +972,8 @@ PositionAuras = function()
         if object then
             RememberHud(aura[1])
             local relative = RelativeScale(object)
-            object:ClearAllPoints()
-            object:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -(right+aura[2])/relative, -(top+aura[3])/relative)
+            Unanchor(object)
+            Anchor(object, "TOPRIGHT", UIParent, "TOPRIGHT", -(right+aura[2])/relative, -(top+aura[3])/relative)
             HookTop(object)
         end
     end
@@ -964,8 +1002,8 @@ local function PositionParty()
         if member then
             RememberHud("PartyFrame.MemberFrame"..i)
             SetRelativeScale(member, scale)
-            member:ClearAllPoints()
-            member:SetPoint("TOPLEFT", UIParent, "CENTER",
+            Unanchor(member)
+            Anchor(member, "TOPLEFT", UIParent, "CENTER",
                 (-width*.475+(i-1)*(maxWidth+14)*scale)/scale, UIParent:GetHeight()*.32/scale)
         end
     end
@@ -1005,9 +1043,9 @@ PositionTracker = function()
             trackerSpace:SetPoint("TOPRIGHT", UIParent, "CENTER", (LayoutWidth()/2-16)/scale,
                 (top-UIParent:GetHeight()/2)/scale)
             if object:GetParent() ~= trackerSpace then object:SetParent(trackerSpace) end
-            object:SetScale(1)
-            object:ClearAllPoints()
-            object:SetPoint("TOPRIGHT", trackerSpace, "TOPRIGHT", 0, 0)
+            Rescale(object, 1)
+            Unanchor(object)
+            Anchor(object, "TOPRIGHT", trackerSpace, "TOPRIGHT", 0, 0)
             object:SetHeight(height/scale)
         else
             local scale = math.min(1, LayoutWidth()*.30/math.max(1, object:GetWidth()), height/math.max(1, object:GetHeight()))
@@ -1069,9 +1107,9 @@ local function FitRetailChatButtons()
     local scale = math.min(1, column/math.max(1, stack+alerts))
     RememberHud("ChatFrame1ButtonFrame")
     SetRelativeScale(frame, scale)
-    frame:ClearAllPoints()
+    Unanchor(frame)
     -- The column's top meets the tab row. Its left edge stays clear of the chat background.
-    frame:SetPoint("TOPRIGHT", ChatFrame1, "TOPLEFT", -5/scale, 32/scale-alerts)
+    Anchor(frame, "TOPRIGHT", ChatFrame1, "TOPLEFT", -5/scale, 32/scale-alerts)
     frame:SetHeight(stack)
     for _, name in ipairs({"ChatAlertFrame", "ChatFrameToggleVoiceDeafenButton", "ChatFrameToggleVoiceMuteButton",
         unpack(RETAIL_CHAT_ALERTS)}) do
@@ -1103,7 +1141,7 @@ FitChatButtons = function()
     RememberHud("ChatFrame1ButtonFrame")
     local fit = (ChatFrame1:GetHeight()+32)/math.max(1, ChatFrame1ButtonFrame:GetHeight())
     if fit < 1 then SetRelativeScale(ChatFrame1ButtonFrame, fit)
-    else ChatFrame1ButtonFrame:SetScale(WeHavePhonesTouchDB.hud.ChatFrame1ButtonFrame.scale) end
+    else Rescale(ChatFrame1ButtonFrame, WeHavePhonesTouchDB.hud.ChatFrame1ButtonFrame.scale) end
 end
 
 local function SetChatLarge(large)
@@ -1156,8 +1194,8 @@ local function PlaceHud()
         RememberHud("StatusTrackingBarManager")
         local scale = math.min(.35, LayoutWidth()/math.max(1, StatusTrackingBarManager:GetWidth()))
         SetRelativeScale(StatusTrackingBarManager, scale)
-        StatusTrackingBarManager:ClearAllPoints()
-        StatusTrackingBarManager:SetPoint("BOTTOM", UIParent, "BOTTOM", 0, 1/scale)
+        Unanchor(StatusTrackingBarManager)
+        Anchor(StatusTrackingBarManager, "BOTTOM", UIParent, "BOTTOM", 0, 1/scale)
     end
 end
 
@@ -1340,8 +1378,8 @@ local function Apply()
             db.actionBars = nil
         end
         if db.chat and ChatFrame1 then
-            ChatFrame1:ClearAllPoints()
-            ChatFrame1:SetPoint(db.chat.point, (db.chat.relative and _G[db.chat.relative]) or UIParent, db.chat.relativePoint, db.chat.x, db.chat.y)
+            Unanchor(ChatFrame1)
+            Anchor(ChatFrame1, db.chat.point, (db.chat.relative and _G[db.chat.relative]) or UIParent, db.chat.relativePoint, db.chat.x, db.chat.y)
             ChatFrame1:SetSize(db.chat.width, db.chat.height)
             db.chat = nil
         end

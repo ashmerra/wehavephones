@@ -156,9 +156,12 @@ moving creature models. **Menu → Targeting → Enemy nameplates** toggles them
 Stock windows and visible bags fit together below the toolbar. Large stock
 windows fit the available workspace using their actual effective scale. This
 includes frames such as the world map that ignore their parent's scale.
+Side tabs drawn past a window's edge, such as those on Forever's Character and
+Social windows, stay clear of the next window or bag.
 
 The inventory strip offers **Pack**, **Bag 1–4**, **All** and Classic's
-**Keys**, plus bank bag pages while the bank is open. The open page is
+**Keys**, plus bank bag pages while the bank is open. Keys appears once the
+keyring holds a key. Forever has both the reagent bag and the keyring. The open page is
 highlighted in blue. All reopens the complete player inventory after viewing
 one bag. A single bag gives its item controls more room. A picked-up item
 stays on the cursor when changing pages, ready for a normal placement click.
@@ -169,6 +172,11 @@ Retail's separate bags also have a **Reagents** page. Combined inventory keeps
 its stock combined view, fitted alongside any other open window. Retail's
 bank uses its own tabs. **Skills** in the touch menu opens Retail's profession
 book. The spellbook and profession windows fit below the native toolbar.
+
+On Retail and Forever the layout moves, hides and restores Edit Mode frames
+with their Base methods (`SetPointBase`, `HideBase` and similar). Calling the
+Edit Mode versions from an addon taints the main action bar, and Blizzard's
+own action bar layout is then blocked in combat.
 
 Touch mode enables stock equipment comparison tooltips and restores the
 prior preference on opt-out. Inspect never uses, equips, casts or drags.
