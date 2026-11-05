@@ -236,7 +236,7 @@ public final class BattleNetGamesSelfTest {
         check("Forever Stress Test install=false", false, forever.installed);
         check("Forever Stress Test uid", "wowf", forever.uid);
         check("Forever Stress Test directory", "_forever_", forever.directoryName);
-        check("Forever Stress Test display name", "Forever Stress Test", forever.getDisplayName());
+        check("Forever display name", "Forever", forever.getDisplayName());
         check("Forever Stress Test selection key", "bnet:wowf", forever.selectionKey());
         check("Forever Stress Test install flags", "--game=wowf --install",
                 WeHavePhonesLaunchPlan.installFlags(forever.bnetGameId()));

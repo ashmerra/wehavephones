@@ -242,7 +242,7 @@ whose recorded folder exists on a container drive, such as an SD card mapped to
 | Family | Live | PTR | Beta | Title shown |
 | --- | --- | --- | --- | --- |
 | Retail | `_retail_` | `_ptr_`, `_xptr_` | `_beta_` | World of Warcraft (+ expansion from the build, e.g. *Midnight*) |
-| Forever | `_forever_` (product `wowf`, the Forever Stress Test option) | `_forever_ptr_` (expected) | `_classic_beta_` (`wow_classic_beta`, the launcher's Forever beta) | World of Warcraft: Forever |
+| Forever | `_forever_` (product `wowf`, listed as **Forever**) | `_forever_ptr_` (expected) | `_classic_beta_` (`wow_classic_beta`, the launcher's Forever beta) | World of Warcraft: Forever |
 | Classic progression | `_classic_` | `_classic_ptr_` | shares `_classic_beta_` (a 5.x build there) | World of Warcraft Classic (+ *Mists of Pandaria*) |
 | Titan-Reforged | `_classic_titan_` | | | Titan-Reforged Classic |
 | Anniversary | `_anniversary_` | | | Classic Anniversary |

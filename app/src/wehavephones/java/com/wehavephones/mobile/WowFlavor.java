@@ -41,7 +41,7 @@ public enum WowFlavor {
     // The Forever product codes (wowf, wow_classic_beta) and directories
     // (_forever_, _classic_beta_) come from the Battle.net launcher's
     // ProductManager/InstallState data.
-    FOREVER("_forever_", "wowf", "Forever Stress Test", Family.FOREVER, Release.LIVE, 88568, "forever",
+    FOREVER("_forever_", "wowf", "Forever", Family.FOREVER, Release.LIVE, 88568, "forever",
             Arrays.asList("Forever", "Camelot"),
             new String[]{"Forever", "Camelot", "Mainline"}, 16001),
     FOREVER_PTR("_forever_ptr_", "wow_forever_ptr", "Forever PTR", Family.FOREVER, Release.PTR, 88568, "forever",
