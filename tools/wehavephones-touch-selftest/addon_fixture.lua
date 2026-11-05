@@ -299,7 +299,7 @@ end
 boot(false)
 assert(next(held)==nil and UIParent:GetScale()==1)
 boot(true)
-assert(values.GamePadEnable=="0" and not extraBars[1] and not extraBars[2] and extraBars[3])
+assert(values.useUiScale=="1" and values.GamePadEnable=="1" and values.InputDeviceInterfaceStyle=="1" and not extraBars[1] and not extraBars[2] and extraBars[3])
 assert(UIParent:GetScale()==1.5 and layout==12)
 for i=1,6 do assert(VIEWABLE_ACTION_BAR_PAGES[i],"all six pages accessible through the switcher") end
 assert(not MultiBarBottomLeft.visible and not MultiBarBottomRight.visible,"extra grids do not take camera space")
@@ -786,7 +786,7 @@ assert(layout==before,"display changes defer secure layout until combat ends")
 objects.WeHavePhonesTouchChoice1.scripts.OnClick(objects.WeHavePhonesTouchChoice1)
 assert(actions[1][2]==101,"stale picker callbacks cannot edit in combat")
 boot(false)
-assert(values.GamePadEnable=="0","restoration waits until out of combat")
+assert(values.useUiScale=="1","restoration waits until out of combat")
 combat=false
 active.scripts.OnEvent(active,"PLAYER_REGEN_ENABLED")
 for k,v in pairs(original) do assert(values[k]==v,"restore CVar "..k) end

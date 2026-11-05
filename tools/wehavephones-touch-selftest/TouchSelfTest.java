@@ -188,7 +188,14 @@ public final class TouchSelfTest {
             Files.createDirectories(addons.resolve("ConsolePort_Cursor.disabled"));
             Files.createDirectories(addons.resolve("WeHavePhonesControllerSetup"));
             Files.createDirectories(addons.resolve("UserAddon"));
+            Path config = root.resolve("WTF/Config.wtf");
+            Files.createDirectories(config.getParent());
+            Files.writeString(config, "SET portal \"us\"\r\nSET InputDeviceInterfaceStyle \"1\"\r\n");
             MobileTouchSetup.prepare(root.toFile(), true, 11509, script);
+            String touchConfig = Files.readString(config);
+            check(touchConfig.contains("SET GamePadEnable \"0\"\r\n") && touchConfig.contains("SET InputDeviceInterfaceStyle \"0\"\r\n")
+                    && !touchConfig.contains("InputDeviceInterfaceStyle \"1\"") && touchConfig.contains("SET portal \"us\""),
+                    "touch starts the game with the controller and gamepad UI off");
             check(Files.isDirectory(addons.resolve("ConsolePort.disabled")) && !Files.exists(addons.resolve("ConsolePort")), "touch disables core");
             check(Files.isDirectory(addons.resolve("ConsolePort_Bar.disabled")), "touch disables suite");
             check(Files.isDirectory(addons.resolve("WeHavePhonesControllerSetup.disabled")), "touch disables controller setup");
@@ -201,8 +208,12 @@ public final class TouchSelfTest {
             MobileTouchSetup.prepare(root.toFile(), true, 3f, 11509, script);
             check(Files.readString(mode).contains("addon.scale = 1.50"), "unknown sizes fall back to the default");
             MobileTouchSetup.prepare(root.toFile(), true, 11509, script);
+            check(Files.readString(config).equals(touchConfig), "repeated touch launches keep the first saved controller settings");
             MobileTouchSetup.prepare(root.toFile(), false, 11509, script);
             check(Files.isDirectory(addons.resolve("ConsolePort")) && Files.isDirectory(addons.resolve("ConsolePort_Bar")), "opt-out restores owned folders");
+            String restoredConfig = Files.readString(config);
+            check(restoredConfig.contains("SET InputDeviceInterfaceStyle \"1\"") && !restoredConfig.contains("GamePadEnable")
+                    && !Files.exists(root.resolve(MobileTouchSetup.CVARS)), "opt-out restores the gamepad UI and removes added settings");
             check(Files.isDirectory(addons.resolve("ConsolePort_Cursor.disabled")), "user-disabled module remains disabled");
             check(Files.readString(mode).contains("false"), "addon stays to restore each character's settings");
             MobileTouchSetup.prepare(root.toFile(), false, 11509, script);

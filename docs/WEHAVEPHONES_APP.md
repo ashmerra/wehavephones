@@ -195,7 +195,11 @@ desktop wallpaper.
   option on: the first Forever launch writes `InputDeviceInterfaceStyle 1`
   (the CVar behind that checkbox), then leaves the marker
   `WTF/.wehavephones-gamepad-ui-seeded` so a player who turns it off in the
-  game's Options keeps it off. Explicit region changes
+  game's Options keeps it off. With touch controls on, every game starts
+  with the controller off instead: before each launch the app saves
+  `GamePadEnable` and `InputDeviceInterfaceStyle` from `Config.wtf` to
+  `WTF/.wehavephones-touch-cvars`, writes both as `0` and skips the Forever
+  seed. Turning touch controls off restores the saved values. Explicit region changes
   replace WoW's saved portal on the next launch. Switching to or from China
   once Battle.net is installed is refused with a note pointing to Setup's
   **Add New**, since the installed Battle.net app cannot sign in to the

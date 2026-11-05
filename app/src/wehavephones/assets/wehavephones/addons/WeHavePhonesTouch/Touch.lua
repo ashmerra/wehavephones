@@ -1267,8 +1267,9 @@ local function Apply()
             if db.originalRootScale == nil then db.originalRootScale = UIParent:GetScale() end
             -- The app's size reaches every character once. Later in-game choices survive a reload.
             if addon.scale and db.modeScale ~= addon.scale then db.touchScale, db.modeScale = addon.scale, addon.scale end
-            SaveCVar("GamePadEnable", "0")
-            SaveCVar("InputDeviceInterfaceStyle", "0")
+            -- The app turns GamePadEnable and InputDeviceInterfaceStyle off in
+            -- Config.wtf before launch and restores them, so the game starts without
+            -- Forever's gamepad UI. Saving them here would restore the off values.
             SaveCVar("useUiScale", "1")
             SaveCVar("uiScale", "1")
             -- Native touch is mouse input. Enable Blizzard's nearby interact target

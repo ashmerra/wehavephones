@@ -135,7 +135,8 @@ public final class WeHavePhonesRuntimeApplier {
                             product.getFlavor() == WowFlavor.RETAIL,
                             WeHavePhonesConfig.getGameScreenSize(context), WeHavePhonesConfig.isGameRegionOverride(context),
                             DeviceProfileSelector.wowApiArg(context),
-                            product.getFlavor().family == WowFlavor.Family.FOREVER)) result.step("WoW first-boot settings prepared");
+                            product.getFlavor().family == WowFlavor.Family.FOREVER
+                                    && !WeHavePhonesConfig.isMobileTouchEnabled(context))) result.step("WoW first-boot settings prepared");
                 }
                 catch (java.io.IOException e) {
                     result.fail("Could not prepare WoW first boot: " + e.getMessage());
