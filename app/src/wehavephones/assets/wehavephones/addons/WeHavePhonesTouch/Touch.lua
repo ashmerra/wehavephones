@@ -13,7 +13,10 @@ local ACTION_SCALE = 1.35
 -- native and Lua boundary, whatever the rounding. Keep in step with MobileTouchLayout.
 local COMPACT = 1.59
 local WHITE = "Interface\\Buttons\\WHITE8X8"
+-- Forever (WOW_PROJECT_CAMELOT) runs Classic content on the Retail UI: Edit Mode,
+-- C_SpellBook, combined bags and the objective tracker, without the old Classic globals.
 local retail = WOW_PROJECT_ID == WOW_PROJECT_MAINLINE
+    or (WOW_PROJECT_CAMELOT ~= nil and WOW_PROJECT_ID == WOW_PROJECT_CAMELOT)
 local function SupportedLayout()
     return retail or WOW_PROJECT_ID == WOW_PROJECT_CLASSIC
         or (WOW_PROJECT_BURNING_CRUSADE_CLASSIC and WOW_PROJECT_ID == WOW_PROJECT_BURNING_CRUSADE_CLASSIC)

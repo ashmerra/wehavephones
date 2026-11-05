@@ -110,7 +110,7 @@ fractions of the game's height, so neither covers the other on any screen.
 - If keys would be smaller than 40 dp, Map and Bags, or Keyboard and Inspect,
   move into the touch menu. Esc, Menu and the switch always remain.
 
-On wide Retail, Classic Era, BC Anniversary and MoP Classic screens, eight
+On wide Retail, Forever, Classic Era, BC Anniversary and MoP Classic screens, eight
 stock action buttons form a four-column, two-row grid at the bottom right.
 Four more sit near the bottom middle.
 Tablet shapes use a four-column, three-row grid. Square shapes use three
@@ -261,7 +261,9 @@ top-center widgets, shortcuts and trackers on its next login. Temporary binding
 overrides are never saved. Intentional hotbar edits remain ordinary WoW
 changes.
 
-Retail, Classic Era, BC Anniversary and MoP Classic receive the touch layout.
+Retail, Forever, Classic Era, BC Anniversary and MoP Classic receive the touch
+layout. Forever runs on the Retail interface, so it gets the Retail layout,
+including its spellbook, reagent bag, tracker and **Skills** behavior.
 Other editions receive the native modes and gestures but retain their stock
 hotbars. Third-party bar replacements, raid-style unit frames, party roster changes in combat, simultaneous class
 mechanics and extended combat need separate validation. Unknown addon panels
@@ -281,6 +283,6 @@ inside the regions the addon keeps free. Coverage includes eleven aspect
 ratios, three UI sizes, four Android densities, safe-area insets and
 letterboxing, plus 1,353 stock window and inventory combinations per Classic
 client fixture.
-The fixtures cover Era, BC Anniversary and MoP Classic, with Retail regression
+The fixtures cover Era, BC Anniversary and MoP Classic, with Retail and Forever regression
 checks in each run. The suite uses the host JDK, Python
 and a Lua 5.2 or 5.4 shared library.

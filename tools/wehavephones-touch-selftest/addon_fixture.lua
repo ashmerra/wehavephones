@@ -1036,4 +1036,14 @@ assert(MicroMenu.visible and MainActionBar.EndCaps.visible and MainActionBar.Bor
     "Retail stock shortcuts and art restore on opt-out")
 assert(ObjectiveTrackerFrame.point[3]=="TOPRIGHT" and ObjectiveTrackerFrame:GetScale()==1,
     "Retail tracker geometry restores on opt-out")
+-- Forever reports its own project with the Retail UI and none of the Classic globals.
+WOW_PROJECT_CAMELOT=18
+WOW_PROJECT_ID=WOW_PROJECT_CAMELOT
+boot(true)
+assert(not MicroMenu.visible and not MainActionBar.EndCaps.visible,"Forever gets the Retail touch layout")
+assert(ObjectiveTrackerFrame.point[3]=="CENTER" and PlayerFrame.point[3]=="TOPLEFT",
+    "Forever's tracker and Edit Mode unit frames fit the touch layout")
+assert(held["CTRL-SHIFT-F6"]=="TOGGLEPROFESSIONBOOK","Forever opens its profession book")
+boot(false)
+assert(MicroMenu.visible and ObjectiveTrackerFrame.point[3]=="TOPRIGHT","Forever restores its stock HUD on opt-out")
 print("Touch addon PASS ("..workspaceScenarios.." window and inventory scenarios, paged actions, editing, combat and restoration)")
