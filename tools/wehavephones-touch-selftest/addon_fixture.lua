@@ -861,8 +861,18 @@ ObjectiveTrackerFrame:Show()
 -- Those callbacks can query restricted auras when an addon resizes a tracker.
 local stockTrackerLayout
 ObjectiveTrackerFrame.SetScaleBase=methods.SetScale
-ObjectiveTrackerFrame.SetPointBase=methods.SetPoint
-ObjectiveTrackerFrame.ClearAllPointsBase=methods.ClearAllPoints
+-- Retail's container lists only what fits its own height. In its default place
+-- UpdateHeight sets that height from its parent and offset, 20 pixels here.
+ObjectiveTrackerFrame.anchors={}
+function ObjectiveTrackerFrame:SetPointBase(...)
+    table.insert(self.anchors,{...})
+    return methods.SetPoint(self,...)
+end
+function ObjectiveTrackerFrame:ClearAllPointsBase()
+    self.anchors={}
+    return methods.ClearAllPoints(self)
+end
+function ObjectiveTrackerFrame:UpdateHeight() self:SetHeight(20) end
 for _,method in ipairs({"SetScale","SetPoint","ClearAllPoints"}) do
     local base=ObjectiveTrackerFrame[method.."Base"]
     ObjectiveTrackerFrame[method]=function(self,...)
@@ -981,6 +991,10 @@ local function flushLayout()
     local callbacks=pending
     pending={}
     for _,fn in ipairs(callbacks) do fn() end
+    -- One-shot queue frames run on the next frame's OnUpdate.
+    for _,object in ipairs(all) do
+        if object~=active and object.visible and object.scripts.OnUpdate then object.scripts.OnUpdate(object,0) end
+    end
 end
 BuffFrame:SetSize(385,135)
 buffs=12
@@ -1055,6 +1069,57 @@ assert(editModeCalls==0,"Forever's Edit Mode frames move through their Base meth
 assert(not MicroMenu.visible and not MainActionBar.EndCaps.visible,"Forever gets the Retail touch layout")
 assert(ObjectiveTrackerFrame.point[3]=="CENTER" and PlayerFrame.point[3]=="TOPLEFT",
     "Forever's tracker and Edit Mode unit frames fit the touch layout")
+-- Forever's quests showed nowhere: the stock tracker hid itself with a 20-pixel height.
+do
+    local anchors=ObjectiveTrackerFrame.anchors
+    assert(#anchors==2 and anchors[1][1]=="TOPRIGHT" and anchors[2][1]=="BOTTOMRIGHT",
+        "Forever's tracker is anchored top and bottom, so its height outlasts UpdateHeight")
+    local span=(anchors[1][5]-anchors[2][5])*ObjectiveTrackerFrame:GetScale()
+    assert(span>=100 and span<UIParent:GetHeight()*.65,"Forever's tracker gets room for its quests: "..span)
+    close(ObjectiveTrackerFrame:GetHeight()*ObjectiveTrackerFrame:GetScale(),span,
+        "Forever's tracker keeps its size when Blizzard re-anchors it by the top alone")
+    -- The managed right-hand container moves it after every tracker update.
+    ObjectiveTrackerFrame:ClearAllPointsBase()
+    ObjectiveTrackerFrame:SetPointBase("TOPRIGHT",UIParent,"TOPRIGHT",0,-31)
+    flushLayout()
+    anchors=ObjectiveTrackerFrame.anchors
+    assert(#anchors==2 and anchors[1][3]=="CENTER","Forever's tracker returns from Blizzard's managed container")
+    -- Forever's tracker update drops timers created from its Show. The refit must not wait on one.
+    local after=C_Timer.After
+    C_Timer.After=function() end
+    ObjectiveTrackerFrame:Show()
+    C_Timer.After=after
+    ObjectiveTrackerFrame:ClearAllPointsBase()
+    ObjectiveTrackerFrame:SetPointBase("TOPRIGHT",UIParent,"TOPRIGHT",0,-31)
+    flushLayout()
+    anchors=ObjectiveTrackerFrame.anchors
+    assert(#anchors==2 and anchors[1][3]=="CENTER","a dropped timer never leaves Forever's tracker in the managed container")
+    -- A new target frame: the managed container re-anchors the tracker, sizes it to
+    -- 20 pixels, and Blizzard's update hides it before the refit restores its room.
+    local updates=0
+    ObjectiveTrackerFrame.MarkDirty=function() updates=updates+1 end
+    local function starve()
+        ObjectiveTrackerFrame:ClearAllPointsBase()
+        ObjectiveTrackerFrame:SetPointBase("TOPRIGHT",UIParent,"TOPRIGHT",0,-31)
+        ObjectiveTrackerFrame:UpdateHeight()
+        ObjectiveTrackerFrame:Hide()
+        flushLayout()
+    end
+    starve()
+    assert(updates==1,"a tracker hidden for lack of room asks Blizzard for one update once it has room")
+    ObjectiveTrackerFrame:Show()
+    flushLayout()
+    assert(updates==1,"a shown tracker with room needs no extra update")
+    combat=true
+    starve()
+    assert(updates==1,"the tracker update that rebuilds quest item buttons waits for combat to end")
+    combat=false
+    active.scripts.OnEvent(active,"PLAYER_REGEN_ENABLED")
+    flushLayout()
+    assert(updates==2,"the deferred tracker update runs after combat")
+    ObjectiveTrackerFrame.MarkDirty=nil
+    ObjectiveTrackerFrame:Show()
+end
 assert(held["CTRL-SHIFT-F6"]=="TOGGLEPROFESSIONBOOK","Forever opens its profession book")
 -- Forever keeps Classic's keyring, as bag -1, beside Retail's reagent bag.
 KEYRING_CONTAINER=-1

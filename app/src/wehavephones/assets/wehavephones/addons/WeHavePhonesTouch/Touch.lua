@@ -947,7 +947,7 @@ end
 local PositionTracker
 local trackerSpace
 local PositionAuras
-local positioningTracker, trackerQueued, aurasQueued
+local positioningTracker, trackerQueue, trackerStarved, aurasQueued
 local function QueueAuras()
     if not enabled or aurasQueued then return end
     aurasQueued = true
@@ -1047,6 +1047,35 @@ PositionTracker = function()
             Unanchor(object)
             Anchor(object, "TOPRIGHT", trackerSpace, "TOPRIGHT", 0, 0)
             object:SetHeight(height/scale)
+        elseif object.UpdateHeight then
+            -- Blizzard's container lists only as many quests as its own height allows.
+            -- In its default place it derives that height from the right-hand managed
+            -- container and its offset, which leaves it 20 pixels high here, so it shows
+            -- nothing and hides itself. Anchor its top and bottom to the reserved space
+            -- instead. Anchored height outlasts Blizzard's SetHeight, and on a shown
+            -- tracker the size change reaches Blizzard's own update through the layout pass.
+            local scale = math.min(1, LayoutWidth()*.30/math.max(1, object:GetWidth()))
+            SetRelativeScale(object, scale, object.SetScaleBase)
+            local clearPoints = object.ClearAllPointsBase or object.ClearAllPoints
+            local setPoint = object.SetPointBase or object.SetPoint
+            local x, y = (LayoutWidth()/2-16)/scale, (top-UIParent:GetHeight()/2)/scale
+            local starved = object:GetHeight() < height/scale-1
+            clearPoints(object)
+            -- Blizzard's managed container re-anchors it by its top alone after each
+            -- update. The same explicit height then keeps its size, so the refit
+            -- below moves it back without another update.
+            object:SetHeight(height/scale)
+            setPoint(object, "TOPRIGHT", UIParent, "CENTER", x, y)
+            setPoint(object, "BOTTOMRIGHT", UIParent, "CENTER", x, y-height/scale)
+            -- A new target frame makes the container shrink it to 20 pixels first.
+            -- An update in that moment hides it, and a hidden frame gets no size
+            -- change to update it again. Ask for one update once it has room. Quest
+            -- item buttons belong to that update, so a combat refresh waits for its end.
+            trackerStarved = (trackerStarved or starved) and not object:IsShown()
+            if trackerStarved and not InCombatLockdown() and object.MarkDirty then
+                trackerStarved = false
+                object:MarkDirty()
+            end
         else
             local scale = math.min(1, LayoutWidth()*.30/math.max(1, object:GetWidth()), height/math.max(1, object:GetHeight()))
             -- Retail Edit Mode wraps these methods with global layout callbacks.
@@ -1060,17 +1089,23 @@ PositionTracker = function()
                 (top-UIParent:GetHeight()/2)/scale)
         end
         if not trackerHooks[object] then
-            for _, method in ipairs({"SetPoint", "SetSize", "SetHeight", "SetWidth", "Show"}) do
-                hooksecurefunc(object, method, function()
-                    if positioningTracker or trackerQueued then return end
-                    -- Let Blizzard finish its right-frame layout before refitting.
-                    -- Reentering it from SetPoint can run stock aura work tainted.
-                    trackerQueued = true
-                    C_Timer.After(0, function()
-                        trackerQueued = false
-                        PositionTracker()
-                    end)
+            -- Let Blizzard finish its right-frame layout before refitting.
+            -- Reentering it from SetPoint can run stock aura work tainted.
+            -- Forever's tracker update drops timers created from its Show,
+            -- which left the queue closed for good. The next frame's OnUpdate does not.
+            if not trackerQueue then
+                trackerQueue = CreateFrame("Frame")
+                trackerQueue:Hide()
+                trackerQueue:SetScript("OnUpdate", function(self)
+                    self:Hide()
+                    PositionTracker()
                 end)
+            end
+            -- Retail's managed container moves the tracker with SetPointBase.
+            for _, method in ipairs({"SetPoint", "SetPointBase", "SetSize", "SetHeight", "SetWidth", "Show"}) do
+                if object[method] then hooksecurefunc(object, method, function()
+                    if not positioningTracker then trackerQueue:Show() end
+                end) end
             end
             trackerHooks[object] = true
         end

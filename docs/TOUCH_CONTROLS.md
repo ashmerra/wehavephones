@@ -136,7 +136,10 @@ so casting leaves the screen clear. Inspect and default world tooltips appear
 over chat.
 
 The stock quest tracker fits above the right actions and below the minimap
-and buffs. Addon trackers keep their own position, size and visibility.
+and buffs. On Retail and Forever it gets that whole space, so the quests it
+lists stay visible when a target frame appears or combat starts. If WoW hides it
+in combat, it returns when combat ends.
+Addon trackers keep their own position, size and visibility.
 A new row of buffs moves the debuffs down, in combat as well. The stock
 tracker follows after combat.
 
