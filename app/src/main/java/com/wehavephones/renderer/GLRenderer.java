@@ -50,6 +50,8 @@ public class GLRenderer implements GLSurfaceView.Renderer, WindowManager.OnWindo
     private boolean toggleFullscreen = false;
     public boolean viewportNeedsUpdate = true;
     private boolean cursorVisible = true;
+    // Set by an overlay that drives the pointer itself, independent of the session's own visibility.
+    private boolean cursorHidden = false;
     private boolean screenOffsetYRelativeToCursor = false;
     private String[] unviewableWMClasses = null;
     private float magnifierZoom = 1.0f;
@@ -195,7 +197,7 @@ public class GLRenderer implements GLSurfaceView.Renderer, WindowManager.OnWindo
         renderWindows();
 
         // Render cursor if enabled
-        if (cursorVisible) renderCursor();
+        if (cursorVisible && !cursorHidden) renderCursor();
 
         // Disable scissor test if magnifier is disabled and not in fullscreen mode
         if (!magnifierEnabled && !fullscreen) {
@@ -430,6 +432,13 @@ public class GLRenderer implements GLSurfaceView.Renderer, WindowManager.OnWindo
 
     public void setCursorVisible(boolean cursorVisible) {
         this.cursorVisible = cursorVisible;
+        xServerView.requestRender();
+    }
+
+    /** Hides the cursor without changing {@link #isCursorVisible()}, for touch modes that never point. */
+    public void setCursorHidden(boolean cursorHidden) {
+        if (this.cursorHidden == cursorHidden) return;
+        this.cursorHidden = cursorHidden;
         xServerView.requestRender();
     }
 

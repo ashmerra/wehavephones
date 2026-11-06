@@ -28,6 +28,9 @@ once per game session.
 | Menus | Esc, Keyboard, Inspect, Menu and the switch. Blue corner brackets around the game | Tap to click. Hold to right-click. Drag items and windows. Two fingers scroll |
 | Inspect, part of Menus | The Inspect key turns blue and the brackets turn silver | Touch or slide over anything to read its tooltip without clicking |
 
+Play hides the mouse pointer, because fingers aim directly and the pointer
+would only mark the last tap. Menus, Inspect and the Controls tab show it.
+
 Use keeps the current mode, including when looting a corpse. Tap Menus when
 you need to drag or scroll an interaction window. Map, Bags, Keyboard and
 every window opened from the touch menu switch to Menus by themselves.

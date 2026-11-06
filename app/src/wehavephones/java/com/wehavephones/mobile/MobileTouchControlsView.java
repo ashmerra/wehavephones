@@ -132,6 +132,16 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
             }
         } else menu.dismiss();
         setVisibility(show ? VISIBLE : GONE);
+        syncCursor();
+    }
+
+    /**
+     * Play aims with fingers, so the pointer only marks the last tap or the start of the last
+     * camera drag. Hide it there. Menus, Inspect and the collapsed Controls tab keep it.
+     */
+    private void syncCursor() {
+        if (xServer.getRenderer() == null) return;
+        xServer.getRenderer().setCursorHidden(getVisibility() == VISIBLE && !toolbarCollapsed && !input.isUiMode());
     }
 
     @Override protected void onSizeChanged(int w, int h, int oldw, int oldh) {
@@ -176,6 +186,7 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
         }
         labels[MobileTouchLayout.JUMP] = getContext().getString(diving ? R.string.wehavephones_touch_dive : R.string.wehavephones_touch_jump);
         if (toolbarCollapsed) updateHandle();
+        syncCursor();
         invalidate();
     }
 
