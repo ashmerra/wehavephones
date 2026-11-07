@@ -7,12 +7,14 @@
 --
 --   magenta | in world | jumped | moved | turned | cyan
 --
--- Each flag square is black until its event happens and then turns green. Jumped
--- turns green when the character leaves the ground more than three seconds after
--- entering the world (a character standing still never falls by itself), and
--- yellow when the jump binding ran but the character never left the ground.
+-- In world, moved and turned are black until their event happens and then stay
+-- green. Jumped is a pulse instead: green for five seconds after the character
+-- leaves the ground, yellow for five seconds after the jump binding ran without
+-- the character leaving the ground, black otherwise. The runner waits for black,
+-- jumps and looks for green, so a fall while the world streams in never counts.
+-- Turned is yellow when the client does not report the player's facing (Retail
+-- can hide it), so the runner measures the turn on screen instead.
 -- The magenta and cyan ends let the runner find the strip at any resolution.
--- Flags only go from black to green during a session.
 -- Works on every client from Classic Era to Retail: it uses only APIs that all
 -- of them share.
 
@@ -25,7 +27,9 @@ local COLORS = {
 }
 
 local state = { inWorld = "off", jumped = "off", moved = "off", turned = "off" }
-local enteredAt, firstFacing, hooked
+local enteredAt, firstFacing, hooked, wasFalling
+local fellAt, pressedAt = -100, -100
+local PULSE = 5
 
 local strip = CreateFrame("Frame", "WeHavePhonesE2EMarker", UIParent)
 strip:SetFrameStrata("TOOLTIP")
@@ -63,7 +67,16 @@ local function set(name, value)
 end
 
 local function onJump()
-    set("jumped", "pressed")
+    pressedAt = GetTime()
+end
+
+local function showJump()
+    local now = GetTime()
+    local value = now - fellAt < PULSE and "on" or now - pressedAt < PULSE and "pressed" or "off"
+    if state.jumped == value then return end
+    state.jumped = value
+    local color = COLORS[value]
+    squares.jumped:SetColorTexture(color[1], color[2], color[3], 1)
 end
 
 -- The runner presses Enter at character select. A press that lands after the
@@ -79,18 +92,29 @@ if type(JumpOrAscendStart) == "function" then
     hooked = pcall(hooksecurefunc, "JumpOrAscendStart", onJump)
 end
 
+-- Retail can return facing as a secret value: it looks like a number, but math
+-- on it raises an error. Either case counts as "facing not available".
+local function checkTurn()
+    local facing = GetPlayerFacing and GetPlayerFacing()
+    if type(facing) ~= "number" or (type(issecretvalue) == "function" and issecretvalue(facing)) then
+        set("turned", "pressed")
+        return
+    end
+    if not firstFacing then firstFacing = facing end
+    local turn = math.abs(facing - firstFacing)
+    if math.min(turn, 2 * math.pi - turn) > 0.25 then set("turned", "on") end
+end
+
 strip:SetScript("OnUpdate", function()
     local since = GetTime() - (enteredAt or GetTime())
     if since < 8 then closeChat() end
-    if IsFalling() and since > 3 then set("jumped", "on") end
+    local falling = IsFalling()
+    if falling and not wasFalling then fellAt = GetTime() end
+    wasFalling = falling
+    showJump()
     local speed = GetUnitSpeed("player")
     if speed and speed > 0 and not IsFalling() then set("moved", "on") end
-    local facing = GetPlayerFacing and GetPlayerFacing()
-    if facing then
-        if not firstFacing then firstFacing = facing end
-        local turn = math.abs(facing - firstFacing)
-        if math.min(turn, 2 * math.pi - turn) > 0.35 then set("turned", "on") end
-    end
+    if state.turned ~= "on" and not pcall(checkTurn) then set("turned", "pressed") end
 end)
 
 local events = CreateFrame("Frame")

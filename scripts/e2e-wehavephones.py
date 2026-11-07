@@ -101,21 +101,23 @@ class Scenario:
         return '%s, %s, jump with %s%s' % (self.title, controls, how, extra)
 
 
-SCENARIOS = [
-    Scenario('classic-era', '_classic_era_', 'Classic Era'),
-    Scenario('anniversary', '_anniversary_', 'Anniversary (TBC)'),
-    Scenario('mop', '_classic_', 'MoP Classic'),
-    Scenario('titan', '_classic_titan_', 'Wrath / Titan'),
-    Scenario('retail', '_retail_', 'Retail', boot=600),
-    Scenario('forever', '_forever_', 'Forever', boot=600),
-    Scenario('forever-touch', '_forever_', 'Forever', jump='touch', touch=True,
-             extra=('move', 'turn'), boot=600),
-    Scenario('classic-era-gamepad', '_classic_era_', 'Classic Era', jump='gamepad'),
+# One entry per game line: scenario name, game folder, title, seconds to reach the world.
+GAMES = [
+    ('classic-era', '_classic_era_', 'Classic Era', 420),
+    ('anniversary', '_anniversary_', 'Anniversary (TBC)', 420),
+    ('mop', '_classic_', 'MoP Classic', 420),
+    ('titan', '_classic_titan_', 'Wrath / Titan', 420),
+    ('retail', '_retail_', 'Retail', 600),
+    ('forever', '_forever_', 'Forever', 600),
 ]
+SCENARIOS = [Scenario(name, game, title, boot=boot) for name, game, title, boot in GAMES]
+SCENARIOS += [Scenario(name + '-touch', game, title, jump='touch', touch=True, extra=('move', 'turn'), boot=boot)
+              for name, game, title, boot in GAMES]
+SCENARIOS.append(Scenario('classic-era-gamepad', '_classic_era_', 'Classic Era', jump='gamepad'))
 BY_NAME = {scenario.name: scenario for scenario in SCENARIOS}
 GROUPS = {
-    'versions': ['classic-era', 'anniversary', 'mop', 'titan', 'retail', 'forever'],
-    'touch': ['forever-touch'],
+    'versions': [name for name, _, _, _ in GAMES],
+    'touch': [name + '-touch' for name, _, _, _ in GAMES],
     'extra': ['classic-era-gamepad'],
 }
 GROUPS['all'] = GROUPS['versions'] + GROUPS['touch'] + GROUPS['extra']
@@ -618,9 +620,18 @@ def rect_center(rect):
 
 
 def jump(phone, scenario):
+    """The jumped square pulses green after any fall, so wait for black, press, then look for green."""
     layout = play_mode(phone) if scenario.jump == 'touch' else None
     flags = None
     for _ in range(3):
+        deadline = time.time() + 20
+        while time.time() < deadline:
+            flags = read_marker(phone.screenshot())
+            if flags and flags['jumped'] == 'off':
+                break
+            time.sleep(1)
+        else:
+            raise Failure('the jumped square never settled to black before the jump (%s)' % flags)
         if scenario.jump == 'key':
             phone.key('KEYCODE_SPACE')
         elif scenario.jump == 'gamepad':
@@ -646,15 +657,43 @@ def move(phone, scenario):
     say('moved with the stick')
 
 
+def world_change(before, after, viewport):
+    """Mean brightness change of the upper right game area, 0-255. Idle scenes stay below 6."""
+    from PIL import ImageChops, ImageStat
+    vx1, vy1, vx2, vy2 = viewport
+    w, h = vx2 - vx1, vy2 - vy1
+    box = (int(vx1 + w * .55), int(vy1 + h * .12), int(vx1 + w * .95), int(vy1 + h * .65))
+    a, b = (image.convert('L').crop(box).resize((200, 100)) for image in (before, after))
+    return ImageStat.Stat(ImageChops.difference(a, b)).mean[0]
+
+
+# Camera drags in fractions of the game area: (x1, y1, x2, y2, repeats). Chat, the quest tracker
+# and the action bars sit in different places per client and touch layout, and a drag that
+# crosses them can stop turning or open a chat link, so the runner tries several.
+TURN_DRAGS = [(.84, .56, .36, .56, 1), (.97, .40, .80, .40, 3), (.97, .74, .55, .74, 1)]
+
+
 def turn(phone, scenario):
     layout = play_mode(phone)
     vx1, vy1, vx2, vy2 = layout['viewport']
     w, h = vx2 - vx1, vy2 - vy1
-    phone.drag(int(vx1 + w * .45), int(vy1 + h * .45), int(vx1 + w * .70), int(vy1 + h * .45), 700)
-    flags = wait_flag(phone, 'turned')
-    if not flags or flags['turned'] != 'on':
-        raise Failure('a camera drag did not turn the character')
-    say('turned with a camera drag')
+    before = phone.screenshot()
+    change = 0
+    for x1, y1, x2, y2, repeats in TURN_DRAGS:
+        for _ in range(repeats):
+            phone.drag(int(vx1 + w * x1), int(vy1 + h * y1), int(vx1 + w * x2), int(vy1 + h * y2), 900)
+            time.sleep(.5)
+        flags = wait_flag(phone, 'turned', 3)
+        if flags and flags['turned'] == 'on':
+            say('turned with a camera drag')
+            return
+        # Retail can hide the facing (yellow) or report one that never changes (black). Fall
+        # back on the view: standing still changes it by 6 or less, a turn by 11 to 28.
+        change = world_change(before, phone.screenshot(), layout['viewport'])
+        if change >= 8:
+            say('turned the view with a camera drag (facing not readable, view changed by %.0f)' % change)
+            return
+    raise Failure('camera drags did not turn the character (view changed by %.0f)' % change)
 
 
 EXTRA = {'move': move, 'turn': turn}
@@ -679,7 +718,15 @@ def run_scenario(phone, scenario, evidence):
     phone.private('rm -f %s' % TOUCH_LAYOUT)
     crashes_before = crash_lines(phone)
     try:
-        login(phone, evidence)
+        try:
+            login(phone, evidence)
+        except Failure as error:
+            # Battle.net sometimes hangs on sign-in or never starts the game. One retry from a
+            # clean session clears that. A second failure is the scenario's result.
+            say('%s; retrying Play once' % error)
+            dev.stop_runtime(phone.serial)
+            time.sleep(3)
+            login(phone, evidence)
         enter_world(phone, scenario, evidence, scenario.boot)
         time.sleep(4)
         phone.screenshot(evidence / 'world.png')

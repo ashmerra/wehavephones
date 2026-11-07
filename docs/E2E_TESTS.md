@@ -21,7 +21,9 @@ Enter World detector and the settings round trip on synthetic data.
 - Sign in to Battle.net once in the app. The tests use that saved sign-in
   through the app's own **Play** and never type credentials.
 - Pick a character in each game once. The tests enter the world with the
-  character selected at character select.
+  character selected at character select. If a game opens on a realm without
+  your characters, it shows character creation and the test fails. Choose
+  your realm and character in that game once and run it again.
 - Keep the phone unlocked, awake and preferably charging. A Battle.net
   security challenge or a pending game update needs the player.
 
@@ -35,11 +37,12 @@ Enter World detector and the settings round trip on synthetic data.
 | `titan` | Wrath / Titan | App defaults | Enter world, jump with Space |
 | `retail` | Retail | App defaults | Enter world, jump with Space |
 | `forever` | Forever | App defaults | Enter world, jump with Space |
-| `forever-touch` | Forever | Mobile touch controls on | Tap Enter World, switch to Play, jump with the Jump key, move with the stick, turn with a camera drag |
+| `classic-era-touch`, `anniversary-touch`, `mop-touch`, `titan-touch`, `retail-touch`, `forever-touch` | Each game above | Mobile touch controls on | Tap Enter World, switch to Play, jump with the Jump key, move with the stick, turn with a camera drag |
 | `classic-era-gamepad` | Classic Era | App defaults | Enter world, jump with the on-screen gamepad's A |
 
-Groups: `versions` (one per game line), `touch`, `extra`, `default`
-(`versions` and `touch`) and `all`. A game that is not installed is skipped.
+Groups: `versions` (one per game line), `touch` (the same games with touch
+controls), `extra`, `default` (`versions` and `touch`) and `all`. A game that
+is not installed is skipped.
 
 "App defaults" means the settings a new install starts with. The runner
 removes the player's touch controls, performance overlay, runtime profile,
@@ -52,7 +55,9 @@ choice, region, setup state and touch guide flags.
    `out/e2e/settings-backup.json` and writes the scenario's settings.
 2. It copies the test addon `tests/e2e/WeHavePhonesE2E` into the game, with a
    `.toc` for the interface version in the client's `.build.info`.
-3. It taps **Play** and follows `launch-last.json` until the game runs.
+3. It taps **Play** and follows `launch-last.json` until the game runs. When
+   Battle.net hangs or does not start the game, it stops the session and
+   tries Play once more.
 4. It waits for character select, then presses Enter (or taps Enter World with
    touch controls on). Character select shows either the red Enter World button
    at the bottom center or, on Forever with the on-screen gamepad, the flat
@@ -69,14 +74,22 @@ The test addon draws a strip of squares near the top of the screen:
 magenta | in world | jumped | moved | turned | cyan
 ```
 
-A flag square is black until its event happens and then turns green. Jumped
-turns green when `IsFalling()` turns true more than three seconds after
-entering the world, because a character standing still never falls by
-itself. It turns yellow when the JUMP binding ran (`JumpOrAscendStart`) but
-the character stayed on the ground. Moved uses `GetUnitSpeed` and turned uses
-`GetPlayerFacing`. For its first eight seconds in the world the addon also
-closes the chat box, so a late Enter press cannot swallow the jump key. The magenta and cyan ends let
-the runner find the strip at any resolution.
+In world, moved and turned are black until their event happens and then stay
+green. Moved uses `GetUnitSpeed` and turned uses `GetPlayerFacing`. Turned is
+yellow when the client does not report a usable facing. Retail on its starter
+island reports one that never changes. When turned stays black or yellow, the
+runner compares the upper right game area before and after the camera drag and
+accepts a clear change of view. The result line says when it did.
+
+Jumped is a pulse. It is green for five seconds after `IsFalling()` turns
+true, yellow for five seconds after the JUMP binding ran
+(`JumpOrAscendStart`) without the character leaving the ground, and black
+otherwise. The runner waits for black, presses jump and looks for green, so a
+fall while the world streams in never counts as a jump.
+
+For its first eight seconds in the world the addon also closes the chat box,
+so a late Enter press cannot swallow the jump key. The magenta and cyan ends
+let the runner find the strip at any resolution.
 
 Debuggable builds write the touch controls' mode and key bounds to
 `files/wehavephones/touch-layout.json`, so touch checks press the real keys
