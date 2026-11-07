@@ -1,5 +1,6 @@
 package com.wehavephones.mobile;
 
+import android.content.pm.ApplicationInfo;
 import android.content.res.Configuration;
 import android.graphics.Canvas;
 import android.graphics.DashPathEffect;
@@ -21,8 +22,16 @@ import android.view.ViewGroup;
 import android.view.WindowInsets;
 import android.widget.FrameLayout;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.Set;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import com.wehavephones.R;
 import com.wehavephones.XServerDisplayActivity;
@@ -133,6 +142,7 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
         } else menu.dismiss();
         setVisibility(show ? VISIBLE : GONE);
         syncCursor();
+        writeTestLayout();
     }
 
     /**
@@ -188,6 +198,43 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
         if (toolbarCollapsed) updateHandle();
         syncCursor();
         invalidate();
+        writeTestLayout();
+    }
+
+    /**
+     * Debuggable builds only: the current mode and key bounds in screen pixels, in
+     * files/wehavephones/touch-layout.json, so device tests press keys without fixed coordinates.
+     */
+    private void writeTestLayout() {
+        if ((getContext().getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) == 0 || layout == null) return;
+        int[] origin = new int[2];
+        getLocationOnScreen(origin);
+        try {
+            JSONObject json = new JSONObject()
+                    .put("mode", toolbarCollapsed ? "collapsed" : input.isInspectMode() ? "inspect" : input.isUiMode() ? "menus" : "play")
+                    .put("visible", getVisibility() == VISIBLE)
+                    .put("guide", guide)
+                    .put("stick", new JSONArray().put(origin[0] + stickX).put(origin[1] + stickY).put(radius));
+            if (lastViewport != null) json.put("viewport", new JSONArray().put(origin[0] + lastViewport.left)
+                    .put(origin[1] + lastViewport.top).put(origin[0] + lastViewport.right).put(origin[1] + lastViewport.bottom));
+            JSONObject keys = new JSONObject();
+            for (int i = 0; i < buttons.length; i++) {
+                RectF rect = buttons[i];
+                if (rect.isEmpty()) continue;
+                keys.put(ZONES[i].name().toLowerCase(java.util.Locale.ROOT), new JSONArray().put(origin[0] + rect.left)
+                        .put(origin[1] + rect.top).put(origin[0] + rect.right).put(origin[1] + rect.bottom));
+            }
+            json.put("keys", keys);
+            File dir = new File(getContext().getFilesDir(), "wehavephones");
+            File target = new File(dir, "touch-layout.json"), temp = new File(dir, "touch-layout.json.tmp");
+            if (!dir.isDirectory() && !dir.mkdirs()) return;
+            try (FileOutputStream out = new FileOutputStream(temp)) {
+                out.write(json.toString().getBytes(StandardCharsets.UTF_8));
+            }
+            if (!temp.renameTo(target)) temp.delete();
+        } catch (IOException | JSONException ignored) {
+            // Test aid only.
+        }
     }
 
     private void updateHandle() {
@@ -214,6 +261,7 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
             guide = false;
             swallowing = true;
             invalidate();
+            writeTestLayout();
         }
         if (swallowing) {
             if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) swallowing = false;
@@ -751,6 +799,7 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
         bannerAt = -BANNER_MS;
         guide = true;
         invalidate();
+        writeTestLayout();
     }
 
     @Override public void key(MobileTouchInput.Key key, boolean down) {
