@@ -436,9 +436,11 @@ public final class TouchSelfTest {
                     float closestX = Math.max(left, Math.min(right, nativeLayout.stickX));
                     float closestY = Math.max(top, Math.min(bottom, nativeLayout.stickY));
                     check(Math.hypot(closestX - nativeLayout.stickX, closestY - nativeLayout.stickY) >= nativeLayout.radius * 1.2f - .1f,
-                            "actual Lua " + fields[6] + " geometry stays clear of the entire stick hit region");
+                            "actual Lua " + fields[6] + " geometry stays clear of the entire stick hit region at "
+                                    + rootWidth + "x" + rootHeight + ", density " + density + ", letterboxed " + letterboxed);
                     // Unit frames, auras and the minimap may sit over the world. Controls never become camera drags.
-                    boolean control = fields[6].equals("action") || fields[6].equals("pager") || fields[6].equals("class") || fields[6].equals("party");
+                    boolean control = fields[6].equals("action") || fields[6].equals("pager") || fields[6].equals("class")
+                            || fields[6].equals("party") || fields[6].equals("chat-size");
                     if (control) for (float fx : new float[]{.01f, .5f, .99f}) for (float fy : new float[]{.01f, .5f, .99f}) {
                         float sampleX = (left + (right-left)*fx - viewport.left) / viewport.width() * rootWidth;
                         float sampleY = (top + (bottom-top)*fy - viewport.top) / viewport.height() * rootHeight;

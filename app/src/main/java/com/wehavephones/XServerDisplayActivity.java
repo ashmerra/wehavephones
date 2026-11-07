@@ -879,6 +879,7 @@ import java.util.concurrent.Executors;
                 if (now < suppressImeAutoShowUntilMs) {
                     return;
                 }
+                SessionInputExtras.onTextFocus(this, boxName);
                 if (wowImeFocused && imeBridgeView != null) {
                     return;
                 }

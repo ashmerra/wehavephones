@@ -96,7 +96,8 @@ during combat applies when combat ends.
 ## Screen layout
 
 The native toolbar and the touch addon share fixed regions, measured in
-fractions of the game's height, so neither covers the other on any screen.
+fractions of the game's height. The stock HUD stays clear of the native keys,
+apart from compact chat, which shares the movement corner.
 
 - **Wide games** (aspect ratio 1.59 or more, which includes 16:10 and every
   phone): the toolbar is a row in the upper right, just left of a minimap
@@ -125,14 +126,14 @@ The layout reserves space for native thumb controls and caps its width on
 ultrawide screens. Camera gestures follow the actual guest viewport,
 including letterboxing and stretching. The stock party frames form a row
 above chat and movement, retaining their own targeting, pet and aura
-behavior. Group chat fits below that row.
+behavior.
 
-Chat shows four rows below the unit frames, so the world stays in view. Its
-stock utility buttons shrink to fit beside them. The small arrows icon next
-to chat opens a wider and taller view, with about eleven rows when solo and
-the utility buttons at their normal size. It stops above the movement stick.
-The icon then points inward. Tap it again to return chat to four rows. The
-start of combat does the same. Stock
+Chat shows four rows at the bottom left, partly behind the movement stick.
+Its stock utility buttons shrink to fit beside them. The small arrows icon
+beside chat stays clear of the stick's touch area. Tap it to move chat to the
+center and open a wider, taller view for reading. The icon then points inward.
+Tap it again to return chat to the bottom left. The start of combat does the
+same. Stock
 chat retains its touch anchor during combat. Protected replacement chat frames
 defer their layout until combat ends. Hotbar tooltips appear only in Inspect,
 so casting leaves the screen clear. Inspect and default world tooltips appear
@@ -147,10 +148,12 @@ A new row of buffs moves the debuffs down, in combat as well. The stock
 tracker follows after combat.
 
 Typing in chat, from **Menu → Typing and items → Chat** or **Reply** or from
-WoW itself, raises the chat box to just below the unit frames. The renderer
-pans the game to keep the pointer above the Android keyboard, so Chat and
-Reply also park the pointer at the raised box. The game then stays still and
-the box stays visible. The chat box returns to the chat frame afterwards.
+WoW itself, expands chat before typing and raises the input to just below the
+unit frames. The centered message area shortens to fit below the input and
+above the Android keyboard. Chat focus also switches to Menus and parks the
+pointer near the raised input, keeping the renderer from panning the game.
+After typing, chat stays expanded for reading. Collapsing chat ends text focus
+and returns the input to its stock anchor beside the compact chat frame.
 **Keyboard** leaves the pointer where you last tapped, which is normally the
 text field you want to type in.
 

@@ -384,10 +384,11 @@ local function SetTouchScale(scale)
     Layout()
 end
 
--- Chat shows a few rows so the world stays in view. Its size key opens a larger
--- view for reading, which stops above the movement stick.
+-- Compact chat shares the lower-left corner with movement. Its size key stays
+-- beyond the stick and opens a centered conversation for reading and typing.
 local CHAT_ROWS = 4
-local chatLarge, chatSize, FitChatButtons
+local chatLarge, chatSize, FitChatButtons, SetChatLarge, RaiseEditBox
+local editBoxes, activeChatEdit = {}, nil
 -- Phosphor arrows-out-simple, then arrows-in-simple, as line segments in its 256-unit grid.
 local CHAT_ICONS = {
     out = {{144, 112, 208, 48}, {160, 48, 208, 48}, {208, 48, 208, 96},
@@ -424,17 +425,31 @@ local function PositionChat()
     end
     if not InCombatLockdown() and ChatFrame1.BreakFromFrameManager then ChatFrame1:BreakFromFrameManager() end
     Unanchor(ChatFrame1)
-    local height = UIParent:GetHeight()
+    local height, screenWidth = UIParent:GetHeight(), UIParent:GetWidth()
     local party = PartyFrame and PartyFrame.MemberFrame1 and PartyFrame.MemberFrame1:IsShown()
-    -- The top edge stays below the unit frames, or the party row, in both sizes.
-    local top = party and height*.08 or 128
-    local width = math.min(300, LayoutWidth()*.34)
-    local chatHeight = math.min(ChatRows(CHAT_ROWS), party and height*.10 or 92)
+    local left, top = 40, height*.78
+    -- Match the native stick's largest possible bounds, including its margin.
+    -- Keep the size key's expanded hit area beyond its right edge on tablets too.
+    -- An ultrawide guest can be letterboxed inside a taller landscape display.
+    local controlHeight = math.max(height, screenWidth/COMPACT)
+    local radius = math.min(controlHeight*(screenWidth/height<1.6 and .12 or .13), screenWidth*.13)
+    local stickRight = math.max(radius*1.2+screenWidth*.025, screenWidth*.12)+radius*1.2
+    local width = math.max(math.min(300, LayoutWidth()*.34), stickRight-left+16)
+    local chatHeight = math.min(ChatRows(CHAT_ROWS), height*.14)
     if chatLarge then
-        width = math.max(width, math.min(480, LayoutWidth()*.42))
-        chatHeight = math.max(chatHeight, top+height*.05)
+        width = math.min(560, LayoutWidth()*.65)
+        left = (screenWidth-width)/2
+        top = math.max(height*.20, unitBottom+38, party and height*.34+32 or 0)
+        if activeChatEdit then
+            RaiseEditBox(activeChatEdit)
+            local relative = activeChatEdit:GetEffectiveScale()/UIParent:GetEffectiveScale()
+            local editBottom = math.max(height*.14, unitBottom)+6+activeChatEdit:GetHeight()*relative
+            -- Tabs sit above the conversation. Both stay below the raised input.
+            top = math.max(top, editBottom+36)
+        end
+        chatHeight = math.min(ChatRows(11), math.max(1, height*(activeChatEdit and .48 or .70)-top))
     end
-    Anchor(ChatFrame1, "TOPLEFT", UIParent, "CENTER", -LayoutWidth()/2+16, top)
+    Anchor(ChatFrame1, "TOPLEFT", UIParent, "CENTER", left-screenWidth/2, height/2-top)
     ChatFrame1:SetSize(width, chatHeight)
     if chatSize then
         PaintChatSize()
@@ -577,9 +592,12 @@ local function RestoreGeometry(object, state)
     for _, point in ipairs(state.points) do Anchor(object, unpack(point)) end
 end
 
-local editBoxes = {}
-local function RaiseEditBox(editBox)
-    if not enabled or not editBox or retail or not SupportedLayout() then return end
+RaiseEditBox = function(editBox)
+    if not enabled or not editBox or not SupportedLayout() then return end
+    if activeChatEdit ~= editBox then
+        activeChatEdit = editBox
+        SetChatLarge(true)
+    end
     -- The Android keyboard covers the lower half. Type just below the unit frames instead.
     if not editBoxes[editBox] then
         local state = RememberGeometry(editBox)
@@ -598,6 +616,10 @@ local function LowerEditBox(editBox)
     RestoreGeometry(editBox, state)
     editBox:SetWidth(state.width)
     editBoxes[editBox] = nil
+    if activeChatEdit == editBox then
+        activeChatEdit = nil
+        if enabled then SetChatLarge(chatLarge) end
+    end
 end
 
 local function HudObject(name)
@@ -1179,7 +1201,12 @@ FitChatButtons = function()
     else Rescale(ChatFrame1ButtonFrame, WeHavePhonesTouchDB.hud.ChatFrame1ButtonFrame.scale) end
 end
 
-local function SetChatLarge(large)
+SetChatLarge = function(large)
+    if not large and activeChatEdit then
+        -- Collapsing ends text focus before the input returns behind movement.
+        if ChatFrameUtil and ChatFrameUtil.DeactivateChat then ChatFrameUtil.DeactivateChat(activeChatEdit)
+        elseif ChatEdit_DeactivateChat then ChatEdit_DeactivateChat(activeChatEdit) end
+    end
     chatLarge = large
     PositionChat()
     FitChatButtons()

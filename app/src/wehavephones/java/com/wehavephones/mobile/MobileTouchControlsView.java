@@ -1003,6 +1003,14 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
         xServer.injectPointerMove(xServer.screenInfo.width / 2, xServer.screenInfo.height / 5);
     }
 
+    /** Chat opened inside WoW needs the same keyboard position as the touch menu. */
+    public void onTextFocus(String boxName) {
+        if (getVisibility() != VISIBLE || boxName == null
+                || !boxName.matches("ChatFrame[0-9]+EditBox")) return;
+        setWindows(true);
+        parkPointerForChat();
+    }
+
     private void setScale(float scale, XKeycode key) {
         WeHavePhonesConfig.setMobileTouchScale(getContext(), scale);
         chord(XKeycode.KEY_SHIFT_L, key);

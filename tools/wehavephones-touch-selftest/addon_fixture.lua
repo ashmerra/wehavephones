@@ -412,6 +412,53 @@ local function exportGeometry(object, width, height, kind, fullHeight)
     if object.point[1]=="TOPLEFT" then y=y-h end
     geometry:write(table.concat({width,height,x,y,object:GetWidth()*scale,h,kind},"\t"),"\n")
 end
+local function checkChatLayout(width,height,aspect)
+    local sizeKey=objects.WeHavePhonesTouchChatSize
+    local compactX,compactY=ChatFrame1.point[4],ChatFrame1.point[5]
+    assert(ChatFrame1:GetHeight()==60 and math.abs(compactY+height*.28)<.001,
+        "compact chat sits at the lower left in solo and party layouts")
+    assert(sizeKey.visible and chatIcon()=="out" and sizeKey.point[2]==ChatFrame1 and sizeKey.point[3]=="TOPRIGHT",
+        "the expand key follows compact chat")
+    local radius=math.min(math.max(height,width/1.59)*(aspect<1.6 and .12 or .13),width*.13)
+    local stickRight=math.max(radius*1.2+width*.025,width*.12)+radius*1.2
+    local keyLeft=width/2+compactX+ChatFrame1:GetWidth()+6-10
+    assert(keyLeft>stickRight and keyLeft+44<=width,
+        "the entire expand touch target clears the native movement hit area and stays on screen")
+    if geometry then
+        geometry:write(table.concat({width,height,keyLeft,height/2+compactY-34,44,44,"chat-size"},"\t"),"\n")
+    end
+    sizeKey.scripts.OnClick(sizeKey)
+    local readingHeight=ChatFrame1:GetHeight()
+    assert(readingHeight>60 and math.abs(ChatFrame1.point[4]+ChatFrame1:GetWidth()/2)<.001,
+        "expanded chat is taller and horizontally centered")
+    local chatTop=height/2+ChatFrame1.point[5]
+    assert(chatTop-readingHeight>=height*.30-.001 and chatTop+32<=height*.86,
+        "expanded reading leaves room for the top toolbar and lower actions")
+    ChatFrameUtil.ActivateChat(ChatFrame1EditBox)
+    assert(chatIcon()=="in" and ChatFrame1EditBox.point[1]=="TOP",
+        "typing always uses expanded chat")
+    local inputScale=ChatFrame1EditBox:GetEffectiveScale()/UIParent:GetEffectiveScale()
+    local inputBottom=height+ChatFrame1EditBox.point[5]*inputScale-ChatFrame1EditBox:GetHeight()*inputScale
+    local historyTop=height/2+ChatFrame1.point[5]
+    assert(historyTop+32<inputBottom and historyTop-ChatFrame1:GetHeight()>=height*.52-.001,
+        "chat tabs and message history fit below the input and above the keyboard")
+    assert(ChatFrame1:GetHeight()>14 and ChatFrame1:GetHeight()<readingHeight,
+        "typing leaves readable history while reserving the lower half for the keyboard")
+    active.scripts.OnEvent(active,"DISPLAY_SIZE_CHANGED")
+    assert(ChatFrame1EditBox.point[1]=="TOP" and chatIcon()=="in","layout updates preserve expanded typing")
+    ChatFrameUtil.DeactivateChat(ChatFrame1EditBox)
+    assert(ChatFrame1:GetHeight()==readingHeight and chatIcon()=="in",
+        "finishing a message restores the expanded reading area")
+    sizeKey.scripts.OnClick(sizeKey)
+    assert(ChatFrame1.point[4]==compactX and ChatFrame1.point[5]==compactY and chatIcon()=="out",
+        "collapse restores the exact lower-left anchor")
+    ChatFrameUtil.ActivateChat(ChatFrame1EditBox)
+    assert(chatIcon()=="in","Chat and Reply expand compact chat before typing")
+    sizeKey.scripts.OnClick(sizeKey)
+    assert(not ChatFrame1EditBox.visible and ChatFrame1EditBox.point[2]==ChatFrame1
+        and ChatFrame1EditBox:GetWidth()==300 and chatIcon()=="out",
+        "collapsing while typing ends focus and restores the stock edit box geometry")
+end
 for _,scale in ipairs({1.25,1.5,1.75}) do
     WeHavePhonesTouchDB.touchScale=scale
     for _,aspect in ipairs({1,6/5,5/4,4/3,3/2,16/10,16/9,2,19.5/9,21/9,32/9}) do
@@ -492,8 +539,8 @@ for _,scale in ipairs({1.25,1.5,1.75}) do
             lastRight=x+128*s
         end
         local chatBottom=height/2+ChatFrame1.point[5]-ChatFrame1:GetHeight()
-        assert(ChatFrame1.point[1]=="TOPLEFT" and ChatFrame1.point[3]=="CENTER" and chatBottom>=height*.48-.01,
-            "group chat stays below the party row and above the stick")
+        assert(ChatFrame1.point[1]=="TOPLEFT" and ChatFrame1.point[3]=="CENTER" and chatBottom>0,
+            "group chat stays on screen at the lower left")
         local chatTop=height/2+ChatFrame1.point[5]
         local chatButtonsTop=chatBottom+ChatFrame1ButtonFrame:GetHeight()*ChatFrame1ButtonFrame:GetEffectiveScale()/UIParent:GetEffectiveScale()
         assert(chatTop+32<=height*.694 and chatButtonsTop<=chatTop+32.01,
@@ -503,27 +550,12 @@ for _,scale in ipairs({1.25,1.5,1.75}) do
         assert(chatBottom+220*ChatFrame1ButtonFrame:GetEffectiveScale()/UIParent:GetEffectiveScale()<=height*.694,
             "late chat utility buttons cannot grow into party controls")
         ChatFrame1ButtonFrame:SetHeight(184)
+        checkChatLayout(width,height,aspect)
         PartyFrame:Layout()
         assert(PartyFrame.MemberFrame1.point[3]=="CENTER","stock party layout updates cannot cover the movement stick")
         for i=1,4 do PartyFrame["MemberFrame"..i]:Hide() end
         active.scripts.OnEvent(active,"GROUP_ROSTER_UPDATE")
-        -- Four rows of the 14-point chat font, with the tabs where they were.
-        assert(ChatFrame1:GetHeight()==60 and ChatFrame1.point[5]==128,"solo chat shows a few rows below the unit frames")
-        local sizeKey=objects.WeHavePhonesTouchChatSize
-        assert(sizeKey.visible and chatIcon()=="out" and sizeKey.point[2]==ChatFrame1 and sizeKey.point[3]=="TOPRIGHT",
-            "the chat size icon sits beside the chat tabs")
-        local compactWidth=ChatFrame1:GetWidth()
-        sizeKey.scripts.OnClick(sizeKey)
-        local largeBottom=height/2+ChatFrame1.point[5]-ChatFrame1:GetHeight()
-        local radius=math.min(height*(aspect<1.6 and .12 or .13),width*.13)
-        assert(ChatFrame1:GetHeight()>=2*60 and ChatFrame1:GetWidth()>compactWidth and ChatFrame1.point[5]==128,
-            "the larger chat keeps its top edge and grows")
-        assert(height-largeBottom<=height*(aspect<1.6 and .68 or .70)-radius,"the larger chat stops above the movement stick")
-        assert(ChatFrame1.point[4]+ChatFrame1:GetWidth()<=0,"the larger chat leaves the character in the center clear")
-        assert(chatIcon()=="in" and ChatFrame1ButtonFrame:GetScale()>=.95,
-            "the larger chat restores the stock button column to about its own size")
-        sizeKey.scripts.OnClick(sizeKey)
-        assert(ChatFrame1:GetHeight()==60 and chatIcon()=="out","the size icon returns chat to a few rows")
+        checkChatLayout(width,height,aspect)
     end
 end
 if geometry then geometry:close() end
@@ -742,12 +774,13 @@ assert(ChatFrame1EditBox.point[1]=="TOP" and ChatFrame1EditBox.point[3]=="TOP"
 ChatFrameUtil.DeactivateChat(ChatFrame1EditBox)
 assert(ChatFrame1EditBox.point[1]=="TOPLEFT" and ChatFrame1EditBox.point[2]==ChatFrame1 and ChatFrame1EditBox:GetWidth()==300,
     "the chat box returns to the chat frame after typing")
+objects.WeHavePhonesTouchChatSize.scripts.OnClick(objects.WeHavePhonesTouchChatSize)
 edit(ActionButton1)
 combat=true
 ChatFrame1:ApplySystemAnchor()
 assert(ChatFrame1.point[3]=="CENTER","unprotected stock chat cannot move over the stick during combat")
 ChatFrame1:SetSize(900,400)
-assert(ChatFrame1:GetWidth()<=300 and ChatFrame1:GetHeight()==60,"combat chat resizing cannot cover movement or party controls")
+assert(ChatFrame1:GetWidth()<400 and ChatFrame1:GetHeight()==60,"combat chat resizing preserves the compact layout")
 ChatFrame1.protected=true
 ChatFrame1:ApplySystemAnchor()
 assert(ChatFrame1.point[3]=="BOTTOMLEFT","protected replacement chat frames remain untouched during combat")
@@ -932,6 +965,7 @@ for _,scale in ipairs({1.25,1.5,1.75}) do
         UIParent:SetSize(width,height)
         active.scripts.OnEvent(active,"DISPLAY_SIZE_CHANGED")
         for i=1,12 do exportGeometry(_G["ActionButton"..i],width,height,"action") end
+        checkChatLayout(width,height,aspect)
         for _,info in ipairs({{"WeHavePhonesTouchPager","pager"},{"MinimapCluster","minimap"},{"PlayerFrame","unit"},
             {"TargetFrame","unit"},{"BuffFrame","aura"},{"DebuffFrame","aura"}}) do exportGeometry(_G[info[1]],width,height,info[2]) end
         local left,_,w=topRect(TargetFrame)
