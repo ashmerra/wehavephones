@@ -7,6 +7,8 @@ local extraBars = {false,false,true,false,false,false,false}
 local actions = {[1]={"spell",101}, [61]={"item",500}}
 local targetExists, targetDead = false, false
 local buffs = 0
+local clock = 0
+function GetTime() return clock end
 WOW_PROJECT_MAINLINE, WOW_PROJECT_CLASSIC, WOW_PROJECT_ID, BOOKTYPE_SPELL = 1, 2, FIXTURE_PROJECT or 2, "spell"
 WOW_PROJECT_BURNING_CRUSADE_CLASSIC, WOW_PROJECT_MISTS_CLASSIC = 5, 19
 tinsert, UISpecialFrames, unpack = table.insert, {}, table.unpack or unpack
@@ -774,6 +776,11 @@ menuChord("SHIFT-F5")
 local scale=UIParent:GetScale()
 active.scripts.OnEvent(active,"PLAYER_ENTERING_WORLD")
 assert(UIParent:GetScale()==scale,"re-entry never compounds scale")
+ChatFrameUtil.ActivateChat(ChatFrame1EditBox)
+assert(chatIcon()=="in","chat opened by the Enter that entered the world still types in expanded chat")
+ChatFrameUtil.DeactivateChat(ChatFrame1EditBox)
+assert(chatIcon()=="out" and ChatFrame1:GetHeight()==60,"chat opened by the Enter that entered the world starts compact")
+clock=clock+60
 boot(true)
 assert(UIParent:GetScale()==scale,"reload never compounds scale")
 boot(true,1.25)

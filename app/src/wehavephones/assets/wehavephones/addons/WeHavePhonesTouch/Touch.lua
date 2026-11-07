@@ -389,6 +389,10 @@ end
 local CHAT_ROWS = 4
 local chatLarge, chatSize, FitChatButtons, SetChatLarge, RaiseEditBox
 local editBoxes, activeChatEdit = {}, nil
+-- The Enter that enters the world can land after the loading screen and open the
+-- chat box. Chat opened that soon returns to compact when it closes.
+local LOADING_CHAT_SECONDS = 10
+local loadedAt, collapseAfterTyping = nil, false
 -- Phosphor arrows-out-simple, then arrows-in-simple, as line segments in its 256-unit grid.
 local CHAT_ICONS = {
     out = {{144, 112, 208, 48}, {160, 48, 208, 48}, {208, 48, 208, 96},
@@ -615,6 +619,7 @@ RaiseEditBox = function(editBox)
     if not enabled or not editBox or not SupportedLayout() then return end
     if activeChatEdit ~= editBox then
         activeChatEdit = editBox
+        collapseAfterTyping = not chatLarge and loadedAt ~= nil and GetTime()-loadedAt < LOADING_CHAT_SECONDS
         SetChatLarge(true)
     end
     -- Keep the input below the toolbar and leave room for history above a tall keyboard.
@@ -637,7 +642,9 @@ local function LowerEditBox(editBox)
     editBoxes[editBox] = nil
     if activeChatEdit == editBox then
         activeChatEdit = nil
-        if enabled then SetChatLarge(chatLarge) end
+        local large = chatLarge and not collapseAfterTyping
+        collapseAfterTyping = false
+        if enabled then SetChatLarge(large) end
     end
 end
 
@@ -1265,7 +1272,10 @@ local function CreateChatSize()
             chatSize.lines[i] = line
         end
     end
-    chatSize:SetScript("OnClick", function() SetChatLarge(not chatLarge) end)
+    chatSize:SetScript("OnClick", function()
+        collapseAfterTyping = false
+        SetChatLarge(not chatLarge)
+    end)
 end
 
 local function PlaceHud()
@@ -1499,6 +1509,7 @@ frame:RegisterEvent("GROUP_ROSTER_UPDATE")
 if frame.RegisterUnitEvent then frame:RegisterUnitEvent("UNIT_AURA", "player") end
 local buffRows
 frame:SetScript("OnEvent", function(_, event)
+    if event == "PLAYER_ENTERING_WORLD" then loadedAt = GetTime() end
     if event == "ACTIONBAR_PAGE_CHANGED" then
         UpdatePager()
     elseif event == "UNIT_AURA" then

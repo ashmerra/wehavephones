@@ -163,7 +163,9 @@ WoW itself, expands chat before typing and raises the input to just below the
 toolbar. The centered message area shortens to fit below the input and
 above the Android keyboard. Chat focus also switches to Menus and parks the
 pointer near the raised input, keeping the renderer from panning the game.
-After typing, chat stays expanded for reading. Collapsing chat ends text focus
+After typing, chat stays expanded for reading. Chat starts compact. If the
+Enter that entered the world opens the chat box, chat returns to compact
+when that box closes. Collapsing chat ends text focus
 and returns the input to its stock anchor beside the compact chat frame.
 **Keyboard** leaves the pointer where you last tapped, which is normally the
 text field you want to type in.
