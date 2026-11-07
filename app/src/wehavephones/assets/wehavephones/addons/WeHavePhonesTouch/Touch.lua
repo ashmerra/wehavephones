@@ -1,7 +1,7 @@
 local _, addon = ...
 local enabled = addon.enabled
 local frame = CreateFrame("Frame")
-local applied, editor, selectedSlot, chatHooked, positioningChat, pager
+local applied, editor, selectedSlot, chatHooked, positioningChat, pager, chatTabsHooked
 local category, page, entries = "Spells", 1, {}
 local undo
 -- Bottom of the player and target frames, kept free of the native toolbar.
@@ -453,6 +453,17 @@ local function PositionChat()
     end
     Anchor(ChatFrame1, "TOPLEFT", UIParent, "CENTER", left-screenWidth/2, height/2-top)
     ChatFrame1:SetSize(width, chatHeight)
+    -- Compact chat shares the movement corner. Its tabs take no touches there, so a
+    -- stray press or drag cannot switch tabs or pull one out into its own window.
+    for _, name in ipairs(CHAT_FRAMES or {}) do
+        local tab = _G[name.."Tab"]
+        if tab and not tab:IsProtected() then tab:EnableMouse(chatLarge and true or false) end
+    end
+    if not chatTabsHooked and FCF_OpenTemporaryWindow then
+        -- Whisper tabs opened later start with the mouse enabled.
+        hooksecurefunc("FCF_OpenTemporaryWindow", function() if not positioningChat then PositionChat() end end)
+        chatTabsHooked = true
+    end
     if chatSize then
         chatSize:ClearAllPoints()
         if chatLarge then chatSize:SetPoint("TOPLEFT", ChatFrame1, "TOPRIGHT", 6, 0)

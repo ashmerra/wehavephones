@@ -134,7 +134,9 @@ above chat stays clear of the stick's touch area and the action-page buttons.
 Tap it to move chat to the center and open a wider, taller view for reading.
 The icon then points inward.
 Tap it again to return chat to the bottom left. The start of combat does the
-same. Stock
+same. Compact chat's tabs ignore touches, so a press or drag beside the stick
+cannot switch tabs or pull a tab out into its own window. Expanded chat's tabs
+work as usual. Stock
 chat retains its touch anchor during combat. Protected replacement chat frames
 defer their layout until combat ends. Hotbar tooltips appear only in Inspect,
 so casting leaves the screen clear. Inspect and default world tooltips appear

@@ -83,6 +83,7 @@ function methods:SetAnchorType(anchor) self.anchor=anchor end
 for _,name in ipairs({"RegisterEvent","RegisterUnitEvent","ClearAllPoints","SetFrameStrata","EnableMouse","SetClampedToScreen","SetBackdrop",
     "SetTexture","SetJustifyH","SetBackdropColor","SetBackdropBorderColor","SetGradient","SetThickness",
     "SetColorTexture","SetAllPoints","SetHitRectInsets"}) do methods[name]=function() end end
+function methods:EnableMouse(enabled) self.mouse=enabled end
 function methods:SetStartPoint(...) self.start={...} end
 function methods:SetEndPoint(...) self.finish={...} end
 function CreateColor(r,g,b,a) return {r=r,g=g,b=b,a=a} end
@@ -98,6 +99,9 @@ function methods:CreateTexture() return CreateFrame("Texture") end
 UIParent=CreateFrame("Frame","UIParent")
 ChatFrame1=CreateFrame("Frame","ChatFrame1",UIParent)
 ChatFrame1:SetSize(300,150)
+ChatFrame1Tab=CreateFrame("Button","ChatFrame1Tab",UIParent)
+ChatFrame2Tab=CreateFrame("Button","ChatFrame2Tab",UIParent)
+CHAT_FRAMES={"ChatFrame1","ChatFrame2"}
 function ChatFrame1:GetFont() return "Fonts\\ARIALN.TTF",14 end
 ChatFrame1ButtonFrame=CreateFrame("Frame","ChatFrame1ButtonFrame",ChatFrame1)
 ChatFrame1ButtonFrame:SetSize(29,184)
@@ -420,6 +424,8 @@ local function checkChatLayout(width,height,aspect)
     assert(sizeKey.visible and chatIcon()=="out" and sizeKey.point[1]=="BOTTOMLEFT"
         and sizeKey.point[2]==ChatFrame1 and sizeKey.point[3]=="TOPRIGHT",
         "the expand key follows compact chat")
+    assert(ChatFrame1Tab.mouse==false and ChatFrame2Tab.mouse==false,
+        "compact chat tabs take no touches, so none can be switched or pulled out beside the stick")
     local radius=math.min(math.max(height,width/1.59)*(aspect<1.6 and .12 or .13),width*.13)
     local stickRight=math.max(radius*1.2+width*.025,width*.12)+radius*1.2
     local keyLeft=width/2+compactX+ChatFrame1:GetWidth()+6-10
@@ -437,6 +443,7 @@ local function checkChatLayout(width,height,aspect)
     end
     sizeKey.scripts.OnClick(sizeKey)
     local readingHeight=ChatFrame1:GetHeight()
+    assert(ChatFrame1Tab.mouse==true and ChatFrame2Tab.mouse==true,"expanded chat tabs work as usual")
     assert(readingHeight>60 and math.abs(ChatFrame1.point[4]+ChatFrame1:GetWidth()/2)<.001,
         "expanded chat is taller and horizontally centered")
     local chatTop=height/2+ChatFrame1.point[5]
