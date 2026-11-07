@@ -59,6 +59,13 @@ session. The touch guide remains available from the menu.
 
 ## Moving and auto run
 
+In Play every drag on the game turns the camera and the character together,
+including drags that start on a hotbar, the quest tracker or the empty space
+beside the camera area. Running then keeps the view where you left it. A drag
+in Menus is a normal mouse drag. Over the world it turns only the camera, so
+WoW swings the camera back behind the character on the next step, as it does
+on a PC.
+
 Push the stick past its ring toward the top and a runner appears above it.
 Slide farther up onto the runner, hold for just under half a second until
 it turns blue, then let go to lock auto run. A quick slide past it will not
@@ -228,7 +235,7 @@ extra bottom bars hide for touch mode and restore on opt-out.
 | Change a hotbar action | Hold the slot, then use the picker |
 | Movement | Left stick, including diagonal movement and strafing |
 | Auto run | Hold the stick on the runner until blue and release, or Menu → Movement |
-| Camera turn | Drag in the empty area above or beside the actions |
+| Camera turn | Drag anywhere in the game in Play, away from the native keys and the stick |
 | Camera zoom | Pinch with two fingers in the camera area |
 | Drag a window, slider, spellbook entry or bag item | Menus, then drag |
 | Scroll a list | Two fingers in Menus |

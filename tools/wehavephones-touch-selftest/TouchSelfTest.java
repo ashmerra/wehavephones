@@ -84,8 +84,17 @@ public final class TouchSelfTest {
         check(sink.held.contains(Key.JUMP), "duplicate utility touches do not release another finger");
         input.down(0, Zone.UI, 400, 400, 0);
         input.move(0, 450, 400, 100, 100, 60, 0);
+        check(sink.camera && !sink.dragging,
+                "a Play drag beside the camera area turns camera and character instead of the camera alone");
         input.up(0);
-        check(sink.clicks == 2, "UI drag never casts an accidental spell");
+        check(sink.clicks == 2 && !sink.camera, "a Play drag never casts an accidental spell and releases the camera");
+        input.down(19, Zone.CAMERA, 600, 250, 0);
+        input.down(0, Zone.UI, 400, 400, 0);
+        input.move(19, 630, 250, 100, 100, 60, 0);
+        input.move(0, 450, 400, 100, 100, 60, 0);
+        input.up(0);
+        check(sink.camera && !sink.dragging, "a second Play drag leaves the camera finger in charge");
+        input.up(19);
         input.cancel();
         check(sink.held.isEmpty() && !sink.camera, "cancel releases every key and mouse button");
         input.down(25, Zone.UI, 400, 400, 100);
@@ -438,7 +447,7 @@ public final class TouchSelfTest {
                     check(Math.hypot(closestX - nativeLayout.stickX, closestY - nativeLayout.stickY) >= nativeLayout.radius * 1.2f - .1f,
                             "actual Lua " + fields[6] + " geometry stays clear of the entire stick hit region at "
                                     + rootWidth + "x" + rootHeight + ", density " + density + ", letterboxed " + letterboxed);
-                    // Unit frames, auras and the minimap may sit over the world. Controls never become camera drags.
+                    // Unit frames, auras and the minimap may sit over the world. Controls stay outside the camera area.
                     boolean control = fields[6].equals("action") || fields[6].equals("pager") || fields[6].equals("class")
                             || fields[6].equals("party");
                     // The lifted chat key can meet the lower camera strip. A short tap still clicks it.
@@ -457,7 +466,7 @@ public final class TouchSelfTest {
                         float sampleX = (left + (right-left)*fx - viewport.left) / viewport.width() * rootWidth;
                         float sampleY = (top + (bottom-top)*fy - viewport.top) / viewport.height() * rootHeight;
                         check(!MobileTouchInput.isCameraArea(sampleX, sampleY, rootWidth, rootHeight),
-                                "actual Lua " + fields[6] + " geometry never becomes a camera drag");
+                                "actual Lua " + fields[6] + " geometry stays outside the camera area");
                     }
                 }
             }

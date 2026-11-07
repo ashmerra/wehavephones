@@ -222,6 +222,15 @@ public final class MobileTouchInput {
         else if (id == camera && finger.dragged && (dx != 0 || dy != 0)) {
             setCamera(true);
             sink.moveCamera(dx, dy);
+        } else if (!uiMode && finger.zone == Zone.UI && finger.dragged) {
+            // Play has no UI drags. A left drag over the world turns only the camera, and
+            // WoW then swings it back behind the character on the next step. Every Play drag
+            // turns the camera and the character together, as the camera area does.
+            if (camera == -1) camera = id;
+            if (camera == id && (dx != 0 || dy != 0)) {
+                setCamera(true);
+                sink.moveCamera(dx, dy);
+            }
         } else if (finger.zone == Zone.UI && finger.dragged) {
             if (drag == -1) {
                 drag = id;
