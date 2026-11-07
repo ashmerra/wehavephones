@@ -76,6 +76,7 @@ Run `scripts/lint-wehavephones.sh` before sending a change. It runs ShellCheck o
 - [Device reports](docs/DEVICE_REPORTS.md)
 - [Tested devices and graphics drivers](docs/TESTED_DEVICES.md)
 - [Build assets](docs/BUILD_ASSETS.md)
+- [End-to-end game tests](docs/E2E_TESTS.md)
 
 ## Contributing
 
