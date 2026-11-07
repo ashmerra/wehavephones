@@ -336,7 +336,7 @@ if FIXTURE_PROJECT==19 then
     assert(space:GetHeight()==height and space:GetScale()==scale and WatchFrame:GetHeight()==height,
         "stock tracker updates cannot feed a changing height back into its scale")
 else
-    assert(QuestWatchFrame.point[3]=="CENTER","the stock tracker stays inside the right thumb rail")
+    assert(QuestWatchFrame.point[3]=="CENTER","the stock tracker keeps its center-relative touch anchor")
 end
 assert(PossessActionBar.point[4]==PetActionBar.point[4] and PossessActionBar.point[5]==PetActionBar.point[5],
     "possession retains its secure commands in the pet footer")
@@ -363,7 +363,7 @@ TargetFrame.GetRight=function() error("fixture layout failure") end
 assert(not pcall(active.scripts.OnEvent,active,"GROUP_ROSTER_UPDATE"),"layout errors are still reported")
 TargetFrame.GetRight=getRight
 active.scripts.OnEvent(active,"GROUP_ROSTER_UPDATE")
-assert(QuestWatchFrame.point[3]==(FIXTURE_PROJECT==19 and "TOPRIGHT" or "CENTER"),
+assert(QuestWatchFrame.point[3]==(FIXTURE_PROJECT==19 and "TOPLEFT" or "CENTER"),
     "one failed layout never blocks the next stock tracker layout")
 assert(values.SoftTargetInteract=="3" and values.SoftTargetInteractArc=="1" and values.SoftTargetIconInteract=="1",
     "mouse-based touch enables nearby interaction with a visible front-cone target")
@@ -1115,7 +1115,7 @@ assert(ObjectiveTrackerFrame.point[3]=="CENTER" and PlayerFrame.point[3]=="TOPLE
 -- Forever's quests showed nowhere: the stock tracker hid itself with a 20-pixel height.
 do
     local anchors=ObjectiveTrackerFrame.anchors
-    assert(#anchors==2 and anchors[1][1]=="TOPRIGHT" and anchors[2][1]=="BOTTOMRIGHT",
+    assert(#anchors==2 and anchors[1][1]=="TOPLEFT" and anchors[2][1]=="BOTTOMLEFT",
         "Forever's tracker is anchored top and bottom, so its height outlasts UpdateHeight")
     local span=(anchors[1][5]-anchors[2][5])*ObjectiveTrackerFrame:GetScale()
     assert(span>=100 and span<UIParent:GetHeight()*.65,"Forever's tracker gets room for its quests: "..span)

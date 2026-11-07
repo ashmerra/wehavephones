@@ -140,13 +140,14 @@ defer their layout until combat ends. Hotbar tooltips appear only in Inspect,
 so casting leaves the screen clear. Inspect and default world tooltips appear
 over chat.
 
-The stock quest tracker fits above the right actions and below the minimap
-and buffs. On Retail and Forever it gets that whole space, so the quests it
-lists stay visible when a target frame appears or combat starts. If WoW hides it
-in combat, it returns when combat ends.
+The stock quest tracker sits in the upper left, under the player frame and
+anything below it such as the pet frame, class bars or party frames, and above
+the movement stick. It keeps to the player frame's width, so the target frame's
+auras stay clear. On Retail and Forever it gets that whole space, so the quests
+it lists stay visible when a target frame appears or combat starts. If WoW hides
+it in combat, it returns when combat ends.
 Addon trackers keep their own position, size and visibility.
-A new row of buffs moves the debuffs down, in combat as well. The stock
-tracker follows after combat.
+A new row of buffs moves the debuffs down, in combat as well.
 
 Typing in chat, from **Menu → Typing and items → Chat** or **Reply** or from
 WoW itself, expands chat before typing and raises the input to just below the

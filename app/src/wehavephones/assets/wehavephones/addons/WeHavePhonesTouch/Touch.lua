@@ -871,7 +871,7 @@ end
 -- in step with MobileTouchLayout: a band along the top with a minimap square at its right
 -- end on wide games, and the right rail beside the centered layout on narrower ones.
 local TOOLBAR_BAND, MINIMAP_RESERVE, ZONE_GAP, AURA_ROW, AURA_ICON = .14, .30, .012, 45, 35
-local topHooks, auraLeft, auraBottom = {}, 0, 0
+local topHooks, auraLeft = {}, 0
 local function HookTop(object)
     -- Edit Mode reapplies its anchors and frame sizes after login and layout changes.
     if not object or topHooks[object] then return end
@@ -996,7 +996,7 @@ PositionAuras = function()
     local right = compact and math.max((width-LayoutWidth())/2, width*.16)+4 or (MINIMAP_RESERVE+ZONE_GAP)*height
     local top = compact and minimapBottom+4 or TOOLBAR_BAND*height+4
     local rows = BuffRows()
-    auraLeft, auraBottom = width-right-11*AURA_ICON, top+(rows+1)*AURA_ROW
+    auraLeft = width-right-11*AURA_ICON
     for _, aura in ipairs({{"BuffFrame", 0, 0}, {"DebuffFrame", 0, rows*AURA_ROW}}) do
         local object = _G[aura[1]]
         if object then
@@ -1052,12 +1052,26 @@ PositionTracker = function()
     positioningTracker = true
     local ok, problem = pcall(function()
         RememberHud(name)
-        local fit = math.min(1, LayoutWidth()/760)
-        -- Below the minimap and the player's buffs and debuffs.
-        local top = math.min(UIParent:GetHeight()*.65, UIParent:GetHeight()-math.max(minimapBottom+12, auraBottom+8))
-        local actionTop = UIParent:GetWidth()/UIParent:GetHeight()<COMPACT
-            and (64+(math.ceil(12/CompactColumns())-1)*54+36*ACTION_SCALE)*ActionFit() or (118+36*ACTION_SCALE)*fit
-        local height = math.max(32, top-actionTop-16)
+        -- Upper left, under the player frame and whatever hangs below it, and above
+        -- the movement stick. The width stays under the player frame, clear of the
+        -- target frame's auras.
+        local screenWidth, screenHeight = UIParent:GetWidth(), UIParent:GetHeight()
+        local below = unitBottom
+        for _, object in ipairs({PlayerFrame, PetFrame, PlayerFrameBottomManagedFramesContainer,
+            PartyFrame and PartyFrame.MemberFrame1, PartyFrame and PartyFrame.MemberFrame4}) do
+            if object and object:IsShown() and object:GetBottom() then
+                below = math.max(below, screenHeight-object:GetBottom()*RelativeScale(object))
+            end
+        end
+        local controlHeight = math.max(screenHeight, screenWidth/COMPACT)
+        local radius = math.min(controlHeight*(screenWidth/screenHeight<1.6 and .12 or .13), screenWidth*.13)
+        local stickTop = screenHeight*(screenWidth/screenHeight<1.6 and .68 or .70)-radius*1.2
+        local columnWidth = math.min(LayoutWidth()*.30, math.max(160,
+            PlayerFrame and PlayerFrame:GetRight() and PlayerFrame:GetRight()*RelativeScale(PlayerFrame)-8 or 0))
+        -- Distances from the top edge become offsets from UIParent's center.
+        local top = screenHeight-(below+8)
+        local height = math.max(32, top-(screenHeight-stickTop)-12)
+        local x, y = 8-screenWidth/2, top-screenHeight/2
         if name == "WatchFrame" then
             -- MoP fills the space down to its parent's bottom in WatchFrame_Update.
             -- Give it a bounded parent with the same effective scale. Scaling the
@@ -1066,16 +1080,15 @@ PositionTracker = function()
             local state = WeHavePhonesTouchDB.hud[name]
             if not state.parent then state.parent = HudName(object:GetParent()) end
             if not trackerSpace then trackerSpace = CreateFrame("Frame", "WeHavePhonesTouchTrackerSpace", UIParent) end
-            local scale = math.min(1, LayoutWidth()*.30/math.max(1, object:GetWidth()))
+            local scale = math.min(1, columnWidth/math.max(1, object:GetWidth()))
             SetRelativeScale(trackerSpace, scale)
             trackerSpace:SetSize(object:GetWidth(), height/scale)
             trackerSpace:ClearAllPoints()
-            trackerSpace:SetPoint("TOPRIGHT", UIParent, "CENTER", (LayoutWidth()/2-16)/scale,
-                (top-UIParent:GetHeight()/2)/scale)
+            trackerSpace:SetPoint("TOPLEFT", UIParent, "CENTER", x/scale, y/scale)
             if object:GetParent() ~= trackerSpace then object:SetParent(trackerSpace) end
             Rescale(object, 1)
             Unanchor(object)
-            Anchor(object, "TOPRIGHT", trackerSpace, "TOPRIGHT", 0, 0)
+            Anchor(object, "TOPLEFT", trackerSpace, "TOPLEFT", 0, 0)
             object:SetHeight(height/scale)
         elseif object.UpdateHeight then
             -- Blizzard's container lists only as many quests as its own height allows.
@@ -1084,19 +1097,19 @@ PositionTracker = function()
             -- nothing and hides itself. Anchor its top and bottom to the reserved space
             -- instead. Anchored height outlasts Blizzard's SetHeight, and on a shown
             -- tracker the size change reaches Blizzard's own update through the layout pass.
-            local scale = math.min(1, LayoutWidth()*.30/math.max(1, object:GetWidth()))
+            local scale = math.min(1, columnWidth/math.max(1, object:GetWidth()))
             SetRelativeScale(object, scale, object.SetScaleBase)
             local clearPoints = object.ClearAllPointsBase or object.ClearAllPoints
             local setPoint = object.SetPointBase or object.SetPoint
-            local x, y = (LayoutWidth()/2-16)/scale, (top-UIParent:GetHeight()/2)/scale
+            x, y = x/scale, y/scale
             local starved = object:GetHeight() < height/scale-1
             clearPoints(object)
             -- Blizzard's managed container re-anchors it by its top alone after each
             -- update. The same explicit height then keeps its size, so the refit
             -- below moves it back without another update.
             object:SetHeight(height/scale)
-            setPoint(object, "TOPRIGHT", UIParent, "CENTER", x, y)
-            setPoint(object, "BOTTOMRIGHT", UIParent, "CENTER", x, y-height/scale)
+            setPoint(object, "TOPLEFT", UIParent, "CENTER", x, y)
+            setPoint(object, "BOTTOMLEFT", UIParent, "CENTER", x, y-height/scale)
             -- A new target frame makes the container shrink it to 20 pixels first.
             -- An update in that moment hides it, and a hidden frame gets no size
             -- change to update it again. Ask for one update once it has room. Quest
@@ -1107,7 +1120,7 @@ PositionTracker = function()
                 object:MarkDirty()
             end
         else
-            local scale = math.min(1, LayoutWidth()*.30/math.max(1, object:GetWidth()), height/math.max(1, object:GetHeight()))
+            local scale = math.min(1, columnWidth/math.max(1, object:GetWidth()), height/math.max(1, object:GetHeight()))
             -- Retail Edit Mode wraps these methods with global layout callbacks.
             -- Those callbacks can refresh secret auras in this addon's tainted call.
             -- Its saved base methods perform geometry only, with engine protection intact.
@@ -1115,8 +1128,7 @@ PositionTracker = function()
             local setPoint = retail and object.SetPointBase or object.SetPoint
             SetRelativeScale(object, scale, retail and object.SetScaleBase)
             clearPoints(object)
-            setPoint(object, "TOPRIGHT", UIParent, "CENTER", (LayoutWidth()/2-16)/scale,
-                (top-UIParent:GetHeight()/2)/scale)
+            setPoint(object, "TOPLEFT", UIParent, "CENTER", x/scale, y/scale)
         end
         if not trackerHooks[object] then
             -- Let Blizzard finish its right-frame layout before refitting.
