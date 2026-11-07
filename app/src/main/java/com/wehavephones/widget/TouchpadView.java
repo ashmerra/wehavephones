@@ -75,6 +75,9 @@ public class TouchpadView extends View {
     private final XServer xServer;
     private Runnable fourFingersTapCallback;
     private final float[] xform = XForm.getInstance();
+    // The keyboard pan on screen when the gesture began. The pan follows the pointer,
+    // so reading it on every move would shift the finger's target mid-gesture.
+    private int gestureOffsetY = 0;
 
     public TouchpadView(Context context, XServer xServer) {
         super(context);
@@ -105,6 +108,17 @@ public class TouchpadView extends View {
         else XForm.makeScale(xform, invAspect, invAspect);
     }
 
+    /** Maps a touch to the guest point shown under it, including the keyboard pan. */
+    private float[] toGuest(float x, float y) {
+        float[] point = XForm.transformPoint(xform, x, y);
+        point[1] += gestureOffsetY;
+        return point;
+    }
+
+    private void beginGesture() {
+        gestureOffsetY = xServer.getRenderer().getScreenOffsetY();
+    }
+
     private class Finger {
         private int x;
         private int y;
@@ -115,7 +129,7 @@ public class TouchpadView extends View {
         private final long touchTime;
 
         public Finger(float x, float y) {
-            float[] transformedPoint = XForm.transformPoint(xform, x, y);
+            float[] transformedPoint = toGuest(x, y);
             this.x = this.startX = this.lastX = (int)transformedPoint[0];
             this.y = this.startY = this.lastY = (int)transformedPoint[1];
             touchTime = System.currentTimeMillis();
@@ -124,7 +138,7 @@ public class TouchpadView extends View {
         public void update(float x, float y) {
             lastX = this.x;
             lastY = this.y;
-            float[] transformedPoint = XForm.transformPoint(xform, x, y);
+            float[] transformedPoint = toGuest(x, y);
             this.x = (int)transformedPoint[0];
             this.y = (int)transformedPoint[1];
         }
@@ -165,6 +179,7 @@ public class TouchpadView extends View {
             case MotionEvent.ACTION_DOWN:
             case MotionEvent.ACTION_POINTER_DOWN:
                 if (event.isFromSource(InputDevice.SOURCE_MOUSE)) return true;
+                if (numFingers == 0) beginGesture();
                 scrollAccumY = 0;
                 scrolling = false;
                 fingers[pointerId] = new Finger(event.getX(actionIndex), event.getY(actionIndex));
@@ -224,7 +239,8 @@ public class TouchpadView extends View {
 
         switch (actionMasked) {
             case MotionEvent.ACTION_DOWN: {
-                float[] transformedPoint = XForm.transformPoint(xform, event.getX(actionIndex), event.getY(actionIndex));
+                beginGesture();
+                float[] transformedPoint = toGuest(event.getX(actionIndex), event.getY(actionIndex));
                 tapDragPointerId = pointerId;
                 tapDragSecondPointerId = -1;
                 tapDragDownX = (int) transformedPoint[0];
@@ -246,8 +262,8 @@ public class TouchpadView extends View {
                     int firstIndex = event.findPointerIndex(tapDragPointerId);
                     int secondIndex = event.findPointerIndex(tapDragSecondPointerId);
                     if (firstIndex >= 0 && secondIndex >= 0) {
-                        float[] p1 = XForm.transformPoint(xform, event.getX(firstIndex), event.getY(firstIndex));
-                        float[] p2 = XForm.transformPoint(xform, event.getX(secondIndex), event.getY(secondIndex));
+                        float[] p1 = toGuest(event.getX(firstIndex), event.getY(firstIndex));
+                        float[] p2 = toGuest(event.getX(secondIndex), event.getY(secondIndex));
                         tapDragTwoFingerDownCenterX = Math.round((p1[0] + p2[0]) * 0.5f);
                         tapDragTwoFingerDownCenterY = Math.round((p1[1] + p2[1]) * 0.5f);
                         tapDragTwoFingerLastCenterX = tapDragTwoFingerDownCenterX;
@@ -276,8 +292,8 @@ public class TouchpadView extends View {
                     int secondIndex = event.findPointerIndex(tapDragSecondPointerId);
                     if (firstIndex < 0 || secondIndex < 0) break;
 
-                    float[] p1 = XForm.transformPoint(xform, event.getX(firstIndex), event.getY(firstIndex));
-                    float[] p2 = XForm.transformPoint(xform, event.getX(secondIndex), event.getY(secondIndex));
+                    float[] p1 = toGuest(event.getX(firstIndex), event.getY(firstIndex));
+                    float[] p2 = toGuest(event.getX(secondIndex), event.getY(secondIndex));
                     int centerX = Math.round((p1[0] + p2[0]) * 0.5f);
                     int centerY = Math.round((p1[1] + p2[1]) * 0.5f);
                     tapDragTwoFingerCurrentDistance = (float)Math.hypot(p1[0] - p2[0], p1[1] - p2[1]);
@@ -361,7 +377,7 @@ public class TouchpadView extends View {
                 int idx = event.findPointerIndex(tapDragPointerId);
                 if (idx < 0) break;
 
-                float[] transformedPoint = XForm.transformPoint(xform, event.getX(idx), event.getY(idx));
+                float[] transformedPoint = toGuest(event.getX(idx), event.getY(idx));
                 int currentX = (int) transformedPoint[0];
                 int currentY = (int) transformedPoint[1];
 
@@ -440,7 +456,7 @@ public class TouchpadView extends View {
                 }
 
                 if (pointerId != tapDragPointerId) break;
-                float[] transformedPoint = XForm.transformPoint(xform, event.getX(actionIndex), event.getY(actionIndex));
+                float[] transformedPoint = toGuest(event.getX(actionIndex), event.getY(actionIndex));
                 int upX = (int) transformedPoint[0];
                 int upY = (int) transformedPoint[1];
 

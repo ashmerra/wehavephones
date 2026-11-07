@@ -450,6 +450,13 @@ public class GLRenderer implements GLSurfaceView.Renderer, WindowManager.OnWindo
         return screenOffsetYRelativeToCursor;
     }
 
+    /** Guest pixels the picture is moved up to keep the pointer above the soft keyboard. */
+    public int getScreenOffsetY() {
+        if (!screenOffsetYRelativeToCursor || !magnifierEnabled) return 0;
+        float height = xServer.screenInfo.height;
+        return Math.round(Mathf.clamp(xServer.pointer.getY() - height * 0.25f, 0, height * 0.5f));
+    }
+
     public void setScreenOffsetYRelativeToCursor(boolean screenOffsetYRelativeToCursor) {
         this.screenOffsetYRelativeToCursor = screenOffsetYRelativeToCursor;
         xServerView.requestRender();
