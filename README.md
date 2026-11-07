@@ -1,5 +1,8 @@
 # WeHavePhones
 
+[![Discord](https://img.shields.io/badge/Discord-Join%20us-5865F2?logo=discord&logoColor=white)](https://discord.gg/Y23ytaf3qE)
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-FFDD00?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/ashmerra)
+
 We do have phones, and also Wine.
 
 Winlator fork for running World of Warcraft (ARM64 Windows version) and Battle.net on Android phones.
