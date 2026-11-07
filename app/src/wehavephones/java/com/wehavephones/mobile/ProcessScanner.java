@@ -107,9 +107,12 @@ public final class ProcessScanner {
      * The game process itself: its argv[0] (a Windows path under Wine, may
      * contain spaces) or comm is a WoW executable. Arguments are not searched,
      * so a launcher or shell whose arguments mention the exe does not match.
+     * A zombie leader (no command line) is a game that already exited, even
+     * when stuck network threads keep it listed. It used to block touch setup
+     * and the next launch until the leftover reap.
      */
     public static boolean isWowProcess(Entry entry) {
-        if (entry == null) return false;
+        if (entry == null || entry.cmdline.isEmpty()) return false;
         return matchesExecutable(entry.argv0) || matchesExecutable(entry.name);
     }
 

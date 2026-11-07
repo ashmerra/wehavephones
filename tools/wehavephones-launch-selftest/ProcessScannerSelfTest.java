@@ -35,6 +35,8 @@ public final class ProcessScannerSelfTest {
         check("reapNow refuses without a game", WeHavePhonesLauncherReaper.reapNow() == 0);
         checkClassification();
         checkLeftovers();
+        check("zombie WoW leader is not a running game", !ProcessScanner.isWowProcess(
+                new ProcessScanner.Entry(1, "", "Wow-arm64.exe", "")));
         check("zombie wineserver does not lock switching", !ProcessScanner.isWineSessionProcess(
                 new ProcessScanner.Entry(1, "", "wineserver", "")));
         check("live wineserver locks switching", ProcessScanner.isWineSessionProcess(
