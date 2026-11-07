@@ -289,7 +289,7 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
         input.advanceTime(now);
         boolean animating = input.isRunLockPending();
         boolean menus = input.isUiMode();
-        if (menus && !toolbarCollapsed) drawBrackets(canvas);
+        if (menus && !toolbarCollapsed) drawModeBadge(canvas);
         if (!menus && !toolbarCollapsed) drawStick(canvas);
         for (int i = 0; i < buttons.length; i++) {
             if (buttons[i].isEmpty() || i == MobileTouchLayout.MENUS) continue;
@@ -510,7 +510,6 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
             paint.setColor(ACTIVE_EDGE);
             canvas.drawCircle(cx, cy, r, paint);
             drawIcon(canvas, runner, cx, cy, r * 1.15f, WHITE);
-            pill(canvas, getContext().getString(R.string.wehavephones_touch_auto_run), cx, cy - r - 6 * density, 0, 1);
         }
         paint.setStyle(Paint.Style.FILL);
         float knob = radius * .38f;
@@ -524,27 +523,43 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
         if (input.isAutoRunning()) drawIcon(canvas, runner, knobX, knobY, knob * 1.1f, WHITE);
     }
 
-    /** Menus turn the whole game into a pointer surface. Corner brackets mark that state. */
-    private void drawBrackets(Canvas canvas) {
-        MobileTouchLayout.Bounds viewport = viewport();
-        float inset = 8 * density, length = Math.min(34 * density, viewport.width() * .06f);
-        float l = Math.max(insetLeft, viewport.left) + inset, t = Math.max(insetTop, viewport.top) + inset;
-        float r = Math.min(getWidth() - insetRight, viewport.right) - inset, b = Math.min(getHeight() - insetBottom, viewport.bottom) - inset;
-        path.reset();
-        path.moveTo(l, t + length); path.lineTo(l, t); path.lineTo(l + length, t);
-        path.moveTo(r - length, t); path.lineTo(r, t); path.lineTo(r, t + length);
-        path.moveTo(r, b - length); path.lineTo(r, b); path.lineTo(r - length, b);
-        path.moveTo(l + length, b); path.lineTo(l, b); path.lineTo(l, b - length);
+    /**
+     * Menus turn the whole game into a pointer surface. A small badge beside the toolbar marks
+     * that state: left of a toolbar row, or under a toolbar column, where Menus has no thumb keys.
+     * It is drawn only. Touches on it reach the game like any other spot.
+     */
+    private void drawModeBadge(Canvas canvas) {
+        boolean inspect = input.isInspectMode();
+        int key = inspect ? MobileTouchLayout.INSPECT : MobileTouchLayout.MENUS;
+        String label = labels[key];
+        float h = Math.min(30 * density, layout.side * .62f), pad = h * .38f, iconSize = h * .58f;
+        text.setTypeface(medium);
+        text.setTextAlign(Paint.Align.LEFT);
+        text.setTextSize(h * .46f);
+        float w = pad * 2.4f + iconSize + text.measureText(label);
+        MobileTouchLayout.Bounds toolbar = layout.toolbar;
+        float left, top;
+        if (layout.column) {
+            left = toolbar.right - w;
+            top = toolbar.bottom + layout.side * MobileTouchLayout.GAP;
+        } else {
+            left = toolbar.left - layout.side * MobileTouchLayout.GAP - w;
+            top = (toolbar.top + toolbar.bottom - h) / 2;
+        }
+        left = Math.max(insetLeft + 4 * density, left);
+        scratch.set(left, top, left + w, top + h);
+        int accent = inspect ? SILVER_LIGHT : BLUE_LIGHT;
         paint.setShader(null);
+        paint.setStyle(Paint.Style.FILL);
+        paint.setColor(PANEL);
+        canvas.drawRoundRect(scratch, h / 2, h / 2, paint);
         paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeCap(Paint.Cap.ROUND);
-        paint.setStrokeJoin(Paint.Join.ROUND);
-        paint.setStrokeWidth(7 * density);
-        paint.setColor(SHADE);
-        canvas.drawPath(path, paint);
-        paint.setStrokeWidth(3.5f * density);
-        paint.setColor(input.isInspectMode() ? SILVER_LIGHT : BLUE_LIGHT);
-        canvas.drawPath(path, paint);
+        paint.setStrokeWidth(1.5f * density);
+        paint.setColor(accent);
+        canvas.drawRoundRect(scratch, h / 2, h / 2, paint);
+        drawIcon(canvas, icons[key], left + pad + iconSize / 2, scratch.centerY(), iconSize, accent);
+        text.setColor(SILVER_LIGHT);
+        canvas.drawText(label, left + pad * 1.4f + iconSize, scratch.centerY() - (text.ascent() + text.descent()) / 2, text);
     }
 
     private void drawBanner(Canvas canvas, long age) {
@@ -608,7 +623,7 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
         paint.setColor(0xB8071C39);
         canvas.drawRect(0, 0, getWidth(), getHeight(), paint);
         boolean menus = input.isUiMode();
-        if (menus) drawBrackets(canvas);
+        if (menus) drawModeBadge(canvas);
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(2 * density);
         paint.setColor(BLUE_LIGHT);

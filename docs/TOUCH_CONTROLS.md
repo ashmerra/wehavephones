@@ -25,8 +25,8 @@ once per game session.
 | Mode | On screen | Touches |
 | --- | --- | --- |
 | Play | Esc, Map, Bags, Menu and the switch. The stick on the left. Target, Use and Jump on the right | Stick to move. Drag the world to look. Pinch to zoom. Tap the game to click. Hold to right-click |
-| Menus | Esc, Keyboard, Inspect, Menu and the switch. Blue corner brackets around the game | Tap to click. Hold to right-click. Drag items and windows. Two fingers scroll |
-| Inspect, part of Menus | The Inspect key turns blue and the brackets turn silver | Touch or slide over anything to read its tooltip without clicking |
+| Menus | Esc, Keyboard, Inspect, Menu and the switch. A blue Menus badge beside the toolbar | Tap to click. Hold to right-click. Drag items and windows. Two fingers scroll |
+| Inspect, part of Menus | The Inspect key turns blue and the badge turns silver and reads Inspect | Touch or slide over anything to read its tooltip without clicking |
 
 Play hides the mouse pointer, because fingers aim directly and the pointer
 would only mark the last tap. Menus, Inspect and the Controls tab show it.
@@ -62,7 +62,7 @@ session. The touch guide remains available from the menu.
 Push the stick past its ring toward the top and a runner appears above it.
 Slide farther up onto the runner, hold for just under half a second until
 it turns blue, then let go to lock auto run. A quick slide past it will not
-lock running. The knob then shows the runner. Strafe with the stick or
+lock running. The runner is an icon only, with no label. The knob then shows the runner. Strafe with the stick or
 drag the world to steer. Pushing forward or backward ends auto run, as it
 does in WoW. **Menu → Movement → Auto run** toggles it as well.
 
