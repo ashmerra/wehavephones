@@ -439,19 +439,27 @@ local function PositionChat()
     if chatLarge then
         width = math.min(560, LayoutWidth()*.65)
         left = (screenWidth-width)/2
-        top = math.max(height*.20, unitBottom+38, party and height*.34+32 or 0)
+        top = math.max(height*.20, activeChatEdit and 0 or unitBottom+38,
+            party and not activeChatEdit and height*.34+32 or 0)
         if activeChatEdit then
             RaiseEditBox(activeChatEdit)
             local relative = activeChatEdit:GetEffectiveScale()/UIParent:GetEffectiveScale()
-            local editBottom = math.max(height*.14, unitBottom)+6+activeChatEdit:GetHeight()*relative
+            local editBottom = height*.14+6+activeChatEdit:GetHeight()*relative
             -- Tabs sit above the conversation. Both stay below the raised input.
             top = math.max(top, editBottom+36)
         end
-        chatHeight = math.min(ChatRows(11), math.max(1, height*(activeChatEdit and .48 or .70)-top))
+        -- Landscape keyboards can cover more than half of the display.
+        chatHeight = math.min(ChatRows(11), math.max(1, height*(activeChatEdit and .42 or .70)-top))
     end
     Anchor(ChatFrame1, "TOPLEFT", UIParent, "CENTER", left-screenWidth/2, height/2-top)
     ChatFrame1:SetSize(width, chatHeight)
     if chatSize then
+        chatSize:ClearAllPoints()
+        if chatLarge then chatSize:SetPoint("TOPLEFT", ChatFrame1, "TOPRIGHT", 6, 0)
+        else
+            -- The action-page keys share the lower row. Keep this target above them.
+            chatSize:SetPoint("BOTTOMLEFT", ChatFrame1, "TOPRIGHT", 6, 32)
+        end
         PaintChatSize()
         chatSize:Show()
     end
@@ -598,7 +606,7 @@ RaiseEditBox = function(editBox)
         activeChatEdit = editBox
         SetChatLarge(true)
     end
-    -- The Android keyboard covers the lower half. Type just below the unit frames instead.
+    -- Keep the input below the toolbar and leave room for history above a tall keyboard.
     if not editBoxes[editBox] then
         local state = RememberGeometry(editBox)
         state.width = editBox:GetWidth()
@@ -606,7 +614,7 @@ RaiseEditBox = function(editBox)
     end
     local relative = editBox:GetEffectiveScale()/UIParent:GetEffectiveScale()
     editBox:ClearAllPoints()
-    editBox:SetPoint("TOP", UIParent, "TOP", 0, -(math.max(.14*UIParent:GetHeight(), unitBottom)+6)/relative)
+    editBox:SetPoint("TOP", UIParent, "TOP", 0, -(.14*UIParent:GetHeight()+6)/relative)
     editBox:SetWidth(math.min(LayoutWidth()*.6, 560)/relative)
 end
 

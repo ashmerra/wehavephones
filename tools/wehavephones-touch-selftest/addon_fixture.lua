@@ -417,15 +417,23 @@ local function checkChatLayout(width,height,aspect)
     local compactX,compactY=ChatFrame1.point[4],ChatFrame1.point[5]
     assert(ChatFrame1:GetHeight()==60 and math.abs(compactY+height*.28)<.001,
         "compact chat sits at the lower left in solo and party layouts")
-    assert(sizeKey.visible and chatIcon()=="out" and sizeKey.point[2]==ChatFrame1 and sizeKey.point[3]=="TOPRIGHT",
+    assert(sizeKey.visible and chatIcon()=="out" and sizeKey.point[1]=="BOTTOMLEFT"
+        and sizeKey.point[2]==ChatFrame1 and sizeKey.point[3]=="TOPRIGHT",
         "the expand key follows compact chat")
     local radius=math.min(math.max(height,width/1.59)*(aspect<1.6 and .12 or .13),width*.13)
     local stickRight=math.max(radius*1.2+width*.025,width*.12)+radius*1.2
     local keyLeft=width/2+compactX+ChatFrame1:GetWidth()+6-10
     assert(keyLeft>stickRight and keyLeft+44<=width,
         "the entire expand touch target clears the native movement hit area and stays on screen")
+    local keyBottom=height/2+compactY+22
+    for _,object in ipairs({objects.WeHavePhonesTouchPager,ActionButton1,ActionButton2,ActionButton3,ActionButton4,
+        ActionButton5,ActionButton6,ActionButton7,ActionButton8,ActionButton9,ActionButton10,ActionButton11,ActionButton12}) do
+        local left,bottom,w,h=topRect(object)
+        assert(keyLeft+44<=left or left+w<=keyLeft or keyBottom+44<=bottom or bottom+h<=keyBottom,
+            "the complete expand target stays clear of "..object:GetName().." at "..width.."x"..height)
+    end
     if geometry then
-        geometry:write(table.concat({width,height,keyLeft,height/2+compactY-34,44,44,"chat-size"},"\t"),"\n")
+        geometry:write(table.concat({width,height,keyLeft,keyBottom,44,44,"chat-size"},"\t"),"\n")
     end
     sizeKey.scripts.OnClick(sizeKey)
     local readingHeight=ChatFrame1:GetHeight()
@@ -440,10 +448,11 @@ local function checkChatLayout(width,height,aspect)
     local inputScale=ChatFrame1EditBox:GetEffectiveScale()/UIParent:GetEffectiveScale()
     local inputBottom=height+ChatFrame1EditBox.point[5]*inputScale-ChatFrame1EditBox:GetHeight()*inputScale
     local historyTop=height/2+ChatFrame1.point[5]
-    assert(historyTop+32<inputBottom and historyTop-ChatFrame1:GetHeight()>=height*.52-.001,
+    assert(historyTop+32<inputBottom and historyTop-ChatFrame1:GetHeight()>=height*.58-.001,
         "chat tabs and message history fit below the input and above the keyboard")
     assert(ChatFrame1:GetHeight()>14 and ChatFrame1:GetHeight()<readingHeight,
-        "typing leaves readable history while reserving the lower half for the keyboard")
+        "typing leaves readable history while reserving space for a tall landscape keyboard at "
+            ..width.."x"..height..", history "..ChatFrame1:GetHeight()..", reading "..readingHeight)
     active.scripts.OnEvent(active,"DISPLAY_SIZE_CHANGED")
     assert(ChatFrame1EditBox.point[1]=="TOP" and chatIcon()=="in","layout updates preserve expanded typing")
     ChatFrameUtil.DeactivateChat(ChatFrame1EditBox)

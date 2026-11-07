@@ -440,7 +440,19 @@ public final class TouchSelfTest {
                                     + rootWidth + "x" + rootHeight + ", density " + density + ", letterboxed " + letterboxed);
                     // Unit frames, auras and the minimap may sit over the world. Controls never become camera drags.
                     boolean control = fields[6].equals("action") || fields[6].equals("pager") || fields[6].equals("class")
-                            || fields[6].equals("party") || fields[6].equals("chat-size");
+                            || fields[6].equals("party");
+                    // The lifted chat key can meet the lower camera strip. A short tap still clicks it.
+                    if (fields[6].equals("chat-size")) {
+                        Sink sink = new Sink();
+                        MobileTouchInput input = new MobileTouchInput(sink, 8);
+                        float centerX = (left + right) / 2, centerY = (top + bottom) / 2;
+                        float guestX = (centerX - viewport.left) / viewport.width() * rootWidth;
+                        float guestY = (centerY - viewport.top) / viewport.height() * rootHeight;
+                        Zone zone = MobileTouchInput.isCameraArea(guestX, guestY, rootWidth, rootHeight) ? Zone.CAMERA : Zone.UI;
+                        input.down(0, zone, centerX, centerY, 0);
+                        input.up(0);
+                        check(sink.clicks == 1 && !sink.camera, "the chat expand target receives a tap in Play");
+                    }
                     if (control) for (float fx : new float[]{.01f, .5f, .99f}) for (float fy : new float[]{.01f, .5f, .99f}) {
                         float sampleX = (left + (right-left)*fx - viewport.left) / viewport.width() * rootWidth;
                         float sampleY = (top + (bottom-top)*fy - viewport.top) / viewport.height() * rootHeight;

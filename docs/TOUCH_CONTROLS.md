@@ -130,8 +130,9 @@ behavior.
 
 Chat shows four rows at the bottom left, partly behind the movement stick.
 Its stock utility buttons shrink to fit beside them. The small arrows icon
-beside chat stays clear of the stick's touch area. Tap it to move chat to the
-center and open a wider, taller view for reading. The icon then points inward.
+above chat stays clear of the stick's touch area and the action-page buttons.
+Tap it to move chat to the center and open a wider, taller view for reading.
+The icon then points inward.
 Tap it again to return chat to the bottom left. The start of combat does the
 same. Stock
 chat retains its touch anchor during combat. Protected replacement chat frames
@@ -149,7 +150,7 @@ tracker follows after combat.
 
 Typing in chat, from **Menu → Typing and items → Chat** or **Reply** or from
 WoW itself, expands chat before typing and raises the input to just below the
-unit frames. The centered message area shortens to fit below the input and
+toolbar. The centered message area shortens to fit below the input and
 above the Android keyboard. Chat focus also switches to Menus and parks the
 pointer near the raised input, keeping the renderer from panning the game.
 After typing, chat stays expanded for reading. Collapsing chat ends text focus
