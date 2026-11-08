@@ -774,13 +774,15 @@ menuChord("SHIFT-F6")
 assert(UIParent:GetScale()==1.75 and WeHavePhonesTouchDB.touchScale==1.75,"the touch menu changes the interface size")
 menuChord("SHIFT-F5")
 local scale=UIParent:GetScale()
+ChatFrameUtil.ActivateChat(ChatFrame1EditBox)
+ChatFrameUtil.DeactivateChat(ChatFrame1EditBox)
+assert(chatIcon()=="out" and ChatFrame1:GetHeight()==60,"chat the client opens while the world loads starts compact")
 active.scripts.OnEvent(active,"PLAYER_ENTERING_WORLD")
 assert(UIParent:GetScale()==scale,"re-entry never compounds scale")
 ChatFrameUtil.ActivateChat(ChatFrame1EditBox)
 assert(chatIcon()=="in","chat opened by the Enter that entered the world still types in expanded chat")
 ChatFrameUtil.DeactivateChat(ChatFrame1EditBox)
 assert(chatIcon()=="out" and ChatFrame1:GetHeight()==60,"chat opened by the Enter that entered the world starts compact")
-clock=clock+60
 boot(true)
 assert(UIParent:GetScale()==scale,"reload never compounds scale")
 boot(true,1.25)
@@ -790,6 +792,9 @@ boot(true,1.25)
 assert(UIParent:GetScale()==1.75,"an in-game size choice survives a reload until the app writes a new one")
 boot(true,1.5)
 assert(UIParent:GetScale()==scale,"a new app-wide size applies at the next launch")
+-- Typing well after the world has loaded keeps chat expanded for reading.
+active.scripts.OnEvent(active,"PLAYER_ENTERING_WORLD")
+clock=clock+60
 ChatFrameUtil.ActivateChat(ChatFrame1EditBox)
 assert(ChatFrame1EditBox.point[1]=="TOP" and ChatFrame1EditBox.point[3]=="TOP"
     and -ChatFrame1EditBox.point[5]>=UIParent:GetHeight()*.14 and -ChatFrame1EditBox.point[5]>=PlayerFrame:GetHeight()*PlayerFrame:GetScale(),

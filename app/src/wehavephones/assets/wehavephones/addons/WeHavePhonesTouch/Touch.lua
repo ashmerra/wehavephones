@@ -389,8 +389,9 @@ end
 local CHAT_ROWS = 4
 local chatLarge, chatSize, FitChatButtons, SetChatLarge, RaiseEditBox
 local editBoxes, activeChatEdit = {}, nil
--- The Enter that enters the world can land after the loading screen and open the
--- chat box. Chat opened that soon returns to compact when it closes.
+-- The client opens and closes the chat box while the world loads, and the Enter
+-- that enters the world can open it just after. Chat opened before the world has
+-- loaded, or that soon after, returns to compact when it closes.
 local LOADING_CHAT_SECONDS = 10
 local loadedAt, collapseAfterTyping = nil, false
 -- Phosphor arrows-out-simple, then arrows-in-simple, as line segments in its 256-unit grid.
@@ -619,7 +620,7 @@ RaiseEditBox = function(editBox)
     if not enabled or not editBox or not SupportedLayout() then return end
     if activeChatEdit ~= editBox then
         activeChatEdit = editBox
-        collapseAfterTyping = not chatLarge and loadedAt ~= nil and GetTime()-loadedAt < LOADING_CHAT_SECONDS
+        collapseAfterTyping = not chatLarge and (loadedAt == nil or GetTime()-loadedAt < LOADING_CHAT_SECONDS)
         SetChatLarge(true)
     end
     -- Keep the input below the toolbar and leave room for history above a tall keyboard.
