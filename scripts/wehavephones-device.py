@@ -310,7 +310,11 @@ def is_wine_program(argv0):
 
 
 # argv[0] of a thread other than the zombie leader, empty when none is left.
-THREAD_ARGV0 = 'for t in /proc/{pid}/task/*; do [ "${{t##*/}}" = {pid} ] && continue; tr "\\0" "\\n" < "$t/cmdline" | head -n 1; break; done'
+# toybox tr retries a failing read forever, and a thread reaped mid-read makes
+# its cmdline fail. That left a tr spinning a CPU core for hours, so cat (which
+# exits on a read error) reads the file under a timeout.
+THREAD_ARGV0 = ('for t in /proc/{pid}/task/*; do [ "${{t##*/}}" = {pid} ] && continue; '
+                'timeout 3 cat "$t/cmdline" 2>/dev/null | tr "\\0" "\\n" | head -n 1; break; done')
 
 
 def stop_runtime(serial):
