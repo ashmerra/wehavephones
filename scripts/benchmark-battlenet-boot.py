@@ -37,6 +37,8 @@ CANDIDATES = {
     'reduced-x87': {'FEX_X87REDUCEDPRECISION': '1'},
     'v8-jitless': {'WHP_BNET_V8_MODE': 'jitless'},
     'v8-no-opt': {'WHP_BNET_V8_MODE': 'no-opt'},
+    # Dev-only: keep the system.ini audio codecs the app turns off (old behavior).
+    'keep-acm-codecs': {'WHP_ACM_CODECS': 'keep'},
     'small-blocks': {'FEX_MAXINST': '500'},
     'multiblock': {'FEX_MULTIBLOCK': '1'},
     'dynamic-l1': {'FEX_DYNAMICL1CACHE': '1'},

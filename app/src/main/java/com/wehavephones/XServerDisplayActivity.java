@@ -63,6 +63,7 @@ import com.wehavephones.core.WineRegistryEditor;
 import com.wehavephones.core.WineStartMenuCreator;
 import com.wehavephones.core.WineThemeManager;
 import com.wehavephones.core.WineUtils;
+import com.wehavephones.core.WineAcmCodecs;
 import com.wehavephones.core.WineFontPaths;
 import com.wehavephones.core.WineRequestHandler;
 import com.wehavephones.inputcontrols.ControlsProfile;
@@ -621,6 +622,19 @@ import java.util.concurrent.Executors;
         }
         catch (java.io.IOException e) {
             Log.e(TAG_GUEST_DEBUG, "Could not repair Wine font paths", e);
+        }
+
+        // Battle.net's format queries open every system.ini audio codec many times
+        // over, about 7 s of its start. Dev builds keep them for comparisons with
+        // the shortcut variable WHP_ACM_CODECS=keep.
+        try {
+            boolean keep = BuildConfig.DEBUG && shortcut != null
+                    && "keep".equals(new EnvVars(shortcut.getExtra("envVars")).get("WHP_ACM_CODECS"));
+            int changed = WineAcmCodecs.apply(new File(container.getRootDir(), ".wine"), keep);
+            if (changed > 0) Log.i(TAG_GUEST_DEBUG, (keep ? "Restored" : "Turned off") + " Wine audio codecs: " + changed);
+        }
+        catch (java.io.IOException e) {
+            Log.e(TAG_GUEST_DEBUG, "Could not update Wine audio codecs", e);
         }
 
         String startupSelection = String.valueOf(container.getStartupSelection());

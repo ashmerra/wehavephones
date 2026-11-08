@@ -79,6 +79,7 @@ assert boot.CANDIDATES['no-memcpy-tso'] == {'FEX_MEMCPYSETTSOENABLED': '0'}
 assert boot.CANDIDATES['reduced-x87'] == {'FEX_X87REDUCEDPRECISION': '1'}
 assert boot.CANDIDATES['dynamic-l1'] == {'FEX_DYNAMICL1CACHE': '1'}
 assert boot.CANDIDATES['no-l2'] == {'FEX_DISABLEL2CACHE': '1'}
+assert boot.CANDIDATES['keep-acm-codecs'] == {'WHP_ACM_CODECS': 'keep'}
 configurations = ['baseline', 'small-blocks', 'reduced-x87']
 assert boot.trial_configurations(configurations, 1, True) == configurations
 assert boot.trial_configurations(configurations, 2, True) == configurations[::-1]
