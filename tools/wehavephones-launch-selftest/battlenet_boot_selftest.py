@@ -3,6 +3,8 @@
 import importlib.util
 import pathlib
 from unittest.mock import patch
+
+from PIL import ImageDraw
 import datetime
 import json
 
@@ -51,7 +53,7 @@ assert boot.is_play((24, 125, 223))
 assert not boot.is_play((5, 25, 45))  # Dimmed Play must not count as ready.
 placeholder = boot.Image.new('RGB', (300, 50), (24, 125, 223))
 assert boot.play_label_pixels(placeholder, (0, 0, 300, 50)) == 0
-boot.ImageDraw.Draw(placeholder).rectangle((130, 20, 170, 30), fill='white')
+ImageDraw.Draw(placeholder).rectangle((130, 20, 170, 30), fill='white')
 assert boot.play_label_pixels(placeholder, (0, 0, 300, 50)) > 100
 assert boot.validate_geometry((2400, 1080), (410, 695, 300, 50))
 assert not boot.validate_geometry((2400, 1080), (2300, 695, 300, 50))
