@@ -128,7 +128,7 @@ public final class AddonAppLauncher {
                 return;
             }
             File stage = stageDir(container, app);
-            if (!stageHybridDlls(activity, container, stage) || !stagePatchScript(app, stage)) {
+            if (!stageHybridDlls(activity, container, stage)) {
                 post(activity, listener, activity.getString(R.string.wehavephones_addon_app_dlls_failed, name), true);
                 return;
             }
@@ -164,12 +164,6 @@ public final class AddonAppLauncher {
                         start(activity, container, app, latest.version, listener);
                     })));
         });
-    }
-
-    private static boolean stagePatchScript(AddonApp app, File stage) {
-        if (app.patchScript == null) return true;
-        byte[] script = AddonApp.WOWUP_CONTAINER_FIXES_JS.getBytes(StandardCharsets.UTF_8);
-        return FileUtils.write(new File(stage, app.patchScript), script);
     }
 
     /** Copies Wine's ARM64X DirectX DLLs where the batch file picks them up. */

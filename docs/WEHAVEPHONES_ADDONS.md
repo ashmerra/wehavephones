@@ -299,15 +299,13 @@ install and start path:
   `--no-sandbox --disable-gpu`. CurseForge's .NET mods agent
   (`Curse.Agent.Host.exe`) crashes with `ExecutionEngineException` under
   emulation unless `DOTNET_EnableWriteXorExecute=0` is set.
-- **WowUp patches:** before each start the batch file runs
-  `container-fixes.js` with WowUp's own Electron as Node (its RunAsNode fuse
-  is on, asar integrity checking is off). It makes three same-length edits to
-  `app.asar`: no tray icon (updating it hangs this Wine build's taskbar
-  inside explorer's `WM_COPYDATA` handler, so the window never appeared), the
-  ARM64 game executable names (the x64 app only looks for `WowClassic.exe`
-  and similar), and drive C for Battle.net's `product.db` (its disk listing
-  finds no drives under Wine). The edits are idempotent and reapplied after
-  updates. WowUp is GPL-3.0, and the changes stay on the device.
+- **WowUp:** it runs unmodified. Its tray icon used to hang the session
+  before the window appeared. The runtime's `win32u` and `user32` fix that
+  (see [WEHAVEPHONES_RUNTIME.md](WEHAVEPHONES_RUNTIME.md)). WowUp 2.25 and
+  later find the games through Battle.net's `product.db` under
+  `C:\ProgramData`. They also keep the app in a signed bundle and turn off
+  Electron's RunAsNode fuse, so the earlier `app.asar` patches can no longer
+  be applied.
 - **Settings:** before each start the launcher sets the app to exit when
   closed instead of hiding in the tray (CurseForge `storage.json` →
   `general-settings`, WowUp `preferences.json` → `collapse_to_tray`), turns
@@ -326,8 +324,9 @@ install and start path:
   install of an addon, exit on close. WowUp: fresh download and install,
   start past the tray, all installed games found through `product.db`, Wago
   token received. Not yet validated: an addon install through WowUp, the
-  in-session WinHandler path, an update to a newer feed version, and other
-  phones.
+  in-session WinHandler path and other phones. On 2026-11-09 WowUp 2.25.4
+  started unmodified with the runtime's tray fix, and CurseForge updated
+  itself from 1.324.0 to 1.326.0 through the feed and opened.
 - **Why WowUp is unreliable and heavy on the phone** (S23, 2026-10-16, WowUp
   2.24.0). WowUp is an x64 Electron app, so every Chromium process runs
   through FEX emulation inside the session. Measured cost while running:

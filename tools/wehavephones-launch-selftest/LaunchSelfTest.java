@@ -770,17 +770,9 @@ public final class LaunchSelfTest {
         check("wowup stage dir", true, bat.contains("set \"STAGE=C:\\windows\\wehavephones-wowup\""));
         check("wowup app dir", true, bat.contains("set \"APP=%LOCALAPPDATA%\\Programs\\wowup\""));
         check("wowup runs the app", "\"%APP%\\WowUp.exe\" --no-sandbox --disable-gpu", lastLine(bat));
-        String patch = "set ELECTRON_RUN_AS_NODE=1\r\n\"%APP%\\WowUp.exe\" \"%STAGE%\\container-fixes.js\" \"%APP%\\resources\\app.asar\"\r\n"
-                + "set ELECTRON_RUN_AS_NODE=\r\n";
-        check("wowup removes its tray before starting", true,
-                bat.contains(patch) && bat.indexOf(patch) < bat.lastIndexOf("--no-sandbox"));
-        check("wowup patch runs after install", true, bat.indexOf(patch) > bat.indexOf(":launch"));
-        String fixes = AddonApp.WOWUP_CONTAINER_FIXES_JS;
-        check("wowup fixes script is Node", true, fixes.startsWith("process.noAsar = true;\n"));
-        check("wowup fixes cover tray, ARM64 names and drive C", true,
-                fixes.contains("function createTray(window, config) {") && fixes.contains("class WarcraftPlatformWin {")
-                && fixes.contains("getBlizzardAgentPath() {"));
-        check("curseforge has no patch", false, AddonApp.CURSEFORGE.bat(null).contains("ELECTRON_RUN_AS_NODE"));
+        long starts = java.util.Arrays.stream(bat.split("\r\n")).filter(line -> line.startsWith("\"%APP%\\WowUp.exe\"")).count();
+        check("wowup starts once, with the runtime flags", 1L, starts);
+        check("wowup runs no Node patch", false, bat.contains("ELECTRON_RUN_AS_NODE"));
         check("wowup skips the .NET setting", false, bat.contains("DOTNET_"));
         check("wowup skips the startup entry", false, bat.contains("CurrentVersion\\Run"));
         check("wowup bat name", "wehavephones-wowup.bat", AddonApp.WOWUP.batName());

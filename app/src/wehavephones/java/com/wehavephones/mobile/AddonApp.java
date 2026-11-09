@@ -21,58 +21,16 @@ public enum AddonApp {
      */
     CURSEFORGE("curseforge", "CurseForge",
             "https://electron-updates.overwolf.com/electron-updates/electron/cfiahnpaolfnlgaihhmobmnjdafknjnjdpdabpcm/latest.yml",
-            null, "overwolf.com", "CurseForge", "CurseForge.exe", "CurseForge/storage.json", "com.overwolf.curseforge", true,
-            null),
+            null, "overwolf.com", "CurseForge", "CurseForge.exe", "CurseForge/storage.json", "com.overwolf.curseforge", true),
     /** WowUp (its Wago edition) adds Wago, WoWInterface, Tukui and GitHub addons without keys. */
     WOWUP("wowup", "WowUp",
             "https://github.com/WowUp/WowUp/releases/latest/download/latest.yml",
             "https://github.com/WowUp/WowUp/releases/download/v%s/", "github.com", "wowup", "WowUp.exe",
-            "WowUp/preferences.json", null, false, "container-fixes.js");
+            "WowUp/preferences.json", null, false);
 
     public static final String VERSION_FILE = "installed-version.txt";
     /** Desktop size for the apps, more room than the low game default. */
     public static final String DESKTOP_SIZE = "1280x800";
-    /**
-     * Node script that adapts WowUp to the container, run with WowUp's own
-     * Electron before each start. It makes three same-length edits to
-     * app.asar, so the archive index stays valid (WowUp does not check the
-     * archive's integrity):
-     * <ul>
-     * <li>No tray icon. WowUp creates one at every start, and updating it hangs
-     * this Wine build's taskbar, so the window would never appear.</li>
-     * <li>ARM64 game names. The x64 app looks for {@code WowClassic.exe}, but the
-     * container runs Blizzard's ARM64 builds.</li>
-     * <li>Drive C for Battle.net's product list. Its disk listing finds no
-     * drives under Wine.</li>
-     * </ul>
-     * WowUp is GPL-3.0, and the changes stay on the player's device.
-     */
-    static final String WOWUP_CONTAINER_FIXES_JS =
-            "process.noAsar = true;\n"
-            + "const fs = require(\"fs\");\n"
-            + "const file = process.argv[2];\n"
-            + "const data = fs.readFileSync(file);\n"
-            + "// [anchor, old, new]: the first old code shortly after anchor becomes new,\n"
-            + "// padded with spaces to the same length.\n"
-            + "const patches = [\n"
-            + "    [\"function createTray(window, config) {\",\n"
-            + "        \"_trayRef === null || _trayRef === void 0 ? void 0 : _trayRef.destroy();\", \"return false;\"],\n"
-            + "    [\"class WarcraftPlatformWin {\", \"process.arch === \\\"arm64\\\"\", \"true\"],\n"
-            + "    [\"getBlizzardAgentPath() {\", \"nodeDiskInfo.getDiskInfo()\", \"[{ mounted: \\\"C:\\\" }]\"],\n"
-            + "];\n"
-            + "let changed = false;\n"
-            + "for (const [anchor, from, to] of patches) {\n"
-            + "    for (let start = data.indexOf(anchor); start >= 0; start = data.indexOf(anchor, start + 1)) {\n"
-            + "        const at = data.indexOf(from, start);\n"
-            + "        if (at < 0 || at - start > 400) continue;\n"
-            + "        const code = Buffer.alloc(Buffer.byteLength(from), \" \");\n"
-            + "        code.write(to);\n"
-            + "        code.copy(data, at);\n"
-            + "        changed = true;\n"
-            + "        break;\n"
-            + "    }\n"
-            + "}\n"
-            + "if (changed) fs.writeFileSync(file, data);\n";
     /**
      * The container's DirectX DLLs are ARM64-only builds for the native ARM64
      * game, which these x64 apps cannot load. Wine's own ARM64X builds next to
@@ -98,12 +56,9 @@ public enum AddonApp {
     final String startupValue;
     /** The app runs a .NET helper, which needs write-xor-execute off under emulation. */
     final boolean dotnetHelper;
-    /** File name of a Node script run with the app's own Electron before each start, or null. */
-    public final String patchScript;
 
     AddonApp(String id, String displayName, String feedUrl, String downloadBase, String trustedHost,
-            String installDir, String exe, String settingsFile, String startupValue, boolean dotnetHelper,
-            String patchScript) {
+            String installDir, String exe, String settingsFile, String startupValue, boolean dotnetHelper) {
         this.id = id;
         this.displayName = displayName;
         this.feedUrl = feedUrl;
@@ -114,7 +69,6 @@ public enum AddonApp {
         this.settingsFile = settingsFile;
         this.startupValue = startupValue;
         this.dotnetHelper = dotnetHelper;
-        this.patchScript = patchScript;
     }
 
     public String installerName() {
@@ -316,13 +270,6 @@ public enum AddonApp {
         if (dotnetHelper) {
             // .NET's write-xor-execute double mapping crashes the helper under emulation.
             bat.append("set DOTNET_EnableWriteXorExecute=0\r\n");
-        }
-        if (patchScript != null) {
-            // The app's Electron runs the script as Node (its RunAsNode fuse is on).
-            bat.append("set ELECTRON_RUN_AS_NODE=1\r\n")
-                    .append("\"%APP%\\").append(exe).append("\" \"%STAGE%\\").append(patchScript)
-                    .append("\" \"%APP%\\resources\\app.asar\"\r\n")
-                    .append("set ELECTRON_RUN_AS_NODE=\r\n");
         }
         // Chromium's sandbox and GPU process do not start under this runtime.
         bat.append("\"%APP%\\").append(exe).append("\" --no-sandbox --disable-gpu\r\n");
