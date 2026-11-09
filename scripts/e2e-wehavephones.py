@@ -6,7 +6,7 @@
     scripts/e2e-wehavephones.py restore [--serial S]
     scripts/e2e-wehavephones.py selftest
 
-Each scenario starts one game with a known set of app settings, logs in, enters
+The game scenarios start one game with a known set of app settings, logs in, enters
 the world with the last played character and checks what the character does.
 A small test addon (tests/e2e/WeHavePhonesE2E) shows the game's own view of the
 character as colored squares, which the runner reads from screenshots: in
@@ -28,6 +28,12 @@ Per scenario:
 Afterwards the runner removes the addon and restores the saved settings, also
 after a failure. If it is killed, `restore` puts the settings back from
 out/e2e/settings-backup.json.
+
+The addon app scenarios (wowup, curseforge) open the app's Add-ons > Addon apps
+and start the manager from its card, updating it when an update is offered.
+They pass when the manager's own log shows it loaded and the session then stays
+open for a hold time. They fail when Android closes the app (reported with its
+reason, such as LOW_MEMORY) or the log stays short of the ready lines.
 
 Results and evidence go to out/e2e/<time>/ (gitignored). Exit status: 0 all
 passed or skipped, 1 a scenario failed, 2 usage or setup error.
@@ -71,6 +77,7 @@ DEVICE_PREFS = 'shared_prefs/wehavephones_devices.xml'
 TOUCH_LAYOUT = 'files/wehavephones/touch-layout.json'
 LAUNCH_RECORD = 'files/wehavephones/launch-last.json'
 WOW_DIR = 'files/imagefs/home/xuser-%s/.wine/drive_c/Program Files (x86)/World of Warcraft'
+APPDATA = 'files/imagefs/home/xuser-%s/.wine/drive_c/users/xuser/AppData/Roaming'
 
 # App settings removed for "default settings", so the app falls back to its own defaults.
 # Exact keys, plus key prefixes ending in "_". The game choice, region, setup state and
@@ -114,14 +121,45 @@ SCENARIOS = [Scenario(name, game, title, boot=boot) for name, game, title, boot 
 SCENARIOS += [Scenario(name + '-touch', game, title, jump='touch', touch=True, extra=('move', 'turn'), boot=boot)
               for name, game, title, boot in GAMES]
 SCENARIOS.append(Scenario('classic-era-gamepad', '_classic_era_', 'Classic Era', jump='gamepad'))
+
+
+class AppScenario:
+    """An addon manager started from the app's Addon apps screen.
+
+    log: 'file' for one log the app appends to, 'dirs' for a new folder of logs per start.
+    ready: log lines that show it loaded, in the order the app writes them.
+    hold: seconds the session must then stay open, for work the app does not log the end of.
+    """
+
+    def __init__(self, name, title, log, path, ready, boot=300, hold=30):
+        self.name, self.title, self.log, self.path = name, title, log, path
+        self.ready, self.boot, self.hold = tuple(ready), boot, hold
+
+    def describe(self):
+        return '%s from Addon apps: its log shows %s, then it stays open %d s' % (
+            self.title, ' then '.join('"%s"' % line for line in self.ready), self.hold)
+
+
+APP_SCENARIOS = [
+    # Past the tray icon that used to hang the session, its addon list, then the scan of the
+    # game's addon folders. The lookups on the addon sites follow, and its memory peaks there,
+    # but it does not log their end: the hold covers them.
+    AppScenario('wowup', 'WowUp', 'file', 'WowUp/logs/main.log',
+                ['Tray created true', 'Checking for addon updates', '[scan] wowup scan of'], hold=60),
+    # Its .NET mods agent answered, then the WoW library scan ("Forging your library") finished.
+    AppScenario('curseforge', 'CurseForge', 'dirs', 'CurseForge/logs',
+                ['Connected to Mods Agent', 'Scan complete for game 1 ']),
+]
+SCENARIOS += APP_SCENARIOS
 BY_NAME = {scenario.name: scenario for scenario in SCENARIOS}
 GROUPS = {
     'versions': [name for name, _, _, _ in GAMES],
     'touch': [name + '-touch' for name, _, _, _ in GAMES],
     'extra': ['classic-era-gamepad'],
+    'apps': [scenario.name for scenario in APP_SCENARIOS],
 }
-GROUPS['all'] = GROUPS['versions'] + GROUPS['touch'] + GROUPS['extra']
-GROUPS['default'] = GROUPS['versions'] + GROUPS['touch']
+GROUPS['all'] = GROUPS['versions'] + GROUPS['touch'] + GROUPS['extra'] + GROUPS['apps']
+GROUPS['default'] = GROUPS['versions'] + GROUPS['touch'] + GROUPS['apps']
 
 
 def say(message):
@@ -751,6 +789,162 @@ def run_scenario(phone, scenario, evidence):
     return result, detail, time.time() - started
 
 
+# ---------- addon apps ----------
+
+def appdata(phone):
+    main = parse_prefs(phone.read_private(MAIN_PREFS))
+    container = next((c.get('value') for c in main if c.get('name') == 'wehavephones_container_id'), '1')
+    return APPDATA % container
+
+
+def missing_ready(text, ready):
+    """The ready lines not yet in text, in order: each must follow the one before it."""
+    at = 0
+    for index, line in enumerate(ready):
+        found = text.find(line, at)
+        if found < 0:
+            return list(ready[index:])
+        at = found + len(line)
+    return []
+
+
+class AppLog:
+    """What the manager logged since mark(), for a single log or a folder of logs per start."""
+
+    def __init__(self, phone, scenario):
+        self.phone, self.scenario = phone, scenario
+        self.base = '%s/%s' % (appdata(phone), scenario.path)
+        self.size, self.dirs = 0, set()
+
+    def mark(self):
+        if self.scenario.log == 'file':
+            out = self.phone.private('wc -c < %s 2>/dev/null' % shlex.quote(self.base)).strip()
+            self.size = int(out) if out.isdigit() else 0
+        else:
+            self.dirs = set(self.phone.private('ls %s 2>/dev/null' % shlex.quote(self.base)).split())
+
+    def text(self):
+        if self.scenario.log == 'file':
+            path = shlex.quote(self.base)
+            # Byte offsets, since the log is UTF-8. electron-log starts a new file at 1 MB: then all of it is new.
+            return self.phone.private('size=$(wc -c < %s); if [ "$size" -ge %d ]; then tail -c +%d %s; else cat %s; fi'
+                                      % (path, self.size, self.size + 1, path, path), 90)
+        new = sorted(set(self.phone.private('ls %s 2>/dev/null' % shlex.quote(self.base)).split()) - self.dirs)
+        return ''.join(self.phone.private('cat %s/full-*.log 2>/dev/null' % shlex.quote(self.base + '/' + name), 90)
+                       for name in new)
+
+
+def last_exit(phone):
+    """(timestamp, reason) of the app's newest exit record, or None."""
+    lines = phone.sh('dumpsys activity exit-info %s' % PKG, 60).splitlines()
+    for index, line in enumerate(lines):
+        stamp = re.search(r'timestamp=(\S+ \S+)', line)
+        if stamp:
+            reason = next((re.search(r'reason=\d+ \(([A-Z_]+)\)', later).group(1) for later in lines[index:index + 3]
+                           if re.search(r'reason=\d+ \(([A-Z_]+)\)', later)), 'unknown')
+            return stamp.group(1), reason
+    return None
+
+
+def tap_view(phone, view_id, seconds=60):
+    deadline = time.time() + seconds
+    while time.time() < deadline:
+        nodes = phone.ui_nodes()
+        ok = next((node for node in nodes if node.get('text') == 'OK'), None)
+        if ok is not None and any('App Compatibility' in node.get('text', '') for node in nodes):
+            phone.tap(*center(ok))
+            time.sleep(1)
+            continue
+        node = next((node for node in nodes if node.get('resource-id', '').endswith(':id/' + view_id)), None)
+        if node is not None:
+            phone.tap(*center(node))
+            return
+        time.sleep(2)
+    raise Failure('%s is not on screen' % view_id)
+
+
+def start_app(phone, scenario):
+    """Start the manager from its card; returns the card's button label."""
+    phone.sh('am start -W -n %s' % ACTIVITY, 90)
+    tap_view(phone, 'RailAddons')
+    tap_view(phone, 'RailAddonsApps')
+    deadline = time.time() + 60
+    while time.time() < deadline:
+        nodes = phone.ui_nodes()
+        name = next((node for node in nodes if node.get('resource-id', '').endswith(':id/TVAppName')
+                     and node.get('text') == scenario.title), None)
+        buttons = [node for node in nodes if node.get('resource-id', '').endswith(':id/BTAppOpen')]
+        if name is not None and buttons:
+            row_y = center(name)[1]
+            button = min(buttons, key=lambda node: abs(center(node)[1] - row_y))
+            if button.get('enabled') != 'false':
+                phone.tap(*center(button))
+                return button.get('text', '')
+        time.sleep(2)
+    raise Failure('the %s card is not on the Addon apps screen' % scenario.title)
+
+
+def run_app(phone, scenario, evidence):
+    evidence.mkdir(parents=True, exist_ok=True)
+    started = time.time()
+    check_ready(phone)
+    say('== %s: %s' % (scenario.name, scenario.title))
+    dev.stop_runtime(phone.serial)
+    time.sleep(2)
+    log = AppLog(phone, scenario)
+    log.mark()
+    exit_before = last_exit(phone)
+    crashes_before = crash_lines(phone)
+    text = ''
+    try:
+        label = start_app(phone, scenario)
+        say('pressed %s' % label)
+        # A download or update comes first; give it time on a slow connection.
+        seconds = scenario.boot + (0 if label == 'Open' else 900)
+        loaded = None
+        while True:
+            time.sleep(5)
+            phone.dismiss_idle_lock()
+            exited = last_exit(phone)
+            if loaded is None:
+                text = log.text()
+                missing = missing_ready(text, scenario.ready)
+                if not missing:
+                    loaded = time.time()
+                    say('%s loaded after %d s; checking it stays open %d s' % (
+                        scenario.title, loaded - started, scenario.hold))
+                    continue
+                if exited and exited != exit_before:
+                    raise Failure('Android closed the app (%s at %s) before %s logged "%s"'
+                                  % (exited[1], exited[0], scenario.title, missing[0]))
+                if time.time() - started > seconds:
+                    raise Failure('%s did not log "%s" in %d s (see app.log)' % (scenario.title, missing[0], seconds))
+                continue
+            if exited and exited != exit_before:
+                raise Failure('Android closed the app (%s at %s) %d s after %s loaded'
+                              % (exited[1], exited[0], time.time() - loaded, scenario.title))
+            if not phone.session_open():
+                raise Failure('the session closed %d s after %s loaded' % (time.time() - loaded, scenario.title))
+            if time.time() - loaded >= scenario.hold:
+                break
+        phone.screenshot(evidence / 'app.png')
+        result, detail = 'pass', 'loaded in %d s and stayed open (%s)' % (loaded - started, label)
+    except Failure as error:
+        phone.screenshot(evidence / 'failure.png')
+        result, detail = 'fail', str(error)
+    finally:
+        (evidence / 'app.log').write_text(log.text() or text)
+        crashes = crash_lines(phone)
+        new = crashes[len(crashes_before):] if crashes[:len(crashes_before)] == crashes_before else crashes
+        if new:
+            (evidence / 'crash.txt').write_text('\n'.join(new) + '\n')
+        (evidence / 'logcat.txt').write_text(phone.sh('logcat -d -t 3000', 90))
+        dev.stop_runtime(phone.serial)
+    if result == 'pass' and new and any(PKG in line for line in new):
+        result, detail = 'fail', 'loaded but the app crashed (crash.txt)'
+    return result, detail, time.time() - started
+
+
 def selftest():
     """Host checks of the screen readers and the settings round trip, on synthetic data."""
     from PIL import Image, ImageDraw
@@ -806,6 +1000,21 @@ def selftest():
     apply_entries(changed, TOUCHED_MAIN, saved)
     assert entries(changed, TOUCHED_MAIN) == saved
     assert interface_version('12.1.5.70783') == 120105 and interface_version('1.60.1.70862') == 16001
+
+    wowup = BY_NAME['wowup'].ready
+    assert missing_ready('[i] Creating tray\n', wowup) == list(wowup), 'hung at the tray'
+    assert missing_ready('Tray created true\nChecking for addon updates...\n', wowup) == [wowup[2]], 'scanning'
+    assert missing_ready('Tray created true\nChecking for addon updates...\n'
+                         '[debug] [scan] wowup scan of 15 folders read 742 files in 22603ms\n', wowup) == []
+    assert missing_ready('Checking for addon updates...\nTray created true\n', wowup) == list(wowup[1:]), 'order'
+    curseforge = BY_NAME['curseforge'].ready
+    agent_timeout = '[error] [PluginProcessHost] Timed out starting the Mods Agent process.\n'
+    assert missing_ready(agent_timeout * 3, curseforge) == list(curseforge), 'agent never answered'
+    assert missing_ready('Connected to Mods Agent on port 59911.\n'
+                         'Scan complete for game 1 - Classic - 395d9c8f\n', curseforge) == []
+    assert missing_ready('Connected to Mods Agent on port 59911.\nScan complete for game 432 - x\n',
+                         curseforge) == [curseforge[1]], 'other game'
+    assert expand(['apps']) == APP_SCENARIOS and all(app in expand(['default']) for app in APP_SCENARIOS)
     print('[e2e] selftest passed')
     return 0
 
@@ -869,8 +1078,9 @@ def main():
     results = []
     try:
         for scenario in scenarios:
+            run = run_app if isinstance(scenario, AppScenario) else run_scenario
             try:
-                result, detail, seconds = run_scenario(phone, scenario, run_dir / scenario.name)
+                result, detail, seconds = run(phone, scenario, run_dir / scenario.name)
             except Failure as error:
                 result, detail, seconds = 'fail', str(error), 0
             say('%s %s: %s' % (result.upper(), scenario.name, detail))

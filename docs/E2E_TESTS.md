@@ -2,12 +2,14 @@
 
 `scripts/e2e-wehavephones.py` boots each installed game on a real phone, logs
 in the way a player does, enters the world and checks that the character
-responds. It drives the Dev build (`com.wehavephones.dev`) over adb.
+responds. It also starts the addon managers from **Addon apps** and checks
+that they load. It drives the Dev build (`com.wehavephones.dev`) over adb.
 
 ```bash
 scripts/e2e-wehavephones.py list                      # scenarios and groups
 scripts/e2e-wehavephones.py run --serial <adb serial>  # versions + touch
 scripts/e2e-wehavephones.py run forever-touch classic-era
+scripts/e2e-wehavephones.py run apps                  # WowUp and CurseForge
 scripts/e2e-wehavephones.py restore                   # after an interrupted run
 scripts/e2e-wehavephones.py selftest                  # host check, no phone
 ```
@@ -40,9 +42,12 @@ Enter World detector and the settings round trip on synthetic data.
 | `classic-era-touch`, `anniversary-touch`, `mop-touch`, `titan-touch`, `retail-touch`, `forever-touch` | Each game above | Mobile touch controls on | Tap Enter World, switch to Play, jump with the Jump key, move with the stick, turn with a camera drag |
 | `classic-era-gamepad` | Classic Era | App defaults | Enter world, jump with the on-screen gamepad's A |
 
+| `wowup` | WowUp | App defaults | Logs `Tray created true`, `Checking for addon updates` and `[scan] wowup scan of`, then stays open 60 s |
+| `curseforge` | CurseForge | App defaults | Logs `Connected to Mods Agent` and `Scan complete for game 1`, then stays open 30 s |
+
 Groups: `versions` (one per game line), `touch` (the same games with touch
-controls), `extra`, `default` (`versions` and `touch`) and `all`. A game that
-is not installed is skipped.
+controls), `extra`, `apps` (`wowup` and `curseforge`), `default` (`versions`,
+`touch` and `apps`) and `all`. A game that is not installed is skipped.
 
 "App defaults" means the settings a new install starts with. The runner
 removes the player's touch controls, performance overlay, runtime profile,
@@ -65,6 +70,27 @@ choice, region, setup state and touch guide flags.
 5. It runs the checks and saves screenshots and the new crash log entries.
 6. It stops the session and removes the addon. At the end it restores the
    saved settings, also after a failure.
+
+## How an addon app scenario runs
+
+1. The runner stops any session and notes the app's newest exit record and
+   how far the manager's log has grown.
+2. It opens **Add-ons**, then **Addon apps**, and taps the manager's button by
+   its view id. The button may download or update the manager first. That is
+   part of the test, and the time limit grows by 15 minutes for it.
+3. It reads what the manager logged since the tap: WowUp's
+   `AppData/Roaming/WowUp/logs/main.log`, or the new folders under
+   CurseForge's `AppData/Roaming/CurseForge/logs`. The ready lines must appear
+   in order. WowUp's mean it got past its tray icon, opened its addon list and
+   read the game's addon folders. CurseForge's mean its .NET mods agent
+   answered and the WoW library scan behind "Forging your library" finished.
+4. The session must then stay open for the hold time. WowUp looks up the
+   addons on the addon sites after the folder scan, does not log the end of
+   it and uses the most memory there.
+5. A new exit record fails the scenario with Android's reason, such as
+   `LOW_MEMORY`, so a closed app is not mistaken for a slow one. The runner
+   saves `app.png` (or `failure.png`), `app.log`, `logcat.txt` and new crash
+   entries, then stops the session.
 
 ## Reading the game
 
