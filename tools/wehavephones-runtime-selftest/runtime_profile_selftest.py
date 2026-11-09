@@ -85,10 +85,23 @@ EXPECTED_P10_GE34_FILES = [
     ("server/wineserver-android-owner-10.0-34",
      "opt/{wineVersion}/bin/wineserver",
      "d7454aa4eefbf888efb1587ac9a8dfd83e2a4970f0a862f6836fdfba3ba67848"),
+    ("win32u/win32u-copydata-10.0-34.so",
+     "opt/{wineVersion}/lib/wine/aarch64-unix/win32u.so",
+     "1debaa4a1a3fbe4e713f5427b2baeba74c61782cdd35bfc62286aa4c4c3252db"),
+    ("win32u/user32-copydata-10.0-34.dll",
+     "opt/{wineVersion}/lib/wine/aarch64-windows/user32.dll",
+     "b1508e495f6c0e1ecd33a31bccc8692d5a4b4636cd806cefb9f8c317d12856b4"),
+    ("win32u/user32-copydata-10.0-34.dll",
+     "container:.wine/drive_c/windows/system32/user32.dll",
+     "b1508e495f6c0e1ecd33a31bccc8692d5a4b4636cd806cefb9f8c317d12856b4"),
 ]
 
-# Only the wineserver is deployed as a program.
-EXPECTED_P10_GE34_EXECUTABLES = ["opt/{wineVersion}/bin/wineserver"]
+# Files that running Wine processes use are renamed into place, with the execute bit.
+EXPECTED_P10_GE34_EXECUTABLES = [
+    "opt/{wineVersion}/bin/wineserver",
+    "opt/{wineVersion}/lib/wine/aarch64-unix/win32u.so",
+    "opt/{wineVersion}/lib/wine/aarch64-windows/user32.dll",
+]
 
 
 def artifact_tuples(profile, key):

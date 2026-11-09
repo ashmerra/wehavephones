@@ -44,14 +44,16 @@ Artifacts it installs:
 | `ntdll-grace-copysafe-10.0-34.so` | `opt/proton-10.0-34-arm64ec/lib/wine/aarch64-unix/ntdll.so` | `9f3e55a0…` |
 | `arm64-vkd3d.dll`, `arm64-libc++.dll`, `arm64-libunwind.dll` | `C:\arm64-*.dll` in the prefix | `f1c11399…`, `ed9edb58…`, `535c6c86…` |
 | `wineserver-android-owner-10.0-34` | `opt/proton-10.0-34-arm64ec/bin/wineserver` | `d7454aa4…` |
+| `win32u-copydata-10.0-34.so` | `opt/proton-10.0-34-arm64ec/lib/wine/aarch64-unix/win32u.so` | `1debaa4a…` |
+| `user32-copydata-10.0-34.dll` | `opt/proton-10.0-34-arm64ec/lib/wine/aarch64-windows/user32.dll` and prefix `drive_c/windows/system32/user32.dll` | `b1508e49…` |
 
 The APK bundles the SHA-256-pinned GE-Proton 10.0-34 layer. First-run setup
 installs it offline, then `WeHavePhonesRuntimeApplier` copies the patched
 `ntdll` pair over the stock one in the layer and in the prefix (sha256-checked,
 with a snapshot and read-back), places the ARM64 DLLs and replaces the layer's
-`wineserver`. Artifacts marked `"executable": true` are written next to their
-target, given the execute bit and renamed into place, so a server that is still
-running keeps its old file. The three ARM64 DLLs
+`wineserver`, `win32u.so` and `user32.dll`. Artifacts marked
+`"executable": true` are written next to their target, given the execute bit
+and renamed into place, so a process that is still running keeps its old file. The three ARM64 DLLs
 are copied into `system32` again when `bnet.bat` and `wow.bat` start.
 `scripts/install-wine-layer-adb.py` installs a verified `.wcp` layer onto a
 phone from a computer, for manual tests.
@@ -247,3 +249,33 @@ current user keeps full access, which is what Battle.net checks.
   Pass `--without-inotify` like the layer, then build only `server/wineserver`.
 - Its exported and static symbols match the layer's server, apart from the
   now unused `anonymous_logon_sid` and compiler inlining differences.
+
+## The win32u and user32 WM_COPYDATA backport
+
+`patches/wine/win32u-large-copydata-wine10.patch` backports upstream Wine
+commit `05564eb21634` (Wine 10.1), which the Proton 10 branches do not have.
+Wine 10.0 packs a `WM_COPYDATA` message's data into the user-mode callback on
+the stack, so a large message can overflow it. The patched `win32u` passes data
+over 2048 bytes in a separate buffer, and the patched `user32` reads it from
+there. A program's tray icon reaches explorer as one `WM_COPYDATA` message with
+the icon bitmap, and WowUp 2.25's large Electron tray icon hung the session
+before its window appeared (issue #36). Both files must come from the same
+build, because each expects the other's message layout.
+
+### How win32u and user32 were built
+
+- Source: the `wineserver` tree above, plus the patch.
+- Configure in a separate build directory like the `wineserver`, but with
+  FreeType, Fontconfig and Vulkan enabled, because `win32u.so` loads them at
+  run time. Use the headers from the Termux tree (`include/freetype2`,
+  `include/fontconfig`) and link against the aarch64 `libfreetype.so`,
+  `libfontconfig.so` and `libvulkan.so.1` from a phone's
+  `imagefs/usr/lib`, placed first on the linker path, so the NDK's
+  `libvulkan.so` is not picked up.
+- Set `SONAME_LIBFREETYPE` to `"libfreetype.so"` and `SONAME_LIBFONTCONFIG`
+  to `"libfontconfig.so"` in `include/config.h`, the names the layer's
+  `win32u.so` loads. Keep `SONAME_LIBVULKAN` as `"libvulkan.so.1"`.
+- Build only `dlls/win32u/win32u.so` and
+  `dlls/user32/aarch64-windows/user32.dll`.
+- Their dynamic dependencies, the libraries they load and their exported and
+  imported symbols match the layer's files.
