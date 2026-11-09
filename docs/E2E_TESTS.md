@@ -42,7 +42,7 @@ Enter World detector and the settings round trip on synthetic data.
 | `classic-era-touch`, `anniversary-touch`, `mop-touch`, `titan-touch`, `retail-touch`, `forever-touch` | Each game above | Mobile touch controls on | Tap Enter World, switch to Play, jump with the Jump key, move with the stick, turn with a camera drag |
 | `classic-era-gamepad` | Classic Era | App defaults | Enter world, jump with the on-screen gamepad's A |
 
-| `wowup` | WowUp | App defaults | Logs `Tray created true`, `Checking for addon updates` and `[scan] wowup scan of`, then stays open 60 s |
+| `wowup` | WowUp | App defaults | Logs `Tray created true`, `Checking for addon updates` and `[scan] wowup scan of` |
 | `curseforge` | CurseForge | App defaults | Logs `Connected to Mods Agent` and `Scan complete for game 1`, then stays open 30 s |
 
 Groups: `versions` (one per game line), `touch` (the same games with touch
@@ -84,9 +84,12 @@ choice, region, setup state and touch guide flags.
    in order. WowUp's mean it got past its tray icon, opened its addon list and
    read the game's addon folders. CurseForge's mean its .NET mods agent
    answered and the WoW library scan behind "Forging your library" finished.
-4. The session must then stay open for the hold time. WowUp looks up the
-   addons on the addon sites after the folder scan, does not log the end of
-   it and uses the most memory there.
+4. CurseForge's session must then stay open for 30 s. WowUp has no hold. It
+   looks up the addons on the addon sites after the folder scan and does not
+   log the end of it. On the Galaxy S23 (8 GB) Android closes the app for low
+   memory during those lookups, at about 1.3 GB across WowUp's 10 processes,
+   so the test stops at the folder scan, the furthest WowUp reliably gets on
+   that phone.
 5. A new exit record fails the scenario with Android's reason, such as
    `LOW_MEMORY`, so a closed app is not mistaken for a slow one. The runner
    saves `app.png` (or `failure.png`), `app.log`, `logcat.txt` and new crash

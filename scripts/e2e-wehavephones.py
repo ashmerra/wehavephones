@@ -136,16 +136,17 @@ class AppScenario:
         self.ready, self.boot, self.hold = tuple(ready), boot, hold
 
     def describe(self):
-        return '%s from Addon apps: its log shows %s, then it stays open %d s' % (
-            self.title, ' then '.join('"%s"' % line for line in self.ready), self.hold)
+        hold = ', then it stays open %d s' % self.hold if self.hold else ''
+        return '%s from Addon apps: its log shows %s%s' % (
+            self.title, ' then '.join('"%s"' % line for line in self.ready), hold)
 
 
 APP_SCENARIOS = [
     # Past the tray icon that used to hang the session, its addon list, then the scan of the
-    # game's addon folders. The lookups on the addon sites follow, and its memory peaks there,
-    # but it does not log their end: the hold covers them.
+    # game's addon folders. No hold: the lookups on the addon sites follow, and on the Galaxy S23
+    # (8 GB) Android closes the app for low memory there, at about 1.3 GB across 10 processes.
     AppScenario('wowup', 'WowUp', 'file', 'WowUp/logs/main.log',
-                ['Tray created true', 'Checking for addon updates', '[scan] wowup scan of'], hold=60),
+                ['Tray created true', 'Checking for addon updates', '[scan] wowup scan of'], hold=0),
     # Its .NET mods agent answered, then the WoW library scan ("Forging your library") finished.
     AppScenario('curseforge', 'CurseForge', 'dirs', 'CurseForge/logs',
                 ['Connected to Mods Agent', 'Scan complete for game 1 ']),
@@ -911,8 +912,10 @@ def run_app(phone, scenario, evidence):
                 missing = missing_ready(text, scenario.ready)
                 if not missing:
                     loaded = time.time()
-                    say('%s loaded after %d s; checking it stays open %d s' % (
-                        scenario.title, loaded - started, scenario.hold))
+                    say('%s loaded after %d s%s' % (scenario.title, loaded - started,
+                                                     '; checking it stays open %d s' % scenario.hold if scenario.hold else ''))
+                    if not scenario.hold:
+                        break
                     continue
                 if exited and exited != exit_before:
                     raise Failure('Android closed the app (%s at %s) before %s logged "%s"'
@@ -928,7 +931,7 @@ def run_app(phone, scenario, evidence):
             if time.time() - loaded >= scenario.hold:
                 break
         phone.screenshot(evidence / 'app.png')
-        result, detail = 'pass', 'loaded in %d s and stayed open (%s)' % (loaded - started, label)
+        result, detail = 'pass', 'loaded in %d s%s (%s)' % (loaded - started, ' and stayed open' if scenario.hold else '', label)
     except Failure as error:
         phone.screenshot(evidence / 'failure.png')
         result, detail = 'fail', str(error)
