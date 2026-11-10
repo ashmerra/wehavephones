@@ -8,11 +8,22 @@ local undo
 local unitBottom = 100
 local buttons = {}
 local Layout, OpenEditor, RefreshEditor, LayoutWorkspace, QueueWorkspace
+-- The action wheel replaces the stock action grid on wide games when the app asks for it.
+local wheelOn = addon.wheel == true
+local WheelHub, WheelWanted
 local ACTION_SCALE = 1.35
 -- Taller action grids below this aspect ratio. 16:10 is wide on both sides of the
 -- native and Lua boundary, whatever the rounding. Keep in step with MobileTouchLayout.
 local COMPACT = 1.59
 local WHITE = "Interface\\Buttons\\WHITE8X8"
+-- The action wheel: nine slots in two arcs around a hub at the lower right. Four rings use
+-- Action Bars 6 to 8 (slots 145 to 180). They go with the character like other slots, but a
+-- PC shows them only with those bars turned on, so phone and PC can each keep their own bars.
+-- Sizes are fractions of the game's height. Keep in step with MobileTouchLayout.
+local WHEEL_FIRST, WHEEL_SLOTS, WHEEL_RINGS = 145, 9, 4
+local WHEEL_ANGLES = {180, 143, 107, 70, 180, 154, 129, 104, 78}
+local WHEEL_SLOT, WHEEL_HUB, WHEEL_INNER, WHEEL_OUTER = .10, .13, .21, .32
+local WHEEL_RIGHT, WHEEL_GAP, WHEEL_HUB_X, WHEEL_HUB_Y = .975, .17, .125, .075
 -- Forever (WOW_PROJECT_CAMELOT) runs Classic content on the Retail UI: Edit Mode,
 -- C_SpellBook, combined bags and the objective tracker, without the old Classic globals.
 local retail = WOW_PROJECT_ID == WOW_PROJECT_MAINLINE
@@ -856,7 +867,14 @@ local function PositionClassBars()
         end
     end
     local reserved = UIParent:GetWidth()/UIParent:GetHeight()<COMPACT and 132*ActionFit() or 0
-    local scale = math.min(1, (LayoutWidth()-32-reserved)/math.max(1, total+12))
+    local room = LayoutWidth()-32-reserved
+    if WheelWanted() then
+        -- The footer ends before the wheel's leftmost slot.
+        local hubX, _, height = WheelHub()
+        room = math.max(60, math.min(room, hubX-(WHEEL_OUTER+WHEEL_SLOT/2)*height-12
+            -(UIParent:GetWidth()-LayoutWidth())/2-16-reserved))
+    end
+    local scale = math.min(1, room/math.max(1, total+12))
     local x = -LayoutWidth()/2+16+reserved
     for _, object in ipairs(bars) do
         SetRelativeScale(object, scale)
@@ -1312,6 +1330,168 @@ PositionHud = function()
     if not ok then geterrorhandler()(problem) end
 end
 
+-- Vehicles, possession and override bars put their own actions on the stock main bar.
+-- The wheel steps aside for them, and the stock grid returns until they end.
+local WHEEL_SPECIAL = (retail or (WOW_PROJECT_MISTS_CLASSIC and WOW_PROJECT_ID == WOW_PROJECT_MISTS_CLASSIC))
+    and "[vehicleui][possessbar][overridebar]" or "[bonusbar:5]"
+local wheel
+
+WheelHub = function()
+    -- The hub, from the bottom left in UIParent units, and the game's height.
+    local width, height = UIParent:GetWidth(), UIParent:GetHeight()
+    local right = math.min((width+LayoutWidth())/2, width*WHEEL_RIGHT-height*WHEEL_GAP)
+    return right-WHEEL_HUB_X*height, WHEEL_HUB_Y*height, height
+end
+
+WheelWanted = function()
+    return enabled and wheelOn and UIParent:GetWidth()/UIParent:GetHeight() >= COMPACT
+end
+
+local function ShowRing(ring)
+    ring = math.max(1, math.min(WHEEL_RINGS, tonumber(ring) or 1))
+    WeHavePhonesTouchDB.wheelRing = ring
+    if not wheel then return end
+    wheel.hub:SetText(tostring(ring))
+    for i, dot in ipairs(wheel.dots) do
+        if i == ring then dot:SetVertexColor(.46, .74, .96, 1) else dot:SetVertexColor(.55, .62, .72, .55) end
+    end
+end
+
+-- Secure ring changes, so a swipe works in combat. Shift-F10 and Shift-F11 click these.
+local RING_SNIPPET = [=[
+    if down or button ~= "LeftButton" then return end
+    local wheel = self:GetFrameRef("wheel")
+    local ring = (wheel:GetAttribute("ring") or 1) + %d
+    if ring > %d then ring = 1 elseif ring < 1 then ring = %d end
+    wheel:SetAttribute("ring", ring)
+]=]
+
+local function RingButton(button, step)
+    button:RegisterForClicks("AnyUp", "AnyDown")
+    -- The global, because a second template's OnLoad can replace the one that adds the method.
+    SecureHandlerSetFrameRef(button, "wheel", wheel)
+    button:SetAttribute("_onclick", RING_SNIPPET:format(step, WHEEL_RINGS, WHEEL_RINGS))
+    return button
+end
+
+local function CreateWheel()
+    if wheel then return end
+    wheel = CreateFrame("Frame", "WeHavePhonesTouchWheel", UIParent, "SecureHandlerAttributeTemplate")
+    wheel:SetSize(1, 1)
+    wheel:SetPoint("BOTTOMLEFT")
+    wheel.slots = {}
+    for i = 1, WHEEL_SLOTS do
+        -- Blizzard's own action button, so icons, cooldowns, charges, range and casting work as on the stock bars.
+        local slot = CreateFrame("CheckButton", "WeHavePhonesTouchWheelSlot" .. i, wheel, "ActionBarButtonTemplate")
+        slot:SetAttribute("type", "action")
+        slot:SetAttribute("action", WHEEL_FIRST+i-1)
+        slot:SetAttribute("showgrid", 1)
+        slot:SetAttribute("type2", "")
+        slot:RegisterForClicks("LeftButtonUp", "LeftButtonDown")
+        slot:HookScript("OnMouseUp", function(self, mouse)
+            if mouse == "RightButton" then OpenEditor(self) end
+        end)
+        if slot.SetTooltip then hooksecurefunc(slot, "SetTooltip", PositionActionTooltip) end
+        buttons[slot] = true
+        SecureHandlerSetFrameRef(wheel, "slot" .. i, slot)
+        wheel.slots[i] = slot
+    end
+    wheel:SetAttribute("_onattributechanged", ([=[
+        if name ~= "ring" then return end
+        for i = 1, %d do
+            self:GetFrameRef("slot" .. i):SetAttribute("action", %d + (value-1)*%d + i)
+        end
+    ]=]):format(WHEEL_SLOTS, WHEEL_FIRST-1, WHEEL_SLOTS))
+    wheel:HookScript("OnAttributeChanged", function(_, name, value) if name == "ring" then ShowRing(value) end end)
+    -- The hub shows the ring and changes to the next one when tapped.
+    wheel.hub = RingButton(Button(wheel, "WeHavePhonesTouchWheelHub", "1", 0, 0, 64, 64, nil,
+        "SecureHandlerClickTemplate,BackdropTemplate"), 1)
+    wheel.dots = {}
+    for i = 1, WHEEL_RINGS do
+        local dot = wheel.hub:CreateTexture(nil, "OVERLAY")
+        dot:SetTexture(WHITE)
+        dot:SetSize(5, 5)
+        dot:SetPoint("CENTER", wheel.hub, "CENTER", (i-(WHEEL_RINGS+1)/2)*9, -18)
+        wheel.dots[i] = dot
+    end
+    RingButton(CreateFrame("Button", "WeHavePhonesTouchWheelNext", UIParent, "SecureHandlerClickTemplate"), 1)
+    RingButton(CreateFrame("Button", "WeHavePhonesTouchWheelPrevious", UIParent, "SecureHandlerClickTemplate"), -1)
+    wheel:SetAttribute("ring", math.max(1, math.min(WHEEL_RINGS, tonumber(WeHavePhonesTouchDB.wheelRing) or 1)))
+    ShowRing(wheel:GetAttribute("ring"))
+end
+
+local function PlaceWheel()
+    local hubX, hubY, height = WheelHub()
+    local size = WHEEL_SLOT*height
+    for i, slot in ipairs(wheel.slots) do
+        local radius, angle = (i <= 4 and WHEEL_INNER or WHEEL_OUTER)*height, math.rad(WHEEL_ANGLES[i])
+        local scale = size/math.max(1, slot:GetWidth())
+        SetRelativeScale(slot, scale)
+        slot:ClearAllPoints()
+        slot:SetPoint("CENTER", UIParent, "BOTTOMLEFT",
+            (hubX+radius*math.cos(angle))/scale, (hubY+radius*math.sin(angle))/scale)
+    end
+    local hubScale = WHEEL_HUB*height/64
+    SetRelativeScale(wheel.hub, hubScale)
+    wheel.hub:ClearAllPoints()
+    wheel.hub:SetPoint("CENTER", UIParent, "BOTTOMLEFT", hubX/hubScale, hubY/hubScale)
+end
+
+-- Retail's main bar draws dividers between its visible buttons and keeps them when a state
+-- driver hides the buttons. Fade them while the wheel is on. Calling the bar's own update
+-- from here would taint it.
+local dividersHooked
+local function FadeDividers()
+    local bar = MainActionBar
+    if not bar then return end
+    local alpha = WheelWanted() and 0 or 1
+    for _, pool in ipairs({bar.HorizontalDividersPool, bar.VerticalDividersPool}) do
+        if pool then for divider in pool:EnumerateActive() do divider:SetAlpha(alpha) end end
+    end
+end
+
+-- Show the wheel and hand the stock grid to vehicles and possession, or return the grid.
+local function ApplyWheel()
+    if InCombatLockdown() then return end
+    local wanted = WheelWanted()
+    -- A PC that shows Action Bars 6 to 8 keeps them. They would repeat the wheel here.
+    local db = WeHavePhonesTouchDB
+    for _, name in ipairs({"MultiBar5", "MultiBar6", "MultiBar7"}) do
+        local object = _G[name]
+        if object and wanted then RememberHud(name, true)
+        elseif object and db.hud and db.hud[name] then
+            Reveal(object, db.hud[name].shown)
+            db.hud[name] = nil
+        end
+    end
+    if wanted then CreateWheel() end
+    if not wheel then return end
+    local stock = {pager}
+    for i = 1, 12 do stock[#stock+1] = _G["ActionButton" .. i] end
+    for _, object in ipairs(stock) do
+        if wanted then RegisterStateDriver(object, "visibility", WHEEL_SPECIAL .. " show; hide")
+        else UnregisterStateDriver(object, "visibility") object:Show() end
+    end
+    if MainActionBar and MainActionBar.UpdateDividers and not dividersHooked then
+        hooksecurefunc(MainActionBar, "UpdateDividers", FadeDividers)
+        dividersHooked = true
+    end
+    FadeDividers()
+    if wanted then
+        RegisterStateDriver(wheel, "visibility", WHEEL_SPECIAL .. " hide; show")
+        PlaceWheel()
+    else
+        UnregisterStateDriver(wheel, "visibility")
+        wheel:Hide()
+    end
+end
+
+local function SetWheel(on)
+    wheelOn = on
+    if InCombatLockdown() then Notice("The action wheel changes after combat.") return end
+    Layout()
+end
+
 Layout = function()
     if not enabled or InCombatLockdown() then return end
     if not SupportedLayout() then return end
@@ -1366,6 +1546,7 @@ Layout = function()
         pager:SetPoint("BOTTOMLEFT", UIParent, "CENTER", (-halfWidth+16)/pagerScale, (12-halfHeight)/pagerScale)
     else pager:SetPoint("BOTTOMLEFT", UIParent, "CENTER", -240, (64*fit-halfHeight)/fit) end
     UpdatePager()
+    ApplyWheel()
     for _, name in ipairs({"MainMenuBarTexture0", "MainMenuBarTexture1", "MainMenuBarTexture2",
         "MainMenuBarTexture3", "MainMenuBarLeftEndCap", "MainMenuBarRightEndCap"}) do
         if _G[name] then _G[name]:SetAlpha(0) end
@@ -1452,6 +1633,19 @@ local function Apply()
                 trigger:SetSize(1, 1)
                 trigger:SetPoint("TOPLEFT")
                 trigger:SetScript("OnClick", function(_, _, down) if not down then action() end end)
+                trigger:Show()
+                SetOverrideBindingClick(frame, true, key, name)
+            end
+            -- Wheel rings, and the menu's wheel switch: Ctrl-F11 shows it, Ctrl-F12 returns the stock grid.
+            SetOverrideBindingClick(frame, true, "SHIFT-F10", "WeHavePhonesTouchWheelNext")
+            SetOverrideBindingClick(frame, true, "SHIFT-F11", "WeHavePhonesTouchWheelPrevious")
+            for key, on in pairs({["CTRL-F11"] = true, ["CTRL-F12"] = false}) do
+                local name = "WeHavePhonesTouchWheel" .. (on and "On" or "Off")
+                local trigger = _G[name] or CreateFrame("Button", name, UIParent)
+                trigger:RegisterForClicks("AnyUp", "AnyDown")
+                trigger:SetSize(1, 1)
+                trigger:SetPoint("TOPLEFT")
+                trigger:SetScript("OnClick", function(_, _, down) if not down then SetWheel(on) end end)
                 trigger:Show()
                 SetOverrideBindingClick(frame, true, key, name)
             end

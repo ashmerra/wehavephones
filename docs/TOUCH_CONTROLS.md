@@ -227,6 +227,32 @@ is in use. It never copies or erases actions.
 The primary buttons retain WoW's stance behavior and assignments. The two
 extra bottom bars hide for touch mode and restore on opt-out.
 
+## Action wheel
+
+**Menu → Touch controls → Action wheel** replaces the stock action grid with
+a wheel at the lower right of wide games. It is off by default and the choice
+is kept for the next launch. Tablet shapes keep the stock grid.
+
+The wheel has nine slots in two arcs around a hub. Four rings of nine slots
+use WoW's Action Bars 6 to 8 (slots 145 to 180). Those slots belong to the
+character like any other, but a PC shows them only when those bars are turned
+on. The phone and a PC on the same account can therefore keep different bar
+setups. While the wheel is on, Action Bars 6 to 8 are hidden in touch mode
+because they would repeat it.
+
+- Swipe around the hub, toward the top, for the next ring. Swipe the other way
+  for the previous one. Each ring takes about a quarter of the arc. Swipes work in
+  combat, and they never click or turn the camera.
+- Tap the hub for the next ring. The hub shows the ring number and a dot for
+  each ring. The ring in use is kept for the next login.
+- Tap a slot to use it. Hold a slot to change it with the same picker as the
+  hotbar.
+- Vehicles, possession and override bars bring the stock main bar back until
+  they end.
+
+New rings start empty. A slot keeps whatever the character already had in
+that Action Bar 6 to 8 slot.
+
 ## Inputs for WoW
 
 | Input | Touch control |

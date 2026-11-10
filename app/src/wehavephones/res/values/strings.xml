@@ -516,4 +516,8 @@ World of Warcraft, Warcraft, Battle.net and Blizzard Entertainment are trademark
     <string name="wehavephones_touch_act_hide">Hide controls</string>
     <string name="wehavephones_touch_act_undo">Undo hotbar edit</string>
     <string name="wehavephones_touch_act_page">Next action page</string>
+    <string name="wehavephones_touch_act_wheel">Action wheel</string>
+    <string name="wehavephones_touch_wheel_on">Action wheel on</string>
+    <string name="wehavephones_touch_wheel_off">Action wheel off</string>
+    <string name="wehavephones_touch_wheel_hint">Swipe around the wheel to change ring. It uses Action Bars 6 to 8, so your PC bars stay as they are.</string>
 </resources>

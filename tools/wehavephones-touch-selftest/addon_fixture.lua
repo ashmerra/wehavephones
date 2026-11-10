@@ -62,7 +62,44 @@ function methods:GetEffectiveScale()
     return self:GetScale()*((not self.ignoreParentScale and self.parent) and self.parent:GetEffectiveScale() or 1)
 end
 function methods:IsShown() return self.visible==true end
-function methods:SetAttribute(key,value) assert(not combat) self[key]=value end
+-- Restricted snippets may change attributes in combat. Everything else may not.
+local secure=false
+local function runSnippet(code, header, ...)
+    local was=secure
+    secure=true
+    assert(load(header..code,"snippet","t",_ENV))(...)
+    secure=was
+end
+function methods:SetAttribute(key,value)
+    assert(not combat or secure)
+    self[key]=value
+    if key:sub(1,1)=="_" then return end
+    if self._onattributechanged then runSnippet(self._onattributechanged,"local self,name,value=...\n",self,key,value) end
+    if self.scripts.OnAttributeChanged then self.scripts.OnAttributeChanged(self,key,value) end
+end
+function methods:GetAttribute(key) return self[key] end
+function SecureHandlerSetFrameRef(frame,label,object) frame.refs=frame.refs or {} frame.refs[label]=object end
+function methods:GetFrameRef(label) return self.refs[label] end
+-- A secure click: the handler's own snippet, as WoW runs it from a binding or a tap.
+function secureClick(object,button,down)
+    runSnippet(object._onclick,"local self,button,down=...\n",object,button,down)
+end
+-- State drivers for the special bars: "[conditions] show; hide" or the reverse.
+local drivers, special = {}, false
+local function drive(object)
+    local condition=drivers[object]
+    object.visible=(condition:find("show; hide$")~=nil)==special
+end
+function RegisterStateDriver(object,state,condition)
+    assert(not combat and state=="visibility")
+    drivers[object]=condition
+    drive(object)
+end
+function UnregisterStateDriver(object) assert(not combat) drivers[object]=nil end
+function setSpecialBar(value)
+    special=value
+    for object in pairs(drivers) do drive(object) end
+end
 function methods:RegisterForClicks(...) self.clicks={...} end
 function methods:SetScript(name,fn) self.scripts[name]=fn end
 function methods:HookScript(name,fn) self.scripts[name]=fn end
@@ -90,8 +127,10 @@ function methods:SetStartPoint(...) self.start={...} end
 function methods:SetEndPoint(...) self.finish={...} end
 function CreateColor(r,g,b,a) return {r=r,g=g,b=b,a=a} end
 function UnitBuff(_,i) if i<=buffs then return "Buff "..i end end
-function CreateFrame(_,name,parent)
-    local object=setmetatable({name=name, scripts={}, parent=parent}, {__index=methods})
+function CreateFrame(_,name,parent,template)
+    local object=setmetatable({name=name, scripts={}, parent=parent, template=template}, {__index=methods})
+    -- Blizzard's action buttons are 45 units on Retail and 36 on Classic.
+    if template and template:find("ActionBarButtonTemplate") then object.width,object.height=45,45 end
     if name then objects[name]=object _G[name]=object end
     table.insert(all,object)
     return object
@@ -266,7 +305,7 @@ local function chatIcon()
     local line=objects.WeHavePhonesTouchChatSize.lines[1]
     return line.finish[3]>line.start[3] and "out" or "in"
 end
-local function boot(enabled, scale)
+local function boot(enabled, scale, wheel)
     -- Reloading WoW discards the previous Lua runtime and its secure hooks.
     -- Keep the DB and frame geometry here, but never run old enabled callbacks
     -- while exercising a new disabled addon instance.
@@ -277,7 +316,7 @@ local function boot(enabled, scale)
     secureHooks={}
     local chunk=assert(load(ADDON,"Touch.lua"))
     local before=#all
-    chunk("WeHavePhonesTouch",{enabled=enabled,scale=scale})
+    chunk("WeHavePhonesTouch",{enabled=enabled,scale=scale,wheel=wheel})
     active=all[before+1]
     active.scripts.OnEvent(active,"PLAYER_LOGIN")
 end
@@ -576,6 +615,103 @@ for _,scale in ipairs({1.25,1.5,1.75}) do
         checkChatLayout(width,height,aspect)
     end
 end
+-- The action wheel on Action Bars 6 to 8, for wide games.
+for _,name in ipairs({"MultiBar5","MultiBar6","MultiBar7"}) do
+    local object=CreateFrame("Frame",name,UIParent)
+    object:SetSize(500,40)
+    object:SetPoint("BOTTOM",UIParent,"BOTTOM",0,200)
+    object:Show()
+end
+boot(true,nil,true)
+local wheel=objects.WeHavePhonesTouchWheel
+local slots={}
+for i=1,9 do slots[i]=objects["WeHavePhonesTouchWheelSlot"..i] end
+assert(wheel and slots[9] and slots[1].template=="ActionBarButtonTemplate","the wheel uses Blizzard's action buttons")
+for i=1,9 do assert(slots[i].action==144+i and slots[i].type2=="" and slots[i].showgrid==1,"ring 1 shows slots 145 to 153") end
+assert(held["SHIFT-F10"]=="WeHavePhonesTouchWheelNext" and held["SHIFT-F11"]=="WeHavePhonesTouchWheelPrevious",
+    "swipes reach the secure ring buttons through session bindings")
+assert(not MultiBar5.visible and not MultiBar6.visible and not MultiBar7.visible,"Action Bars 6 to 8 do not repeat the wheel")
+assert(wheel.visible and not ActionButton1.visible and not ActionButton12.visible and not objects.WeHavePhonesTouchPager.visible,
+    "the wheel replaces the stock grid and its page switcher")
+local function wheelRect(object)
+    local left,bottom,w,h=topRect(object)
+    return {left,bottom,left+w,bottom+h}
+end
+for _,scale in ipairs({1.25,1.5,1.75}) do
+    WeHavePhonesTouchDB.touchScale=scale
+    for _,aspect in ipairs({1,4/3,3/2,16/10,16/9,2,19.5/9,21/9,32/9}) do
+        local height=768/scale
+        local width=height*aspect
+        UIParent:SetSize(width,height)
+        active.scripts.OnEvent(active,"DISPLAY_SIZE_CHANGED")
+        if aspect<1.59 then
+            assert(not wheel.visible and ActionButton1.visible and ActionButton9.visible,"tablet shapes keep the stock grid")
+        else
+            assert(wheel.visible and not ActionButton1.visible,"wide games show the wheel")
+            local rects={wheelRect(objects.WeHavePhonesTouchWheelHub)}
+            for i=1,9 do
+                local r=wheelRect(slots[i])
+                close(r[3]-r[1],height*.10,"slots are a tenth of the game's height")
+                assert(r[1]>=0 and r[3]<=width and r[2]>=0 and r[4]<=height*.5,"the wheel stays in the lower right of the screen")
+                rects[#rects+1]=r
+            end
+            for i,a in ipairs(rects) do
+                for j=i+1,#rects do
+                    local b=rects[j]
+                    assert(a[3]<=b[1] or b[3]<=a[1] or a[4]<=b[2] or b[4]<=a[2],"wheel slots and hub never overlap")
+                end
+            end
+            for _,bar in ipairs({StanceBar,PetActionBar}) do
+                local l,b,w,h=topRect(bar)
+                for _,r in ipairs(rects) do
+                    assert(l+w<=r[1] or r[3]<=l or b+h<=r[2] or r[4]<=b,"class controls end before the wheel")
+                end
+            end
+            for i=1,9 do exportGeometry(slots[i],width,height,"wheel") end
+            exportGeometry(objects.WeHavePhonesTouchWheelHub,width,height,"wheel")
+        end
+    end
+end
+WeHavePhonesTouchDB.touchScale=1.5
+UIParent:SetSize(1600,900)
+active.scripts.OnEvent(active,"DISPLAY_SIZE_CHANGED")
+-- Rings change in combat through the secure handlers only.
+combat=true
+secureClick(objects.WeHavePhonesTouchWheelNext,"LeftButton",true)
+assert(wheel.ring==nil or wheel.ring==1,"a ring changes once per key, on release")
+secureClick(objects.WeHavePhonesTouchWheelNext,"LeftButton",false)
+for i=1,9 do assert(slots[i].action==153+i,"ring 2 shows slots 154 to 162 in combat") end
+assert(objects.WeHavePhonesTouchWheelHub.text=="2" and WeHavePhonesTouchDB.wheelRing==2,"the hub shows the ring")
+secureClick(objects.WeHavePhonesTouchWheelPrevious,"LeftButton",false)
+secureClick(objects.WeHavePhonesTouchWheelPrevious,"LeftButton",false)
+for i=1,9 do assert(slots[i].action==171+i,"previous from ring 1 wraps to ring 4, slots 172 to 180") end
+secureClick(objects.WeHavePhonesTouchWheelHub,"RightButton",false)
+assert(slots[1].action==172,"a hold on the hub does not change ring")
+secureClick(objects.WeHavePhonesTouchWheelHub,"LeftButton",false)
+assert(slots[1].action==145,"a tap on the hub moves to the next ring")
+setSpecialBar(true)
+assert(not wheel.visible and ActionButton1.visible and objects.WeHavePhonesTouchPager.visible,
+    "vehicles and possession get the stock main bar back, in combat")
+setSpecialBar(false)
+assert(wheel.visible and not ActionButton1.visible,"the wheel returns after a vehicle")
+local beforeWheelNotice=notices
+menuChord("CTRL-F12")
+assert(notices==beforeWheelNotice+1 and wheel.visible,"the wheel switch waits for combat to end")
+combat=false
+active.scripts.OnEvent(active,"PLAYER_REGEN_ENABLED")
+assert(not wheel.visible and ActionButton1.visible and objects.WeHavePhonesTouchPager.visible,"switching the wheel off returns the stock grid")
+assert(MultiBar5.visible and MultiBar7.visible,"switching the wheel off returns Action Bars 6 to 8")
+menuChord("CTRL-F11")
+assert(wheel.visible and not ActionButton1.visible and not MultiBar6.visible,"the wheel can return in the same session")
+edit(slots[3])
+assert(objects.WeHavePhonesTouchEditor.visible and objects.WeHavePhonesTouchEditor.title.text=="Choose action for slot 147",
+    "holding a wheel slot edits that slot")
+objects.WeHavePhonesTouchEditor:Hide()
+boot(true,nil,true)
+assert(objects.WeHavePhonesTouchWheelSlot1.action==145 and objects.WeHavePhonesTouchWheelHub.text=="1",
+    "the ring in use is kept for the next login")
+boot(true)
+assert(ActionButton1.visible and MultiBar5.visible,"a launch without the wheel uses the stock grid")
 if geometry then geometry:close() end
 UIParent_ManageFramePositions()
 assert(StanceBar.point[3]=="CENTER" and PetActionBar.point[3]=="CENTER","late stock frame management preserves class controls")

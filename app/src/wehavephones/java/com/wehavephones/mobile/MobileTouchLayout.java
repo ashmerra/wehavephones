@@ -10,6 +10,19 @@ public final class MobileTouchLayout {
      * Narrower games: the right rail beside the centered layout, above the thumb keys.
      */
     public static final float TOOLBAR_BAND = .14f, MINIMAP_RESERVE = .30f, ZONE_GAP = .012f;
+    /**
+     * The action wheel, in fractions of the game's height. Keep in step with the touch addon.
+     * Its rightmost slot ends at the layout edge, or {@link #WHEEL_GAP} game heights left of
+     * {@link #WHEEL_RIGHT} of the game's width, whichever is nearer: clear of Target, Use and Jump.
+     * The hub sits {@link #WHEEL_HUB_X} left of that edge and {@link #WHEEL_HUB_Y} above the
+     * bottom. Slots form two arcs around the hub.
+     */
+    public static final float WHEEL_RIGHT = .975f, WHEEL_GAP = .17f, WHEEL_HUB_X = .125f, WHEEL_HUB_Y = .075f, WHEEL_SLOT = .10f,
+            WHEEL_HUB = .13f, WHEEL_INNER = .21f, WHEEL_OUTER = .32f;
+    /** Slot angles in degrees, counterclockwise from the right: four inner slots, then five outer slots. */
+    public static final float[] WHEEL_ANGLES = {180, 143, 107, 70, 180, 154, 129, 104, 78};
+    /** How far the wheel's touch area reaches from the hub, past the outer slots. */
+    public static final float WHEEL_REACH = WHEEL_OUTER + WHEEL_SLOT * .7f;
     /** Each Play or Menus segment is narrower than a key. The two form one switch. */
     static final float SEGMENT = .85f, GAP = .16f;
 
@@ -31,6 +44,8 @@ public final class MobileTouchLayout {
     public final boolean overflow;
     /** The area covered by the toolbar, for placing hints beside it. */
     public final Bounds toolbar;
+    /** The action wheel's hub and touch reach in view pixels. Reach is 0 where the wheel is not used. */
+    public final float wheelX, wheelY, wheelReach, wheelUnit;
 
     /** Width of the wide toolbar zone, left of the minimap square, in fractions of the game's height. */
     public static float toolbarZone(float aspect) {
@@ -126,6 +141,30 @@ public final class MobileTouchLayout {
         stickX = insetLeft + Math.max(radius * 1.2f + margin, w * .12f);
         stickY = insetTop + h * (w / h < 1.6f ? .68f : .70f);
         textSize = Math.min(11 * density, s * .22f);
+        // Wide games only. Tablet shapes keep the stock action grid.
+        float[] wheel = wheel(viewport);
+        wheelX = wheel[0];
+        wheelY = wheel[1];
+        wheelUnit = wheel[2];
+        wheelReach = column ? 0 : WHEEL_REACH * wheelUnit;
+    }
+
+    /** The wheel's hub position and the game's height, in view pixels. */
+    public static float[] wheel(Bounds viewport) {
+        float vpH = Math.max(1, viewport.height()), vpW = viewport.width();
+        float layoutWidth = Math.min(vpW * .8f, vpH * 16 / 9);
+        float right = viewport.left + Math.min((vpW + layoutWidth) / 2, vpW * WHEEL_RIGHT - vpH * WHEEL_GAP);
+        return new float[]{right - WHEEL_HUB_X * vpH, viewport.bottom - WHEEL_HUB_Y * vpH, vpH};
+    }
+
+    /**
+     * Whether a touch belongs to the wheel: within its reach of the hub, no farther right than
+     * the rightmost slot and no lower than the hub's own bottom edge.
+     */
+    public boolean inWheel(float x, float y) {
+        if (wheelReach <= 0) return false;
+        float dx = x - wheelX, dy = y - wheelY;
+        return Math.hypot(dx, dy) <= wheelReach && dx <= WHEEL_HUB_X * wheelUnit && dy <= WHEEL_HUB_Y * wheelUnit;
     }
 
     /** Keys, their gaps, and the joined Play and Menus switch, in key widths. */

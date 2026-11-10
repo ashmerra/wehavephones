@@ -5,8 +5,8 @@ import java.util.Map;
 
 /** Pointer ownership for simultaneous movement, camera and direct UI taps. No Android dependencies. */
 public final class MobileTouchInput {
-    public enum Key { FORWARD, BACK, LEFT, RIGHT, JUMP, TARGET, INTERACT, BAGS, MAP, ESCAPE, BAR, MORE, CORPSE, PLAY, MENUS, HANDLE, KEYBOARD, INSPECT, AUTORUN }
-    public enum Zone { STICK, CAMERA, UI, JUMP, TARGET, INTERACT, BAGS, MAP, ESCAPE, BAR, MORE, PLAY, MENUS, HANDLE, KEYBOARD, INSPECT }
+    public enum Key { FORWARD, BACK, LEFT, RIGHT, JUMP, TARGET, INTERACT, BAGS, MAP, ESCAPE, BAR, MORE, CORPSE, PLAY, MENUS, HANDLE, KEYBOARD, INSPECT, AUTORUN, RING_NEXT, RING_PREV }
+    public enum Zone { STICK, CAMERA, UI, JUMP, TARGET, INTERACT, BAGS, MAP, ESCAPE, BAR, MORE, PLAY, MENUS, HANDLE, KEYBOARD, INSPECT, WHEEL }
     public interface Sink {
         void key(Key key, boolean down);
         void click(float x, float y);
@@ -31,6 +31,9 @@ public final class MobileTouchInput {
         float x, y;
         boolean dragged;
         boolean consumed;
+        /** The wheel angle of the last ring change, or of the touch for a new swipe. */
+        float angle;
+        boolean swiping;
         final long downAt;
         Finger(Zone zone, float x, float y, long now) {
             this.zone = zone;
@@ -55,9 +58,20 @@ public final class MobileTouchInput {
     public static final long HOLD_MS = 550;
     /** Auto run target above the stick, in stick radii. Hold on it briefly, then release to lock running. */
     public static final float RUN_LOCK_OFFSET = 2.4f, RUN_LOCK_RADIUS = .45f;
+    /** Degrees of travel around the wheel's hub for one ring. Toward the top is the next ring. */
+    public static final float RING_STEP = 24;
+    private float wheelX, wheelY, wheelMin;
     private final boolean[] keys = new boolean[Key.values().length];
 
     public MobileTouchInput(Sink sink, float slop) { this.sink = sink; this.slop = slop; }
+
+    /** The wheel's hub, and the distance from it inside which a swipe has no steady angle. */
+    public void setWheel(float x, float y, float minimum) { wheelX = x; wheelY = y; wheelMin = minimum; }
+
+    /** Counterclockwise degrees around the hub, as drawn on screen. */
+    private float wheelAngle(float x, float y) {
+        return (float) Math.toDegrees(Math.atan2(wheelY - y, x - wheelX));
+    }
 
     /**
      * Camera swipe rectangles as {left, top, right, bottom} fractions of the guest view.
@@ -97,6 +111,7 @@ public final class MobileTouchInput {
             return;
         }
         fingers.put(id, new Finger(zone, x, y, now));
+        if (zone == Zone.WHEEL) fingers.get(id).angle = wheelAngle(x, y);
         if (inspectMode && (zone == Zone.UI || zone == Zone.CAMERA)) {
             fingers.get(id).consumed = true;
             setCamera(false);
@@ -133,7 +148,7 @@ public final class MobileTouchInput {
                 finger.consumed = true;
                 setCamera(false);
                 pulse(Key.CORPSE);
-            } else if ((finger.zone == Zone.UI || finger.zone == Zone.CAMERA) && !finger.dragged
+            } else if ((finger.zone == Zone.UI || finger.zone == Zone.CAMERA || finger.zone == Zone.WHEEL) && !finger.dragged
                     && !finger.consumed && now - finger.downAt >= HOLD_MS) {
                 finger.consumed = true;
                 setCamera(false);
@@ -147,7 +162,8 @@ public final class MobileTouchInput {
         if (drag != -1 || multiA != -1) return null;
         Hold best = null;
         for (Finger finger : fingers.values()) {
-            boolean holdable = finger.zone == Zone.TARGET || finger.zone == Zone.UI || finger.zone == Zone.CAMERA;
+            boolean holdable = finger.zone == Zone.TARGET || finger.zone == Zone.UI || finger.zone == Zone.CAMERA
+                    || finger.zone == Zone.WHEEL;
             if (!holdable || finger.dragged || finger.consumed || now - finger.downAt < delay) continue;
             float progress = Math.min(1, (now - finger.downAt) / (float) HOLD_MS);
             if (best == null || progress > best.progress) best = new Hold(finger.zone, finger.x, finger.y, progress);
@@ -217,6 +233,24 @@ public final class MobileTouchInput {
             if (!onTarget) runTargetSince = -1;
             else if (runTargetSince < 0) runTargetSince = now;
             runArmed = onTarget && now - runTargetSince >= RUN_LOCK_HOLD_MS;
+        } else if (finger.zone == Zone.WHEEL) {
+            // A swipe around the hub changes ring. It never clicks, drags or turns the camera.
+            // A finger whose hold already fired stays on its slot.
+            if (!finger.dragged || (finger.consumed && !finger.swiping)) return;
+            if (Math.hypot(x - wheelX, y - wheelY) < wheelMin) return;
+            float angle = wheelAngle(x, y);
+            if (!finger.swiping) {
+                finger.swiping = finger.consumed = true;
+                // A swipe that starts on the hub counts from where it leaves the hub.
+                if (Math.hypot(finger.startX - wheelX, finger.startY - wheelY) < wheelMin) finger.angle = angle;
+            }
+            float delta = finger.angle - angle;
+            if (delta > 180) delta -= 360;
+            if (delta < -180) delta += 360;
+            if (Math.abs(delta) >= RING_STEP) {
+                finger.angle = angle;
+                pulse(delta > 0 ? Key.RING_NEXT : Key.RING_PREV);
+            }
         } else if (inspectMode && finger.zone == Zone.UI) sink.hover(x, y);
         else if (finger.consumed) return;
         else if (id == camera && finger.dragged && (dx != 0 || dy != 0)) {
@@ -268,7 +302,7 @@ public final class MobileTouchInput {
             camera = -1;
             setCamera(false);
         }
-        if ((finger.zone == Zone.UI || finger.zone == Zone.CAMERA) && !finger.dragged && !finger.consumed) {
+        if ((finger.zone == Zone.UI || finger.zone == Zone.CAMERA || finger.zone == Zone.WHEEL) && !finger.dragged && !finger.consumed) {
             // WoW captures the mouse during right-drag. Drop the grab before an absolute UI tap.
             setCamera(false);
             sink.click(finger.x, finger.y);
@@ -292,7 +326,8 @@ public final class MobileTouchInput {
             Key key = Key.values()[i];
             // Target is a tap or hold action. Never cycle a living enemy before a corpse hold.
             if (key == Key.TARGET || key == Key.CORPSE || key == Key.MORE || key == Key.PLAY || key == Key.MENUS
-                    || key == Key.HANDLE || key == Key.KEYBOARD || key == Key.INSPECT || key == Key.AUTORUN) continue;
+                    || key == Key.HANDLE || key == Key.KEYBOARD || key == Key.INSPECT || key == Key.AUTORUN
+                    || key == Key.RING_NEXT || key == Key.RING_PREV) continue;
             boolean held = false;
             for (Finger finger : fingers.values()) if (finger.zone.name().equals(key.name())) held = true;
             setKey(key, held);

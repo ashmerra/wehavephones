@@ -29,6 +29,12 @@ public final class MobileTouchSetup {
 
     /** {@code scale} is the app-wide touch interface size, applied to every character at login. */
     public static void prepare(File product, boolean enabled, float scale, int interfaceVersion, byte[] script) throws IOException {
+        prepare(product, enabled, scale, false, interfaceVersion, script);
+    }
+
+    /** {@code wheel} shows the action wheel on wide games instead of the stock action grid. */
+    public static void prepare(File product, boolean enabled, float scale, boolean wheel, int interfaceVersion, byte[] script)
+            throws IOException {
         File state = new File(product, STATE);
         File folder = new File(product, "Interface/AddOns/" + FOLDER);
         // Default-off installs never acquire a touch addon or have their addons changed.
@@ -75,7 +81,7 @@ public final class MobileTouchSetup {
         write(new File(folder, "Touch.lua"), script);
         String size = String.format(java.util.Locale.US, "%.2f", scale == 1.25f || scale == 1.75f ? scale : 1.5f);
         write(new File(folder, "Mode.lua"), ("local _, addon = ...\naddon.enabled = " + enabled
-                + "\naddon.scale = " + size + "\n").getBytes(StandardCharsets.UTF_8));
+                + "\naddon.scale = " + size + "\naddon.wheel = " + wheel + "\n").getBytes(StandardCharsets.UTF_8));
     }
 
     /** Journals the player's controller CVars once, turns them off, and restores them on opt-out. */
