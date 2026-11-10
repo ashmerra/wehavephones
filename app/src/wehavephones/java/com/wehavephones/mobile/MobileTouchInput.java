@@ -31,9 +31,9 @@ public final class MobileTouchInput {
         float x, y;
         boolean dragged;
         boolean consumed;
-        /** The wheel angle of the last ring change, or of the touch for a new swipe. */
+        /** The wheel angle where the swipe started. */
         float angle;
-        boolean swiping;
+        boolean swiping, stepped;
         final long downAt;
         Finger(Zone zone, float x, float y, long now) {
             this.zone = zone;
@@ -58,8 +58,11 @@ public final class MobileTouchInput {
     public static final long HOLD_MS = 550;
     /** Auto run target above the stick, in stick radii. Hold on it briefly, then release to lock running. */
     public static final float RUN_LOCK_OFFSET = 2.4f, RUN_LOCK_RADIUS = .45f;
-    /** Degrees of travel around the wheel's hub for one ring. Toward the top is the next ring. */
-    public static final float RING_STEP = 24;
+    /**
+     * Degrees of travel around the wheel's hub before a swipe changes ring. Toward the top is the
+     * next ring. One swipe changes one ring, however far it goes.
+     */
+    public static final float RING_STEP = 40;
     private float wheelX, wheelY, wheelMin;
     private final boolean[] keys = new boolean[Key.values().length];
 
@@ -236,7 +239,7 @@ public final class MobileTouchInput {
         } else if (finger.zone == Zone.WHEEL) {
             // A swipe around the hub changes ring. It never clicks, drags or turns the camera.
             // A finger whose hold already fired stays on its slot.
-            if (!finger.dragged || (finger.consumed && !finger.swiping)) return;
+            if (!finger.dragged || finger.stepped || (finger.consumed && !finger.swiping)) return;
             if (Math.hypot(x - wheelX, y - wheelY) < wheelMin) return;
             float angle = wheelAngle(x, y);
             if (!finger.swiping) {
@@ -248,7 +251,7 @@ public final class MobileTouchInput {
             if (delta > 180) delta -= 360;
             if (delta < -180) delta += 360;
             if (Math.abs(delta) >= RING_STEP) {
-                finger.angle = angle;
+                finger.stepped = true;
                 pulse(delta > 0 ? Key.RING_NEXT : Key.RING_PREV);
             }
         } else if (inspectMode && finger.zone == Zone.UI) sink.hover(x, y);

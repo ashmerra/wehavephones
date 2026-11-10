@@ -241,7 +241,8 @@ setups. While the wheel is on, Action Bars 6 to 8 are hidden in touch mode
 because they would repeat it.
 
 - Swipe around the hub, toward the top, for the next ring. Swipe the other way
-  for the previous one. Each ring takes about a quarter of the arc. Swipes work in
+  for the previous one. One swipe changes one ring, after about 40 degrees around
+  the hub. Swipes work in
   combat, and they never click or turn the camera.
 - Tap the hub for the next ring. The hub shows the ring number and a dot for
   each ring. The ring in use is kept for the next login.

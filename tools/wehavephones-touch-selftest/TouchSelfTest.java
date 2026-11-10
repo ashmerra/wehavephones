@@ -458,15 +458,22 @@ public final class TouchSelfTest {
         input.advanceTime(700);
         input.up(1);
         check(sink.contexts == 1 && sink.clicks == 1, "a hold on a wheel slot opens the editor without casting");
-        // A swipe from the left end of the arc toward the top changes ring, once per step.
+        // A swipe from the left end of the arc toward the top changes one ring, however far it goes.
         input.down(2, Zone.WHEEL, hx - r, hy, 1000);
         for (int degrees = 180; degrees >= 90; degrees -= 3) {
             double a = Math.toRadians(degrees);
             input.move(2, hx + r * (float) Math.cos(a), hy - r * (float) Math.sin(a), 0, 0, 1, 1000);
         }
         input.up(2);
-        check(count(sink, "RING_NEXT:true") == 3 && count(sink, "RING_PREV:true") == 0,
-                "a swipe up the arc steps forward one ring per " + MobileTouchInput.RING_STEP + " degrees");
+        check(count(sink, "RING_NEXT:true") == 1 && count(sink, "RING_PREV:true") == 0,
+                "a long swipe up the arc steps forward exactly one ring");
+        input.down(7, Zone.WHEEL, hx - r, hy, 1500);
+        for (int degrees = 180; degrees >= 180 - MobileTouchInput.RING_STEP + 4; degrees -= 3) {
+            double a = Math.toRadians(degrees);
+            input.move(7, hx + r * (float) Math.cos(a), hy - r * (float) Math.sin(a), 0, 0, 1, 1500);
+        }
+        input.up(7);
+        check(count(sink, "RING_NEXT:true") == 1 && sink.clicks == 1, "a short swipe changes nothing and does not click");
         check(sink.clicks == 1 && sink.contexts == 1 && !sink.camera && !sink.dragging,
                 "a wheel swipe never clicks, drags or turns the camera");
         input.down(3, Zone.WHEEL, hx, hy - r, 2000);
@@ -477,7 +484,7 @@ public final class TouchSelfTest {
         input.down(4, Zone.WHEEL, hx, hy, 3000);
         input.move(4, hx - r, hy - r * .1f, 0, 0, 1, 3000);
         input.up(4);
-        check(count(sink, "RING_NEXT:true") == 3 && count(sink, "RING_PREV:true") == 1 && sink.clicks == 1,
+        check(count(sink, "RING_NEXT:true") == 1 && count(sink, "RING_PREV:true") == 1 && sink.clicks == 1,
                 "a drag out of the hub changes nothing and does not click");
         // The camera finger keeps turning while the other thumb swipes the wheel.
         input.down(5, Zone.CAMERA, 1200, 400, 4000);
@@ -485,7 +492,7 @@ public final class TouchSelfTest {
         input.down(6, Zone.WHEEL, hx - r, hy, 4000);
         input.move(6, hx - r * .7f, hy - r * .7f, 0, 0, 1, 4000);
         input.move(5, 1260, 400, 0, 0, 1, 4000);
-        check(sink.camera && count(sink, "RING_NEXT:true") == 4, "wheel swipes and camera turns work together");
+        check(sink.camera && count(sink, "RING_NEXT:true") == 2, "wheel swipes and camera turns work together");
         input.up(6);
         input.up(5);
         check(!sink.camera, "lifting the camera finger releases it");
