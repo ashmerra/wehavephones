@@ -73,9 +73,17 @@ local function SaveCVar(name, value)
     SetCVar(name, value)
 end
 
+-- Size of the native controls and the wheel, 1 at the default 150%. They change half as much
+-- as the interface. Keep in step with MobileTouchLayout.controlScale. It changes with the
+-- interface size, so a size chosen in combat moves the wheel only once combat ends.
+local controlScale = 1
+-- The native toolbar's band at the top of wide games, in game heights at the default size.
+local TOOLBAR_BAND = .14
+
 local function UniformScale()
     if not enabled or InCombatLockdown() then return end
     local scale = math.max(.75, math.min(1.75, tonumber(WeHavePhonesTouchDB.touchScale) or 1.5))
+    controlScale = .5+scale/3
     -- The whole UI inherits this scale. Do not multiply an already scaled parent.
     if math.abs(UIParent:GetScale() - scale) > .001 then UIParent:SetScale(scale) end
 end
@@ -450,7 +458,7 @@ local function PositionChat()
     -- Keep the size key's expanded hit area beyond its right edge on tablets too.
     -- An ultrawide guest can be letterboxed inside a taller landscape display.
     local controlHeight = math.max(height, screenWidth/COMPACT)
-    local radius = math.min(controlHeight*(screenWidth/height<1.6 and .12 or .13), screenWidth*.13)
+    local radius = math.min(controlHeight*(screenWidth/height<1.6 and .12 or .13), screenWidth*.13)*controlScale
     local stickRight = math.max(radius*1.2+screenWidth*.025, screenWidth*.12)+radius*1.2
     local width = math.max(math.min(300, LayoutWidth()*.34), stickRight-left+16)
     local chatHeight = math.min(ChatRows(CHAT_ROWS), height*.14)
@@ -462,7 +470,7 @@ local function PositionChat()
         if activeChatEdit then
             RaiseEditBox(activeChatEdit)
             local relative = activeChatEdit:GetEffectiveScale()/UIParent:GetEffectiveScale()
-            local editBottom = height*.14+6+activeChatEdit:GetHeight()*relative
+            local editBottom = height*TOOLBAR_BAND*controlScale+6+activeChatEdit:GetHeight()*relative
             -- Tabs sit above the conversation. Both stay below the raised input.
             top = math.max(top, editBottom+36)
         end
@@ -644,7 +652,7 @@ RaiseEditBox = function(editBox)
     end
     local relative = editBox:GetEffectiveScale()/UIParent:GetEffectiveScale()
     editBox:ClearAllPoints()
-    editBox:SetPoint("TOP", UIParent, "TOP", 0, -(.14*UIParent:GetHeight()+6)/relative)
+    editBox:SetPoint("TOP", UIParent, "TOP", 0, -(TOOLBAR_BAND*controlScale*UIParent:GetHeight()+6)/relative)
     editBox:SetWidth(math.min(LayoutWidth()*.6, 560)/relative)
 end
 
@@ -857,7 +865,7 @@ end)
 
 -- Right of the wheel's touch area and under Jump, centered on the hub. Druids can have six
 -- or more forms, so stances form a grid: up to three in one row, more in two. Sizes are
--- fractions of the game's height. Keep in step with MobileTouchLayout. A game wider than any
+-- fractions of the wheel's unit, the game's height times the control size. Keep in step with MobileTouchLayout. A game wider than any
 -- phone screen is letterboxed, and Jump then covers that corner, so stances stay in the
 -- footer there.
 local STANCE_ASPECT, STANCE_SIZE, STANCE_HEIGHT, STANCE_GAP = 2.4, .07, .12, .15
@@ -878,16 +886,19 @@ end
 
 local stanceHooked
 local function PlaceStances(object)
-    local hubX, hubY, height = WheelHub()
-    local left = hubX+WHEEL_HUB_X*height+8
+    local hubX, hubY, wheelUnit = WheelHub()
+    local left = hubX+WHEEL_HUB_X*wheelUnit+8
     local containers = object.shownButtonContainers or {}
     local count = math.max(1, #containers)
     local columns = count <= 3 and count or math.ceil(count/2)
     local rows = math.ceil(count/columns)
     local unit = containers[1] and containers[1]:GetWidth()*containers[1]:GetEffectiveScale()/object:GetEffectiveScale()
         or object:GetHeight()
-    local size = math.min(STANCE_SIZE*height, (UIParent:GetWidth()-8-left)/(columns+(columns-1)*STANCE_GAP),
-        STANCE_HEIGHT*height/(rows+(rows-1)*STANCE_GAP))
+    -- Jump keeps its bottom edge at every control size, so the grid never reaches higher
+    -- than it does at the default size.
+    local tallest = math.min(STANCE_HEIGHT*wheelUnit, 2*((WHEEL_HUB_Y+STANCE_HEIGHT/2)*UIParent:GetHeight()-hubY))
+    local size = math.min(STANCE_SIZE*wheelUnit, (UIParent:GetWidth()-8-left)/(columns+(columns-1)*STANCE_GAP),
+        tallest/(rows+(rows-1)*STANCE_GAP))
     local scale = math.max(.1, size/math.max(1, unit))
     SetRelativeScale(object, scale)
     for i, container in ipairs(containers) do
@@ -940,8 +951,8 @@ local function PositionClassBars()
     local room = LayoutWidth()-32-reserved
     if WheelWanted() then
         -- The footer ends before the wheel's leftmost slot.
-        local hubX, _, height = WheelHub()
-        room = math.max(60, math.min(room, hubX-(WHEEL_OUTER+WHEEL_SLOT/2)*height-12
+        local hubX, _, wheelUnit = WheelHub()
+        room = math.max(60, math.min(room, hubX-(WHEEL_OUTER+WHEEL_SLOT/2)*wheelUnit-12
             -(UIParent:GetWidth()-LayoutWidth())/2-16-reserved))
     end
     local scale = math.min(1, room/math.max(1, total+12))
@@ -979,7 +990,7 @@ end
 -- end on wide games, and the right rail beside the centered layout on narrower ones.
 -- Swing timers at most this share of the layout's width.
 local SWING_WIDTH = .18
-local TOOLBAR_BAND, MINIMAP_RESERVE, ZONE_GAP, AURA_ROW, AURA_ICON = .14, .30, .012, 45, 35
+local MINIMAP_RESERVE, ZONE_GAP, AURA_ROW, AURA_ICON = .30, .012, 45, 35
 local topHooks, auraLeft = {}, 0
 local function HookTop(object)
     -- Edit Mode reapplies its anchors and frame sizes after login and layout changes.
@@ -1018,7 +1029,7 @@ local function PositionTopHud()
         RememberHud("UIWidgetTopCenterContainerFrame")
         Unanchor(UIWidgetTopCenterContainerFrame)
         Anchor(UIWidgetTopCenterContainerFrame, "TOP", UIParent, "TOP", 0,
-            -(TOOLBAR_BAND*height+4)/RelativeScale(UIWidgetTopCenterContainerFrame))
+            -(TOOLBAR_BAND*controlScale*height+4)/RelativeScale(UIWidgetTopCenterContainerFrame))
         HookTop(UIWidgetTopCenterContainerFrame)
     end
     -- Player and target frames keep their own anchors. They shrink toward those anchors only
@@ -1103,7 +1114,7 @@ PositionAuras = function()
     -- Wide games: right-aligned under the toolbar band. Narrower games: under the minimap,
     -- clear of Target, Use and Jump, which can be wider than the rail.
     local right = compact and math.max((width-LayoutWidth())/2, width*.16)+4 or (MINIMAP_RESERVE+ZONE_GAP)*height
-    local top = compact and minimapBottom+4 or TOOLBAR_BAND*height+4
+    local top = compact and minimapBottom+4 or TOOLBAR_BAND*controlScale*height+4
     local rows = BuffRows()
     auraLeft = width-right-11*AURA_ICON
     for _, aura in ipairs({{"BuffFrame", 0, 0}, {"DebuffFrame", 0, rows*AURA_ROW}}) do
@@ -1173,7 +1184,7 @@ PositionTracker = function()
             end
         end
         local controlHeight = math.max(screenHeight, screenWidth/COMPACT)
-        local radius = math.min(controlHeight*(screenWidth/screenHeight<1.6 and .12 or .13), screenWidth*.13)
+        local radius = math.min(controlHeight*(screenWidth/screenHeight<1.6 and .12 or .13), screenWidth*.13)*controlScale
         local stickTop = screenHeight*(screenWidth/screenHeight<1.6 and .68 or .70)-radius*1.2
         local columnWidth = math.min(LayoutWidth()*.30, math.max(160,
             PlayerFrame and PlayerFrame:GetRight() and PlayerFrame:GetRight()*RelativeScale(PlayerFrame)-8 or 0))
@@ -1419,10 +1430,11 @@ local WHEEL_SPECIAL = (retail or (WOW_PROJECT_MISTS_CLASSIC and WOW_PROJECT_ID =
 local wheel
 
 WheelHub = function()
-    -- The hub, from the bottom left in UIParent units, and the game's height.
-    local width, height = UIParent:GetWidth(), UIParent:GetHeight()
-    local right = math.min((width+LayoutWidth())/2, width*WHEEL_RIGHT-height*WHEEL_GAP)
-    return right-WHEEL_HUB_X*height, WHEEL_HUB_Y*height, height
+    -- The hub, from the bottom left in UIParent units, and the wheel's unit: the game's height
+    -- times the control size. Every wheel and stance distance is a fraction of it.
+    local width, unit = UIParent:GetWidth(), UIParent:GetHeight()*controlScale
+    local right = math.min((width+LayoutWidth())/2, width*WHEEL_RIGHT-unit*WHEEL_GAP)
+    return right-WHEEL_HUB_X*unit, WHEEL_HUB_Y*unit, unit
 end
 
 WheelWanted = function()
@@ -1568,10 +1580,10 @@ local function CreateWheel()
 end
 
 local function PlaceWheel()
-    local hubX, hubY, height = WheelHub()
-    local size = WHEEL_SLOT*height
+    local hubX, hubY, wheelUnit = WheelHub()
+    local size = WHEEL_SLOT*wheelUnit
     for i, slot in ipairs(wheel.slots) do
-        local radius, angle = (i <= 4 and WHEEL_INNER or WHEEL_OUTER)*height, math.rad(WHEEL_ANGLES[i])
+        local radius, angle = (i <= 4 and WHEEL_INNER or WHEEL_OUTER)*wheelUnit, math.rad(WHEEL_ANGLES[i])
         local scale = size/math.max(1, slot:GetWidth())
         SetRelativeScale(slot, scale)
         slot:ClearAllPoints()
@@ -1580,10 +1592,10 @@ local function PlaceWheel()
     end
     -- The key sits up the middle of the arcs, close to the inner slots. Swipes still turn
     -- around the wheel's own center.
-    local hubScale = WHEEL_HUB*height/HUB_SIZE
+    local hubScale = WHEEL_HUB*wheelUnit/HUB_SIZE
     SetRelativeScale(wheel.hub, hubScale)
     wheel.hub:ClearAllPoints()
-    wheel.hub:SetPoint("CENTER", UIParent, "BOTTOMLEFT", (hubX+WHEEL_KEY_X*height)/hubScale, (hubY+WHEEL_KEY_Y*height)/hubScale)
+    wheel.hub:SetPoint("CENTER", UIParent, "BOTTOMLEFT", (hubX+WHEEL_KEY_X*wheelUnit)/hubScale, (hubY+WHEEL_KEY_Y*wheelUnit)/hubScale)
 end
 
 -- Retail's main bar draws dividers between its visible buttons and keeps them when a state

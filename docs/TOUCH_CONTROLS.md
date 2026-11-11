@@ -98,14 +98,22 @@ keys. None uses Alt, because Windows reads Alt with F4 as closing the game.
 
 The interface size is one app setting for every character. It applies at
 once in game and is written to the addon before each launch. A size chosen
-during combat applies when combat ends. 150% is the default. The hotbar
-scales with the rest of the interface, so its buttons get harder to tap at
-the smaller sizes, mostly on phones. Tablets have more room for them.
+during combat applies when combat ends. 150% is the default.
+
+The native controls follow the interface size at half its rate: the stick,
+the toolbar, Target, Use and Jump, the action wheel and the stances beside it.
+At 75% the interface is half its default size and the controls are three
+quarters of theirs, so they stay easy to tap. At 175% the controls are 8%
+larger. Target, Use and Jump keep their bottom right corner, and the stick
+keeps its center, at every size. The standard hotbar is part of the interface,
+so its buttons shrink at the full rate. A size chosen during combat changes
+the native controls at once and the wheel when combat ends.
 
 ## Screen layout
 
 The native toolbar and the touch addon share fixed regions, measured in
-fractions of the game's height. The stock HUD stays clear of the native keys,
+fractions of the game's height at the default interface size. The toolbar band
+and the wheel follow the control size. The stock HUD stays clear of the native keys,
 apart from compact chat, which shares the movement corner.
 
 - **Wide games** (aspect ratio 1.59 or more, which includes 16:10 and every

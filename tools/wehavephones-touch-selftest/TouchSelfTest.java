@@ -341,11 +341,15 @@ public final class TouchSelfTest {
                         if (guest > aspect) continue;
                         MobileTouchLayout.Bounds viewport = MobileTouchLayout.viewport(width, height, height * guest, height, false);
                         MobileTouchLayout play = null;
-                        for (boolean windows : new boolean[]{false, true}) {
-                            MobileTouchLayout layout = new MobileTouchLayout(width, height, density, inset, 0, inset, inset, viewport, windows);
+                        for (float size : MobileTouchSetup.SCALES) for (boolean windows : new boolean[]{false, true}) {
+                            if (!windows) play = null;
+                            MobileTouchLayout layout = new MobileTouchLayout(width, height, density, inset, 0, inset, inset, viewport, windows,
+                                    MobileTouchLayout.controlScale(size));
                             checkLayout(layout, width, height, density, inset, viewport, windows);
                             if (play == null) play = layout;
                             else for (int key : new int[]{MobileTouchLayout.PLAY, MobileTouchLayout.MENUS, MobileTouchLayout.ESCAPE, MobileTouchLayout.MORE}) {
+                                if (layout.column) check(layout.buttons[key].bottom <= play.buttons[MobileTouchLayout.TARGET].top + .01f,
+                                        "the Menus column stays above where Target, Use and Jump return");
                                 check(play.buttons[key].left == layout.buttons[key].left && play.buttons[key].top == layout.buttons[key].top,
                                         "the mode switch, Esc and Menu never move between Play and Menus");
                             }
@@ -359,6 +363,7 @@ public final class TouchSelfTest {
         check(compactColumns > 0 && overflowed < compactColumns, "tablet shapes use the rail column, mostly without overflow");
         // The S23+ at its native resolution, 16:9 and 4:3 games, and common tablets and foldables keep every key.
         float[][] devices = {{2340, 1080, 2.625f, 2340, 1080}, {2340, 1080, 2.625f, 1920, 1080}, {2340, 1080, 2.625f, 1440, 1080},
+                {2340, 1080, 2.8125f, 2340, 1080}, {2340, 1080, 2.8125f, 1920, 1080},
                 {2400, 1080, 2.75f, 2400, 1080}, {2560, 1600, 2, 2560, 1600}, {2048, 1536, 2, 2048, 1536},
                 {2208, 1840, 2.6f, 2208, 1840}, {2176, 1812, 2.34f, 2176, 1812}, {1920, 1200, 1.5f, 1920, 1200}};
         for (float[] device : devices) {
@@ -366,6 +371,17 @@ public final class TouchSelfTest {
             MobileTouchLayout layout = new MobileTouchLayout(device[0], device[1], device[2], 0, 0, 0, 0, viewport, false);
             check(!layout.overflow && layout.side >= 40 * device[2] - .01f,
                     "phones, tablets and foldables keep Map and Bags on full-size keys");
+            for (float size : MobileTouchSetup.SCALES) {
+                float controls = MobileTouchLayout.controlScale(size);
+                MobileTouchLayout sized = new MobileTouchLayout(device[0], device[1], device[2], 0, 0, 0, 0, viewport, false, controls);
+                check(!sized.overflow && sized.side >= 40 * device[2] * Math.min(1, controls) - .01f && sized.side >= 30 * device[2] - .01f,
+                        "every interface size keeps Map and Bags, on keys of at least 30 dp");
+                MobileTouchLayout.Bounds jump = sized.buttons[MobileTouchLayout.JUMP], full = layout.buttons[MobileTouchLayout.JUMP];
+                check(Math.abs(jump.bottom - full.bottom) < .5f && Math.abs(jump.right - full.right) < .01f,
+                        "Target, Use and Jump keep their bottom right corner at every size");
+                check(Math.abs(sized.radius - layout.radius * controls) < .01f && Math.abs(sized.stickY - layout.stickY) < .01f,
+                        "the stick scales around the same center height");
+            }
         }
         MobileTouchLayout.Bounds viewport = MobileTouchLayout.viewport(2340, 1080, 1280, 720, false);
         check(Math.abs(viewport.left - 210) < .01f && viewport.top == 0 && viewport.width() == 1920,
@@ -409,12 +425,13 @@ public final class TouchSelfTest {
                         "the toolbar leaves the minimap square free");
                 check(b.left >= viewport.right - (MobileTouchLayout.MINIMAP_RESERVE + MobileTouchLayout.ZONE_GAP
                         + MobileTouchLayout.toolbarZone(aspect)) * vpH - .01f, "the toolbar stays right of the unit frames");
-                if (viewport.top == 0) check(b.bottom <= viewport.top + MobileTouchLayout.TOOLBAR_BAND * vpH + .01f,
+                if (viewport.top == 0) check(b.bottom <= viewport.top + MobileTouchLayout.TOOLBAR_BAND * layout.controls * vpH + .01f,
                         "the toolbar stays inside the band the addon keeps free");
             } else {
                 float layoutWidth = Math.min(viewport.width() * .8f, vpH * 16 / 9);
                 check(b.left >= viewport.left + (viewport.width() + layoutWidth) / 2 - .01f, "the toolbar column stays in the right rail");
-                check(b.bottom <= (height - inset) * .48f + .01f, "the column stays above Target, Use and Jump");
+                MobileTouchLayout.Bounds target = layout.buttons[MobileTouchLayout.TARGET];
+                if (target != null) check(b.bottom <= target.top + .01f, "the column stays above Target, Use and Jump");
             }
         }
         check(layout.stickX - layout.radius * 1.2f >= inset && layout.stickY + layout.radius * 1.2f < height - inset,
@@ -510,12 +527,14 @@ public final class TouchSelfTest {
             float rootWidth = Float.parseFloat(fields[0]), rootHeight = Float.parseFloat(fields[1]);
             float x = Float.parseFloat(fields[2]), y = Float.parseFloat(fields[3]);
             float w = Float.parseFloat(fields[4]), h = Float.parseFloat(fields[5]);
+            // The addon's interface size sets the native control size it must stay clear of.
+            float controls = MobileTouchLayout.controlScale(Float.parseFloat(fields[7]));
             for (float density : new float[]{1, 1.5f, 2.75f, 4}) {
                 for (boolean letterboxed : new boolean[]{false, true}) {
                     float height = 1080, width = letterboxed ? 2340 : height * rootWidth / rootHeight;
                     float inset = height * .035f;
                     MobileTouchLayout.Bounds viewport = MobileTouchLayout.viewport(width, height, rootWidth, rootHeight, !letterboxed);
-                    MobileTouchLayout nativeLayout = new MobileTouchLayout(width, height, density, inset, inset, inset, inset, viewport, false);
+                    MobileTouchLayout nativeLayout = new MobileTouchLayout(width, height, density, inset, inset, inset, inset, viewport, false, controls);
                     float left = viewport.left + x / rootWidth * viewport.width();
                     float right = left + w / rootWidth * viewport.width();
                     float top = viewport.bottom - (y + h) / rootHeight * viewport.height();
@@ -523,7 +542,9 @@ public final class TouchSelfTest {
                     for (MobileTouchLayout.Bounds button : nativeLayout.buttons) {
                         if (button != null) check(right <= button.left + .1f || button.right <= left + .1f
                                         || bottom <= button.top + .1f || button.bottom <= top + .1f,
-                                "actual Lua " + fields[6] + " geometry stays clear of native control hit regions");
+                                "actual Lua " + fields[6] + " geometry stays clear of native control hit regions at "
+                                        + rootWidth + "x" + rootHeight + ", interface size " + fields[7] + ", density " + density
+                                        + ", letterboxed " + letterboxed);
                     }
                     float closestX = Math.max(left, Math.min(right, nativeLayout.stickX));
                     float closestY = Math.max(top, Math.min(bottom, nativeLayout.stickY));

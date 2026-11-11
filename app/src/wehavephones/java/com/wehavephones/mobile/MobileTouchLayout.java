@@ -48,6 +48,15 @@ public final class MobileTouchLayout {
     public final Bounds toolbar;
     /** The action wheel's hub and touch reach in view pixels. Reach is 0 where the wheel is not used. */
     public final float wheelX, wheelY, wheelReach, wheelUnit;
+    /** The control size from {@link #controlScale}. 1 at the default interface size. */
+    public final float controls;
+
+    /**
+     * Size of the native controls and the wheel for an interface size, relative to the default 150%.
+     * They change half as much as the WoW interface, so small sizes stay easy to tap. Keep in step
+     * with ControlScale in the touch addon.
+     */
+    public static float controlScale(float interfaceScale) { return .5f + interfaceScale / 3f; }
 
     /** Width of the wide toolbar zone, left of the minimap square, in fractions of the game's height. */
     public static float toolbarZone(float aspect) {
@@ -60,15 +69,25 @@ public final class MobileTouchLayout {
     public MobileTouchLayout(float width, float height, float density,
                              float insetLeft, float insetTop, float insetRight, float insetBottom,
                              Bounds viewport, boolean windows) {
+        this(width, height, density, insetLeft, insetTop, insetRight, insetBottom, viewport, windows, 1);
+    }
+
+    public MobileTouchLayout(float width, float height, float density,
+                             float insetLeft, float insetTop, float insetRight, float insetBottom,
+                             Bounds viewport, boolean windows, float controls) {
+        this.controls = controls;
         float w = Math.max(1, width - insetLeft - insetRight);
         float h = Math.max(1, height - insetTop - insetBottom);
-        float thumb = Math.min(48 * density, Math.min(h * .115f, w * .095f));
-        float minKey = Math.min(40 * density, thumb);
+        float fullThumb = Math.min(48 * density, Math.min(h * .115f, w * .095f));
+        float thumb = fullThumb * controls;
+        // Larger controls shrink back to the room there is before any key moves into the menu.
+        float minKey = Math.min(40 * density * Math.min(1, controls), thumb);
         float margin = Math.min(22 * density, w * .025f);
         float top = insetTop + Math.min(12 * density, h * .018f);
         float right = insetLeft + w - margin;
         float vpH = Math.max(1, viewport.height()), aspect = viewport.width() / vpH;
-        float thumbTop = insetTop + h * .48f;
+        // Target, Use and Jump keep the bottom edge they have at full size, under the thumb.
+        float thumbTop = insetTop + h * .48f + (fullThumb - thumb) * (3 + 2 * GAP);
         column = isCompact(aspect);
         int[] keys = windows ? new int[]{ESCAPE, KEYBOARD, INSPECT, MORE} : new int[]{ESCAPE, MAP, BAGS, MORE};
         int[] few = {ESCAPE, MORE};
@@ -81,7 +100,7 @@ public final class MobileTouchLayout {
             float zoneLeft = Math.max(insetLeft + margin, zoneRight - toolbarZone(aspect) * vpH);
             float available = Math.max(0, zoneRight - zoneLeft);
             // A top inset can push keys down. They still end inside the band the addon keeps free.
-            float room = viewport.top + TOOLBAR_BAND * vpH - top;
+            float room = viewport.top + TOOLBAR_BAND * controls * vpH - top;
             float largest = room > 0 ? Math.min(thumb, room) : thumb;
             s = Math.min(largest, available / rowUnits(keys.length));
             if (s < Math.min(minKey, largest)) {
@@ -139,24 +158,27 @@ public final class MobileTouchLayout {
             float y = thumbTop + (i - TARGET) * (thumb + thumb * GAP);
             buttons[i] = new Bounds(right - thumb, y, right, y + thumb);
         }
-        radius = Math.min(66 * density, Math.min(h * (w / h < 1.6f ? .12f : .13f), w * .13f));
+        radius = Math.min(66 * density, Math.min(h * (w / h < 1.6f ? .12f : .13f), w * .13f)) * controls;
         stickX = insetLeft + Math.max(radius * 1.2f + margin, w * .12f);
         stickY = insetTop + h * (w / h < 1.6f ? .68f : .70f);
         textSize = Math.min(11 * density, s * .22f);
         // Wide games only. Tablet shapes keep the stock action grid.
-        float[] wheel = wheel(viewport);
+        float[] wheel = wheel(viewport, controls);
         wheelX = wheel[0];
         wheelY = wheel[1];
         wheelUnit = wheel[2];
         wheelReach = column ? 0 : WHEEL_REACH * wheelUnit;
     }
 
-    /** The wheel's hub position and the game's height, in view pixels. */
-    public static float[] wheel(Bounds viewport) {
-        float vpH = Math.max(1, viewport.height()), vpW = viewport.width();
+    /**
+     * The wheel's hub position and its unit, in view pixels. The unit is the game's height times
+     * the control size: every wheel distance is a fraction of it.
+     */
+    public static float[] wheel(Bounds viewport, float controls) {
+        float vpH = Math.max(1, viewport.height()), vpW = viewport.width(), unit = vpH * controls;
         float layoutWidth = Math.min(vpW * .8f, vpH * 16 / 9);
-        float right = viewport.left + Math.min((vpW + layoutWidth) / 2, vpW * WHEEL_RIGHT - vpH * WHEEL_GAP);
-        return new float[]{right - WHEEL_HUB_X * vpH, viewport.bottom - WHEEL_HUB_Y * vpH, vpH};
+        float right = viewport.left + Math.min((vpW + layoutWidth) / 2, vpW * WHEEL_RIGHT - unit * WHEEL_GAP);
+        return new float[]{right - WHEEL_HUB_X * unit, viewport.bottom - WHEEL_HUB_Y * unit, unit};
     }
 
     /**

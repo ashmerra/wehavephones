@@ -3,6 +3,8 @@ local original = {GamePadEnable="1", InputDeviceInterfaceStyle="1", useUiScale="
 local values, held, objects, all = {}, {}, {}, {}
 -- The interface sizes the touch menu offers, matching MobileTouchSetup.SCALES.
 local TOUCH_SCALES = {.75,.9,1.1,1.25,1.5,1.75}
+-- The native control size for the current interface size, as in MobileTouchLayout.controlScale.
+local function controls() return .5+(WeHavePhonesTouchDB.touchScale or 1.5)/3 end
 for k,v in pairs(original) do values[k]=v end
 local combat, cursor, layout, notices, actionPage = false, nil, 0, 0, 1
 local extraBars = {false,false,true,false,false,false,false}
@@ -469,14 +471,14 @@ local function exportGeometry(object, width, height, kind, fullHeight)
     local scale=object:GetEffectiveScale()/UIParent:GetEffectiveScale()
     if object.point[3]~="CENTER" then
         local left,bottom,w,h=topRect(object)
-        geometry:write(table.concat({width,height,left,bottom,w,h,kind},"\t"),"\n")
+        geometry:write(table.concat({width,height,left,bottom,w,h,kind,WeHavePhonesTouchDB.touchScale},"\t"),"\n")
         return
     end
     local x=width/2+object.point[4]*scale
     local y=height/2+object.point[5]*scale
     local h=(fullHeight or object:GetHeight())*scale
     if object.point[1]=="TOPLEFT" then y=y-h end
-    geometry:write(table.concat({width,height,x,y,object:GetWidth()*scale,h,kind},"\t"),"\n")
+    geometry:write(table.concat({width,height,x,y,object:GetWidth()*scale,h,kind,WeHavePhonesTouchDB.touchScale},"\t"),"\n")
 end
 local function checkChatLayout(width,height,aspect)
     local sizeKey=objects.WeHavePhonesTouchChatSize
@@ -488,7 +490,7 @@ local function checkChatLayout(width,height,aspect)
         "the expand key follows compact chat")
     assert(ChatFrame1Tab.mouse==false and ChatFrame2Tab.mouse==false,
         "compact chat tabs take no touches, so none can be switched or pulled out beside the stick")
-    local radius=math.min(math.max(height,width/1.59)*(aspect<1.6 and .12 or .13),width*.13)
+    local radius=math.min(math.max(height,width/1.59)*(aspect<1.6 and .12 or .13),width*.13)*controls()
     local stickRight=math.max(radius*1.2+width*.025,width*.12)+radius*1.2
     local keyLeft=width/2+compactX+ChatFrame1:GetWidth()+6-10
     assert(keyLeft>stickRight and keyLeft+44<=width,
@@ -501,7 +503,7 @@ local function checkChatLayout(width,height,aspect)
             "the complete expand target stays clear of "..object:GetName().." at "..width.."x"..height)
     end
     if geometry then
-        geometry:write(table.concat({width,height,keyLeft,keyBottom,44,44,"chat-size"},"\t"),"\n")
+        geometry:write(table.concat({width,height,keyLeft,keyBottom,44,44,"chat-size",WeHavePhonesTouchDB.touchScale},"\t"),"\n")
     end
     sizeKey.scripts.OnClick(sizeKey)
     local readingHeight=ChatFrame1:GetHeight()
@@ -595,12 +597,12 @@ for _,scale in ipairs(TOUCH_SCALES) do
         for _,name in ipairs({"BuffFrame","DebuffFrame"}) do
             local al,ab,aw,ah=topRect(_G[name])
             if compactTop then assert(al+aw<=width-math.max(rail,width*.16)+.01 and ab+ah<=mb+.01,"narrower games show auras under the minimap")
-            else assert(ab+ah<=height*.86+.01 and al+aw<=width-.30*height+.01,"wide games show auras under the toolbar band") end
+            else assert(ab+ah<=height*(1-.14*controls())+.01 and al+aw<=width-.30*height+.01,"wide games show auras under the toolbar band") end
             exportGeometry(_G[name],width,height,"aura")
         end
         if not compactTop then
             local wl,wb,ww,wh=topRect(UIWidgetTopCenterContainerFrame)
-            assert(wb+wh<=height*.86+.01,"top-center widgets start below the toolbar band")
+            assert(wb+wh<=height*(1-.14*controls())+.01,"top-center widgets start below the toolbar band")
             exportGeometry(UIWidgetTopCenterContainerFrame,width,height,"widget")
         end
         exportGeometry(MinimapCluster,width,height,"minimap")
@@ -678,10 +680,10 @@ for _,scale in ipairs(TOUCH_SCALES) do
             assert(wheel.visible and not ActionButton1.visible,"wide games show the wheel")
             local rects={wheelRect(objects.WeHavePhonesTouchWheelHub)}
             local hubRect=rects[1]
-            close(hubRect[3]-hubRect[1],height*.107,"the hub matches the native keys on a 16:9 game")
+            close(hubRect[3]-hubRect[1],height*.107*controls(),"the hub matches the native keys on a 16:9 game")
             for i=1,9 do
                 local r=wheelRect(slots[i])
-                close(r[3]-r[1],height*.10,"slots are a tenth of the game's height")
+                close(r[3]-r[1],height*.10*controls(),"slots are a tenth of the game's height at the default size")
                 assert(r[1]>=0 and r[3]<=width and r[2]>=0 and r[4]<=height*.5,"the wheel stays in the lower right of the screen")
                 rects[#rects+1]=r
             end
@@ -704,8 +706,8 @@ for _,scale in ipairs(TOUCH_SCALES) do
             end
             -- Stances and forms sit right of the wheel's touch area, under Jump, on the hub's line.
             -- The hub key sits up the arcs from the wheel's center.
-            local hubX,hubY=objects.WeHavePhonesTouchWheelHub.point[4]*objects.WeHavePhonesTouchWheelHub:GetScale()+.04*height,
-                objects.WeHavePhonesTouchWheelHub.point[5]*objects.WeHavePhonesTouchWheelHub:GetScale()-.069*height
+            local hubX,hubY=objects.WeHavePhonesTouchWheelHub.point[4]*objects.WeHavePhonesTouchWheelHub:GetScale()+.04*height*controls(),
+                objects.WeHavePhonesTouchWheelHub.point[5]*objects.WeHavePhonesTouchWheelHub:GetScale()-.069*height*controls()
             if aspect<=2.4 then
                 assert(StanceBar.point[3]=="BOTTOMLEFT" and PetActionBar.point[3]=="CENTER","only the stance bar leaves the footer")
                 local barLeft,barBottom,_,barHeight=topRect(StanceBar)
@@ -717,18 +719,18 @@ for _,scale in ipairs(TOUCH_SCALES) do
                     local l=barLeft+container.point[4]*s
                     local top=barBottom+barHeight+container.point[5]*s
                     local w=container:GetWidth()*s
-                    assert(w<=height*.07+.01,"stance buttons are smaller than wheel slots")
-                    assert(l>=hubX+.125*height and l+w<=width and top-w>=0,"stances fill the lower right corner")
+                    assert(w<=height*.07*controls()+.01,"stance buttons are smaller than wheel slots")
+                    assert(l>=hubX+.125*height*controls() and l+w<=width and top-w>=0,"stances fill the lower right corner")
                     for _,r in ipairs(rects) do
                         assert(l+w<=r[1] or r[3]<=l or top<=r[2] or r[4]<=top-w,"stances stay clear of the wheel")
                     end
                     low,high=math.min(low,top-w),math.max(high,top)
                     rows[top]=true
-                    if geometry then geometry:write(table.concat({width,height,l,top-w,w,w,"class"},"\t"),"\n") end
+                    if geometry then geometry:write(table.concat({width,height,l,top-w,w,w,"class",WeHavePhonesTouchDB.touchScale},"\t"),"\n") end
                 end
                 local count=0 for _ in pairs(rows) do count=count+1 end
                 assert(count==(forms<=3 and 1 or 2),"up to three stances in a row, more in two rows")
-                assert(high-low<=height*.12+.01,"stances stay under Jump")
+                assert(high-low<=height*.12*controls()+.01,"stances stay under Jump")
                 close((high+low)/2,hubY,"stances line up with the hub")
             else assert(StanceBar.point[3]=="CENTER","stances stay in the footer when Jump covers the corner") end
             for i=1,9 do exportGeometry(slots[i],width,height,"wheel") end
@@ -1007,7 +1009,7 @@ active.scripts.OnEvent(active,"PLAYER_ENTERING_WORLD")
 clock=clock+60
 ChatFrameUtil.ActivateChat(ChatFrame1EditBox)
 assert(ChatFrame1EditBox.point[1]=="TOP" and ChatFrame1EditBox.point[3]=="TOP"
-    and -ChatFrame1EditBox.point[5]>=UIParent:GetHeight()*.14 and -ChatFrame1EditBox.point[5]>=PlayerFrame:GetHeight()*PlayerFrame:GetScale(),
+    and -ChatFrame1EditBox.point[5]>=UIParent:GetHeight()*.14*controls() and -ChatFrame1EditBox.point[5]>=PlayerFrame:GetHeight()*PlayerFrame:GetScale(),
     "typing moves the chat box above the Android keyboard, below the unit frames and toolbar")
 ChatFrameUtil.DeactivateChat(ChatFrame1EditBox)
 assert(ChatFrame1EditBox.point[1]=="TOPLEFT" and ChatFrame1EditBox.point[2]==ChatFrame1 and ChatFrame1EditBox:GetWidth()==300,

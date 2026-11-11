@@ -183,7 +183,8 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
             }
         }
         lastViewport = viewport();
-        layout = new MobileTouchLayout(getWidth(), getHeight(), density, left, top, right, bottom, lastViewport, input.isUiMode());
+        layout = new MobileTouchLayout(getWidth(), getHeight(), density, left, top, right, bottom, lastViewport, input.isUiMode(),
+                MobileTouchLayout.controlScale(WeHavePhonesConfig.getMobileTouchScale(getContext())));
         insetLeft = left; insetTop = top; insetRight = right; insetBottom = bottom;
         radius = layout.radius;
         stickX = layout.stickX;
@@ -1104,6 +1105,8 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
     private void setScale(float scale, XKeycode modifier, XKeycode key) {
         WeHavePhonesConfig.setMobileTouchScale(getContext(), scale);
         chord(modifier, key);
+        cancelTouches();
+        refreshLayout();
         banner(activity.getDrawable(R.drawable.wehavephones_touch_ic_text_aa).mutate(),
                 getContext().getString(R.string.wehavephones_touch_size_hint, Math.round(scale * 100)), null);
     }
