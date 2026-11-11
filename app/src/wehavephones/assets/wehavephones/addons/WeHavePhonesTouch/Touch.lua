@@ -7,7 +7,7 @@ local undo
 -- Bottom of the player and target frames, kept free of the native toolbar.
 local unitBottom = 100
 local buttons = {}
-local Layout, OpenEditor, RefreshEditor, LayoutWorkspace, QueueWorkspace
+local Layout, OpenEditor, RefreshEditor, LayoutWorkspace, QueueWorkspace, QueueHud
 -- The action wheel replaces the stock action grid on wide games when the app asks for it.
 local wheelOn = addon.wheel == true
 local WheelHub, WheelWanted
@@ -853,21 +853,67 @@ frame:SetScript("OnUpdate", function(_, elapsed)
     if signature ~= workspaceSignature then workspaceSignature = signature QueueWorkspace() end
 end)
 
--- Right of the wheel's touch area and under Jump, centered on the hub and no taller than a
--- wheel slot. Keep in step with MobileTouchLayout. A game wider than any phone screen is
--- letterboxed, and Jump then covers that corner, so stances stay in the footer there.
-local STANCE_ASPECT = 2.4
+-- Right of the wheel's touch area and under Jump, centered on the hub. Druids can have six
+-- or more forms, so stances form a grid: up to three in one row, more in two. Sizes are
+-- fractions of the game's height. Keep in step with MobileTouchLayout. A game wider than any
+-- phone screen is letterboxed, and Jump then covers that corner, so stances stay in the
+-- footer there.
+local STANCE_ASPECT, STANCE_SIZE, STANCE_HEIGHT, STANCE_GAP = 2.4, .07, .12, .15
+local stanceAnchors = {}
 local function CornerStances()
     return WheelWanted() and UIParent:GetWidth()/UIParent:GetHeight() <= STANCE_ASPECT
 end
+
+-- Blizzard lays the containers out again only when the number of forms changes, and
+-- then this runs again. Put back its own anchors when the stances leave the corner.
+local function RestoreStanceGrid()
+    for container, points in pairs(stanceAnchors) do
+        container:ClearAllPoints()
+        for _, point in ipairs(points) do container:SetPoint(unpack(point)) end
+    end
+    stanceAnchors = {}
+end
+
+local stanceHooked
 local function PlaceStances(object)
     local hubX, hubY, height = WheelHub()
     local left = hubX+WHEEL_HUB_X*height+8
-    local scale = math.max(.1, math.min(WHEEL_SLOT*height/math.max(1, object:GetHeight()),
-        (UIParent:GetWidth()-8-left)/math.max(1, object:GetWidth())))
+    local containers = object.shownButtonContainers or {}
+    local count = math.max(1, #containers)
+    local columns = count <= 3 and count or math.ceil(count/2)
+    local rows = math.ceil(count/columns)
+    local unit = containers[1] and containers[1]:GetWidth()*containers[1]:GetEffectiveScale()/object:GetEffectiveScale()
+        or object:GetHeight()
+    local size = math.min(STANCE_SIZE*height, (UIParent:GetWidth()-8-left)/(columns+(columns-1)*STANCE_GAP),
+        STANCE_HEIGHT*height/(rows+(rows-1)*STANCE_GAP))
+    local scale = math.max(.1, size/math.max(1, unit))
     SetRelativeScale(object, scale)
-    Unanchor(object)
-    Anchor(object, "LEFT", UIParent, "BOTTOMLEFT", left/scale, hubY/scale)
+    for i, container in ipairs(containers) do
+        if not stanceAnchors[container] then
+            local points = {}
+            for j = 1, container:GetNumPoints() do points[j] = {container:GetPoint(j)} end
+            stanceAnchors[container] = points
+        end
+        -- Offsets are in the container's own units, a button's width plus the gap per step.
+        local step = container:GetWidth()*(1+STANCE_GAP)
+        container:ClearAllPoints()
+        container:SetPoint("TOPLEFT", object, "TOPLEFT", ((i-1)%columns)*step, -math.floor((i-1)/columns)*step)
+    end
+    if #containers == 0 then
+        -- No grid to arrange: the whole bar fits the corner instead.
+        scale = math.max(.1, math.min(scale, (UIParent:GetWidth()-8-left)/math.max(1, object:GetWidth())))
+        SetRelativeScale(object, scale)
+        Unanchor(object)
+        Anchor(object, "LEFT", UIParent, "BOTTOMLEFT", left/scale, hubY/scale)
+    else
+        local gridHeight = (rows+(rows-1)*STANCE_GAP)*size
+        Unanchor(object)
+        Anchor(object, "TOPLEFT", UIParent, "BOTTOMLEFT", left/scale, (hubY+gridHeight/2)/scale)
+    end
+    if not stanceHooked and object.UpdateGridLayout then
+        hooksecurefunc(object, "UpdateGridLayout", function() if not InCombatLockdown() then QueueHud() end end)
+        stanceHooked = true
+    end
 end
 
 local positioningClassBars
@@ -882,6 +928,7 @@ local function PositionClassBars()
             -- With the wheel, stances and forms sit in the lower right corner beside it instead.
             if name == "StanceBar" and CornerStances() then PlaceStances(object)
             else
+                if name == "StanceBar" then RestoreStanceGrid() end
                 bars[#bars+1] = object
                 total = total+object:GetWidth()
             end
@@ -919,7 +966,7 @@ end
 local hudHooked, positioningHud, hudQueued, chatButtonsHooked
 local trackerHooks = {}
 local PositionHud
-local function QueueHud()
+QueueHud = function()
     if not enabled or hudQueued or positioningHud then return end
     hudQueued = true
     C_Timer.After(0, function() hudQueued = false PositionHud() end)
@@ -1715,6 +1762,7 @@ local function Apply()
             db.chat = nil
         end
         RestoreHud()
+        RestoreStanceGrid()
         for editBox in pairs(editBoxes) do LowerEditBox(editBox) end
         for object, state in pairs(workspaceOriginal) do RestoreGeometry(object, state) end
         workspaceOriginal = {}

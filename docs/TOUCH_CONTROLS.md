@@ -251,7 +251,8 @@ because they would repeat it.
 - Vehicles, possession and override bars bring the stock main bar back until
   they end.
 - Stances and forms move to the lower right corner, beside the hub and below
-  Jump. Pet controls stay in the footer. A game wider than 2.4:1 keeps stances
+  Jump. Up to three sit in one row and more take two rows, so a druid's forms
+  fit too. Pet controls stay in the footer. A game wider than 2.4:1 keeps stances
   in the footer, because Jump covers that corner there.
 
 New rings start empty. A slot keeps whatever the character already had in

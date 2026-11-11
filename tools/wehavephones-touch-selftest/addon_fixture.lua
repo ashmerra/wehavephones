@@ -254,6 +254,19 @@ for _, name in ipairs({"StanceBar","PetActionBar","PossessActionBar","MicroMenuC
     object:SetPoint("BOTTOMLEFT",UIParent,"BOTTOMLEFT",2,3)
     object:Show()
 end
+-- Blizzard's stance bar lays out a container per form. A druid can have six.
+local stanceContainers={}
+for i=1,6 do
+    local container=CreateFrame("Frame","StanceButtonContainer"..i,StanceBar)
+    container:SetSize(30,30)
+    container:SetPoint("TOPLEFT",StanceBar,"TOPLEFT",(i-1)*33,0)
+    stanceContainers[i]=container
+end
+local function setForms(count)
+    StanceBar.shownButtonContainers={}
+    for i=1,count do StanceBar.shownButtonContainers[i]=stanceContainers[i] end
+end
+setForms(2)
 -- Forever's swing timers, which Blizzard stacks above the action bar.
 SwingTimerMainHandFrame=CreateFrame("Frame","SwingTimerMainHandFrame",UIParent)
 SwingTimerMainHandFrame:SetSize(426,30)
@@ -650,6 +663,8 @@ for _,scale in ipairs({1.25,1.5,1.75}) do
         local height=768/scale
         local width=height*aspect
         UIParent:SetSize(width,height)
+        for _,forms in ipairs({2,6}) do
+        setForms(forms)
         active.scripts.OnEvent(active,"DISPLAY_SIZE_CHANGED")
         if aspect<1.59 then
             assert(not wheel.visible and ActionButton1.visible and ActionButton9.visible,"tablet shapes keep the stock grid")
@@ -678,17 +693,37 @@ for _,scale in ipairs({1.25,1.5,1.75}) do
             local hubX,hubY=objects.WeHavePhonesTouchWheelHub.point[4]*objects.WeHavePhonesTouchWheelHub:GetScale(),
                 objects.WeHavePhonesTouchWheelHub.point[5]*objects.WeHavePhonesTouchWheelHub:GetScale()
             if aspect<=2.4 then
-                local l,b,w,h=topRect(StanceBar)
                 assert(StanceBar.point[3]=="BOTTOMLEFT" and PetActionBar.point[3]=="CENTER","only the stance bar leaves the footer")
-                assert(l>=hubX+.125*height and l+w<=width and h<=height*.10+.01 and b>=0,"stances fill the lower right corner")
-                close(b+h/2,hubY,"stances line up with the hub")
+                local barLeft,barBottom,_,barHeight=topRect(StanceBar)
+                local low,high,rows=math.huge,-math.huge,{}
+                for i=1,forms do
+                    local container=stanceContainers[i]
+                    local s=container:GetEffectiveScale()/UIParent:GetEffectiveScale()
+                    assert(container.point[2]==StanceBar and container.point[1]=="TOPLEFT")
+                    local l=barLeft+container.point[4]*s
+                    local top=barBottom+barHeight+container.point[5]*s
+                    local w=container:GetWidth()*s
+                    assert(w<=height*.07+.01,"stance buttons are smaller than wheel slots")
+                    assert(l>=hubX+.125*height and l+w<=width and top-w>=0,"stances fill the lower right corner")
+                    for _,r in ipairs(rects) do
+                        assert(l+w<=r[1] or r[3]<=l or top<=r[2] or r[4]<=top-w,"stances stay clear of the wheel")
+                    end
+                    low,high=math.min(low,top-w),math.max(high,top)
+                    rows[top]=true
+                    if geometry then geometry:write(table.concat({width,height,l,top-w,w,w,"class"},"\t"),"\n") end
+                end
+                local count=0 for _ in pairs(rows) do count=count+1 end
+                assert(count==(forms<=3 and 1 or 2),"up to three stances in a row, more in two rows")
+                assert(high-low<=height*.12+.01,"stances stay under Jump")
+                close((high+low)/2,hubY,"stances line up with the hub")
             else assert(StanceBar.point[3]=="CENTER","stances stay in the footer when Jump covers the corner") end
-            exportGeometry(StanceBar,width,height,"class")
             for i=1,9 do exportGeometry(slots[i],width,height,"wheel") end
             exportGeometry(objects.WeHavePhonesTouchWheelHub,width,height,"wheel")
         end
+        end
     end
 end
+setForms(2)
 WeHavePhonesTouchDB.touchScale=1.5
 UIParent:SetSize(1600,900)
 active.scripts.OnEvent(active,"DISPLAY_SIZE_CHANGED")
@@ -718,6 +753,10 @@ combat=false
 active.scripts.OnEvent(active,"PLAYER_REGEN_ENABLED")
 assert(not wheel.visible and ActionButton1.visible and objects.WeHavePhonesTouchPager.visible,"switching the wheel off returns the stock grid")
 assert(MultiBar5.visible and MultiBar7.visible,"switching the wheel off returns Action Bars 6 to 8")
+for i=1,6 do
+    assert(stanceContainers[i].point[2]==StanceBar and stanceContainers[i].point[4]==(i-1)*33 and stanceContainers[i].point[5]==0,
+        "switching the wheel off returns Blizzard's stance layout")
+end
 menuChord("CTRL-F11")
 assert(wheel.visible and not ActionButton1.visible and not MultiBar6.visible,"the wheel can return in the same session")
 edit(slots[3])
