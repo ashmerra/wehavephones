@@ -23,8 +23,18 @@ public final class MobileTouchSetup {
     public static final String[][] CONTROLLER_OFF = {{"GamePadEnable", "0"}, {"InputDeviceInterfaceStyle", "0"}};
     private MobileTouchSetup() {}
 
+    /** The touch interface sizes the menu offers, smallest first. */
+    public static final float[] SCALES = {.75f, .9f, 1.1f, 1.25f, 1.5f, 1.75f};
+    public static final float DEFAULT_SCALE = 1.5f;
+
+    /** Returns {@code scale} if it is one of {@link #SCALES}, otherwise the default. */
+    public static float normalizeScale(float scale) {
+        for (float offered : SCALES) if (scale == offered) return scale;
+        return DEFAULT_SCALE;
+    }
+
     public static void prepare(File product, boolean enabled, int interfaceVersion, byte[] script) throws IOException {
-        prepare(product, enabled, 1.5f, interfaceVersion, script);
+        prepare(product, enabled, DEFAULT_SCALE, interfaceVersion, script);
     }
 
     /** {@code scale} is the app-wide touch interface size, applied to every character at login. */
@@ -73,7 +83,7 @@ public final class MobileTouchSetup {
                 + "## Version: 1.6.5\n## SavedVariablesPerCharacter: WeHavePhonesTouchDB\n\nMode.lua\nTouch.lua\n";
         write(new File(folder, FOLDER + ".toc"), toc.getBytes(StandardCharsets.UTF_8));
         write(new File(folder, "Touch.lua"), script);
-        String size = String.format(java.util.Locale.US, "%.2f", scale == 1.25f || scale == 1.75f ? scale : 1.5f);
+        String size = String.format(java.util.Locale.US, "%.2f", normalizeScale(scale));
         write(new File(folder, "Mode.lua"), ("local _, addon = ...\naddon.enabled = " + enabled
                 + "\naddon.scale = " + size + "\n").getBytes(StandardCharsets.UTF_8));
     }

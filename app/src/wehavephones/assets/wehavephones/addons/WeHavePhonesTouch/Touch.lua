@@ -62,7 +62,7 @@ end
 
 local function UniformScale()
     if not enabled or InCombatLockdown() then return end
-    local scale = math.max(1, math.min(1.75, tonumber(WeHavePhonesTouchDB.touchScale) or 1.5))
+    local scale = math.max(.75, math.min(1.75, tonumber(WeHavePhonesTouchDB.touchScale) or 1.5))
     -- The whole UI inherits this scale. Do not multiply an already scaled parent.
     if math.abs(UIParent:GetScale() - scale) > .001 then UIParent:SetScale(scale) end
 end
@@ -1443,7 +1443,8 @@ local function Apply()
                     if InCombatLockdown() then Notice("Macros can be opened after combat.") else ShowMacroFrame() end
                 end, ["SHIFT-F2"] = function() ToggleHelpFrame() end, ["SHIFT-F3"] = Undo,
                 ["SHIFT-F4"] = function() SetTouchScale(1.25) end, ["SHIFT-F5"] = function() SetTouchScale(1.5) end,
-                ["SHIFT-F6"] = function() SetTouchScale(1.75) end,
+                ["SHIFT-F6"] = function() SetTouchScale(1.75) end, ["SHIFT-F10"] = function() SetTouchScale(.75) end,
+                ["SHIFT-F11"] = function() SetTouchScale(.9) end, ["SHIFT-F12"] = function() SetTouchScale(1.1) end,
                 ["SHIFT-F8"] = function() SetActionTooltips(true) end,
                 ["SHIFT-F9"] = function() SetActionTooltips(false) end}) do
                 local name = "WeHavePhonesTouchMenu" .. key:gsub("%-", "")

@@ -1,6 +1,8 @@
 local original = {GamePadEnable="1", InputDeviceInterfaceStyle="1", useUiScale="0", uiScale="0.64", lootUnderMouse="1", alwaysCompareItems="0",
     SoftTargetInteract="1", SoftTargetInteractArc="0", SoftTargetIconInteract="0", nameplateShowEnemies="0"}
 local values, held, objects, all = {}, {}, {}, {}
+-- The interface sizes the touch menu offers, matching MobileTouchSetup.SCALES.
+local TOUCH_SCALES = {.75,.9,1.1,1.25,1.5,1.75}
 for k,v in pairs(original) do values[k]=v end
 local combat, cursor, layout, notices, actionPage = false, nil, 0, 0, 1
 local extraBars = {false,false,true,false,false,false,false}
@@ -459,7 +461,9 @@ local function checkChatLayout(width,height,aspect)
     local historyTop=height/2+ChatFrame1.point[5]
     assert(historyTop+32<inputBottom and historyTop-ChatFrame1:GetHeight()>=height*.58-.001,
         "chat tabs and message history fit below the input and above the keyboard")
-    assert(ChatFrame1:GetHeight()>14 and ChatFrame1:GetHeight()<readingHeight,
+    -- Small interface sizes leave room for the full eleven rows while typing.
+    assert(ChatFrame1:GetHeight()>14 and (ChatFrame1:GetHeight()<readingHeight
+        or WeHavePhonesTouchDB.touchScale<1 and ChatFrame1:GetHeight()==readingHeight),
         "typing leaves readable history while reserving space for a tall landscape keyboard at "
             ..width.."x"..height..", history "..ChatFrame1:GetHeight()..", reading "..readingHeight)
     active.scripts.OnEvent(active,"DISPLAY_SIZE_CHANGED")
@@ -477,7 +481,7 @@ local function checkChatLayout(width,height,aspect)
         and ChatFrame1EditBox:GetWidth()==300 and chatIcon()=="out",
         "collapsing while typing ends focus and restores the stock edit box geometry")
 end
-for _,scale in ipairs({1.25,1.5,1.75}) do
+for _,scale in ipairs(TOUCH_SCALES) do
     WeHavePhonesTouchDB.touchScale=scale
     for _,aspect in ipairs({1,6/5,5/4,4/3,3/2,16/10,16/9,2,19.5/9,21/9,32/9}) do
         local height=768/scale
@@ -640,7 +644,7 @@ local function checkWorkspace(panelNames,bagCount)
     end
 end
 local workspaceScenarios=0
-for _,scale in ipairs({1.25,1.5,1.75}) do
+for _,scale in ipairs(TOUCH_SCALES) do
     WeHavePhonesTouchDB.touchScale=scale
     for _,aspect in ipairs({1,6/5,5/4,4/3,3/2,16/10,16/9,2,19.5/9,21/9,32/9}) do
         UIParent:SetSize(768/scale*aspect,768/scale)
@@ -770,6 +774,10 @@ local before=notices
 edit(ActionButton1)
 assert(notices==before+1 and cursor[2]==900,"cursor contents never discarded to open editor")
 cursor=nil
+for chord,size in pairs({["SHIFT-F10"]=.75,["SHIFT-F11"]=.9,["SHIFT-F12"]=1.1,["SHIFT-F4"]=1.25,["SHIFT-F5"]=1.5,["SHIFT-F6"]=1.75}) do
+    menuChord(chord)
+    assert(UIParent:GetScale()==size and WeHavePhonesTouchDB.touchScale==size,"the touch menu sets the interface size to "..size)
+end
 menuChord("SHIFT-F6")
 assert(UIParent:GetScale()==1.75 and WeHavePhonesTouchDB.touchScale==1.75,"the touch menu changes the interface size")
 menuChord("SHIFT-F5")
@@ -985,7 +993,7 @@ close(ActionButton1:GetScale()*45,36*1.35,"Retail actions have the same physical
 assert(ActionButton1.scripts.OnMouseUp,"Retail hotbars can be edited by holding")
 assert(held["CTRL-SHIFT-F6"]=="TOGGLEPROFESSIONBOOK","Retail opens its profession book instead of the removed Skills binding")
 if GEOMETRY_PATH then geometry=assert(io.open(GEOMETRY_PATH,"a")) end
-for _,scale in ipairs({1.25,1.5,1.75}) do
+for _,scale in ipairs(TOUCH_SCALES) do
     WeHavePhonesTouchDB.touchScale=scale
     for _,aspect in ipairs({1,6/5,5/4,4/3,3/2,16/10,16/9,2,19.5/9,21/9,32/9}) do
         local height=768/scale

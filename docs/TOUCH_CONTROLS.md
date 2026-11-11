@@ -89,7 +89,7 @@ items in Menus.
 | Targeting | Self, Party 1–4, Next friend, Assist, Previous enemy, Nearby corpse, Enemy nameplates |
 | Movement | Auto run, Follow target, Walk or run, Sit or stand, Dive key |
 | Typing and items | Chat, Reply, Keyboard, Inspect, Shift, Ctrl, Alt, No modifier |
-| Touch controls | Interface size 125%, 150% or 175%, Touch guide, Hide controls, Undo hotbar edit, Next action page |
+| Touch controls | Interface size 75%, 90%, 110%, 125%, 150% or 175%, Touch guide, Hide controls, Undo hotbar edit, Next action page |
 
 Entries use WoW's own key bindings as session-only overrides. Windows with no
 stock binding, such as Macros and Help, and the size and Undo entries use
@@ -98,7 +98,9 @@ keys. None uses Alt, because Windows reads Alt with F4 as closing the game.
 
 The interface size is one app setting for every character. It applies at
 once in game and is written to the addon before each launch. A size chosen
-during combat applies when combat ends.
+during combat applies when combat ends. 150% is the default. The hotbar
+scales with the rest of the interface, so its buttons get harder to tap at
+the smaller sizes, mostly on phones. Tablets have more room for them.
 
 ## Screen layout
 
@@ -310,7 +312,7 @@ frame rectangles (actions, pager, class and party controls, the minimap, unit
 frames, auras and top-center widgets) and checks them against the native
 keys, the stick and camera hit regions. It also checks that the toolbar stays
 inside the regions the addon keeps free. Coverage includes eleven aspect
-ratios, three UI sizes, four Android densities, safe-area insets and
+ratios, six UI sizes, four Android densities, safe-area insets and
 letterboxing, plus 1,353 stock window and inventory combinations per Classic
 client fixture.
 The fixtures cover Era, BC Anniversary and MoP Classic, with Retail and Forever regression

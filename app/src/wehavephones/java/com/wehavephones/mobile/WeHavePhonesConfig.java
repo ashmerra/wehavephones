@@ -8,6 +8,8 @@ import android.view.Display;
 
 import androidx.preference.PreferenceManager;
 
+import com.wehavephones.mobile.addons.required.MobileTouchSetup;
+
 public final class WeHavePhonesConfig {
     public static final String BNET_SETUP_SCREEN_SIZE = "1280x800";
     private static final String KEY_GAME_REGION = "wehavephones_game_region_";
@@ -169,10 +171,9 @@ public final class WeHavePhonesConfig {
         prefs(context).edit().putBoolean(KEY_MOBILE_TOUCH, enabled).apply();
     }
 
-    /** Touch interface size for every character: 1.25, 1.5 or 1.75. Written to the addon before each launch. */
+    /** Touch interface size for every character, one of {@link MobileTouchSetup#SCALES}. Written to the addon before each launch. */
     public static float getMobileTouchScale(Context context) {
-        float scale = prefs(context).getFloat(KEY_MOBILE_TOUCH_SCALE, 1.5f);
-        return scale == 1.25f || scale == 1.75f ? scale : 1.5f;
+        return MobileTouchSetup.normalizeScale(prefs(context).getFloat(KEY_MOBILE_TOUCH_SCALE, MobileTouchSetup.DEFAULT_SCALE));
     }
 
     public static void setMobileTouchScale(Context context, float scale) {

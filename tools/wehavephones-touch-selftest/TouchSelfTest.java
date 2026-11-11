@@ -214,6 +214,12 @@ public final class TouchSelfTest {
             check(Files.readString(mode).contains("addon.scale = 1.50"), "the app-wide interface size reaches the addon");
             MobileTouchSetup.prepare(root.toFile(), true, 1.75f, 11509, script);
             check(Files.readString(mode).contains("addon.scale = 1.75"), "a chosen interface size is written for the next login");
+            for (float size : MobileTouchSetup.SCALES) {
+                MobileTouchSetup.prepare(root.toFile(), true, size, 11509, script);
+                check(Files.readString(mode).contains(String.format(java.util.Locale.US, "addon.scale = %.2f\n", size)),
+                        "every offered interface size reaches the addon unchanged");
+            }
+            check(MobileTouchSetup.SCALES[0] == .75f && MobileTouchSetup.SCALES.length == 6, "the menu offers sizes from 75% to 175%");
             MobileTouchSetup.prepare(root.toFile(), true, 3f, 11509, script);
             check(Files.readString(mode).contains("addon.scale = 1.50"), "unknown sizes fall back to the default");
             MobileTouchSetup.prepare(root.toFile(), true, 11509, script);

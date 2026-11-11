@@ -967,9 +967,8 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
 
     @Override public boolean isActive(MobileTouchMenu.Action action) {
         switch (action) {
-            case SIZE_125: return WeHavePhonesConfig.getMobileTouchScale(getContext()) == 1.25f;
-            case SIZE_150: return WeHavePhonesConfig.getMobileTouchScale(getContext()) == 1.5f;
-            case SIZE_175: return WeHavePhonesConfig.getMobileTouchScale(getContext()) == 1.75f;
+            case SIZE_75: case SIZE_90: case SIZE_110: case SIZE_125: case SIZE_150: case SIZE_175:
+                return WeHavePhonesConfig.getMobileTouchScale(getContext()) == action.arg / 100f;
             case DIVE: return diving;
             case SHIFT: return nextModifier == XKeycode.KEY_SHIFT_L;
             case CTRL: return nextModifier == XKeycode.KEY_CTRL_L;
@@ -1041,6 +1040,10 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
                 nextModifier = null;
                 banner(icons[MobileTouchLayout.MORE], getContext().getString(R.string.wehavephones_touch_modifier_cleared), null);
                 break;
+            // Each size has its own Shift chord, matching the hidden buttons in the touch addon.
+            case SIZE_75: setScale(.75f, XKeycode.KEY_F10); break;
+            case SIZE_90: setScale(.9f, XKeycode.KEY_F11); break;
+            case SIZE_110: setScale(1.1f, XKeycode.KEY_F12); break;
             case SIZE_125: setScale(1.25f, XKeycode.KEY_F4); break;
             case SIZE_150: setScale(1.5f, XKeycode.KEY_F5); break;
             case SIZE_175: setScale(1.75f, XKeycode.KEY_F6); break;
