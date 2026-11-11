@@ -687,6 +687,11 @@ for _,scale in ipairs({1.25,1.5,1.75}) do
                     assert(a[3]<=b[1] or b[3]<=a[1] or a[4]<=b[2] or b[4]<=a[2],"wheel slots and hub never overlap")
                 end
             end
+            for i=2,#rects do
+                local r,m=rects[i],height*.015
+                assert(hubRect[3]+m<=r[1] or r[3]+m<=hubRect[1] or hubRect[4]+m<=r[2] or r[4]+m<=hubRect[2],
+                    "the hub key sits close to the slots without crowding them")
+            end
             for _,bar in ipairs({StanceBar,PetActionBar}) do
                 local l,b,w,h=topRect(bar)
                 for _,r in ipairs(rects) do
@@ -694,8 +699,9 @@ for _,scale in ipairs({1.25,1.5,1.75}) do
                 end
             end
             -- Stances and forms sit right of the wheel's touch area, under Jump, on the hub's line.
-            local hubX,hubY=objects.WeHavePhonesTouchWheelHub.point[4]*objects.WeHavePhonesTouchWheelHub:GetScale(),
-                objects.WeHavePhonesTouchWheelHub.point[5]*objects.WeHavePhonesTouchWheelHub:GetScale()
+            -- The hub key sits up the arcs from the wheel's center.
+            local hubX,hubY=objects.WeHavePhonesTouchWheelHub.point[4]*objects.WeHavePhonesTouchWheelHub:GetScale()+.04*height,
+                objects.WeHavePhonesTouchWheelHub.point[5]*objects.WeHavePhonesTouchWheelHub:GetScale()-.069*height
             if aspect<=2.4 then
                 assert(StanceBar.point[3]=="BOTTOMLEFT" and PetActionBar.point[3]=="CENTER","only the stance bar leaves the footer")
                 local barLeft,barBottom,_,barHeight=topRect(StanceBar)

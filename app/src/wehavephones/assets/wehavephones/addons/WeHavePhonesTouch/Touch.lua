@@ -23,6 +23,8 @@ local WHITE = "Interface\\Buttons\\WHITE8X8"
 local WHEEL_FIRST, WHEEL_SLOTS, WHEEL_RINGS = 145, 9, 4
 local WHEEL_ANGLES = {180, 143, 107, 70, 180, 154, 129, 104, 78}
 local WHEEL_SLOT, WHEEL_HUB, WHEEL_INNER, WHEEL_OUTER = .10, .107, .21, .32
+-- The hub key's offset from the wheel's center: .08 toward 120 degrees, .02 clear of every slot.
+local WHEEL_KEY_X, WHEEL_KEY_Y = -.04, .069
 local WHEEL_RIGHT, WHEEL_GAP, WHEEL_HUB_X, WHEEL_HUB_Y = .975, .17, .125, .075
 -- Forever (WOW_PROJECT_CAMELOT) runs Classic content on the Retail UI: Edit Mode,
 -- C_SpellBook, combined bags and the objective tracker, without the old Classic globals.
@@ -1581,10 +1583,12 @@ local function PlaceWheel()
         slot:SetPoint("CENTER", UIParent, "BOTTOMLEFT",
             (hubX+radius*math.cos(angle))/scale, (hubY+radius*math.sin(angle))/scale)
     end
+    -- The key sits up the middle of the arcs, close to the inner slots. Swipes still turn
+    -- around the wheel's own center.
     local hubScale = WHEEL_HUB*height/HUB_SIZE
     SetRelativeScale(wheel.hub, hubScale)
     wheel.hub:ClearAllPoints()
-    wheel.hub:SetPoint("CENTER", UIParent, "BOTTOMLEFT", hubX/hubScale, hubY/hubScale)
+    wheel.hub:SetPoint("CENTER", UIParent, "BOTTOMLEFT", (hubX+WHEEL_KEY_X*height)/hubScale, (hubY+WHEEL_KEY_Y*height)/hubScale)
 end
 
 -- Retail's main bar draws dividers between its visible buttons and keeps them when a state
