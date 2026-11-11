@@ -44,6 +44,8 @@ public final class DeviceRulesSelfTest {
     private static int counter;
 
     private static final String TURNIP = "turnip26.3.0-devel-1b51639c20";
+    // Rules v14: the same Turnip with a fixed first pvtmem size, ahead of TURNIP wherever TURNIP was a default.
+    private static final String PVTMEM = "turnip26.3.0-devel-1b51639c20-pvtmem";
     private static final String GEN8 = "turnip-gen8-stevenmxz-v37";
     private static final String V32 = "turnip-v32-rp6sched";
     private static final String RUTABAGA = "turnip-gamesir-rutabaga-v3";
@@ -256,7 +258,7 @@ public final class DeviceRulesSelfTest {
         DeviceRules picker = DeviceRules.parse(mutate(r ->
             r.getJSONObject("profiles").getJSONObject("adreno-7xx").put("choices", new JSONArray().put(GEN8).put(V32))));
         DeviceRules.Profile s23 = picker.getProfile("adreno-7xx");
-        eq(java.util.Arrays.asList(TURNIP, "system", GEN8, V32), ids(s23.pickerDrivers()), "picker lists drivers, then choices");
+        eq(java.util.Arrays.asList(PVTMEM, TURNIP, "system", GEN8, V32), ids(s23.pickerDrivers()), "picker lists drivers, then choices");
         check(s23.pickerDriver("nope") == null, "unknown picker id");
         eq(java.util.Arrays.asList("system"), ids(picker.getProfile("mali").pickerDrivers()), "Mali offers only the system driver");
     }
@@ -281,6 +283,43 @@ public final class DeviceRulesSelfTest {
         return baseline.toString();
     }
 
+    /**
+     * Rules v14 put the pvtmem Turnip just before the pinned Turnip in every automatic list that has it,
+     * after it where it is only a choice, and set TU_PVTMEM_MIN_FIBER in those profiles. Applying that
+     * to the baseline keeps every other default frozen.
+     */
+    private static String withPvtmemTurnip(String json) throws Exception {
+        JSONObject baseline = new JSONObject(json);
+        JSONObject bundled = new JSONObject(bundledJson);
+        baseline.getJSONObject("drivers").put(PVTMEM, bundled.getJSONObject("drivers").getJSONObject(PVTMEM));
+        JSONObject profiles = baseline.getJSONObject("profiles");
+        for (String name : profiles.keySet()) {
+            JSONObject profile = profiles.getJSONObject(name);
+            boolean listed = insertBefore(profile.getJSONArray("drivers"), TURNIP, PVTMEM, 0);
+            if (!listed && profile.has("choices")) listed = insertBefore(profile.getJSONArray("choices"), TURNIP, PVTMEM, 1);
+            JSONObject bundledProfile = bundled.getJSONObject("profiles").getJSONObject(name);
+            if (!listed) {
+                check(!bundledProfile.getJSONObject("env").has("TU_PVTMEM_MIN_FIBER"), "no pvtmem setting without the driver: " + name);
+                continue;
+            }
+            eq("4608", bundledProfile.getJSONObject("env").optString("TU_PVTMEM_MIN_FIBER"), "pvtmem setting with the driver: " + name);
+            profile.getJSONObject("env").put("TU_PVTMEM_MIN_FIBER", "4608");
+            profile.put("notes", bundledProfile.getString("notes"));
+        }
+        return baseline.toString();
+    }
+
+    private static boolean insertBefore(org.json.JSONArray list, String anchor, String id, int offset) {
+        for (int i = 0; i < list.length(); i++) {
+            if (!anchor.equals(list.getString(i))) continue;
+            ArrayList<Object> items = new ArrayList<>(list.toList());
+            items.add(i + offset, id);
+            for (int j = 0; j < items.size(); j++) list.put(j, items.get(j));
+            return true;
+        }
+        return false;
+    }
+
     private static java.util.List<String> ids(java.util.List<DeviceRules.Driver> drivers) {
         ArrayList<String> list = new ArrayList<>();
         for (DeviceRules.Driver driver : drivers) list.add(driver.id);
@@ -290,7 +329,7 @@ public final class DeviceRulesSelfTest {
     // The exact committed v6 catalog freezes every pre-existing default, rule and saved driver id.
     private static void testOptionalTurnipUpdate(String v6Json) throws Exception {
         eq(6, new JSONObject(v6Json).getInt("rulesVersion"), "baseline is the pre-update v6 catalog");
-        String baselineJson = withD3D11ApiChange(v6Json);
+        String baselineJson = withPvtmemTurnip(withD3D11ApiChange(v6Json));
         JSONObject before = new JSONObject(baselineJson);
         JSONObject after = new JSONObject(bundledJson);
         DeviceRules oldRules = DeviceRules.parse(baselineJson);
@@ -491,7 +530,8 @@ public final class DeviceRulesSelfTest {
         DeviceRules.Profile p8xx = rules.getProfile("adreno-8xx");
         eq(V32, p8xx.drivers.get(0), "8xx first driver");
         eq(GEN8, p8xx.drivers.get(1), "8xx second driver");
-        eq(TURNIP, p8xx.drivers.get(2), "8xx third driver");
+        eq(PVTMEM, p8xx.drivers.get(2), "8xx third driver");
+        eq(TURNIP, p8xx.drivers.get(3), "8xx fourth driver");
         eq("noconform,sysmem", p8xx.env.get("TU_DEBUG"), "8xx TU_DEBUG");
         eq("-d3d11", p8xx.wowApiArg, "8xx wowApiArg");
         eq("community", p8xx.status, "8xx status");
@@ -956,7 +996,8 @@ public final class DeviceRulesSelfTest {
         Context ctx = newContext();
         FakeProber prober = new FakeProber();
         GraphicsPlan plan = select(ctx, identity("Adreno (TM) 740", -1), prober, available());
-        eq(TURNIP, plan.driverId, "S23 driver");
+        eq(PVTMEM, plan.driverId, "S23 driver");
+        eq("4608", plan.env.get("TU_PVTMEM_MIN_FIBER"), "S23 pvtmem setting");
         check(plan.useAdrenotools, "S23 uses adrenotools");
         eq("adreno-7xx", plan.ruleId, "S23 plan rule");
         eq("adreno-7xx", plan.profileName, "S23 plan profile");
@@ -965,12 +1006,12 @@ public final class DeviceRulesSelfTest {
         eq(bundledVersion, plan.rulesVersion, "plan rules version");
         eq(1, prober.calls.size(), "one probe");
         check(plan.log.size() > 3, "plan keeps its decision log");
-        eq(TURNIP + "=ok; system=not-tried", DeviceProfileSelector.driverProbes(plan), "driver probes summary");
+        eq(PVTMEM + "=ok; " + TURNIP + "=not-tried; system=not-tried", DeviceProfileSelector.driverProbes(plan), "driver probes summary");
 
         // Cache reuse: the second run does not probe again.
         GraphicsPlan again = select(ctx, identity("Adreno (TM) 740", -1), prober, available());
         eq(1, prober.calls.size(), "cached probe reused");
-        eq(TURNIP, again.driverId, "cached plan driver");
+        eq(PVTMEM, again.driverId, "cached plan driver");
         check(again.log.toString().contains("cached"), "log says the result was cached");
         check(ctx.getSharedPreferences(DeviceRulesStore.PREFERENCES, 0).getString("probe_inflight", null) == null, "in-flight marker cleared");
 
@@ -994,7 +1035,7 @@ public final class DeviceRulesSelfTest {
         eq("noconform,sysmem", a830.env.get("TU_DEBUG"), "8xx env in plan");
         eq("-d3d11", a830.wowApiArg, "8xx wowApiArg in plan");
         check(a830.log.toString().contains("probe " + V32 + "=failed"), "failure logged");
-        eq(V32 + "=failed; " + GEN8 + "=ok; " + TURNIP + "=not-tried; system=not-tried", DeviceProfileSelector.driverProbes(a830), "probe summary with a failure");
+        eq(V32 + "=failed; " + GEN8 + "=ok; " + PVTMEM + "=not-tried; " + TURNIP + "=not-tried; system=not-tried", DeviceProfileSelector.driverProbes(a830), "probe summary with a failure");
 
         // Cached failure is not retried.
         failFirst.calls.clear();
@@ -1012,7 +1053,7 @@ public final class DeviceRulesSelfTest {
         // Unavailable drivers are skipped without a probe.
         Context skip = newContext();
         FakeProber skipProber = new FakeProber();
-        GraphicsPlan skipped = select(skip, identity("Adreno (TM) 830", -1), skipProber, available(V32, GEN8, TURNIP));
+        GraphicsPlan skipped = select(skip, identity("Adreno (TM) 830", -1), skipProber, available(V32, GEN8, PVTMEM, TURNIP));
         eq(0, skipProber.calls.size(), "unavailable driver skipped, nothing probed");
         eq("system", skipped.driverId, "falls back to system");
         check(!skipped.useAdrenotools, "system is not adrenotools");
@@ -1023,6 +1064,7 @@ public final class DeviceRulesSelfTest {
         FakeProber failing = new FakeProber();
         failing.outcomes.put(V32, false);
         failing.outcomes.put(GEN8, false);
+        failing.outcomes.put(PVTMEM, false);
         failing.outcomes.put(TURNIP, false);
         GraphicsPlan fallbackSystem = select(allFail, identity("Adreno (TM) 830", -1), failing, available());
         eq("system", fallbackSystem.driverId, "all failed uses system");
@@ -1052,10 +1094,10 @@ public final class DeviceRulesSelfTest {
         check(crash.getSharedPreferences(DeviceRulesStore.PREFERENCES, 0).getString("probe_inflight", null) != null, "marker survives a dying probe");
         FakeProber afterCrash = new FakeProber();
         GraphicsPlan recovered = select(crash, identity("Adreno (TM) 740", -1), afterCrash, available());
-        eq(0, afterCrash.calls.size(), "crashed driver is not probed again");
-        eq("system", recovered.driverId, "crashed driver replaced by system");
+        eq(java.util.Arrays.asList(TURNIP), afterCrash.calls, "crashed driver is not probed again");
+        eq(TURNIP, recovered.driverId, "crashed pvtmem Turnip replaced by the unpatched Turnip");
         check(recovered.log.toString().contains("crashed during"), "crash recorded in the log");
-        check(recovered.log.toString().contains("probe " + TURNIP + "=failed"), "crashed probe counts as failed");
+        check(recovered.log.toString().contains("probe " + PVTMEM + "=failed"), "crashed probe counts as failed");
         check(crash.getSharedPreferences(DeviceRulesStore.PREFERENCES, 0).getString("probe_inflight", null) == null, "marker cleared after recovery");
 
         // Mali: system only, no probing, compat layer.
@@ -1109,7 +1151,7 @@ public final class DeviceRulesSelfTest {
         Context auto = newContext();
         FakeProber autoProber = new FakeProber();
         GraphicsPlan automatic = DeviceProfileSelector.select(auto, s23, loaded, autoProber, available());
-        eq(TURNIP, automatic.driverId, "automatic keeps the profile order");
+        eq(PVTMEM, automatic.driverId, "automatic keeps the profile order");
         eq("", automatic.driverChoice, "no pick recorded");
         eq("", DeviceProfileSelector.driverChoice(auto), "no pick saved");
 
@@ -1122,7 +1164,7 @@ public final class DeviceRulesSelfTest {
         eq(GEN8, picked.driverId, "picked driver used");
         eq(GEN8, picked.driverChoice, "pick recorded in the plan");
         eq(java.util.Arrays.asList(GEN8), pickProber.calls, "only the pick is probed");
-        eq(GEN8 + "=ok; " + TURNIP + "=not-tried; system=not-tried", DeviceProfileSelector.driverProbes(picked), "probe summary with a pick");
+        eq(GEN8 + "=ok; " + PVTMEM + "=not-tried; " + TURNIP + "=not-tried; system=not-tried", DeviceProfileSelector.driverProbes(picked), "probe summary with a pick");
 
         // A pick that fails to load falls back to the automatic order and keeps the record.
         Context failing = newContext();
@@ -1130,9 +1172,9 @@ public final class DeviceRulesSelfTest {
         FakeProber failProber = new FakeProber();
         failProber.outcomes.put(GEN8, false);
         GraphicsPlan fellBack = DeviceProfileSelector.select(failing, s23, loaded, failProber, available());
-        eq(TURNIP, fellBack.driverId, "failed pick falls back to Automatic");
+        eq(PVTMEM, fellBack.driverId, "failed pick falls back to Automatic");
         eq(GEN8, fellBack.driverChoice, "failed pick still recorded");
-        eq(java.util.Arrays.asList(GEN8, TURNIP), failProber.calls, "pick probed, then the automatic order");
+        eq(java.util.Arrays.asList(GEN8, PVTMEM), failProber.calls, "pick probed, then the automatic order");
         check(fellBack.log.toString().contains("failed to load; using Automatic"), "fallback logged");
         DeviceProfileSelector.select(failing, s23, loaded, failProber, available());
         eq(2, failProber.calls.size(), "cached failure is not retried by itself");
@@ -1145,8 +1187,8 @@ public final class DeviceRulesSelfTest {
         DeviceProfileSelector.setDriverChoice(missing, rules.getDriver(V32));
         FakeProber missingProber = new FakeProber();
         GraphicsPlan notDownloaded = DeviceProfileSelector.select(missing, s23, loaded, missingProber, available(V32));
-        eq(TURNIP, notDownloaded.driverId, "missing pick falls back");
-        eq(java.util.Arrays.asList(TURNIP), missingProber.calls, "missing pick not probed");
+        eq(PVTMEM, notDownloaded.driverId, "missing pick falls back");
+        eq(java.util.Arrays.asList(PVTMEM), missingProber.calls, "missing pick not probed");
         check(notDownloaded.log.toString().contains("is not downloaded; using Automatic"), "missing pick logged");
 
         // Picking the system driver: no probes, no adrenotools.
@@ -1158,40 +1200,42 @@ public final class DeviceRulesSelfTest {
         check(!systemPlan.useAdrenotools, "system pick is not adrenotools");
         eq(0, systemProber.calls.size(), "system pick probes nothing");
 
-        // Picking a driver the profile already lists probes it once.
+        // Picking a driver the profile already lists probes it once. Picking the unpatched Turnip is how
+        // a player goes back from the pvtmem build. The profile's env stays, and the unpatched build ignores it.
         Context listed = newContext();
         DeviceProfileSelector.setDriverChoice(listed, rules.getDriver(TURNIP));
         FakeProber listedProber = new FakeProber();
         GraphicsPlan listedPlan = DeviceProfileSelector.select(listed, s23, loaded, listedProber, available());
         eq(TURNIP, listedPlan.driverId, "listed pick");
         eq(java.util.Arrays.asList(TURNIP), listedProber.calls, "listed pick probed once");
-        eq(TURNIP + "=ok; system=not-tried", DeviceProfileSelector.driverProbes(listedPlan), "listed pick summary has no duplicate");
+        eq(TURNIP + "=ok; " + PVTMEM + "=not-tried; system=not-tried", DeviceProfileSelector.driverProbes(listedPlan), "listed pick summary has no duplicate");
+        eq("4608", listedPlan.env.get("TU_PVTMEM_MIN_FIBER"), "unpatched pick keeps the profile env");
 
         // A pick the matched profile does not offer (rules changed, or another GPU) is ignored.
         Context stale = newContext();
         DeviceProfileSelector.setDriverChoice(stale, rules.getDriver(GEN8));
         FakeProber staleProber = new FakeProber();
         GraphicsPlan ignored = select(stale, s23, staleProber, available());
-        eq(TURNIP, ignored.driverId, "pick not offered by the bundled 7xx profile");
+        eq(PVTMEM, ignored.driverId, "pick not offered by the bundled 7xx profile");
         eq("", ignored.driverChoice, "unoffered pick not recorded");
         check(ignored.log.toString().contains("is not offered"), "unoffered pick logged");
 
         // The driver Automatic uses, for the picker: the first listed driver not known to fail.
         DeviceRules.Profile s23Profile = rules.match(s23).profile;
-        eq(TURNIP, DeviceProfileSelector.automaticDriver(newContext(), s23Profile).id, "Automatic before any probe");
-        eq(TURNIP, DeviceProfileSelector.automaticDriver(auto, s23Profile).id, "Automatic after its driver loaded");
+        eq(PVTMEM, DeviceProfileSelector.automaticDriver(newContext(), s23Profile).id, "Automatic before any probe");
+        eq(PVTMEM, DeviceProfileSelector.automaticDriver(auto, s23Profile).id, "Automatic after its driver loaded");
         Context brokenFirst = newContext();
         FakeProber brokenProber = new FakeProber();
-        brokenProber.outcomes.put(TURNIP, false);
+        brokenProber.outcomes.put(PVTMEM, false);
         DeviceProfileSelector.select(brokenFirst, s23, loaded, brokenProber, available());
-        eq("system", DeviceProfileSelector.automaticDriver(brokenFirst, s23Profile).id, "Automatic skips a failed driver");
+        eq(TURNIP, DeviceProfileSelector.automaticDriver(brokenFirst, s23Profile).id, "Automatic skips a failed driver");
         check(DeviceProfileSelector.automaticDriver(auto, null) == null, "no profile, no Automatic driver");
 
         // Back to Automatic.
         DeviceProfileSelector.setDriverChoice(pick, null);
         eq("", DeviceProfileSelector.driverChoice(pick), "pick cleared");
         FakeProber clearedProber = new FakeProber();
-        eq(TURNIP, DeviceProfileSelector.select(pick, s23, loaded, clearedProber, available()).driverId, "Automatic again");
+        eq(PVTMEM, DeviceProfileSelector.select(pick, s23, loaded, clearedProber, available()).driverId, "Automatic again");
     }
 
     // ---- equivalence with the pre-rules behaviour ----
@@ -1218,7 +1262,8 @@ public final class DeviceRulesSelfTest {
             eq(legacyAdreno, plan.useAdrenotools, "adrenotools decision matches mayBeAdreno for \"" + renderer + "\"");
             eq(!legacyAdreno, plan.vulkanCompatLayer, "compat layer matches !mayBeAdreno for \"" + renderer + "\"");
             if (legacyAdreno) {
-                eq("turnip" + DefaultVersion.ADRENOTOOLS_TURNIP, plan.driverId, "legacy driver id for \"" + renderer + "\"");
+                // Rules v14 put the pvtmem build of the legacy Turnip first. The legacy build follows it.
+                eq("turnip" + DefaultVersion.ADRENOTOOLS_TURNIP + "-pvtmem", plan.driverId, "legacy driver id for \"" + renderer + "\"");
                 eq("noconform,sysmem", legacyTuDebug(plan.env.get("TU_DEBUG")), "TU_DEBUG for \"" + renderer + "\"");
             }
             else {
@@ -1231,15 +1276,16 @@ public final class DeviceRulesSelfTest {
 
         // The two shipped test phones, spelled out.
         GraphicsPlan s23 = select(newContext(), identity("Adreno (TM) 740", -1), new FakeProber(), available());
-        eq("turnip26.3.0-devel-1b51639c20", s23.driverId, "S23 driver is the pinned Turnip");
-        check(s23.useAdrenotools && !s23.vulkanCompatLayer && s23.env.isEmpty(), "S23: Turnip, no compat layer, no extra env");
+        eq("turnip26.3.0-devel-1b51639c20-pvtmem", s23.driverId, "S23 driver is the pinned Turnip with the pvtmem patch");
+        check(s23.useAdrenotools && !s23.vulkanCompatLayer, "S23: Turnip, no compat layer");
+        eq(java.util.Collections.singletonMap("TU_PVTMEM_MIN_FIBER", "4608"), s23.env, "S23: only the pvtmem setting");
         eq("-d3d11", s23.wowApiArg, "S23 runs WoW with D3D11");
         GraphicsPlan pixel = select(newContext(), identity("Mali-G715", -1), new FakeProber(), available());
         check("system".equals(pixel.driverId) && !pixel.useAdrenotools && pixel.vulkanCompatLayer && pixel.env.isEmpty(),
             "Pixel 8a: system driver, compat layer, no extra env");
         eq("-d3d11", pixel.wowApiArg, "Pixel 8a runs WoW with D3D11");
-        // A user env value still wins: the integration applies profile env only for unset keys, so with
-        // an empty profile env the legacy TU_DEBUG logic is untouched.
+        // A user env value still wins: the integration applies profile env only for unset keys, and the
+        // S23 profile env has no TU_DEBUG, so the legacy TU_DEBUG logic is untouched.
         eq("foo,sysmem", legacyTuDebug("foo"), "legacy TU_DEBUG logic");
     }
 

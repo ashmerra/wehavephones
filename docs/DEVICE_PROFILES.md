@@ -14,7 +14,12 @@ and D3D12 through vkd3d-proton fails on Mali.
 
 - Galaxy S23 (Adreno 7xx): the pinned Turnip, with WoW in D3D11 through DXVK since rules v8. In WoW
   Forever on the S23, D3D11 needed about 20% fewer GPU cycles per frame than D3D12 through
-  vkd3d-proton. The S23's GPU is thermally limited in long sessions, so that work decides the frame
+  vkd3d-proton. Since rules v14 the Adreno 6xx and 7xx profiles, other Adreno GPUs and unknown GPUs
+  first try the pinned Turnip with a fixed first shader private memory size
+  (`turnip26.3.0-devel-1b51639c20-pvtmem`, with `TU_PVTMEM_MIN_FIBER=4608` in the profile `env`).
+  It held about 100 MiB less GPU memory in WoW Forever on the S23. The unpatched pinned Turnip
+  follows it in the automatic order and in the picker. Adreno 800-839 phones get the same pair
+  after their Gen 8 drivers, and Adreno 840 phones can pick it. The S23's GPU is thermally limited in long sessions, so that work decides the frame
   rate. `d3d12.dll` stays enabled because the app writes `GxApi D3D11` before each launch.
 - Pixel 8a and other Mali phones: the phone's own Vulkan driver with the BCn compat layer, and D3D11.
 - Adreno 840 and newer (Snapdragon 8 Elite Gen 5): WoW in D3D11 with the system driver. On a OnePlus 15
@@ -35,8 +40,8 @@ the Adreno 7xx profile also offers StevenMXZ Gen8 V38, which a player asked for 
 Galaxy S23 (Adreno 740) WoW Retail ran with it but drew a black screen, so it stays picker-only.
 The [October 16](TURNIP_OPTIONAL_2026_10_16.md) and [October 27](TURNIP_OPTIONAL_2026_10_27.md)
 optional Turnip catalogs record the 14 added choices, chip-table limits, package provenance and
-validation. Every automatic driver order, rule, environment, compatibility setting and graphics
-API stays unchanged.
+validation. Those additions left every automatic driver order, rule, environment, compatibility
+setting and graphics API unchanged.
 
 Each profile has a `status` (`tested`, `community` or `untested`) so Diagnostics and issue reports
 show how much a setup has been run on real hardware.

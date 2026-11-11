@@ -1,12 +1,21 @@
 {
   "schema": 1,
-  "rulesVersion": 13,
+  "rulesVersion": 14,
   "minAppVersionCode": 1,
-  "updatedAt": "2026-11-02",
+  "updatedAt": "2026-11-11",
   "drivers": {
     "system": {
       "type": "system",
       "description": "The phone's own Vulkan driver via the wrapper"
+    },
+    "turnip26.3.0-devel-1b51639c20-pvtmem": {
+      "type": "adrenotools",
+      "asset": "graphics_driver/adrenotools-turnip26.3.0-devel-1b51639c20-pvtmem.tzst",
+      "url": null,
+      "sha256": "fba544a315352c4c4584e4a0c8069bf894d2b0407e4ae4dc4c6b2e7fc6b17190",
+      "libraryName": "vulkan.ad07xx.so",
+      "librarySha256": "d9a29cff58765b35f2252e3aaa8739d69562929de86f2d59a07ae601a7c2d98d",
+      "source": "WN-Turnip 1.17 b (Mesa 26.3.0-devel 1b51639c20) plus patches/mesa/turnip-pvtmem-min.patch, built by scripts/build-turnip-pvtmem-docker.sh. See graphics/turnip-pvtmem.json"
     },
     "turnip26.3.0-devel-1b51639c20": {
       "type": "adrenotools",
@@ -288,13 +297,16 @@
     "adreno-7xx": {
       "status": "tested",
       "drivers": [
+        "turnip26.3.0-devel-1b51639c20-pvtmem",
         "turnip26.3.0-devel-1b51639c20",
         "system"
       ],
-      "env": {},
+      "env": {
+        "TU_PVTMEM_MIN_FIBER": "4608"
+      },
       "vulkanCompatLayer": false,
       "wowApiArg": "-d3d11",
-      "notes": "Adreno 7xx (Galaxy S23, Adreno 740): the pinned Turnip with D3D11 through DXVK. In WoW Forever on the S23, D3D11 needed about 20% fewer GPU cycles per frame than D3D12 through vkd3d-proton, so the thermally limited GPU draws more frames.",
+      "notes": "Adreno 7xx (Galaxy S23, Adreno 740): the pinned Turnip with D3D11 through DXVK. Since rules v14 the pinned Turnip is the build with a fixed first shader private memory size (TU_PVTMEM_MIN_FIBER=4608), which held about 100 MiB less GPU memory in WoW Forever on the S23. The unpatched build follows it and stays in the picker. In WoW Forever on the S23, D3D11 needed about 20% fewer GPU cycles per frame than D3D12 through vkd3d-proton, so the thermally limited GPU draws more frames.",
       "choices": [
         "turnip-gamesir-rutabaga-v3",
         "turnip-gen8-stevenmxz-v38"
@@ -303,10 +315,13 @@
     "adreno-6xx": {
       "status": "untested",
       "drivers": [
+        "turnip26.3.0-devel-1b51639c20-pvtmem",
         "turnip26.3.0-devel-1b51639c20",
         "system"
       ],
-      "env": {},
+      "env": {
+        "TU_PVTMEM_MIN_FIBER": "4608"
+      },
       "vulkanCompatLayer": false,
       "wowApiArg": "-d3d11",
       "notes": "Adreno 6xx: same driver choice as before device rules existed, with D3D11 through DXVK since rules v9 like the Adreno 7xx. No 6xx phone has been tested.",
@@ -319,6 +334,7 @@
       "drivers": [
         "turnip-v32-rp6sched",
         "turnip-gen8-stevenmxz-v37",
+        "turnip26.3.0-devel-1b51639c20-pvtmem",
         "turnip26.3.0-devel-1b51639c20",
         "system"
       ],
@@ -349,7 +365,8 @@
       ],
       "env": {
         "TU_DEBUG": "noconform,sysmem",
-        "WINEDLLOVERRIDES": "d3d12,d3d12core=d"
+        "WINEDLLOVERRIDES": "d3d12,d3d12core=d",
+        "TU_PVTMEM_MIN_FIBER": "4608"
       },
       "vulkanCompatLayer": false,
       "wowApiArg": "-d3d11",
@@ -372,6 +389,7 @@
         "turnip-mrpurple-t26",
         "turnip-gamehub-v26.0.0-r8-b12",
         "turnip26.3.0-devel-1b51639c20",
+        "turnip26.3.0-devel-1b51639c20-pvtmem",
         "qualcomm-891.7",
         "qualcomm-863.1",
         "qualcomm-849",
@@ -392,7 +410,8 @@
         "turnip-banner-a8xx-850-845-pre1"
       ],
       "env": {
-        "WINEDLLOVERRIDES": "d3d12,d3d12core=d"
+        "WINEDLLOVERRIDES": "d3d12,d3d12core=d",
+        "TU_PVTMEM_MIN_FIBER": "4608"
       },
       "vulkanCompatLayer": false,
       "wowApiArg": "-d3d11",
@@ -401,10 +420,13 @@
     "adreno-other": {
       "status": "untested",
       "drivers": [
+        "turnip26.3.0-devel-1b51639c20-pvtmem",
         "turnip26.3.0-devel-1b51639c20",
         "system"
       ],
-      "env": {},
+      "env": {
+        "TU_PVTMEM_MIN_FIBER": "4608"
+      },
       "vulkanCompatLayer": false,
       "wowApiArg": "-d3d11",
       "notes": "Any other Adreno: same driver choice as before device rules existed, with D3D11 through DXVK since rules v9."
@@ -432,10 +454,13 @@
     "unknown-gpu": {
       "status": "untested",
       "drivers": [
+        "turnip26.3.0-devel-1b51639c20-pvtmem",
         "turnip26.3.0-devel-1b51639c20",
         "system"
       ],
-      "env": {},
+      "env": {
+        "TU_PVTMEM_MIN_FIBER": "4608"
+      },
       "vulkanCompatLayer": false,
       "wowApiArg": "-d3d11",
       "notes": "No GL renderer string: treated as a possible Adreno like before device rules existed, with D3D11 through DXVK since rules v9."

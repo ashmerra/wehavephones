@@ -65,13 +65,25 @@ bundled with the app reproduce the earlier driver defaults for the phones that w
 runs in D3D11 through DXVK instead of D3D12 on Adreno 7xx since rules v8 and on every other GPU
 since rules v9.
 
-Adreno 6xx and 7xx (and an unknown GPU) use **Mesa Turnip 26.3.0-devel (git-1b51639c20)**,
-under the immutable driver ID `turnip26.3.0-devel-1b51639c20`. This is the exact
-binary tested with Classic Era on a Galaxy S23+, rather than a stable Mesa 26.3
-release or a moving nightly. The
+Adreno 6xx and 7xx (and an unknown GPU) use **Mesa Turnip 26.3.0-devel (git-1b51639c20)**.
+Since rules v14 they first try the driver ID `turnip26.3.0-devel-1b51639c20-pvtmem`, then the
+unpatched `turnip26.3.0-devel-1b51639c20`, which players can also pick on the Play screen. The
+unpatched build is WinNative's WN-Turnip 1.17 "Balanced" release, the exact binary tested with
+Classic Era on a Galaxy S23+. The
 [driver manifest](../app/src/wehavephones/assets/wehavephones/graphics/turnip.json)
 pins both the archive and library SHA-256. The build helper and runtime checks
-verify the archive before packaging. Adreno 800-839 phones try Turnip V32-RP6sched and
+verify the archive before packaging.
+
+The `-pvtmem` build is the same recipe plus
+[`turnip-pvtmem-min.patch`](../patches/mesa/turnip-pvtmem-min.patch), and
+`scripts/build-turnip-pvtmem-docker.sh` reproduces it byte for byte
+([manifest](../app/src/wehavephones/assets/wehavephones/graphics/turnip-pvtmem.json)). Turnip
+keeps every shader private memory (`pvtmem`) buffer it has outgrown, because older shaders still
+point at it. The patch lets `TU_PVTMEM_MIN_FIBER` set the size of the first buffer, and the
+profiles that list this driver set it to 4608 bytes per fiber, what WoW Forever needs on an
+Adreno 740. In Forever on the Galaxy S23+ this kept one 108 MiB buffer instead of five buffers of
+372 MiB in total, and the game held about 100 MiB less GPU memory. The unpatched build ignores the
+variable. Adreno 800-839 phones try Turnip V32-RP6sched and
 **Gen 8 Turnip**
 ([manifest](../app/src/wehavephones/assets/wehavephones/graphics/turnip-gen8-stevenmxz-v37.json))
 first. If a driver fails its test load, the next one in the profile (finally the system driver) is
