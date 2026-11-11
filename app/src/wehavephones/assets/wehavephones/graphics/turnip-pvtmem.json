@@ -1,0 +1,14 @@
+{
+  "driverId": "turnip26.3.0-devel-1b51639c20-pvtmem",
+  "mesaVersion": "26.3.0-devel",
+  "mesaRevision": "1b51639c20",
+  "archiveAsset": "graphics_driver/adrenotools-turnip26.3.0-devel-1b51639c20-pvtmem.tzst",
+  "archiveSha256": "fba544a315352c4c4584e4a0c8069bf894d2b0407e4ae4dc4c6b2e7fc6b17190",
+  "libraryName": "vulkan.ad07xx.so",
+  "librarySha256": "d9a29cff58765b35f2252e3aaa8739d69562929de86f2d59a07ae601a7c2d98d",
+  "upstream": "https://gitlab.freedesktop.org/mesa/mesa",
+  "recipe": "https://github.com/WinNative-Emu/Drivers/tree/8407c8012d7b3096621becec73d836f4fbe7b3ce",
+  "patch": "patches/mesa/turnip-pvtmem-min.patch",
+  "buildScript": "scripts/build-turnip-pvtmem-docker.sh",
+  "provenance": "Built by WeHavePhones on 2026-11-11 with scripts/build-turnip-pvtmem-docker.sh: Mesa 1b51639c2074b5e6a03c98ea1e5dba73aec40865 with the WinNative WN-Turnip 1.17 balanced scripts (the same recipe as turnip26.3.0-devel-1b51639c20), plus patches/mesa/turnip-pvtmem-min.patch, compiled with Android NDK r26d and PYTHONHASHSEED=0. The script reproduces these exact bytes. The patch reads TU_PVTMEM_MIN_FIBER and TU_PVTMEM_MIN_WAVE, which the device rules set to 4608 for the per-fiber layout. On the Galaxy S23+ (Adreno 740) in WoW Forever it kept one 108 MiB shader private memory buffer instead of five buffers totalling 372 MiB, and screen recordings showed no dropped frames."
+}

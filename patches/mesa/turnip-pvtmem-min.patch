@@ -1,0 +1,79 @@
+Turnip: let the environment set the first shader private memory (pvtmem) size.
+
+Turnip shares one pvtmem BO per layout across pipelines and doubles it when a
+shader needs more. Shaders keep a reference to the BO that was current when they
+were created, so each growth step leaves the old BO allocated. WoW Forever on an
+Adreno 740 grew 512 B -> 8 KiB per fiber and held five BOs (12+24+48+96+192 MiB).
+
+TU_PVTMEM_MIN_FIBER and TU_PVTMEM_MIN_WAVE give a starting per-fiber size for the
+per-fiber and per-wave layouts. The first BO uses it exactly (rounded to 512
+bytes, as the hardware requires), and Turnip grows by powers of two past it as
+before. Each growth step is logged under the TU logcat tag.
+
+Apply to Mesa 1b51639c2074b5e6a03c98ea1e5dba73aec40865 after the WinNative
+WN-Turnip 1.17 scripts. scripts/build-turnip-pvtmem-docker.sh does both.
+
+diff --git a/src/freedreno/vulkan/tu_device.cc b/src/freedreno/vulkan/tu_device.cc
+index c673fe7..9566f51 100644
+--- a/src/freedreno/vulkan/tu_device.cc
++++ b/src/freedreno/vulkan/tu_device.cc
+@@ -2916,6 +2916,10 @@ tu_CreateDevice(VkPhysicalDevice physicalDevice,
+    mtx_init(&device->trace_mutex, mtx_plain);
+    mtx_init(&device->fiber_pvtmem_bo.mtx, mtx_plain);
+    mtx_init(&device->wave_pvtmem_bo.mtx, mtx_plain);
++   device->fiber_pvtmem_bo.min_per_fiber_size =
++      debug_get_num_option("TU_PVTMEM_MIN_FIBER", 0);
++   device->wave_pvtmem_bo.min_per_fiber_size =
++      debug_get_num_option("TU_PVTMEM_MIN_WAVE", 0);
+    mtx_init(&device->vis_stream_mtx, mtx_plain);
+    mtx_init(&device->vis_stream_suballocator_mtx, mtx_plain);
+    mtx_init(&device->mutex, mtx_plain);
+diff --git a/src/freedreno/vulkan/tu_device.h b/src/freedreno/vulkan/tu_device.h
+index a6dec22..422e252 100644
+--- a/src/freedreno/vulkan/tu_device.h
++++ b/src/freedreno/vulkan/tu_device.h
+@@ -302,6 +302,12 @@ struct tu_pvtmem_bo {
+       mtx_t mtx;
+       struct tu_bo *bo;
+       uint32_t per_fiber_size, per_sp_size;
++      /* Smallest per-fiber size to allocate, from TU_PVTMEM_MIN_{FIBER,WAVE}.
++       * Shaders keep a reference to the BO that was current when they were
++       * created, so every growth step leaves the old BO alive. Starting at
++       * the size an app eventually needs avoids those stale BOs.
++       */
++      uint32_t min_per_fiber_size;
+ };
+ 
+ struct tu_virtio_device;
+diff --git a/src/freedreno/vulkan/tu_shader.cc b/src/freedreno/vulkan/tu_shader.cc
+index 4fb42f2..1e2ce0e 100644
+--- a/src/freedreno/vulkan/tu_shader.cc
++++ b/src/freedreno/vulkan/tu_shader.cc
+@@ -3062,11 +3062,25 @@ tu_setup_pvtmem(struct tu_device *dev,
+    mtx_lock(&pvtmem_bo->mtx);
+ 
+    if (pvtmem_bo->per_fiber_size < pvtmem_bytes) {
++      uint32_t old_per_fiber_size = pvtmem_bo->per_fiber_size;
+       if (pvtmem_bo->bo)
+          tu_bo_finish(dev, pvtmem_bo->bo);
+ 
+-      pvtmem_bo->per_fiber_size =
+-         util_next_power_of_two(align(pvtmem_bytes, 512));
++      /* A minimum from the environment is the size the app is known to
++       * need, so use it exactly. Grow by powers of two only past it.
++       */
++      if (pvtmem_bytes <= pvtmem_bo->min_per_fiber_size)
++         pvtmem_bo->per_fiber_size =
++            align(pvtmem_bo->min_per_fiber_size, 512);
++      else
++         pvtmem_bo->per_fiber_size =
++            util_next_power_of_two(align(pvtmem_bytes, 512));
++      mesa_logi("pvtmem: %s BO grows %u -> %u bytes per fiber "
++                "(shader stage %s needs %u, min %u)",
++                per_wave ? "per-wave" : "per-fiber", old_per_fiber_size,
++                pvtmem_bo->per_fiber_size,
++                mesa_shader_stage_name(shader->variant->type), pvtmem_bytes,
++                pvtmem_bo->min_per_fiber_size);
+       pvtmem_bo->per_sp_size =
+          align(pvtmem_bo->per_fiber_size *
+                   dev->physical_device->info->fibers_per_sp,

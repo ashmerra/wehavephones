@@ -7,5 +7,5 @@
   "libraryName": "vulkan.ad07xx.so",
   "librarySha256": "6d924960369bddf190cd09365a8624a3aa04907f6622a22d520eb50adc043792",
   "upstream": "https://gitlab.freedesktop.org/mesa/mesa",
-  "provenance": "Exact binary from an earlier private test container, validated in WeHavePhones on 2026-10-03. Original build publisher and build flags are not recorded."
+  "provenance": "Byte-identical to WN-Turnip-1.17-b_Axxx (WinNative Turnip 1.17 Balanced) from https://github.com/WinNative-Emu/Drivers/releases/tag/v1.17: Mesa 1b51639c2 plus WinNative's gralloc, UBWC swapchain, A7xx and A8xx scripts (recipe commit 8407c8012d7b), built with Android NDK r26d. The release's libvulkan_freedreno.so was repackaged as vulkan.ad07xx.so. Validated in WeHavePhones on 2026-10-03. Identified by library SHA-256 on 2026-11-11."
 }
