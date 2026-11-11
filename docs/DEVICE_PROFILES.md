@@ -19,7 +19,8 @@ and D3D12 through vkd3d-proton fails on Mali.
   (`turnip26.3.0-devel-1b51639c20-pvtmem`, with `TU_PVTMEM_MIN_FIBER=4608` in the profile `env`).
   It held about 100 MiB less GPU memory in WoW Forever on the S23. The unpatched pinned Turnip
   follows it in the automatic order and in the picker. Adreno 800-839 phones get the same pair
-  after their Gen 8 drivers, and Adreno 840 phones can pick it. The S23's GPU is thermally limited in long sessions, so that work decides the frame
+  after their Gen 8 drivers, and Adreno 840 phones can pick it. The driver ships inside the APK, so
+  rules v15 set `minAppVersionCode` to 11 and older apps keep their earlier rules. The S23's GPU is thermally limited in long sessions, so that work decides the frame
   rate. `d3d12.dll` stays enabled because the app writes `GxApi D3D11` before each launch.
 - Pixel 8a and other Mali phones: the phone's own Vulkan driver with the BCn compat layer, and D3D11.
 - Adreno 840 and newer (Snapdragon 8 Elite Gen 5): WoW in D3D11 with the system driver. On a OnePlus 15

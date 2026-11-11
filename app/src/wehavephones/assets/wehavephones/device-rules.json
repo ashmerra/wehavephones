@@ -1,7 +1,7 @@
 {
   "schema": 1,
-  "rulesVersion": 14,
-  "minAppVersionCode": 1,
+  "rulesVersion": 15,
+  "minAppVersionCode": 11,
   "updatedAt": "2026-11-11",
   "drivers": {
     "system": {

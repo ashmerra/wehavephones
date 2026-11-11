@@ -337,11 +337,13 @@ public final class DeviceRulesSelfTest {
         check(after.getInt("rulesVersion") > 6, "optional update bumps rulesVersion");
         JSONObject oldHeader = new JSONObject(baselineJson);
         JSONObject newHeader = new JSONObject(bundledJson);
-        for (String key : new String[] {"rulesVersion", "updatedAt", "drivers", "profiles"}) {
+        // Rules v15: only 0.0.11 and newer bundle the pvtmem Turnip, so older apps keep their rules.
+        eq(11, newHeader.getInt("minAppVersionCode"), "rules need the first app that bundles the pvtmem Turnip");
+        for (String key : new String[] {"rulesVersion", "updatedAt", "drivers", "profiles", "minAppVersionCode"}) {
             oldHeader.remove(key);
             newHeader.remove(key);
         }
-        check(oldHeader.similar(newHeader), "all rule matching, schema and app-version requirements unchanged");
+        check(oldHeader.similar(newHeader), "all rule matching and schema requirements unchanged");
         JSONObject oldDrivers = before.getJSONObject("drivers");
         JSONObject newDrivers = after.getJSONObject("drivers");
         for (String id : oldDrivers.keySet()) {
