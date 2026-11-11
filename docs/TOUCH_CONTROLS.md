@@ -244,8 +244,8 @@ because they would repeat it.
 - Swipe around the hub, toward the top, for the next ring. Swipe the other way
   for the previous one. One swipe changes one ring, after about 40 degrees around
   the hub. Swipes work in combat, and they never click or turn the camera.
-- Tap the hub for the next ring. The hub shows the ring number and a dot for
-  each ring. The ring in use is kept for the next login.
+- Tap the hub for the next ring. The hub looks like the toolbar keys and shows
+  the ring number. The ring in use is kept for the next login.
 - Tap a slot to use it. Hold a slot to change it with the same picker as the
   hotbar.
 - Vehicles, possession and override bars bring the stock main bar back until
