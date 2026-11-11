@@ -774,7 +774,7 @@ local before=notices
 edit(ActionButton1)
 assert(notices==before+1 and cursor[2]==900,"cursor contents never discarded to open editor")
 cursor=nil
-for chord,size in pairs({["SHIFT-F10"]=.75,["SHIFT-F11"]=.9,["SHIFT-F12"]=1.1,["SHIFT-F4"]=1.25,["SHIFT-F5"]=1.5,["SHIFT-F6"]=1.75}) do
+for chord,size in pairs({["CTRL-F9"]=.75,["CTRL-F10"]=.9,["SHIFT-F12"]=1.1,["SHIFT-F4"]=1.25,["SHIFT-F5"]=1.5,["SHIFT-F6"]=1.75}) do
     menuChord(chord)
     assert(UIParent:GetScale()==size and WeHavePhonesTouchDB.touchScale==size,"the touch menu sets the interface size to "..size)
 end

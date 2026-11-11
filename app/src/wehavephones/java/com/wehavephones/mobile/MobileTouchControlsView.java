@@ -1040,13 +1040,14 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
                 nextModifier = null;
                 banner(icons[MobileTouchLayout.MORE], getContext().getString(R.string.wehavephones_touch_modifier_cleared), null);
                 break;
-            // Each size has its own Shift chord, matching the hidden buttons in the touch addon.
-            case SIZE_75: setScale(.75f, XKeycode.KEY_F10); break;
-            case SIZE_90: setScale(.9f, XKeycode.KEY_F11); break;
-            case SIZE_110: setScale(1.1f, XKeycode.KEY_F12); break;
-            case SIZE_125: setScale(1.25f, XKeycode.KEY_F4); break;
-            case SIZE_150: setScale(1.5f, XKeycode.KEY_F5); break;
-            case SIZE_175: setScale(1.75f, XKeycode.KEY_F6); break;
+            // Each size has its own chord, matching the hidden buttons in the touch addon.
+            // Ctrl-F9 and Ctrl-F10 are stance keys no class has. Shift-F10 and F11 change wheel rings.
+            case SIZE_75: setScale(.75f, ctrl, XKeycode.KEY_F9); break;
+            case SIZE_90: setScale(.9f, ctrl, XKeycode.KEY_F10); break;
+            case SIZE_110: setScale(1.1f, shift, XKeycode.KEY_F12); break;
+            case SIZE_125: setScale(1.25f, shift, XKeycode.KEY_F4); break;
+            case SIZE_150: setScale(1.5f, shift, XKeycode.KEY_F5); break;
+            case SIZE_175: setScale(1.75f, shift, XKeycode.KEY_F6); break;
             case GUIDE: showGuide(); break;
             case HIDE:
                 setWindows(true);
@@ -1078,9 +1079,9 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
         parkPointerForChat();
     }
 
-    private void setScale(float scale, XKeycode key) {
+    private void setScale(float scale, XKeycode modifier, XKeycode key) {
         WeHavePhonesConfig.setMobileTouchScale(getContext(), scale);
-        chord(XKeycode.KEY_SHIFT_L, key);
+        chord(modifier, key);
         banner(activity.getDrawable(R.drawable.wehavephones_touch_ic_text_aa).mutate(),
                 getContext().getString(R.string.wehavephones_touch_size_hint, Math.round(scale * 100)), null);
     }

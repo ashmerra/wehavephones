@@ -1439,12 +1439,13 @@ local function Apply()
             for key, action in pairs(bindings) do SetOverrideBinding(frame, true, key, action) end
             -- Touch menu entries without a stock binding. Each runs once, when its chord is released.
             -- No Alt chords: Windows reads Alt with F4 as closing the game window.
+            -- Ctrl-F9 and Ctrl-F10 are stance keys no class has. Shift-F10 and F11 belong to the wheel.
             for key, action in pairs({["SHIFT-F1"] = function()
                     if InCombatLockdown() then Notice("Macros can be opened after combat.") else ShowMacroFrame() end
                 end, ["SHIFT-F2"] = function() ToggleHelpFrame() end, ["SHIFT-F3"] = Undo,
                 ["SHIFT-F4"] = function() SetTouchScale(1.25) end, ["SHIFT-F5"] = function() SetTouchScale(1.5) end,
-                ["SHIFT-F6"] = function() SetTouchScale(1.75) end, ["SHIFT-F10"] = function() SetTouchScale(.75) end,
-                ["SHIFT-F11"] = function() SetTouchScale(.9) end, ["SHIFT-F12"] = function() SetTouchScale(1.1) end,
+                ["SHIFT-F6"] = function() SetTouchScale(1.75) end, ["CTRL-F9"] = function() SetTouchScale(.75) end,
+                ["CTRL-F10"] = function() SetTouchScale(.9) end, ["SHIFT-F12"] = function() SetTouchScale(1.1) end,
                 ["SHIFT-F8"] = function() SetActionTooltips(true) end,
                 ["SHIFT-F9"] = function() SetActionTooltips(false) end}) do
                 local name = "WeHavePhonesTouchMenu" .. key:gsub("%-", "")
