@@ -14,6 +14,7 @@ import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.SystemClock;
 import android.view.DisplayCutout;
+import android.view.HapticFeedbackConstants;
 import android.view.InputDevice;
 import android.view.MotionEvent;
 import android.view.View;
@@ -187,6 +188,7 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
         radius = layout.radius;
         stickX = layout.stickX;
         stickY = layout.stickY;
+        input.setWheel(layout.wheelX, layout.wheelY, MobileTouchLayout.WHEEL_DEAD * layout.wheelUnit);
         knobX = stickX;
         knobY = stickY;
         for (int i = 0; i < buttons.length; i++) {
@@ -246,6 +248,7 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
     private MobileTouchInput.Zone zone(float x, float y) {
         for (int i = 0; i < buttons.length; i++) if (buttons[i].contains(x, y)) return ZONES[i];
         if (toolbarCollapsed || input.isUiMode()) return MobileTouchInput.Zone.UI;
+        if (WeHavePhonesConfig.isMobileTouchWheel(getContext()) && layout.inWheel(x, y)) return MobileTouchInput.Zone.WHEEL;
         if (Math.hypot(x - stickX, y - stickY) <= radius * 1.2f) return MobileTouchInput.Zone.STICK;
         MobileTouchLayout.Bounds viewport = viewport();
         if (viewport.contains(x, y) && MobileTouchInput.isCameraArea(x - viewport.left, y - viewport.top,
@@ -834,6 +837,14 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
                     pulse(target.centerX(), target.centerY());
                 }
                 break;
+            case RING_NEXT:
+            case RING_PREV:
+                // Session bindings from the touch addon: Shift-F10 and Shift-F11 click its secure ring buttons.
+                if (down) {
+                    chord(XKeycode.KEY_SHIFT_L, key == MobileTouchInput.Key.RING_NEXT ? XKeycode.KEY_F10 : XKeycode.KEY_F11);
+                    performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK);
+                }
+                return;
             case AUTORUN:
                 if (!down) post(() -> banner(runner, getContext().getString(R.string.wehavephones_touch_auto_run),
                         getContext().getString(R.string.wehavephones_touch_auto_run_hint)));
@@ -969,6 +980,7 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
         switch (action) {
             case SIZE_75: case SIZE_90: case SIZE_110: case SIZE_125: case SIZE_150: case SIZE_175:
                 return WeHavePhonesConfig.getMobileTouchScale(getContext()) == action.arg / 100f;
+            case WHEEL: return WeHavePhonesConfig.isMobileTouchWheel(getContext());
             case DIVE: return diving;
             case SHIFT: return nextModifier == XKeycode.KEY_SHIFT_L;
             case CTRL: return nextModifier == XKeycode.KEY_CTRL_L;
@@ -1059,6 +1071,16 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
                 break;
             case UNDO: chord(shift, XKeycode.KEY_F3); break;
             case PAGE: tap(XKeycode.KEY_N); break;
+            case WHEEL: {
+                boolean wheel = !WeHavePhonesConfig.isMobileTouchWheel(getContext());
+                WeHavePhonesConfig.setMobileTouchWheel(getContext(), wheel);
+                // Ctrl-F11 shows the wheel and Ctrl-F12 returns the stock grid, after combat if needed.
+                chord(XKeycode.KEY_CTRL_L, wheel ? XKeycode.KEY_F11 : XKeycode.KEY_F12);
+                banner(activity.getDrawable(R.drawable.wehavephones_touch_ic_squares_four).mutate(),
+                        getContext().getString(wheel ? R.string.wehavephones_touch_wheel_on : R.string.wehavephones_touch_wheel_off),
+                        wheel ? getContext().getString(R.string.wehavephones_touch_wheel_hint) : null);
+                break;
+            }
         }
         invalidate();
     }

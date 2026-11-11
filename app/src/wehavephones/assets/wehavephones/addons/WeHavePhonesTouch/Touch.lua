@@ -7,12 +7,25 @@ local undo
 -- Bottom of the player and target frames, kept free of the native toolbar.
 local unitBottom = 100
 local buttons = {}
-local Layout, OpenEditor, RefreshEditor, LayoutWorkspace, QueueWorkspace
+local Layout, OpenEditor, RefreshEditor, LayoutWorkspace, QueueWorkspace, QueueHud
+-- The action wheel replaces the stock action grid on wide games when the app asks for it.
+local wheelOn = addon.wheel == true
+local WheelHub, WheelWanted
 local ACTION_SCALE = 1.35
 -- Taller action grids below this aspect ratio. 16:10 is wide on both sides of the
 -- native and Lua boundary, whatever the rounding. Keep in step with MobileTouchLayout.
 local COMPACT = 1.59
 local WHITE = "Interface\\Buttons\\WHITE8X8"
+-- The action wheel: nine slots in two arcs around a hub at the lower right. Four rings use
+-- Action Bars 6 to 8 (slots 145 to 180). They go with the character like other slots, but a
+-- PC shows them only with those bars turned on, so phone and PC can each keep their own bars.
+-- Sizes are fractions of the game's height. Keep in step with MobileTouchLayout.
+local WHEEL_FIRST, WHEEL_SLOTS, WHEEL_RINGS = 145, 9, 4
+local WHEEL_ANGLES = {180, 143, 107, 70, 180, 154, 129, 104, 78}
+local WHEEL_SLOT, WHEEL_HUB, WHEEL_INNER, WHEEL_OUTER = .10, .107, .21, .32
+-- The hub key's offset from the wheel's center: .08 toward 120 degrees, .02 clear of every slot.
+local WHEEL_KEY_X, WHEEL_KEY_Y = -.04, .069
+local WHEEL_RIGHT, WHEEL_GAP, WHEEL_HUB_X, WHEEL_HUB_Y = .975, .17, .125, .075
 -- Forever (WOW_PROJECT_CAMELOT) runs Classic content on the Retail UI: Edit Mode,
 -- C_SpellBook, combined bags and the objective tracker, without the old Classic globals.
 local retail = WOW_PROJECT_ID == WOW_PROJECT_MAINLINE
@@ -842,6 +855,69 @@ frame:SetScript("OnUpdate", function(_, elapsed)
     if signature ~= workspaceSignature then workspaceSignature = signature QueueWorkspace() end
 end)
 
+-- Right of the wheel's touch area and under Jump, centered on the hub. Druids can have six
+-- or more forms, so stances form a grid: up to three in one row, more in two. Sizes are
+-- fractions of the game's height. Keep in step with MobileTouchLayout. A game wider than any
+-- phone screen is letterboxed, and Jump then covers that corner, so stances stay in the
+-- footer there.
+local STANCE_ASPECT, STANCE_SIZE, STANCE_HEIGHT, STANCE_GAP = 2.4, .07, .12, .15
+local stanceAnchors = {}
+local function CornerStances()
+    return WheelWanted() and UIParent:GetWidth()/UIParent:GetHeight() <= STANCE_ASPECT
+end
+
+-- Blizzard lays the containers out again only when the number of forms changes, and
+-- then this runs again. Put back its own anchors when the stances leave the corner.
+local function RestoreStanceGrid()
+    for container, points in pairs(stanceAnchors) do
+        container:ClearAllPoints()
+        for _, point in ipairs(points) do container:SetPoint(unpack(point)) end
+    end
+    stanceAnchors = {}
+end
+
+local stanceHooked
+local function PlaceStances(object)
+    local hubX, hubY, height = WheelHub()
+    local left = hubX+WHEEL_HUB_X*height+8
+    local containers = object.shownButtonContainers or {}
+    local count = math.max(1, #containers)
+    local columns = count <= 3 and count or math.ceil(count/2)
+    local rows = math.ceil(count/columns)
+    local unit = containers[1] and containers[1]:GetWidth()*containers[1]:GetEffectiveScale()/object:GetEffectiveScale()
+        or object:GetHeight()
+    local size = math.min(STANCE_SIZE*height, (UIParent:GetWidth()-8-left)/(columns+(columns-1)*STANCE_GAP),
+        STANCE_HEIGHT*height/(rows+(rows-1)*STANCE_GAP))
+    local scale = math.max(.1, size/math.max(1, unit))
+    SetRelativeScale(object, scale)
+    for i, container in ipairs(containers) do
+        if not stanceAnchors[container] then
+            local points = {}
+            for j = 1, container:GetNumPoints() do points[j] = {container:GetPoint(j)} end
+            stanceAnchors[container] = points
+        end
+        -- Offsets are in the container's own units, a button's width plus the gap per step.
+        local step = container:GetWidth()*(1+STANCE_GAP)
+        container:ClearAllPoints()
+        container:SetPoint("TOPLEFT", object, "TOPLEFT", ((i-1)%columns)*step, -math.floor((i-1)/columns)*step)
+    end
+    if #containers == 0 then
+        -- No grid to arrange: the whole bar fits the corner instead.
+        scale = math.max(.1, math.min(scale, (UIParent:GetWidth()-8-left)/math.max(1, object:GetWidth())))
+        SetRelativeScale(object, scale)
+        Unanchor(object)
+        Anchor(object, "LEFT", UIParent, "BOTTOMLEFT", left/scale, hubY/scale)
+    else
+        local gridHeight = (rows+(rows-1)*STANCE_GAP)*size
+        Unanchor(object)
+        Anchor(object, "TOPLEFT", UIParent, "BOTTOMLEFT", left/scale, (hubY+gridHeight/2)/scale)
+    end
+    if not stanceHooked and object.UpdateGridLayout then
+        hooksecurefunc(object, "UpdateGridLayout", function() if not InCombatLockdown() then QueueHud() end end)
+        stanceHooked = true
+    end
+end
+
 local positioningClassBars
 local function PositionClassBars()
     if not enabled or InCombatLockdown() or positioningClassBars then return end
@@ -851,12 +927,24 @@ local function PositionClassBars()
         local object = _G[name]
         if object then
             RememberHud(name)
-            bars[#bars+1] = object
-            total = total+object:GetWidth()
+            -- With the wheel, stances and forms sit in the lower right corner beside it instead.
+            if name == "StanceBar" and CornerStances() then PlaceStances(object)
+            else
+                if name == "StanceBar" then RestoreStanceGrid() end
+                bars[#bars+1] = object
+                total = total+object:GetWidth()
+            end
         end
     end
     local reserved = UIParent:GetWidth()/UIParent:GetHeight()<COMPACT and 132*ActionFit() or 0
-    local scale = math.min(1, (LayoutWidth()-32-reserved)/math.max(1, total+12))
+    local room = LayoutWidth()-32-reserved
+    if WheelWanted() then
+        -- The footer ends before the wheel's leftmost slot.
+        local hubX, _, height = WheelHub()
+        room = math.max(60, math.min(room, hubX-(WHEEL_OUTER+WHEEL_SLOT/2)*height-12
+            -(UIParent:GetWidth()-LayoutWidth())/2-16-reserved))
+    end
+    local scale = math.min(1, room/math.max(1, total+12))
     local x = -LayoutWidth()/2+16+reserved
     for _, object in ipairs(bars) do
         SetRelativeScale(object, scale)
@@ -880,7 +968,7 @@ end
 local hudHooked, positioningHud, hudQueued, chatButtonsHooked
 local trackerHooks = {}
 local PositionHud
-local function QueueHud()
+QueueHud = function()
     if not enabled or hudQueued or positioningHud then return end
     hudQueued = true
     C_Timer.After(0, function() hudQueued = false PositionHud() end)
@@ -889,6 +977,8 @@ end
 -- The native toolbar's reserved regions, in fractions of the game's height. Keep these
 -- in step with MobileTouchLayout: a band along the top with a minimap square at its right
 -- end on wide games, and the right rail beside the centered layout on narrower ones.
+-- Swing timers at most this share of the layout's width.
+local SWING_WIDTH = .18
 local TOOLBAR_BAND, MINIMAP_RESERVE, ZONE_GAP, AURA_ROW, AURA_ICON = .14, .30, .012, 45, 35
 local topHooks, auraLeft = {}, 0
 local function HookTop(object)
@@ -1301,6 +1391,16 @@ local function PlaceHud()
         Unanchor(StatusTrackingBarManager)
         Anchor(StatusTrackingBarManager, "BOTTOM", UIParent, "BOTTOM", 0, 1/scale)
     end
+    -- Forever's swing timers keep a desktop width above the action bar. Shrink them where
+    -- Blizzard stacks them, and again whenever Edit Mode sizes them.
+    for _, name in ipairs({"SwingTimerMainHandFrame", "SwingTimerOffHandFrame", "SwingTimerRangedFrame"}) do
+        local object = _G[name]
+        if object then
+            RememberHud(name)
+            HookTop(object)
+            SetRelativeScale(object, math.min(.5, LayoutWidth()*SWING_WIDTH/math.max(1, object:GetWidth())))
+        end
+    end
 end
 
 PositionHud = function()
@@ -1310,6 +1410,235 @@ PositionHud = function()
     local ok, problem = pcall(PlaceHud)
     positioningHud = false
     if not ok then geterrorhandler()(problem) end
+end
+
+-- Vehicles, possession and override bars put their own actions on the stock main bar.
+-- The wheel steps aside for them, and the stock grid returns until they end.
+local WHEEL_SPECIAL = (retail or (WOW_PROJECT_MISTS_CLASSIC and WOW_PROJECT_ID == WOW_PROJECT_MISTS_CLASSIC))
+    and "[vehicleui][possessbar][overridebar]" or "[bonusbar:5]"
+local wheel
+
+WheelHub = function()
+    -- The hub, from the bottom left in UIParent units, and the game's height.
+    local width, height = UIParent:GetWidth(), UIParent:GetHeight()
+    local right = math.min((width+LayoutWidth())/2, width*WHEEL_RIGHT-height*WHEEL_GAP)
+    return right-WHEEL_HUB_X*height, WHEEL_HUB_Y*height, height
+end
+
+WheelWanted = function()
+    return enabled and wheelOn and UIParent:GetWidth()/UIParent:GetHeight() >= COMPACT
+end
+
+local function ShowRing(ring)
+    ring = math.max(1, math.min(WHEEL_RINGS, tonumber(ring) or 1))
+    WeHavePhonesTouchDB.wheelRing = ring
+    if not wheel then return end
+    wheel.hub:SetText(tostring(ring))
+end
+
+-- Secure ring changes, so a swipe works in combat. Shift-F10 and Shift-F11 click these.
+local RING_SNIPPET = [=[
+    if down or button ~= "LeftButton" then return end
+    local wheel = self:GetFrameRef("wheel")
+    local ring = (wheel:GetAttribute("ring") or 1) + %d
+    if ring > %d then ring = 1 elseif ring < 1 then ring = %d end
+    wheel:SetAttribute("ring", ring)
+]=]
+
+local function RingButton(button, step)
+    button:RegisterForClicks("AnyUp", "AnyDown")
+    -- The global, because a second template's OnLoad can replace the one that adds the method.
+    SecureHandlerSetFrameRef(button, "wheel", wheel)
+    button:SetAttribute("_onclick", RING_SNIPPET:format(step, WHEEL_RINGS, WHEEL_RINGS))
+    return button
+end
+
+-- A rounded rectangle from three strips and four quarter discs that never overlap, so a
+-- translucent fill stays even. WoW has no rounded texture, but every edition has the round
+-- portrait mask. Each piece takes its own share of a vertical gradient, so together they
+-- shade like one shape.
+local DISC = "Interface\\CharacterFrame\\TempPortraitAlphaMask"
+local function RoundedRect(parent, level, inset, bottomInset, radius, height)
+    local pieces = {}
+    local top, bottom = inset, height-bottomInset
+    local function Piece(texture, from, to, ...)
+        local piece = parent:CreateTexture(nil, "BACKGROUND", nil, level)
+        piece:SetTexture(texture)
+        for _, point in ipairs({...}) do piece:SetPoint(unpack(point)) end
+        pieces[#pieces+1] = {piece, (from-top)/(bottom-top), (to-top)/(bottom-top)}
+        return piece
+    end
+    Piece(WHITE, top, bottom, {"TOPLEFT", inset+radius, -inset}, {"BOTTOMRIGHT", -inset-radius, bottomInset})
+    Piece(WHITE, top+radius, bottom-radius, {"TOPLEFT", inset, -inset-radius}, {"BOTTOMRIGHT", parent, "BOTTOMLEFT", inset+radius, bottomInset+radius})
+    Piece(WHITE, top+radius, bottom-radius, {"TOPRIGHT", -inset, -inset-radius}, {"BOTTOMLEFT", parent, "BOTTOMRIGHT", -inset-radius, bottomInset+radius})
+    for _, corner in ipairs({{"TOPLEFT", inset, -inset, 0, .5, 0, .5}, {"TOPRIGHT", -inset, -inset, .5, 1, 0, .5},
+        {"BOTTOMLEFT", inset, bottomInset, 0, .5, .5, 1}, {"BOTTOMRIGHT", -inset, bottomInset, .5, 1, .5, 1}}) do
+        local upper = corner[1]:find("TOP")
+        local piece = Piece(DISC, upper and top or bottom-radius, upper and top+radius or bottom, {corner[1], corner[2], corner[3]})
+        piece:SetSize(radius, radius)
+        piece:SetTexCoord(corner[4], corner[5], corner[6], corner[7])
+    end
+    -- Colors are {r, g, b, a} at the top and the bottom.
+    return function(high, low)
+        for _, entry in ipairs(pieces) do
+            local piece, from, to = entry[1], entry[2], entry[3]
+            local function At(f)
+                local c = {}
+                for i = 1, 4 do c[i] = high[i]+(low[i]-high[i])*f end
+                return c
+            end
+            local upper, lower = At(from), At(to)
+            if piece.SetGradient and CreateColor then
+                piece:SetGradient("VERTICAL", CreateColor(unpack(lower)), CreateColor(unpack(upper)))
+            else piece:SetVertexColor(unpack(At((from+to)/2))) end
+        end
+    end
+end
+
+-- A copy of the native Map key: the same corner, lip, outline, navy face and silver text,
+-- with only the ring number on it. Colors match MobileTouchControlsView.
+local HUB_SIZE = 64
+local HUB_LIP, HUB_EDGE, HUB_RADIUS = HUB_SIZE*.06, HUB_SIZE*.045, HUB_SIZE*.24
+local HUB_COLORS = {
+    lip = {.024, .086, .176, .8},
+    key = {{.090, .247, .420, .85}, {.039, .141, .282, .85}, {.435, .651, .859, .8}},
+    pressed = {{.133, .447, .729, .95}, {.063, .349, .686, .95}, {.459, .741, .957, 1}},
+}
+local function CreateWheelHub()
+    local hub = CreateFrame("Button", "WeHavePhonesTouchWheelHub", wheel, "SecureHandlerClickTemplate")
+    hub:SetSize(HUB_SIZE, HUB_SIZE)
+    local lip = HUB_COLORS.lip
+    RoundedRect(hub, 1, 0, 0, HUB_RADIUS, HUB_SIZE)(lip, lip)
+    local edge = RoundedRect(hub, 2, 0, HUB_LIP, HUB_RADIUS, HUB_SIZE)
+    local face = RoundedRect(hub, 3, HUB_EDGE, HUB_LIP+HUB_EDGE, HUB_RADIUS-HUB_EDGE, HUB_SIZE)
+    local number = hub:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    local function Paint(pressed)
+        local colors = pressed and HUB_COLORS.pressed or HUB_COLORS.key
+        edge(colors[3], colors[3])
+        face(colors[1], colors[2])
+        number:SetTextColor(pressed and 1 or .937, pressed and 1 or .957, pressed and 1 or .973)
+    end
+    -- Arial Narrow is the closest stock sans to the native keys' Roboto.
+    number:SetFont("Fonts\\ARIALN.TTF", HUB_SIZE*.46, "")
+    -- Centered on the face, above the lip.
+    number:SetPoint("CENTER", 0, HUB_LIP/2)
+    hub:SetFontString(number)
+    hub:SetText("1")
+    Paint(false)
+    hub:HookScript("OnMouseDown", function() Paint(true) end)
+    hub:HookScript("OnMouseUp", function() Paint(false) end)
+    return hub
+end
+
+local function CreateWheel()
+    if wheel then return end
+    wheel = CreateFrame("Frame", "WeHavePhonesTouchWheel", UIParent, "SecureHandlerAttributeTemplate")
+    wheel:SetSize(1, 1)
+    wheel:SetPoint("BOTTOMLEFT")
+    wheel.slots = {}
+    for i = 1, WHEEL_SLOTS do
+        -- Blizzard's own action button, so icons, cooldowns, charges, range and casting work as on the stock bars.
+        local slot = CreateFrame("CheckButton", "WeHavePhonesTouchWheelSlot" .. i, wheel, "ActionBarButtonTemplate")
+        slot:SetAttribute("type", "action")
+        slot:SetAttribute("action", WHEEL_FIRST+i-1)
+        slot:SetAttribute("showgrid", 1)
+        slot:SetAttribute("type2", "")
+        slot:RegisterForClicks("LeftButtonUp", "LeftButtonDown")
+        slot:HookScript("OnMouseUp", function(self, mouse)
+            if mouse == "RightButton" then OpenEditor(self) end
+        end)
+        if slot.SetTooltip then hooksecurefunc(slot, "SetTooltip", PositionActionTooltip) end
+        buttons[slot] = true
+        SecureHandlerSetFrameRef(wheel, "slot" .. i, slot)
+        wheel.slots[i] = slot
+    end
+    wheel:SetAttribute("_onattributechanged", ([=[
+        if name ~= "ring" then return end
+        for i = 1, %d do
+            self:GetFrameRef("slot" .. i):SetAttribute("action", %d + (value-1)*%d + i)
+        end
+    ]=]):format(WHEEL_SLOTS, WHEEL_FIRST-1, WHEEL_SLOTS))
+    wheel:HookScript("OnAttributeChanged", function(_, name, value) if name == "ring" then ShowRing(value) end end)
+    -- The hub shows the ring and changes to the next one when tapped.
+    wheel.hub = RingButton(CreateWheelHub(), 1)
+    RingButton(CreateFrame("Button", "WeHavePhonesTouchWheelNext", UIParent, "SecureHandlerClickTemplate"), 1)
+    RingButton(CreateFrame("Button", "WeHavePhonesTouchWheelPrevious", UIParent, "SecureHandlerClickTemplate"), -1)
+    wheel:SetAttribute("ring", math.max(1, math.min(WHEEL_RINGS, tonumber(WeHavePhonesTouchDB.wheelRing) or 1)))
+    ShowRing(wheel:GetAttribute("ring"))
+end
+
+local function PlaceWheel()
+    local hubX, hubY, height = WheelHub()
+    local size = WHEEL_SLOT*height
+    for i, slot in ipairs(wheel.slots) do
+        local radius, angle = (i <= 4 and WHEEL_INNER or WHEEL_OUTER)*height, math.rad(WHEEL_ANGLES[i])
+        local scale = size/math.max(1, slot:GetWidth())
+        SetRelativeScale(slot, scale)
+        slot:ClearAllPoints()
+        slot:SetPoint("CENTER", UIParent, "BOTTOMLEFT",
+            (hubX+radius*math.cos(angle))/scale, (hubY+radius*math.sin(angle))/scale)
+    end
+    -- The key sits up the middle of the arcs, close to the inner slots. Swipes still turn
+    -- around the wheel's own center.
+    local hubScale = WHEEL_HUB*height/HUB_SIZE
+    SetRelativeScale(wheel.hub, hubScale)
+    wheel.hub:ClearAllPoints()
+    wheel.hub:SetPoint("CENTER", UIParent, "BOTTOMLEFT", (hubX+WHEEL_KEY_X*height)/hubScale, (hubY+WHEEL_KEY_Y*height)/hubScale)
+end
+
+-- Retail's main bar draws dividers between its visible buttons and keeps them when a state
+-- driver hides the buttons. Fade them while the wheel is on. Calling the bar's own update
+-- from here would taint it.
+local dividersHooked
+local function FadeDividers()
+    local bar = MainActionBar
+    if not bar then return end
+    local alpha = WheelWanted() and 0 or 1
+    for _, pool in ipairs({bar.HorizontalDividersPool, bar.VerticalDividersPool}) do
+        if pool then for divider in pool:EnumerateActive() do divider:SetAlpha(alpha) end end
+    end
+end
+
+-- Show the wheel and hand the stock grid to vehicles and possession, or return the grid.
+local function ApplyWheel()
+    if InCombatLockdown() then return end
+    local wanted = WheelWanted()
+    -- A PC that shows Action Bars 6 to 8 keeps them. They would repeat the wheel here.
+    local db = WeHavePhonesTouchDB
+    for _, name in ipairs({"MultiBar5", "MultiBar6", "MultiBar7"}) do
+        local object = _G[name]
+        if object and wanted then RememberHud(name, true)
+        elseif object and db.hud and db.hud[name] then
+            Reveal(object, db.hud[name].shown)
+            db.hud[name] = nil
+        end
+    end
+    if wanted then CreateWheel() end
+    if not wheel then return end
+    local stock = {pager}
+    for i = 1, 12 do stock[#stock+1] = _G["ActionButton" .. i] end
+    for _, object in ipairs(stock) do
+        if wanted then RegisterStateDriver(object, "visibility", WHEEL_SPECIAL .. " show; hide")
+        else UnregisterStateDriver(object, "visibility") object:Show() end
+    end
+    if MainActionBar and MainActionBar.UpdateDividers and not dividersHooked then
+        hooksecurefunc(MainActionBar, "UpdateDividers", FadeDividers)
+        dividersHooked = true
+    end
+    FadeDividers()
+    if wanted then
+        RegisterStateDriver(wheel, "visibility", WHEEL_SPECIAL .. " hide; show")
+        PlaceWheel()
+    else
+        UnregisterStateDriver(wheel, "visibility")
+        wheel:Hide()
+    end
+end
+
+local function SetWheel(on)
+    wheelOn = on
+    if InCombatLockdown() then Notice("The action wheel changes after combat.") return end
+    Layout()
 end
 
 Layout = function()
@@ -1366,6 +1695,7 @@ Layout = function()
         pager:SetPoint("BOTTOMLEFT", UIParent, "CENTER", (-halfWidth+16)/pagerScale, (12-halfHeight)/pagerScale)
     else pager:SetPoint("BOTTOMLEFT", UIParent, "CENTER", -240, (64*fit-halfHeight)/fit) end
     UpdatePager()
+    ApplyWheel()
     for _, name in ipairs({"MainMenuBarTexture0", "MainMenuBarTexture1", "MainMenuBarTexture2",
         "MainMenuBarTexture3", "MainMenuBarLeftEndCap", "MainMenuBarRightEndCap"}) do
         if _G[name] then _G[name]:SetAlpha(0) end
@@ -1457,6 +1787,19 @@ local function Apply()
                 trigger:Show()
                 SetOverrideBindingClick(frame, true, key, name)
             end
+            -- Wheel rings, and the menu's wheel switch: Ctrl-F11 shows it, Ctrl-F12 returns the stock grid.
+            SetOverrideBindingClick(frame, true, "SHIFT-F10", "WeHavePhonesTouchWheelNext")
+            SetOverrideBindingClick(frame, true, "SHIFT-F11", "WeHavePhonesTouchWheelPrevious")
+            for key, on in pairs({["CTRL-F11"] = true, ["CTRL-F12"] = false}) do
+                local name = "WeHavePhonesTouchWheel" .. (on and "On" or "Off")
+                local trigger = _G[name] or CreateFrame("Button", name, UIParent)
+                trigger:RegisterForClicks("AnyUp", "AnyDown")
+                trigger:SetSize(1, 1)
+                trigger:SetPoint("TOPLEFT")
+                trigger:SetScript("OnClick", function(_, _, down) if not down then SetWheel(on) end end)
+                trigger:Show()
+                SetOverrideBindingClick(frame, true, key, name)
+            end
             local corpse = CreateFrame("Button", "WeHavePhonesTouchCorpseTrigger", UIParent, "SecureActionButtonTemplate")
             corpse:RegisterForClicks("AnyUp", "AnyDown")
             corpse:SetSize(1, 1)
@@ -1490,6 +1833,7 @@ local function Apply()
             db.chat = nil
         end
         RestoreHud()
+        RestoreStanceGrid()
         for editBox in pairs(editBoxes) do LowerEditBox(editBox) end
         for object, state in pairs(workspaceOriginal) do RestoreGeometry(object, state) end
         workspaceOriginal = {}

@@ -129,7 +129,8 @@ Four more sit near the bottom middle.
 Tablet shapes use a four-column, three-row grid. Square shapes use three
 columns and four rows. Both put the page switcher at the lower left. Class,
 pet and possession controls have a separate footer. The XP bar stays below
-them.
+them. Forever's swing timers keep their place above the action bar at about
+half their size or less.
 
 The layout reserves space for native thumb controls and caps its width on
 ultrawide screens. Camera gestures follow the actual guest viewport,
@@ -228,6 +229,36 @@ normal action pages in combat. Six dots under the page number show which page
 is in use. It never copies or erases actions.
 The primary buttons retain WoW's stance behavior and assignments. The two
 extra bottom bars hide for touch mode and restore on opt-out.
+
+## Action wheel
+
+**Menu → Touch controls → Action wheel** replaces the stock action grid with
+a wheel at the lower right of wide games. It is off by default and the choice
+is kept for the next launch. Tablet shapes keep the stock grid.
+
+The wheel has nine slots in two arcs around a hub. Four rings of nine slots
+use WoW's Action Bars 6 to 8 (slots 145 to 180). Those slots belong to the
+character like any other, but a PC shows them only when those bars are turned
+on. The phone and a PC on the same account can therefore keep different bar
+setups. While the wheel is on, Action Bars 6 to 8 are hidden in touch mode
+because they would repeat it.
+
+- Swipe around the hub, toward the top, for the next ring. Swipe the other way
+  for the previous one. One swipe changes one ring, after about 40 degrees around
+  the hub. Swipes work in combat, and they never click or turn the camera.
+- Tap the hub for the next ring. The hub looks like the toolbar keys and shows
+  the ring number. The ring in use is kept for the next login.
+- Tap a slot to use it. Hold a slot to change it with the same picker as the
+  hotbar.
+- Vehicles, possession and override bars bring the stock main bar back until
+  they end.
+- Stances and forms move to the lower right corner, beside the hub and below
+  Jump. Up to three sit in one row and more take two rows, so a druid's forms
+  fit too. Pet controls stay in the footer. A game wider than 2.4:1 keeps stances
+  in the footer, because Jump covers that corner there.
+
+New rings start empty. A slot keeps whatever the character already had in
+that Action Bar 6 to 8 slot.
 
 ## Inputs for WoW
 

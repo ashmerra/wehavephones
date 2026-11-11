@@ -28,6 +28,7 @@ public final class WeHavePhonesConfig {
     public static final String KEY_DISABLE_VIRTUAL_GAMEPAD = "wehavephones_disable_virtual_gamepad";
     public static final String KEY_MOBILE_TOUCH = "wehavephones_mobile_touch";
     private static final String KEY_MOBILE_TOUCH_SCALE = "wehavephones_mobile_touch_scale";
+    private static final String KEY_MOBILE_TOUCH_WHEEL = "wehavephones_mobile_touch_wheel";
     private static final String KEY_MOBILE_TOUCH_GUIDE = "wehavephones_mobile_touch_guide_";
     public static final String KEY_KEEP_RUNNING_IN_BACKGROUND = "wehavephones_keep_running_in_background";
     public static final String KEY_START_INPUT_BRIDGE = "wehavephones_start_input_bridge";
@@ -178,6 +179,15 @@ public final class WeHavePhonesConfig {
 
     public static void setMobileTouchScale(Context context, float scale) {
         prefs(context).edit().putFloat(KEY_MOBILE_TOUCH_SCALE, scale).apply();
+    }
+
+    /** Whether wide games show the action wheel on Action Bars 6 to 8 instead of the stock action grid. */
+    public static boolean isMobileTouchWheel(Context context) {
+        return prefs(context).getBoolean(KEY_MOBILE_TOUCH_WHEEL, false);
+    }
+
+    public static void setMobileTouchWheel(Context context, boolean wheel) {
+        prefs(context).edit().putBoolean(KEY_MOBILE_TOUCH_WHEEL, wheel).apply();
     }
 
     /** Whether the touch guide for Play or Menus has been shown once. */
