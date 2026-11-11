@@ -127,7 +127,8 @@ Four more sit near the bottom middle.
 Tablet shapes use a four-column, three-row grid. Square shapes use three
 columns and four rows. Both put the page switcher at the lower left. Class,
 pet and possession controls have a separate footer. The XP bar stays below
-them.
+them. Forever's swing timers keep their place above the action bar at about
+half their size or less.
 
 The layout reserves space for native thumb controls and caps its width on
 ultrawide screens. Camera gestures follow the actual guest viewport,
@@ -242,14 +243,16 @@ because they would repeat it.
 
 - Swipe around the hub, toward the top, for the next ring. Swipe the other way
   for the previous one. One swipe changes one ring, after about 40 degrees around
-  the hub. Swipes work in
-  combat, and they never click or turn the camera.
+  the hub. Swipes work in combat, and they never click or turn the camera.
 - Tap the hub for the next ring. The hub shows the ring number and a dot for
   each ring. The ring in use is kept for the next login.
 - Tap a slot to use it. Hold a slot to change it with the same picker as the
   hotbar.
 - Vehicles, possession and override bars bring the stock main bar back until
   they end.
+- Stances and forms move to the lower right corner, beside the hub and below
+  Jump. Pet controls stay in the footer. A game wider than 2.4:1 keeps stances
+  in the footer, because Jump covers that corner there.
 
 New rings start empty. A slot keeps whatever the character already had in
 that Action Bar 6 to 8 slot.

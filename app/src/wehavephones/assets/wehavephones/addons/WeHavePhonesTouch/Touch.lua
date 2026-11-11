@@ -853,6 +853,23 @@ frame:SetScript("OnUpdate", function(_, elapsed)
     if signature ~= workspaceSignature then workspaceSignature = signature QueueWorkspace() end
 end)
 
+-- Right of the wheel's touch area and under Jump, centered on the hub and no taller than a
+-- wheel slot. Keep in step with MobileTouchLayout. A game wider than any phone screen is
+-- letterboxed, and Jump then covers that corner, so stances stay in the footer there.
+local STANCE_ASPECT = 2.4
+local function CornerStances()
+    return WheelWanted() and UIParent:GetWidth()/UIParent:GetHeight() <= STANCE_ASPECT
+end
+local function PlaceStances(object)
+    local hubX, hubY, height = WheelHub()
+    local left = hubX+WHEEL_HUB_X*height+8
+    local scale = math.max(.1, math.min(WHEEL_SLOT*height/math.max(1, object:GetHeight()),
+        (UIParent:GetWidth()-8-left)/math.max(1, object:GetWidth())))
+    SetRelativeScale(object, scale)
+    Unanchor(object)
+    Anchor(object, "LEFT", UIParent, "BOTTOMLEFT", left/scale, hubY/scale)
+end
+
 local positioningClassBars
 local function PositionClassBars()
     if not enabled or InCombatLockdown() or positioningClassBars then return end
@@ -862,8 +879,12 @@ local function PositionClassBars()
         local object = _G[name]
         if object then
             RememberHud(name)
-            bars[#bars+1] = object
-            total = total+object:GetWidth()
+            -- With the wheel, stances and forms sit in the lower right corner beside it instead.
+            if name == "StanceBar" and CornerStances() then PlaceStances(object)
+            else
+                bars[#bars+1] = object
+                total = total+object:GetWidth()
+            end
         end
     end
     local reserved = UIParent:GetWidth()/UIParent:GetHeight()<COMPACT and 132*ActionFit() or 0
@@ -907,6 +928,8 @@ end
 -- The native toolbar's reserved regions, in fractions of the game's height. Keep these
 -- in step with MobileTouchLayout: a band along the top with a minimap square at its right
 -- end on wide games, and the right rail beside the centered layout on narrower ones.
+-- Swing timers at most this share of the layout's width.
+local SWING_WIDTH = .18
 local TOOLBAR_BAND, MINIMAP_RESERVE, ZONE_GAP, AURA_ROW, AURA_ICON = .14, .30, .012, 45, 35
 local topHooks, auraLeft = {}, 0
 local function HookTop(object)
@@ -1318,6 +1341,16 @@ local function PlaceHud()
         SetRelativeScale(StatusTrackingBarManager, scale)
         Unanchor(StatusTrackingBarManager)
         Anchor(StatusTrackingBarManager, "BOTTOM", UIParent, "BOTTOM", 0, 1/scale)
+    end
+    -- Forever's swing timers keep a desktop width above the action bar. Shrink them where
+    -- Blizzard stacks them, and again whenever Edit Mode sizes them.
+    for _, name in ipairs({"SwingTimerMainHandFrame", "SwingTimerOffHandFrame", "SwingTimerRangedFrame"}) do
+        local object = _G[name]
+        if object then
+            RememberHud(name)
+            HookTop(object)
+            SetRelativeScale(object, math.min(.5, LayoutWidth()*SWING_WIDTH/math.max(1, object:GetWidth())))
+        end
     end
 end
 

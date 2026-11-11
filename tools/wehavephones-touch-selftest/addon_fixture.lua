@@ -254,6 +254,10 @@ for _, name in ipairs({"StanceBar","PetActionBar","PossessActionBar","MicroMenuC
     object:SetPoint("BOTTOMLEFT",UIParent,"BOTTOMLEFT",2,3)
     object:Show()
 end
+-- Forever's swing timers, which Blizzard stacks above the action bar.
+SwingTimerMainHandFrame=CreateFrame("Frame","SwingTimerMainHandFrame",UIParent)
+SwingTimerMainHandFrame:SetSize(426,30)
+SwingTimerMainHandFrame:SetPoint("BOTTOM",UIParent,"BOTTOM",0,120)
 QuestWatchFrame=CreateFrame("Frame",FIXTURE_PROJECT==19 and "WatchFrame" or "QuestWatchFrame",UIParent)
 QuestWatchFrame:SetSize(280,160)
 QuestWatchFrame:SetPoint("TOPRIGHT",UIParent,"TOPRIGHT",-10,-200)
@@ -554,6 +558,9 @@ for _,scale in ipairs({1.25,1.5,1.75}) do
             end
         end
         assert(StanceBar.point[3]=="CENTER" and PetActionBar.point[3]=="CENTER","class controls have a separate footer")
+        local swingScale=SwingTimerMainHandFrame:GetEffectiveScale()/UIParent:GetEffectiveScale()
+        assert(swingScale<=.5 and 426*swingScale<=math.min(width*.8,height*16/9)*.18+.01
+            and SwingTimerMainHandFrame.point[4]==0,"swing timers shrink where Blizzard stacks them")
         local compactTop=aspect<1.59
         local rail=compactTop and (width-math.min(width*.8,height*16/9))/2 or 0
         local zoneLeft=width-(.312+math.max(.42,math.min(.75,aspect-1.1)))*height
@@ -667,6 +674,16 @@ for _,scale in ipairs({1.25,1.5,1.75}) do
                     assert(l+w<=r[1] or r[3]<=l or b+h<=r[2] or r[4]<=b,"class controls end before the wheel")
                 end
             end
+            -- Stances and forms sit right of the wheel's touch area, under Jump, on the hub's line.
+            local hubX,hubY=objects.WeHavePhonesTouchWheelHub.point[4]*objects.WeHavePhonesTouchWheelHub:GetScale(),
+                objects.WeHavePhonesTouchWheelHub.point[5]*objects.WeHavePhonesTouchWheelHub:GetScale()
+            if aspect<=2.4 then
+                local l,b,w,h=topRect(StanceBar)
+                assert(StanceBar.point[3]=="BOTTOMLEFT" and PetActionBar.point[3]=="CENTER","only the stance bar leaves the footer")
+                assert(l>=hubX+.125*height and l+w<=width and h<=height*.10+.01 and b>=0,"stances fill the lower right corner")
+                close(b+h/2,hubY,"stances line up with the hub")
+            else assert(StanceBar.point[3]=="CENTER","stances stay in the footer when Jump covers the corner") end
+            exportGeometry(StanceBar,width,height,"class")
             for i=1,9 do exportGeometry(slots[i],width,height,"wheel") end
             exportGeometry(objects.WeHavePhonesTouchWheelHub,width,height,"wheel")
         end
@@ -989,8 +1006,8 @@ active.scripts.OnEvent(active,"PLAYER_REGEN_ENABLED")
 for k,v in pairs(original) do assert(values[k]==v,"restore CVar "..k) end
 assert(UIParent:GetScale()==1 and not extraBars[1] and not extraBars[2] and extraBars[3],"root scale and extra bars restored without changing another bar")
 assert(ChatFrame1.width==300 and ChatFrame1.height==150,"chat geometry restored")
-assert(StanceBar:GetScale()==1 and PetActionBar:GetScale()==1 and StatusTrackingBarManager:GetScale()==1,
-    "class and experience scaling restore on opt-out")
+assert(StanceBar:GetScale()==1 and PetActionBar:GetScale()==1 and StatusTrackingBarManager:GetScale()==1
+    and SwingTimerMainHandFrame:GetScale()==1,"class, experience and swing timer scaling restore on opt-out")
 assert(MicroMenuContainer.visible and BagsBar.visible and MicroButtonAndBagsBar.visible,"stock shortcuts restore on opt-out")
 assert(QuestWatchFrame.visible and QuestWatchFrame:GetScale()==1 and QuestWatchFrame.point[3]=="TOPRIGHT",
     "opting out restores stock tracker geometry and visibility")
