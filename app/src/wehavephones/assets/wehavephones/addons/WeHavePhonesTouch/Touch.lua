@@ -1496,7 +1496,7 @@ local function RoundedRect(parent, level, inset, bottomInset, radius, height)
 end
 
 -- A copy of the native Map key: the same corner, lip, outline, navy face and silver text,
--- with the ring number in place of the icon. Colors match MobileTouchControlsView.
+-- with only the ring number on it. Colors match MobileTouchControlsView.
 local HUB_SIZE = 64
 local HUB_LIP, HUB_EDGE, HUB_RADIUS = HUB_SIZE*.06, HUB_SIZE*.045, HUB_SIZE*.24
 local HUB_COLORS = {
@@ -1511,22 +1511,17 @@ local function CreateWheelHub()
     RoundedRect(hub, 1, 0, 0, HUB_RADIUS, HUB_SIZE)(lip, lip)
     local edge = RoundedRect(hub, 2, 0, HUB_LIP, HUB_RADIUS, HUB_SIZE)
     local face = RoundedRect(hub, 3, HUB_EDGE, HUB_LIP+HUB_EDGE, HUB_RADIUS-HUB_EDGE, HUB_SIZE)
-    local label = hub:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     local number = hub:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     local function Paint(pressed)
         local colors = pressed and HUB_COLORS.pressed or HUB_COLORS.key
         edge(colors[3], colors[3])
         face(colors[1], colors[2])
         number:SetTextColor(pressed and 1 or .937, pressed and 1 or .957, pressed and 1 or .973)
-        label:SetTextColor(pressed and 1 or .729, pressed and 1 or .780, pressed and 1 or .839)
     end
-    -- The native key: an icon of .42 of the key above a label of .22, both centered together.
     -- Arial Narrow is the closest stock sans to the native keys' Roboto.
-    number:SetFont("Fonts\\ARIALN.TTF", HUB_SIZE*.40, "")
-    label:SetFont("Fonts\\ARIALN.TTF", HUB_SIZE*.22, "")
-    number:SetPoint("CENTER", 0, HUB_SIZE*.11)
-    label:SetPoint("CENTER", 0, -HUB_SIZE*.21)
-    label:SetText("Ring")
+    number:SetFont("Fonts\\ARIALN.TTF", HUB_SIZE*.46, "")
+    -- Centered on the face, above the lip.
+    number:SetPoint("CENTER", 0, HUB_LIP/2)
     hub:SetFontString(number)
     hub:SetText("1")
     Paint(false)
