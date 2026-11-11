@@ -22,7 +22,7 @@ local WHITE = "Interface\\Buttons\\WHITE8X8"
 -- Sizes are fractions of the game's height. Keep in step with MobileTouchLayout.
 local WHEEL_FIRST, WHEEL_SLOTS, WHEEL_RINGS = 145, 9, 4
 local WHEEL_ANGLES = {180, 143, 107, 70, 180, 154, 129, 104, 78}
-local WHEEL_SLOT, WHEEL_HUB, WHEEL_INNER, WHEEL_OUTER = .10, .085, .21, .32
+local WHEEL_SLOT, WHEEL_HUB, WHEEL_INNER, WHEEL_OUTER = .10, .107, .21, .32
 local WHEEL_RIGHT, WHEEL_GAP, WHEEL_HUB_X, WHEEL_HUB_Y = .975, .17, .125, .075
 -- Forever (WOW_PROJECT_CAMELOT) runs Classic content on the Retail UI: Edit Mode,
 -- C_SpellBook, combined bags and the objective tracker, without the old Classic globals.
@@ -1432,9 +1432,6 @@ local function ShowRing(ring)
     WeHavePhonesTouchDB.wheelRing = ring
     if not wheel then return end
     wheel.hub:SetText(tostring(ring))
-    for i, dot in ipairs(wheel.dots) do
-        if i == ring then dot:SetVertexColor(.46, .74, .96, 1) else dot:SetVertexColor(.55, .62, .72, .55) end
-    end
 end
 
 -- Secure ring changes, so a swipe works in combat. Shift-F10 and Shift-F11 click these.
@@ -1454,50 +1451,85 @@ local function RingButton(button, step)
     return button
 end
 
--- A rounded rectangle from two strips and four corner discs. WoW has no rounded texture,
--- but every edition has the round portrait mask.
+-- A rounded rectangle from three strips and four quarter discs that never overlap, so a
+-- translucent fill stays even. WoW has no rounded texture, but every edition has the round
+-- portrait mask. Each piece takes its own share of a vertical gradient, so together they
+-- shade like one shape.
 local DISC = "Interface\\CharacterFrame\\TempPortraitAlphaMask"
-local function RoundedRect(parent, level, inset, bottomInset, radius)
+local function RoundedRect(parent, level, inset, bottomInset, radius, height)
     local pieces = {}
-    local function Piece(texture, ...)
+    local top, bottom = inset, height-bottomInset
+    local function Piece(texture, from, to, ...)
         local piece = parent:CreateTexture(nil, "BACKGROUND", nil, level)
         piece:SetTexture(texture)
         for _, point in ipairs({...}) do piece:SetPoint(unpack(point)) end
-        pieces[#pieces+1] = piece
+        pieces[#pieces+1] = {piece, (from-top)/(bottom-top), (to-top)/(bottom-top)}
         return piece
     end
-    Piece(WHITE, {"TOPLEFT", inset+radius, -inset}, {"BOTTOMRIGHT", -inset-radius, bottomInset})
-    Piece(WHITE, {"TOPLEFT", inset, -inset-radius}, {"BOTTOMRIGHT", -inset, bottomInset+radius})
-    for _, corner in ipairs({{"TOPLEFT", inset, -inset}, {"TOPRIGHT", -inset, -inset},
-        {"BOTTOMLEFT", inset, bottomInset}, {"BOTTOMRIGHT", -inset, bottomInset}}) do
-        Piece(DISC, corner):SetSize(radius*2, radius*2)
+    Piece(WHITE, top, bottom, {"TOPLEFT", inset+radius, -inset}, {"BOTTOMRIGHT", -inset-radius, bottomInset})
+    Piece(WHITE, top+radius, bottom-radius, {"TOPLEFT", inset, -inset-radius}, {"BOTTOMRIGHT", parent, "BOTTOMLEFT", inset+radius, bottomInset+radius})
+    Piece(WHITE, top+radius, bottom-radius, {"TOPRIGHT", -inset, -inset-radius}, {"BOTTOMLEFT", parent, "BOTTOMRIGHT", -inset-radius, bottomInset+radius})
+    for _, corner in ipairs({{"TOPLEFT", inset, -inset, 0, .5, 0, .5}, {"TOPRIGHT", -inset, -inset, .5, 1, 0, .5},
+        {"BOTTOMLEFT", inset, bottomInset, 0, .5, .5, 1}, {"BOTTOMRIGHT", -inset, bottomInset, .5, 1, .5, 1}}) do
+        local upper = corner[1]:find("TOP")
+        local piece = Piece(DISC, upper and top or bottom-radius, upper and top+radius or bottom, {corner[1], corner[2], corner[3]})
+        piece:SetSize(radius, radius)
+        piece:SetTexCoord(corner[4], corner[5], corner[6], corner[7])
     end
-    return function(r, g, b, a) for _, piece in ipairs(pieces) do piece:SetVertexColor(r, g, b, a) end end
+    -- Colors are {r, g, b, a} at the top and the bottom.
+    return function(high, low)
+        for _, entry in ipairs(pieces) do
+            local piece, from, to = entry[1], entry[2], entry[3]
+            local function At(f)
+                local c = {}
+                for i = 1, 4 do c[i] = high[i]+(low[i]-high[i])*f end
+                return c
+            end
+            local upper, lower = At(from), At(to)
+            if piece.SetGradient and CreateColor then
+                piece:SetGradient("VERTICAL", CreateColor(unpack(lower)), CreateColor(unpack(upper)))
+            else piece:SetVertexColor(unpack(At((from+to)/2))) end
+        end
+    end
 end
 
--- Painted like the native keys: a dark lip, an outline and a face that turns blue while pressed.
-local HUB_SIZE, HUB_LIP = 64, 4
+-- A copy of the native Map key: the same corner, lip, outline, navy face and silver text,
+-- with the ring number in place of the icon. Colors match MobileTouchControlsView.
+local HUB_SIZE = 64
+local HUB_LIP, HUB_EDGE, HUB_RADIUS = HUB_SIZE*.06, HUB_SIZE*.045, HUB_SIZE*.24
+local HUB_COLORS = {
+    lip = {.024, .086, .176, .8},
+    key = {{.090, .247, .420, .85}, {.039, .141, .282, .85}, {.435, .651, .859, .8}},
+    pressed = {{.133, .447, .729, .95}, {.063, .349, .686, .95}, {.459, .741, .957, 1}},
+}
 local function CreateWheelHub()
     local hub = CreateFrame("Button", "WeHavePhonesTouchWheelHub", wheel, "SecureHandlerClickTemplate")
     hub:SetSize(HUB_SIZE, HUB_SIZE)
-    local radius = HUB_SIZE*.24
-    RoundedRect(hub, 1, 0, 0, radius)(.024, .086, .176, .8)
-    local edge = RoundedRect(hub, 2, 0, HUB_LIP, radius)
-    local face = RoundedRect(hub, 3, 2, HUB_LIP+2, radius-2)
+    local lip = HUB_COLORS.lip
+    RoundedRect(hub, 1, 0, 0, HUB_RADIUS, HUB_SIZE)(lip, lip)
+    local edge = RoundedRect(hub, 2, 0, HUB_LIP, HUB_RADIUS, HUB_SIZE)
+    local face = RoundedRect(hub, 3, HUB_EDGE, HUB_LIP+HUB_EDGE, HUB_RADIUS-HUB_EDGE, HUB_SIZE)
+    local label = hub:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    local number = hub:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     local function Paint(pressed)
-        local colors = pressed and ACTIVE or KEY
-        edge(colors[3][1], colors[3][2], colors[3][3], 1)
-        face(colors[2][1], colors[2][2], colors[2][3], .9)
+        local colors = pressed and HUB_COLORS.pressed or HUB_COLORS.key
+        edge(colors[3], colors[3])
+        face(colors[1], colors[2])
+        number:SetTextColor(pressed and 1 or .937, pressed and 1 or .957, pressed and 1 or .973)
+        label:SetTextColor(pressed and 1 or .729, pressed and 1 or .780, pressed and 1 or .839)
     end
+    -- The native key: an icon of .42 of the key above a label of .22, both centered together.
+    -- Arial Narrow is the closest stock sans to the native keys' Roboto.
+    number:SetFont("Fonts\\ARIALN.TTF", HUB_SIZE*.40, "")
+    label:SetFont("Fonts\\ARIALN.TTF", HUB_SIZE*.22, "")
+    number:SetPoint("CENTER", 0, HUB_SIZE*.11)
+    label:SetPoint("CENTER", 0, -HUB_SIZE*.21)
+    label:SetText("Ring")
+    hub:SetFontString(number)
+    hub:SetText("1")
     Paint(false)
     hub:HookScript("OnMouseDown", function() Paint(true) end)
     hub:HookScript("OnMouseUp", function() Paint(false) end)
-    local label = hub:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    -- About a third of the key, as on the native keys.
-    if STANDARD_TEXT_FONT then label:SetFont(STANDARD_TEXT_FONT, 22, "") end
-    label:SetPoint("CENTER", 0, 5)
-    hub:SetFontString(label)
-    hub:SetText("1")
     return hub
 end
 
@@ -1532,14 +1564,6 @@ local function CreateWheel()
     wheel:HookScript("OnAttributeChanged", function(_, name, value) if name == "ring" then ShowRing(value) end end)
     -- The hub shows the ring and changes to the next one when tapped.
     wheel.hub = RingButton(CreateWheelHub(), 1)
-    wheel.dots = {}
-    for i = 1, WHEEL_RINGS do
-        local dot = wheel.hub:CreateTexture(nil, "OVERLAY")
-        dot:SetTexture(WHITE)
-        dot:SetSize(5, 5)
-        dot:SetPoint("CENTER", wheel.hub, "CENTER", (i-(WHEEL_RINGS+1)/2)*9, -14)
-        wheel.dots[i] = dot
-    end
     RingButton(CreateFrame("Button", "WeHavePhonesTouchWheelNext", UIParent, "SecureHandlerClickTemplate"), 1)
     RingButton(CreateFrame("Button", "WeHavePhonesTouchWheelPrevious", UIParent, "SecureHandlerClickTemplate"), -1)
     wheel:SetAttribute("ring", math.max(1, math.min(WHEEL_RINGS, tonumber(WeHavePhonesTouchDB.wheelRing) or 1)))
