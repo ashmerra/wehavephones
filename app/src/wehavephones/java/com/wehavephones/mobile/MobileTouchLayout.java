@@ -18,7 +18,9 @@ public final class MobileTouchLayout {
      * bottom. Slots form two arcs around the hub.
      */
     public static final float WHEEL_RIGHT = .975f, WHEEL_GAP = .17f, WHEEL_HUB_X = .125f, WHEEL_HUB_Y = .075f, WHEEL_SLOT = .10f,
-            WHEEL_HUB = .13f, WHEEL_INNER = .21f, WHEEL_OUTER = .32f;
+            WHEEL_INNER = .21f, WHEEL_OUTER = .32f;
+    /** Swipes around the hub count from this far out, where the angle around it is steady. */
+    public static final float WHEEL_DEAD = .052f;
     /** Slot angles in degrees, counterclockwise from the right: four inner slots, then five outer slots. */
     public static final float[] WHEEL_ANGLES = {180, 143, 107, 70, 180, 154, 129, 104, 78};
     /** How far the wheel's touch area reaches from the hub, past the outer slots. */

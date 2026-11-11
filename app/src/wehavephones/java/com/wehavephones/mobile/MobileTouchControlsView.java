@@ -188,7 +188,7 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
         radius = layout.radius;
         stickX = layout.stickX;
         stickY = layout.stickY;
-        input.setWheel(layout.wheelX, layout.wheelY, MobileTouchLayout.WHEEL_HUB * .4f * layout.wheelUnit);
+        input.setWheel(layout.wheelX, layout.wheelY, MobileTouchLayout.WHEEL_DEAD * layout.wheelUnit);
         knobX = stickX;
         knobY = stickY;
         for (int i = 0; i < buttons.length; i++) {

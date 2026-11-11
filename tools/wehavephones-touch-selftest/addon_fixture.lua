@@ -671,6 +671,8 @@ for _,scale in ipairs({1.25,1.5,1.75}) do
         else
             assert(wheel.visible and not ActionButton1.visible,"wide games show the wheel")
             local rects={wheelRect(objects.WeHavePhonesTouchWheelHub)}
+            local hubRect=rects[1]
+            close(hubRect[3]-hubRect[1],height*.085,"the hub is smaller than a wheel slot")
             for i=1,9 do
                 local r=wheelRect(slots[i])
                 close(r[3]-r[1],height*.10,"slots are a tenth of the game's height")

@@ -449,7 +449,7 @@ public final class TouchSelfTest {
         float hx = layout.wheelX, hy = layout.wheelY, unit = layout.wheelUnit, r = MobileTouchLayout.WHEEL_OUTER * unit;
         Sink sink = new Sink();
         MobileTouchInput input = new MobileTouchInput(sink, 8);
-        input.setWheel(hx, hy, MobileTouchLayout.WHEEL_HUB * .4f * unit);
+        input.setWheel(hx, hy, MobileTouchLayout.WHEEL_DEAD * unit);
         // A tap on a slot casts it, and a hold edits it.
         input.down(1, Zone.WHEEL, hx - r, hy, 0);
         input.up(1);
