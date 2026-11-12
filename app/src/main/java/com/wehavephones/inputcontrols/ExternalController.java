@@ -32,8 +32,18 @@ public class ExternalController {
     private String name;
     private String id;
     private int deviceId = -1;
+    /** Analog trigger travel that presses L2/R2, and the lower travel that releases them again. */
+    static final float TRIGGER_PRESS = 0.25f, TRIGGER_RELEASE = 0.15f;
     private final ArrayList<ExternalControllerBinding> controllerBindings = new ArrayList<>();
     public final GamepadState state = new GamepadState();
+    /*
+     * Controllers report the same control as keys or axes depending on their mode: Switch-style
+     * pads send ZL/ZR and the D-pad as key events, Xbox-style pads as trigger and hat axes. Every
+     * stick movement is a motion event, so each source keeps its own state and the two are merged.
+     * Otherwise moving a stick releases a held key trigger or D-pad direction.
+     */
+    private boolean triggerKeyL, triggerKeyR, triggerAxisL, triggerAxisR;
+    private final boolean[] dpadKey = new boolean[4], dpadHat = new boolean[4];
 
     public String getName() {
         return name;
@@ -131,17 +141,32 @@ public class ExternalController {
         if (historyPos == -1) {
             float axisX = getCenteredAxis(event, MotionEvent.AXIS_HAT_X, historyPos);
             float axisY = getCenteredAxis(event, MotionEvent.AXIS_HAT_Y, historyPos);
-
-            state.dpad[0] = axisY == -1.0f && Math.abs(state.thumbLY) < ControlElement.STICK_DEAD_ZONE;
-            state.dpad[1] = axisX ==  1.0f && Math.abs(state.thumbLX) < ControlElement.STICK_DEAD_ZONE;
-            state.dpad[2] = axisY ==  1.0f && Math.abs(state.thumbLY) < ControlElement.STICK_DEAD_ZONE;
-            state.dpad[3] = axisX == -1.0f && Math.abs(state.thumbLX) < ControlElement.STICK_DEAD_ZONE;
+            dpadHat[0] = axisY == -1.0f;
+            dpadHat[1] = axisX ==  1.0f;
+            dpadHat[2] = axisY ==  1.0f;
+            dpadHat[3] = axisX == -1.0f;
+            updateDpad();
         }
     }
 
     private void processTriggerButton(MotionEvent event) {
-        state.setPressed(IDX_BUTTON_L2, event.getAxisValue(MotionEvent.AXIS_LTRIGGER) == 1.0f || event.getAxisValue(MotionEvent.AXIS_BRAKE) == 1.0f);
-        state.setPressed(IDX_BUTTON_R2, event.getAxisValue(MotionEvent.AXIS_RTRIGGER) == 1.0f || event.getAxisValue(MotionEvent.AXIS_GAS) == 1.0f);
+        triggerAxisL = isTriggerHeld(triggerAxisL, Math.max(event.getAxisValue(MotionEvent.AXIS_LTRIGGER), event.getAxisValue(MotionEvent.AXIS_BRAKE)));
+        triggerAxisR = isTriggerHeld(triggerAxisR, Math.max(event.getAxisValue(MotionEvent.AXIS_RTRIGGER), event.getAxisValue(MotionEvent.AXIS_GAS)));
+        updateTriggers();
+    }
+
+    /** Analog triggers rarely reach exactly 1.0, so a partial pull counts, with hysteresis against jitter. */
+    static boolean isTriggerHeld(boolean held, float value) {
+        return value >= (held ? TRIGGER_RELEASE : TRIGGER_PRESS);
+    }
+
+    private void updateTriggers() {
+        state.setPressed(IDX_BUTTON_L2, triggerKeyL || triggerAxisL);
+        state.setPressed(IDX_BUTTON_R2, triggerKeyR || triggerAxisR);
+    }
+
+    private void updateDpad() {
+        for (int i = 0; i < 4; i++) state.dpad[i] = dpadKey[i] || dpadHat[i];
     }
 
     public boolean updateStateFromMotionEvent(MotionEvent event) {
@@ -169,26 +194,39 @@ public class ExternalController {
                             " deviceId=" + event.getDeviceId() +
                             " mappedButtonIdx=" + buttonIdx);
         }
+        if (buttonIdx == IDX_BUTTON_L2 || buttonIdx == IDX_BUTTON_R2) {
+            if (buttonIdx == IDX_BUTTON_L2) triggerKeyL = pressed;
+            else triggerKeyR = pressed;
+            updateTriggers();
+            return true;
+        }
         if (buttonIdx != -1) {
             state.setPressed(buttonIdx, pressed);
             return true;
         }
 
-        switch (keyCode) {
-            case KeyEvent.KEYCODE_DPAD_UP:
-                state.dpad[0] = pressed && Math.abs(state.thumbLY) < ControlElement.STICK_DEAD_ZONE;
-                return true;
-            case KeyEvent.KEYCODE_DPAD_RIGHT:
-                state.dpad[1] = pressed && Math.abs(state.thumbLX) < ControlElement.STICK_DEAD_ZONE;
-                return true;
-            case KeyEvent.KEYCODE_DPAD_DOWN:
-                state.dpad[2] = pressed && Math.abs(state.thumbLY) < ControlElement.STICK_DEAD_ZONE;
-                return true;
-            case KeyEvent.KEYCODE_DPAD_LEFT:
-                state.dpad[3] = pressed && Math.abs(state.thumbLX) < ControlElement.STICK_DEAD_ZONE;
-                return true;
+        int dpadIdx = getDpadIdxByKeyCode(keyCode);
+        if (dpadIdx != -1) {
+            dpadKey[dpadIdx] = pressed;
+            updateDpad();
+            return true;
         }
         return false;
+    }
+
+    static int getDpadIdxByKeyCode(int keyCode) {
+        switch (keyCode) {
+            case KeyEvent.KEYCODE_DPAD_UP:
+                return 0;
+            case KeyEvent.KEYCODE_DPAD_RIGHT:
+                return 1;
+            case KeyEvent.KEYCODE_DPAD_DOWN:
+                return 2;
+            case KeyEvent.KEYCODE_DPAD_LEFT:
+                return 3;
+            default:
+                return -1;
+        }
     }
 
     public static ArrayList<ExternalController> getControllers() {

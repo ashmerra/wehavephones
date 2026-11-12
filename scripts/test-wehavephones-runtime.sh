@@ -203,6 +203,7 @@ echo "[test-wehavephones-runtime] == 9. guest output without session logging =="
 echo
 echo "[test-wehavephones-runtime] == 10. automatic virtual gamepad and controller handoff =="
 "$ROOT_DIR/scripts/test-wehavephones-gamepad.sh" || fail "GamepadSelfTest"
+"$ROOT_DIR/scripts/test-wehavephones-controller.sh" || fail "ControllerSelfTest"
 
 echo
 echo "[test-wehavephones-runtime] == 11. concurrent native connector isolation =="
