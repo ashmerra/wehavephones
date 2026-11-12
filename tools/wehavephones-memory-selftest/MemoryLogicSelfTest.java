@@ -28,6 +28,7 @@ public final class MemoryLogicSelfTest {
     public static void main(String[] args) {
         testEnvComposition();
         testConfigWtf();
+        testSaveMemory();
         testScreenSize();
         testReport();
 
@@ -107,6 +108,57 @@ public final class MemoryLogicSelfTest {
                 !MemoryTransforms.configWtfContains(lfEdited, MemoryTransforms.resolutionCvars("1280x720")), "");
         check("wtf_contains_detects_old_preload",
                 !MemoryTransforms.configWtfContains(original, MemoryTransforms.memoryCvars()), "");
+    }
+
+    private static void testSaveMemory() {
+        // Forever at its Low shadow setting, multithreaded rendering at the game's default.
+        String forever = "SET locale \"enUS\"\r\nSET shadowMode \"2\"\r\nSET RAIDshadowMode \"2\"\r\nSET maxFPS \"30\"\r\n";
+        LinkedHashMap<String, String> pending = MemoryTransforms.saveMemoryPending(forever);
+        check("save_pending_all", "{GxCompatCommandListMultiThreading=0, shadowMode=0, RAIDshadowMode=0}".equals(pending.toString()),
+                pending.toString());
+        String record = MemoryTransforms.saveMemoryRecord(null, forever);
+        check("save_record", "GxCompatCommandListMultiThreading\nshadowMode=2\nRAIDshadowMode=2\n".equals(record), record);
+        String on = MemoryTransforms.editConfigWtf(forever, pending);
+        check("save_applied", MemoryTransforms.configWtfContains(on, MemoryTransforms.saveMemoryCvars())
+                && on.contains("SET maxFPS \"30\"\r\n"), on);
+        check("save_applied_stable", MemoryTransforms.saveMemoryPending(on).isEmpty(), on);
+
+        // The game drops a setting from Config.wtf while it has its default.
+        String gameWrote = "SET locale \"enUS\"\r\nSET maxFPS \"30\"\r\nSET GxCompatCommandListMultiThreading \"0\"\r\n";
+        check("save_default_line_missing_is_applied", MemoryTransforms.saveMemoryPending(gameWrote).isEmpty(), "");
+        check("save_record_unchanged_when_applied", record.equals(MemoryTransforms.saveMemoryRecord(record, gameWrote)), "");
+
+        String off = MemoryTransforms.restoreSaveMemory(gameWrote, record);
+        LinkedHashMap<String, String> restored = MemoryTransforms.parseWtfSettings(off);
+        check("save_restore_shadows", "2".equals(restored.get("shadowmode")) && "2".equals(restored.get("raidshadowmode")), off);
+        check("save_restore_removes_added_line", !restored.containsKey("gxcompatcommandlistmultithreading"), off);
+        check("save_restore_keeps_other", off.startsWith("SET locale \"enUS\"\r\nSET maxFPS \"30\"\r\n")
+                && !off.contains("\n\n") && off.endsWith("\r\n"), off);
+        LinkedHashMap<String, String> fromZeros = MemoryTransforms.parseWtfSettings(MemoryTransforms.restoreSaveMemory(on, record));
+        check("save_restore_from_explicit_zero", "2".equals(fromZeros.get("shadowmode")) && "2".equals(fromZeros.get("raidshadowmode"))
+                && !fromZeros.containsKey("gxcompatcommandlistmultithreading"), fromZeros.toString());
+
+        // A shadow setting chosen in the game while the switch is on becomes the value to bring back.
+        String raised = gameWrote + "SET shadowMode \"3\"\r\n";
+        check("save_pending_changed_in_game", "{shadowMode=0}".equals(MemoryTransforms.saveMemoryPending(raised).toString()), "");
+        String newer = MemoryTransforms.saveMemoryRecord(record, raised);
+        check("save_record_takes_newer_value", "GxCompatCommandListMultiThreading\nshadowMode=3\nRAIDshadowMode=2\n".equals(newer), newer);
+        // Changed after the last launch with the switch on: the player's value stays.
+        String kept = MemoryTransforms.restoreSaveMemory(raised, record);
+        check("save_restore_keeps_newer_value", "3".equals(MemoryTransforms.parseWtfSettings(kept).get("shadowmode"))
+                && "2".equals(MemoryTransforms.parseWtfSettings(kept).get("raidshadowmode")), kept);
+
+        // Retail at Low shadows has no shadow lines: only the renderer setting is recorded and restored.
+        String retail = "SET graphicsShadowQuality \"0\"\n";
+        String retailRecord = MemoryTransforms.saveMemoryRecord(null, retail);
+        check("save_record_only_pending", "GxCompatCommandListMultiThreading\n".equals(retailRecord), retailRecord);
+        String retailOn = MemoryTransforms.editConfigWtf(retail, MemoryTransforms.saveMemoryPending(retail));
+        check("save_retail_roundtrip", retail.equals(MemoryTransforms.restoreSaveMemory(retailOn, retailRecord)),
+                MemoryTransforms.restoreSaveMemory(retailOn, retailRecord));
+        check("save_restore_nothing_recorded", retailOn.equals(MemoryTransforms.restoreSaveMemory(retailOn, "")), "");
+        check("save_restore_ignores_unknown", retailOn.equals(MemoryTransforms.restoreSaveMemory(retailOn, "farclip=100\nbogus\n")), "");
+        String noNewline = "SET a \"1\"\nSET shadowMode \"3\"";
+        check("save_restore_untouched_bytes", noNewline.equals(MemoryTransforms.restoreSaveMemory(noNewline, "shadowMode=2\n")), "");
     }
 
     private static void testScreenSize() {

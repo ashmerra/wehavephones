@@ -49,6 +49,30 @@ public final class MemoryTransforms {
     public static final String DXVK_CHUNK_OPTION = "dxvk.maxChunkSize";
     public static final String DXVK_CHUNK_MB = "16";
 
+    /**
+     * Game settings the Save memory switch in Settings enforces: the name,
+     * the enforced value and the game's own default. The game leaves a
+     * setting out of {@code Config.wtf} while it has its default, so a
+     * missing line counts as the default.
+     *
+     * <p>In Forever on the S23 the multithreaded renderer kept 48 constant
+     * buffers of 2 MB where the single-threaded one kept 9 to 12, and DXVK
+     * holds two copies of each. Shadows kept a 4096x4096 render target and a
+     * 64 MB buffer. Both off held about 300 MB less GPU memory. The raid
+     * shadow setting replaces the normal one in raids and battlegrounds.</p>
+     */
+    private static final String[][] SAVE_MEMORY_CVARS = {
+            {"GxCompatCommandListMultiThreading", "0", "1"},
+            {"shadowMode", "0", "0"},
+            {"RAIDshadowMode", "0", "0"},
+    };
+    /**
+     * Beside each game's {@code Config.wtf}: the values the Save memory
+     * settings had before the switch replaced them, one {@code name=value}
+     * per line, or the bare name for a setting that had no line.
+     */
+    public static final String SAVE_MEMORY_RECORD = "WTF/.wehavephones-save-memory";
+
     /** Keys always removed; {@link #envOverrides()} replaces the rest. */
     public static final String[] REMOVED_ENV_KEYS = {
             ENV_DXVK_HUD
@@ -186,6 +210,87 @@ public final class MemoryTransforms {
         return settings;
     }
 
+    /** The settings the Save memory switch enforces, with their enforced values. */
+    public static LinkedHashMap<String, String> saveMemoryCvars() {
+        LinkedHashMap<String, String> settings = new LinkedHashMap<>();
+        for (String[] cvar : SAVE_MEMORY_CVARS) settings.put(cvar[0], cvar[1]);
+        return settings;
+    }
+
+    /**
+     * The Save memory settings that {@code config} does not have in effect,
+     * with the value to write. Empty when the switch is fully applied.
+     */
+    public static LinkedHashMap<String, String> saveMemoryPending(String config) {
+        LinkedHashMap<String, String> actual = parseWtfSettings(config);
+        LinkedHashMap<String, String> pending = new LinkedHashMap<>();
+        for (String[] cvar : SAVE_MEMORY_CVARS) {
+            if (!cvar[1].equals(effectiveValue(actual, cvar))) pending.put(cvar[0], cvar[1]);
+        }
+        return pending;
+    }
+
+    /**
+     * {@code record} (null for none) updated with the value {@code config}
+     * has for every pending Save memory setting. A value the game wrote
+     * while the switch was on replaces the older one, so turning the switch
+     * off brings back the player's latest choice.
+     */
+    public static String saveMemoryRecord(String record, String config) {
+        LinkedHashMap<String, String> saved = parseSaveMemoryRecord(record);
+        LinkedHashMap<String, String> actual = parseWtfSettings(config);
+        for (String name : saveMemoryPending(config).keySet()) {
+            saved.put(name, actual.get(name.toLowerCase(Locale.US)));
+        }
+        StringBuilder builder = new StringBuilder();
+        for (Map.Entry<String, String> entry : saved.entrySet()) {
+            builder.append(entry.getKey());
+            if (entry.getValue() != null) builder.append('=').append(entry.getValue());
+            builder.append('\n');
+        }
+        return builder.toString();
+    }
+
+    /**
+     * {@code config} with the recorded values put back: a recorded value is
+     * written again and a setting that had no line loses its line. A setting
+     * that no longer has the enforced value was changed in the game since,
+     * and is kept.
+     */
+    public static String restoreSaveMemory(String config, String record) {
+        LinkedHashMap<String, String> saved = parseSaveMemoryRecord(record);
+        LinkedHashMap<String, String> actual = parseWtfSettings(config);
+        LinkedHashMap<String, String> rewritten = new LinkedHashMap<>();
+        Set<String> managed = new TreeSet<>();
+        for (String[] cvar : SAVE_MEMORY_CVARS) {
+            if (!saved.containsKey(cvar[0]) || !cvar[1].equals(effectiveValue(actual, cvar))) continue;
+            String before = saved.get(cvar[0]);
+            if (before == null && !actual.containsKey(cvar[0].toLowerCase(Locale.US))) continue;
+            managed.add(cvar[0].toLowerCase(Locale.US));
+            if (before != null) rewritten.put(cvar[0], before);
+        }
+        return managed.isEmpty() ? (config != null ? config : "") : rewriteConfigWtf(config, managed, rewritten);
+    }
+
+    /** The recorded values by setting name. A null value means the setting had no line. */
+    private static LinkedHashMap<String, String> parseSaveMemoryRecord(String record) {
+        LinkedHashMap<String, String> saved = new LinkedHashMap<>();
+        if (record == null) return saved;
+        for (String line : record.split("\r\n|\r|\n")) {
+            int index = line.indexOf('=');
+            String name = (index >= 0 ? line.substring(0, index) : line).trim();
+            for (String[] cvar : SAVE_MEMORY_CVARS) {
+                if (cvar[0].equalsIgnoreCase(name)) saved.put(cvar[0], index >= 0 ? line.substring(index + 1).trim() : null);
+            }
+        }
+        return saved;
+    }
+
+    private static String effectiveValue(LinkedHashMap<String, String> actual, String[] cvar) {
+        String value = actual.get(cvar[0].toLowerCase(Locale.US));
+        return value != null ? value : cvar[2];
+    }
+
     /** Parse "KEY=value KEY2=value2" into a map; invalid tokens are ignored. */
     public static LinkedHashMap<String, String> parseEnv(String envVars) {
         LinkedHashMap<String, String> values = new LinkedHashMap<>();
@@ -239,9 +344,13 @@ public final class MemoryTransforms {
      * unrelated lines keep their position. Applied twice it is idempotent.
      */
     public static String editConfigWtf(String original, Map<String, String> settings) {
+        return rewriteConfigWtf(original, lowercaseKeys(settings.keySet()), settings);
+    }
+
+    /** Drop every line for a {@code managed} key (lowercase), then append {@code settings}. */
+    private static String rewriteConfigWtf(String original, Set<String> managed, Map<String, String> settings) {
         if (original == null) original = "";
         String newline = original.contains("\r\n") ? "\r\n" : "\n";
-        Set<String> managed = lowercaseKeys(settings.keySet());
 
         ArrayList<String> lines = new ArrayList<>();
         if (!original.isEmpty()) {

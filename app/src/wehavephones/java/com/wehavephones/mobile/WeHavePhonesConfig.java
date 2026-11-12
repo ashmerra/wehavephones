@@ -25,6 +25,7 @@ public final class WeHavePhonesConfig {
     public static final String KEY_PRODUCT_DIR = "wehavephones_product_dir";
     public static final String KEY_LAST_STAGE_STATUS = "wehavephones_last_stage_status";
     public static final String KEY_PERFORMANCE_OVERLAY = "wehavephones_performance_overlay";
+    public static final String KEY_SAVE_MEMORY = "wehavephones_save_memory";
     public static final String KEY_DISABLE_VIRTUAL_GAMEPAD = "wehavephones_disable_virtual_gamepad";
     public static final String KEY_MOBILE_TOUCH = "wehavephones_mobile_touch";
     private static final String KEY_MOBILE_TOUCH_SCALE = "wehavephones_mobile_touch_scale";
@@ -153,6 +154,18 @@ public final class WeHavePhonesConfig {
 
     public static void setPerformanceOverlay(Context context, boolean enabled) {
         prefs(context).edit().putBoolean(KEY_PERFORMANCE_OVERLAY, enabled).apply();
+    }
+
+    /**
+     * Turn off shadows and multithreaded rendering in every WoW game to free
+     * graphics memory (default off). See {@link MemoryTransforms#saveMemoryCvars()}.
+     */
+    public static boolean isSaveMemory(Context context) {
+        return prefs(context).getBoolean(KEY_SAVE_MEMORY, false);
+    }
+
+    public static void setSaveMemory(Context context, boolean enabled) {
+        prefs(context).edit().putBoolean(KEY_SAVE_MEMORY, enabled).apply();
     }
 
     public static boolean isVirtualGamepadDisabled(Context context) {

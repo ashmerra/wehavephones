@@ -51,7 +51,7 @@ controls), `extra`, `apps` (`wowup` and `curseforge`), `default` (`versions`,
 
 "App defaults" means the settings a new install starts with. The runner
 removes the player's touch controls, performance overlay, runtime profile,
-game resolution and graphics driver choices for the run. It keeps the game
+game resolution, Save memory and graphics driver choices for the run. It keeps the game
 choice, region, setup state and touch guide flags.
 
 ## How a scenario runs

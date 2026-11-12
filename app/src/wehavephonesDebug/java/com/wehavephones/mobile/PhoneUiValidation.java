@@ -56,7 +56,7 @@ public final class PhoneUiValidation extends Instrumentation {
             capture("setup");
             show(new WeHavePhonesSettingsFragment());
             require(R.id.CBDisableVirtualGamepad); require(R.id.CBKeepRunningInBackground);
-            require(R.id.CBPerformanceOverlay);
+            require(R.id.CBPerformanceOverlay); require(R.id.CBSaveMemory);
             require(R.id.SPSettingsRegion); require(R.id.SPGameResolution);
             capture("settings");
             show(new DiagnosticsFragment()); capture("diagnostics");

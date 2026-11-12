@@ -63,6 +63,16 @@
                     android:layout_height="48dp"
                     android:background="@drawable/wehavephones_dropdown"
                     android:contentDescription="@string/wehavephones_settings_resolution_title" />
+                <CheckBox
+                    android:id="@+id/CBSaveMemory"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/wehavephones_settings_save_memory" />
+                <TextView
+                    style="@style/WeHavePhonesHint"
+                    android:layout_marginLeft="32dp"
+                    android:text="@string/wehavephones_settings_save_memory_hint" />
                 <TextView
                     style="@style/WeHavePhonesHint"
                     android:layout_marginTop="9dp"

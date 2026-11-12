@@ -184,7 +184,8 @@ desktop wallpaper.
   of the screen Settings is open on, for screens more than 2% from 16:9
   (`MemoryTransforms.fittedScreenSizes`, #26, #27). The display keeps the
   X screen's aspect ratio, so a 16:9 size leaves bars on wider or squarer
-  screens. **Keep the game running when you switch apps**
+  screens. **Save memory with lower graphics** (off by default, §8 Memory
+  behavior). **Keep the game running when you switch apps**
   (on by default, §6 item 11) and **Game region**. Not configurable (removed
   as settings 2026-10-04): Play always launches through Battle.net (the old
   *One-button launch* off mode only opened Battle.net, which **Open Battle.net**
@@ -395,8 +396,8 @@ saved or entered password into it. That path is gone.)
   `WRAPPER_MAX_IMAGE_COUNT=2` and `MESA_SHADER_CACHE_MAX_SIZE=256MB`, sets
   `dxvk.maxChunkSize=16` in `DXVK_CONFIG` (other DXVK options there are kept),
   and applies the game resolution from Settings to the container `screenSize`
-  and the WoW CVars of every detected product. The profile JSON itself is
-  never modified.
+  and the WoW CVars of every detected product. It also applies or undoes the
+  Save memory switch there. The profile JSON itself is never modified.
 - `mode = single` (the default) with **one-button Play** (always on, via
   `OneButtonLauncher`):
   1. Apply the configured `singleStageProfile` (`p10-ge34`) exactly as below,
@@ -795,6 +796,23 @@ The opt-in LOW memory mode is gone. What remains is default behavior:
   `Config.wtf` files) after every profile apply, with a snapshot and
   read-back. It also removes the old LOW `wehavephones-dxvk.conf` and its
   `DXVK_CONFIG_FILE` entry. It no longer writes the LOW CVar preset.
+- **Save memory with lower graphics** in Settings (`wehavephones_save_memory`,
+  off by default) writes `GxCompatCommandListMultiThreading 0`, `shadowMode 0`
+  and `RAIDshadowMode 0` (`MemoryTransforms.saveMemoryCvars()`) to every
+  existing `Config.wtf` at each Play. In Forever on a Galaxy S23+ the two
+  changes together held about 300 MB less GPU memory: the multithreaded
+  renderer keeps 48 constant buffers of 2 MB where the single-threaded one
+  keeps 9 to 12, and shadows keep a 4096x4096 render target and a 64 MB
+  buffer. The cost is no real-time shadows and more work on the game's main
+  thread. Blizzard's own description of the first setting warns of a lower
+  frame rate. The game omits a setting from `Config.wtf` while it has its
+  default, so a missing shadow line counts as applied. Before the first write
+  the previous values go into `WTF/.wehavephones-save-memory` beside the
+  config. A value the game writes while the switch is on (a shadow quality
+  picked in its own settings) replaces the recorded one and is set back to 0
+  at the next Play. With the switch off, the next Play writes the recorded
+  values back, leaves alone any setting that was changed since, and deletes
+  the record. Only Forever was measured.
 - `MemoryTransforms.memoryCvars()` enforces `preloadPlayerModels=0` for every
   game edition and device. Profile apply updates existing product configs, and
   `WowFirstBoot` applies the same policy to new and selected clients on launch,

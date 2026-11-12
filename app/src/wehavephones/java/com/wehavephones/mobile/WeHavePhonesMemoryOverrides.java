@@ -15,12 +15,12 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Applies the memory trims and the game resolution from Settings on top of the
- * runtime profile that is active for the session. The runtime profile JSON is
- * never modified; only the container config and the WoW {@code Config.wtf}
- * files are touched (and a leftover {@code C:/wehavephones-dxvk.conf} from the old
- * low-memory mode removed), always after a snapshot and always verified by
- * read-back.
+ * Applies the memory trims, the game resolution and the Save memory switch
+ * from Settings on top of the runtime profile that is active for the session.
+ * The runtime profile JSON is never modified. Only the container config and
+ * the WoW {@code Config.wtf} files are touched (and a leftover
+ * {@code C:/wehavephones-dxvk.conf} from the old low-memory mode removed),
+ * always after a snapshot and always verified by read-back.
  */
 public final class WeHavePhonesMemoryOverrides {
     public static final String SNAPSHOT_PREFIX = "memory-";
@@ -56,13 +56,28 @@ public final class WeHavePhonesMemoryOverrides {
         final File file;
         final String original;
         final LinkedHashMap<String, String> settings;
+        final File recordFile;
+        /** The Save memory record beside the config: as found, and as it must be. Null for none. */
+        final String recordBefore;
+        String recordAfter;
         String updated;
 
         ConfigPlan(WowProduct product, File file, String original, LinkedHashMap<String, String> settings) {
             this.product = product;
             this.file = file;
             this.original = original;
-            this.settings = settings;
+            this.settings = new LinkedHashMap<>(settings);
+            this.recordFile = new File(product.directory, MemoryTransforms.SAVE_MEMORY_RECORD);
+            this.recordBefore = recordFile.isFile() ? FileUtils.readString(recordFile) : null;
+            this.recordAfter = recordBefore;
+        }
+
+        boolean configChanged() {
+            return !updated.equals(original);
+        }
+
+        boolean recordChanged() {
+            return !java.util.Objects.equals(recordBefore, recordAfter);
         }
     }
 
@@ -89,13 +104,28 @@ public final class WeHavePhonesMemoryOverrides {
         ArrayList<ConfigPlan> plans = new ArrayList<>();
         LinkedHashMap<String, String> settings = MemoryTransforms.resolutionCvars(afterScreen);
         settings.putAll(MemoryTransforms.memoryCvars());
+        boolean saveMemory = WeHavePhonesConfig.isSaveMemory(context);
         for (WowProduct product : WowInstallationScanner.scan(container)) {
             File configFile = new File(new File(product.directory, "WTF"), "Config.wtf");
             if (!configFile.isFile()) continue;
             String original = FileUtils.readString(configFile);
             if (original == null) continue;
             ConfigPlan plan = new ConfigPlan(product, configFile, original, settings);
-            plan.updated = MemoryTransforms.editConfigWtf(original, settings);
+            if (saveMemory) {
+                LinkedHashMap<String, String> pending = MemoryTransforms.saveMemoryPending(original);
+                if (!pending.isEmpty()) {
+                    plan.recordAfter = MemoryTransforms.saveMemoryRecord(plan.recordBefore, original);
+                    plan.settings.putAll(pending);
+                }
+                plan.updated = MemoryTransforms.editConfigWtf(original, plan.settings);
+            }
+            else {
+                plan.updated = MemoryTransforms.editConfigWtf(original, settings);
+                if (plan.recordBefore != null) {
+                    plan.updated = MemoryTransforms.restoreSaveMemory(plan.updated, plan.recordBefore);
+                    plan.recordAfter = null;
+                }
+            }
             plans.add(plan);
         }
 
@@ -106,11 +136,13 @@ public final class WeHavePhonesMemoryOverrides {
         boolean screenChanged = !afterScreen.equals(beforeScreen != null ? beforeScreen : "");
         boolean dxvkChanged = dxvkBefore != null;
         ArrayList<ConfigPlan> configChanged = new ArrayList<>();
+        ArrayList<ConfigPlan> touched = new ArrayList<>();
         for (ConfigPlan plan : plans) {
-            if (!plan.updated.equals(plan.original)) configChanged.add(plan);
+            if (plan.configChanged()) configChanged.add(plan);
+            if (plan.configChanged() || plan.recordChanged()) touched.add(plan);
         }
 
-        if (!envChanged && !screenChanged && !dxvkChanged && configChanged.isEmpty()) {
+        if (!envChanged && !screenChanged && !dxvkChanged && touched.isEmpty()) {
             result.changed = false;
             result.step("Memory overrides and game resolution " + afterScreen + " already applied");
             return result;
@@ -153,19 +185,39 @@ public final class WeHavePhonesMemoryOverrides {
                 result.step("Removed the old low-memory " + MemoryTransforms.LEGACY_DXVK_CONFIG_FILE_NAME);
             }
 
-            for (ConfigPlan plan : configChanged) {
-                if (!FileUtils.write(plan.file, plan.updated.getBytes(StandardCharsets.UTF_8))) {
-                    result.fail("Could not write " + plan.file.getPath());
+            for (ConfigPlan plan : touched) {
+                // The record is written before the settings it protects and removed after they are back.
+                if (plan.recordChanged() && plan.recordAfter != null
+                        && !FileUtils.write(plan.recordFile, plan.recordAfter.getBytes(StandardCharsets.UTF_8))) {
+                    result.fail("Could not write " + plan.recordFile.getPath());
                     rollback(result, container, containerBefore, containerWritten, dxvkFile, dxvkBefore, plans);
                     return result;
                 }
-                String readBack = FileUtils.readString(plan.file);
-                if (!MemoryTransforms.configWtfContains(readBack, plan.settings)) {
-                    result.fail("Config.wtf read-back verification failed: " + plan.file.getPath());
-                    rollback(result, container, containerBefore, containerWritten, dxvkFile, dxvkBefore, plans);
-                    return result;
+                if (plan.configChanged()) {
+                    if (!FileUtils.write(plan.file, plan.updated.getBytes(StandardCharsets.UTF_8))) {
+                        result.fail("Could not write " + plan.file.getPath());
+                        rollback(result, container, containerBefore, containerWritten, dxvkFile, dxvkBefore, plans);
+                        return result;
+                    }
+                    String readBack = FileUtils.readString(plan.file);
+                    if (!MemoryTransforms.configWtfContains(readBack, plan.settings)) {
+                        result.fail("Config.wtf read-back verification failed: " + plan.file.getPath());
+                        rollback(result, container, containerBefore, containerWritten, dxvkFile, dxvkBefore, plans);
+                        return result;
+                    }
+                    result.step("Game resolution " + afterScreen + " and memory settings applied to " + plan.product.directoryName);
                 }
-                result.step("Game resolution " + afterScreen + " and memory settings applied to " + plan.product.directoryName);
+                if (plan.recordChanged() && plan.recordAfter == null) {
+                    if (!FileUtils.delete(plan.recordFile) || plan.recordFile.exists()) {
+                        result.fail("Could not remove " + plan.recordFile.getPath());
+                        rollback(result, container, containerBefore, containerWritten, dxvkFile, dxvkBefore, plans);
+                        return result;
+                    }
+                    result.step("Save memory settings removed from " + plan.product.directoryName);
+                }
+                else if (plan.recordChanged()) {
+                    result.step("Save memory settings applied to " + plan.product.directoryName);
+                }
             }
         }
         catch (Exception e) {
@@ -185,6 +237,11 @@ public final class WeHavePhonesMemoryOverrides {
         labels.add("Game resolution " + WeHavePhonesConfig.getGameScreenSize(context) + " (screenSize + GxMaximize + GxWindowedResolution)");
         for (Map.Entry<String, String> entry : MemoryTransforms.memoryCvars().entrySet()) {
             labels.add("Game " + entry.getKey() + "=" + entry.getValue());
+        }
+        if (WeHavePhonesConfig.isSaveMemory(context)) {
+            for (Map.Entry<String, String> entry : MemoryTransforms.saveMemoryCvars().entrySet()) {
+                labels.add("Save memory " + entry.getKey() + "=" + entry.getValue());
+            }
         }
         labels.add("Battle.net auto-close after WoW starts");
         if (container != null) {
@@ -292,8 +349,15 @@ public final class WeHavePhonesMemoryOverrides {
             FileUtils.delete(dxvkFile);
         }
         for (ConfigPlan plan : plans) {
-            if (!plan.updated.equals(plan.original)) {
+            if (plan.configChanged()) {
                 FileUtils.write(plan.file, plan.original.getBytes(StandardCharsets.UTF_8));
+            }
+            if (!plan.recordChanged()) continue;
+            if (plan.recordBefore != null) {
+                FileUtils.write(plan.recordFile, plan.recordBefore.getBytes(StandardCharsets.UTF_8));
+            }
+            else if (plan.recordFile.isFile()) {
+                FileUtils.delete(plan.recordFile);
             }
         }
     }

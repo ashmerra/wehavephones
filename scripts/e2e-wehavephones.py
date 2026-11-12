@@ -86,7 +86,7 @@ DEFAULT_MAIN = ['wehavephones_mobile_touch', 'wehavephones_mobile_touch_scale',
                 'wehavephones_disable_virtual_gamepad', 'wehavephones_performance_overlay',
                 'wehavephones_runtime_profile', 'wehavephones_game_screen_size',
                 'wehavephones_game_screen_size_', 'wehavephones_keep_running_in_background',
-                'wehavephones_start_input_bridge']
+                'wehavephones_start_input_bridge', 'wehavephones_save_memory']
 DEFAULT_DEVICES = ['driver_choice']
 # Every key a scenario may write; restore covers exactly these.
 TOUCHED_MAIN = DEFAULT_MAIN + ['wehavephones_product_dir']
