@@ -128,7 +128,7 @@
     <string name="wehavephones_memory_launcher_closed">Closed Battle.net and helper processes (%1$d) to free memory. World of Warcraft keeps running.</string>
     <string name="wehavephones_settings_saved">Setting saved.</string>
     <string name="wehavephones_settings_save_memory">Save memory with lower graphics</string>
-    <string name="wehavephones_settings_save_memory_hint">Turns off shadows and multithreaded rendering in every WoW game. In WoW Forever on a Galaxy S23+ this freed about 300 MB of graphics memory. Zones look brighter and flatter, and busy areas can run slower. Turning it off brings back the settings each game had.</string>
+    <string name="wehavephones_settings_save_memory_hint">Turns off shadows and multithreaded rendering.</string>
     <string name="wehavephones_settings_container_title">Active container</string>
     <string name="wehavephones_settings_container_entry">%1$s (#%2$d)</string>
     <string name="wehavephones_settings_container_empty">No containers yet</string>
