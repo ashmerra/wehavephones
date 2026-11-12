@@ -18,6 +18,7 @@ mapfile -t STUBS < <(find "$TEST_DIR/stubs" -name '*.java' | sort)
   "$WEHAVEPHONES/VirtualGamepadController.java" "$WEHAVEPHONES/WeHavePhonesConfig.java" \
   "$WEHAVEPHONES/MemoryTransforms.java" "$WEHAVEPHONES/WowFlavor.java" \
   "$WEHAVEPHONES/WowFirstBoot.java" "$WEHAVEPHONES/WowClientFiles.java" \
+  "$WEHAVEPHONES/addons/required/MobileTouchSetup.java" \
   "$MAIN/inputcontrols/GamepadState.java" "$MAIN/inputcontrols/FakeGamepadWriter.java" \
   "$MAIN/winhandler/WinHandler.java" "$MAIN/winhandler/RequestCodes.java" \
   "$MAIN/winhandler/OnImeFocusListener.java" "$MAIN/winhandler/MouseEventFlags.java" \
