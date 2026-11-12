@@ -42,10 +42,12 @@ public final class MemoryTransforms {
     /**
      * DXVK 2.3 suballocates GPU memory from 256 MB chunks. In Forever on the
      * S23 they held about 370 MB more than the game used. 32 MB chunks cut
-     * that by about 180 MB, and 16 MB gained little more.
+     * that by about 180 MB. A log of every allocation the driver received
+     * then showed 16 MB chunks holding another 60 to 85 MB less in the same
+     * scene, with the same GPU work per frame.
      */
     public static final String DXVK_CHUNK_OPTION = "dxvk.maxChunkSize";
-    public static final String DXVK_CHUNK_MB = "32";
+    public static final String DXVK_CHUNK_MB = "16";
 
     /** Keys always removed; {@link #envOverrides()} replaces the rest. */
     public static final String[] REMOVED_ENV_KEYS = {

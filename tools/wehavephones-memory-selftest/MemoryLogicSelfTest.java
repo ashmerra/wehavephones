@@ -64,13 +64,16 @@ public final class MemoryLogicSelfTest {
                 && !migrated.contains("128MB"), migrated);
         check("env_old_low_stable", migrated.equals(MemoryTransforms.composeEnv(migrated)), migrated);
 
-        check("env_dxvk_chunk", env.contains("DXVK_CONFIG=dxvk.maxChunkSize=32")
+        check("env_dxvk_chunk", env.contains("DXVK_CONFIG=dxvk.maxChunkSize=16")
                 && MemoryTransforms.hasDxvkChunkSize(env), env);
         String userDxvk = MemoryTransforms.composeEnv("DXVK_CONFIG=dxgi.syncInterval=1;dxvk.maxChunkSize=256 A=1");
         check("env_dxvk_keeps_user_options",
-                userDxvk.contains("DXVK_CONFIG=dxgi.syncInterval=1;dxvk.maxChunkSize=32") && !userDxvk.contains("maxChunkSize=256"), userDxvk);
+                userDxvk.contains("DXVK_CONFIG=dxgi.syncInterval=1;dxvk.maxChunkSize=16") && !userDxvk.contains("maxChunkSize=256"), userDxvk);
         check("env_dxvk_stable", userDxvk.equals(MemoryTransforms.composeEnv(userDxvk)), userDxvk);
-        check("env_dxvk_missing_detected", !MemoryTransforms.hasDxvkChunkSize("DXVK_CONFIG=dxvk.maxChunkSize=320 A=1"), "");
+        check("env_dxvk_missing_detected", !MemoryTransforms.hasDxvkChunkSize("DXVK_CONFIG=dxvk.maxChunkSize=160 A=1"), "");
+        String oldChunk = MemoryTransforms.composeEnv("DXVK_CONFIG=dxvk.maxChunkSize=32 A=1");
+        check("env_dxvk_replaces_old_chunk", oldChunk.contains("DXVK_CONFIG=dxvk.maxChunkSize=16")
+                && !oldChunk.contains("maxChunkSize=32"), oldChunk);
         check("dxvk_option_empty_entries", "dxvk.maxChunkSize=32".equals(
                 MemoryTransforms.withDxvkOption(";;", "dxvk.maxChunkSize", "32")), "");
     }

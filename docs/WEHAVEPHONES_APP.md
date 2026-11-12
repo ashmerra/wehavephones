@@ -393,7 +393,7 @@ saved or entered password into it. That path is gone.)
 - Before every stage the memory transform is composed on top of the profile
   (`WeHavePhonesMemoryOverrides.apply`): it removes the debug `DXVK_HUD`, pins
   `WRAPPER_MAX_IMAGE_COUNT=2` and `MESA_SHADER_CACHE_MAX_SIZE=256MB`, sets
-  `dxvk.maxChunkSize=32` in `DXVK_CONFIG` (other DXVK options there are kept),
+  `dxvk.maxChunkSize=16` in `DXVK_CONFIG` (other DXVK options there are kept),
   and applies the game resolution from Settings to the container `screenSize`
   and the WoW CVars of every detected product. The profile JSON itself is
   never modified.
@@ -806,7 +806,7 @@ The opt-in LOW memory mode is gone. What remains is default behavior:
   This covers a never-played client and another edition installed into that
   root during the session. No absent install root is created. A first install
   or an install into a different root receives the policy through the app's Play.
-- DXVK uses 32 MB allocation chunks to limit unused memory held by the
+- DXVK uses 16 MB allocation chunks to limit unused memory held by the
   graphics runtime. On phones GPU memory shares system RAM.
 - `ProcessScanner.leftoverProcesses` also matches a zombie leader whose comm
   was renamed (Battle.net shows `Main`) by the command line its remaining
