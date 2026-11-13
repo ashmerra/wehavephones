@@ -196,7 +196,7 @@ public final class WeHavePhonesConfig {
 
     /** Whether wide games show the action wheel on Action Bars 6 to 8 instead of the stock action grid. */
     public static boolean isMobileTouchWheel(Context context) {
-        return prefs(context).getBoolean(KEY_MOBILE_TOUCH_WHEEL, false);
+        return prefs(context).getBoolean(KEY_MOBILE_TOUCH_WHEEL, true);
     }
 
     public static void setMobileTouchWheel(Context context, boolean wheel) {

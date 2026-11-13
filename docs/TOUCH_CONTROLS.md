@@ -241,7 +241,8 @@ extra bottom bars hide for touch mode and restore on opt-out.
 ## Action wheel
 
 **Menu → Touch controls → Action wheel** replaces the stock action grid with
-a wheel at the lower right of wide games. It is off by default and the choice
+a wheel at the lower right of wide games. It is on by default. Turn it off to
+use the standard action bars. The choice
 is kept for the next launch. Tablet shapes keep the stock grid.
 
 The wheel has nine slots in two arcs around a hub. Four rings of nine slots
