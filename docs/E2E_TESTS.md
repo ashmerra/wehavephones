@@ -9,6 +9,7 @@ that they load. It drives the Dev build (`com.wehavephones.dev`) over adb.
 scripts/e2e-wehavephones.py list                      # scenarios and groups
 scripts/e2e-wehavephones.py run --serial <adb serial>  # versions + touch
 scripts/e2e-wehavephones.py run forever-touch classic-era
+scripts/e2e-wehavephones.py run wheel --touch-scale 0.75  # action wheel at 75%
 scripts/e2e-wehavephones.py run apps                  # WowUp and CurseForge
 scripts/e2e-wehavephones.py restore                   # after an interrupted run
 scripts/e2e-wehavephones.py selftest                  # host check, no phone
@@ -40,18 +41,21 @@ Enter World detector and the settings round trip on synthetic data.
 | `retail` | Retail | App defaults | Enter world, jump with Space |
 | `forever` | Forever | App defaults | Enter world, jump with Space |
 | `classic-era-touch`, `anniversary-touch`, `mop-touch`, `titan-touch`, `retail-touch`, `forever-touch` | Each game above | Mobile touch controls on | Tap Enter World, switch to Play, jump with the Jump key, move with the stick, turn with a camera drag |
+| `classic-era-wheel`, `anniversary-wheel`, `mop-wheel`, `titan-wheel`, `retail-wheel`, `forever-wheel` | Each game above | Touch controls and the action wheel on | Tap Enter World, jump with the Jump key, check the wheel is shown, swipe to the next and previous ring, tap the hub for the next ring, tap a slot, move with the stick |
 | `classic-era-gamepad` | Classic Era | App defaults | Enter world, jump with the on-screen gamepad's A |
 
 | `wowup` | WowUp | App defaults | Logs `Tray created true`, `Checking for addon updates` and `[scan] wowup scan of` |
 | `curseforge` | CurseForge | App defaults | Logs `Connected to Mods Agent` and `Scan complete for game 1`, then stays open 30 s |
 
 Groups: `versions` (one per game line), `touch` (the same games with touch
-controls), `extra`, `apps` (`wowup` and `curseforge`), `default` (`versions`,
+controls), `wheel` (the same games with the action wheel), `extra`, `apps` (`wowup` and `curseforge`), `default` (`versions`,
 `touch` and `apps`) and `all`. A game that is not installed is skipped.
+`--touch-scale` runs the touch and wheel scenarios at one interface size,
+from 0.75 to 1.75. Without it they use the app's default size.
 
 "App defaults" means the settings a new install starts with. The runner
 removes the player's touch controls, performance overlay, runtime profile,
-game resolution, Save memory and graphics driver choices for the run. It keeps the game
+game resolution, Save memory, action wheel and graphics driver choices for the run. It keeps the game
 choice, region, setup state and touch guide flags.
 
 ## How a scenario runs
@@ -100,7 +104,7 @@ choice, region, setup state and touch guide flags.
 The test addon draws a strip of squares near the top of the screen:
 
 ```
-magenta | in world | jumped | moved | turned | cyan
+magenta | in world | jumped | moved | turned | wheel | ring | slot | clean | cyan
 ```
 
 In world, moved and turned are black until their event happens and then stay
@@ -116,13 +120,21 @@ true, yellow for five seconds after the JUMP binding ran
 otherwise. The runner waits for black, presses jump and looks for green, so a
 fall while the world streams in never counts as a jump.
 
+Wheel is green while the touch action wheel is on screen. Ring is a pulse
+like jumped: green for five seconds after a change to the next ring, yellow
+after one to the previous ring. Slot is green for five seconds after a wheel
+slot was clicked. Clean is green until the touch addon raises a Lua error or
+WoW blocks one of its protected actions. It then turns black and the first
+message appears under the strip. A touch or wheel scenario fails when clean
+is black at the end of its checks. Errors from other addons do not count.
+
 For its first eight seconds in the world the addon also closes the chat box,
 so a late Enter press cannot swallow the jump key. The magenta and cyan ends
 let the runner find the strip at any resolution.
 
-Debuggable builds write the touch controls' mode and key bounds to
-`files/wehavephones/touch-layout.json`, so touch checks press the real keys
-without fixed coordinates. Release builds never write it.
+Debuggable builds write the touch controls' mode, key bounds and the action
+wheel's hub to `files/wehavephones/touch-layout.json`, so touch checks press
+the real keys and swipe around the real hub without fixed coordinates. Release builds never write it.
 
 ## Results
 

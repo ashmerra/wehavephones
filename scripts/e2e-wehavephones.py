@@ -11,7 +11,8 @@ the world with the last played character and checks what the character does.
 A small test addon (tests/e2e/WeHavePhonesE2E) shows the game's own view of the
 character as colored squares, which the runner reads from screenshots: in
 world, jumped (the JUMP binding ran and the character left the ground), moved
-and turned.
+and turned, plus the touch action wheel's squares and whether the touch addon
+stayed free of Lua errors and blocked actions.
 
 Per scenario:
   1. Stop any session, save the app settings the scenario changes and write the
@@ -58,6 +59,8 @@ ADDON_DIR = ROOT / 'tests/e2e/WeHavePhonesE2E'
 ADDON = 'WeHavePhonesE2E'
 OUT = ROOT / 'out/e2e'
 BACKUP = OUT / 'settings-backup.json'
+# Interface size for touch scenarios, from --touch-scale. None keeps the app's default.
+TOUCH_SCALE = None
 
 # Keep one adb binary for this runner and the device helper.
 if not os.environ.get('ADB_BIN'):
@@ -86,7 +89,7 @@ DEFAULT_MAIN = ['wehavephones_mobile_touch', 'wehavephones_mobile_touch_scale',
                 'wehavephones_disable_virtual_gamepad', 'wehavephones_performance_overlay',
                 'wehavephones_runtime_profile', 'wehavephones_game_screen_size',
                 'wehavephones_game_screen_size_', 'wehavephones_keep_running_in_background',
-                'wehavephones_start_input_bridge', 'wehavephones_save_memory']
+                'wehavephones_start_input_bridge', 'wehavephones_save_memory', 'wehavephones_mobile_touch_wheel']
 DEFAULT_DEVICES = ['driver_choice']
 # Every key a scenario may write; restore covers exactly these.
 TOUCHED_MAIN = DEFAULT_MAIN + ['wehavephones_product_dir']
@@ -97,12 +100,14 @@ PRODUCT_CODES = {'_retail_': 'wow', '_forever_': 'wowf', '_classic_': 'wow_class
 
 
 class Scenario:
-    def __init__(self, name, game, title, jump='key', touch=False, extra=(), boot=420):
+    def __init__(self, name, game, title, jump='key', touch=False, extra=(), boot=420, wheel=False):
         self.name, self.game, self.title = name, game, title
         self.jump, self.touch, self.extra, self.boot = jump, touch, tuple(extra), boot
+        self.wheel = wheel
 
     def describe(self):
-        controls = 'touch controls' if self.touch else 'default settings'
+        controls = 'touch controls with the action wheel' if self.wheel else 'touch controls' if self.touch \
+            else 'default settings'
         how = {'key': 'Space', 'gamepad': 'on-screen gamepad A', 'touch': 'touch Jump key'}[self.jump]
         extra = ' + ' + ', '.join(self.extra) if self.extra else ''
         return '%s, %s, jump with %s%s' % (self.title, controls, how, extra)
@@ -120,6 +125,8 @@ GAMES = [
 SCENARIOS = [Scenario(name, game, title, boot=boot) for name, game, title, boot in GAMES]
 SCENARIOS += [Scenario(name + '-touch', game, title, jump='touch', touch=True, extra=('move', 'turn'), boot=boot)
               for name, game, title, boot in GAMES]
+SCENARIOS += [Scenario(name + '-wheel', game, title, jump='touch', touch=True, wheel=True, extra=('wheel', 'move'),
+                       boot=boot) for name, game, title, boot in GAMES]
 SCENARIOS.append(Scenario('classic-era-gamepad', '_classic_era_', 'Classic Era', jump='gamepad'))
 
 
@@ -156,10 +163,11 @@ BY_NAME = {scenario.name: scenario for scenario in SCENARIOS}
 GROUPS = {
     'versions': [name for name, _, _, _ in GAMES],
     'touch': [name + '-touch' for name, _, _, _ in GAMES],
+    'wheel': [name + '-wheel' for name, _, _, _ in GAMES],
     'extra': ['classic-era-gamepad'],
     'apps': [scenario.name for scenario in APP_SCENARIOS],
 }
-GROUPS['all'] = GROUPS['versions'] + GROUPS['touch'] + GROUPS['extra'] + GROUPS['apps']
+GROUPS['all'] = GROUPS['versions'] + GROUPS['touch'] + GROUPS['wheel'] + GROUPS['extra'] + GROUPS['apps']
 GROUPS['default'] = GROUPS['versions'] + GROUPS['touch'] + GROUPS['apps']
 
 
@@ -348,6 +356,10 @@ def write_scenario_settings(phone, scenario):
     set_value(main, 'string', 'wehavephones_product_dir', scenario.game)
     if scenario.touch:
         set_value(main, 'boolean', 'wehavephones_mobile_touch', 'true')
+        if TOUCH_SCALE:
+            set_value(main, 'float', 'wehavephones_mobile_touch_scale', TOUCH_SCALE)
+    if scenario.wheel:
+        set_value(main, 'boolean', 'wehavephones_mobile_touch_wheel', 'true')
     phone.write_private(MAIN_PREFS, prefs_text(main))
     devices = parse_prefs(phone.read_private(DEVICE_PREFS))
     apply_entries(devices, DEFAULT_DEVICES, {})
@@ -410,6 +422,10 @@ def CYAN(p):
     return p[0] < 80 and p[1] > 190 and p[2] > 190
 
 
+# The test addon's squares between its magenta and cyan ends.
+MARKER = ('inWorld', 'jumped', 'moved', 'turned', 'wheel', 'ring', 'slot', 'clean')
+
+
 def read_marker(image):
     """Flags from the addon's strip: {'inWorld': 'on'|'off'|'pressed', ...}, or None when it is not on screen."""
     width, height = image.size
@@ -436,14 +452,14 @@ def read_marker(image):
     pitch = size * 30 / 26
     cx = (left + right) / 2
     flags = {}
-    for index, name in enumerate(('inWorld', 'jumped', 'moved', 'turned'), 1):
+    for index, name in enumerate(MARKER, 1):
         x = int(cx + index * pitch)
         if x >= width:
             return None
         r, g, b = pixels[x, mid_y]
         flags[name] = 'on' if g > 150 and r < 100 and b < 100 else 'pressed' if r > 150 and g > 150 and b < 100 \
             else 'off' if r < 60 and g < 60 and b < 60 else '?'
-    end = int(cx + 5 * pitch)
+    end = int(cx + (len(MARKER) + 1) * pitch)
     if end >= width or not CYAN(pixels[end, mid_y]) or '?' in flags.values():
         return None
     return flags
@@ -735,7 +751,62 @@ def turn(phone, scenario):
     raise Failure('camera drags did not turn the character (view changed by %.0f)' % change)
 
 
-EXTRA = {'move': move, 'turn': turn}
+def wait_marker(phone, name, value, seconds=6):
+    deadline = time.time() + seconds
+    flags = None
+    while time.time() < deadline:
+        flags = read_marker(phone.screenshot()) or flags
+        if flags and flags[name] == value:
+            return flags
+        time.sleep(.5)
+    return flags
+
+
+def wheel_point(hub, radius, degrees):
+    """A screen point around the wheel's hub, counterclockwise degrees as drawn."""
+    import math
+    x, y, _ = hub
+    return int(x + radius * math.cos(math.radians(degrees))), int(y - radius * math.sin(math.radians(degrees)))
+
+
+# Fractions of the wheel's unit. Keep in step with MobileTouchLayout.
+WHEEL_INNER, WHEEL_KEY = .21, (-.04, .069)
+
+
+def wheel(phone, scenario):
+    """The wheel is on screen, swipes and the hub change rings, and a slot tap reaches its button."""
+    layout = play_mode(phone)
+    hub = layout.get('wheel')
+    if not hub:
+        raise Failure('the touch controls report no action wheel (%s)' % layout)
+    flags = wait_marker(phone, 'wheel', 'on', 10)
+    if not flags or flags['wheel'] != 'on':
+        raise Failure('the action wheel is not on screen (marker: %s)' % flags)
+    radius = WHEEL_INNER * hub[2]
+    steps = [('swipe up to the next ring', 'on', lambda: phone.drag(*wheel_point(hub, radius, 180),
+                                                                    *wheel_point(hub, radius, 105), 500)),
+             ('swipe down to the previous ring', 'pressed', lambda: phone.drag(*wheel_point(hub, radius, 105),
+                                                                             *wheel_point(hub, radius, 180), 500)),
+             ('tap the hub for the next ring', 'on', lambda: phone.tap(int(hub[0] + WHEEL_KEY[0] * hub[2]),
+                                                                       int(hub[1] - WHEEL_KEY[1] * hub[2])))]
+    for what, expect, action in steps:
+        if (wait_marker(phone, 'ring', 'off', 8) or {}).get('ring') != 'off':
+            raise Failure('the ring square never settled to black before: %s' % what)
+        action()
+        flags = wait_marker(phone, 'ring', expect)
+        if not flags or flags['ring'] != expect:
+            raise Failure('the action wheel did not change ring: %s (ring square: %s)' % (
+                what, flags['ring'] if flags else 'marker not visible'))
+        say('wheel: %s' % what)
+    # The innermost slot left of the hub, ring 2 now. Empty slots still click.
+    phone.tap(*wheel_point(hub, radius, 180))
+    flags = wait_marker(phone, 'slot', 'on')
+    if not flags or flags['slot'] != 'on':
+        raise Failure('a tap on a wheel slot did not reach its button')
+    say('wheel: a slot tap reached its button')
+
+
+EXTRA = {'move': move, 'turn': turn, 'wheel': wheel}
 
 
 def crash_lines(phone):
@@ -772,7 +843,9 @@ def run_scenario(phone, scenario, evidence):
         jump(phone, scenario)
         for name in scenario.extra:
             EXTRA[name](phone, scenario)
-        phone.screenshot(evidence / 'checks.png')
+        flags = read_marker(phone.screenshot(evidence / 'checks.png'))
+        if scenario.touch and flags and flags['clean'] != 'on':
+            raise Failure('the touch addon raised a Lua error or a blocked action (message under the marker in checks.png)')
         result, detail = 'pass', version
     except Failure as error:
         phone.screenshot(evidence / 'failure.png')
@@ -964,9 +1037,9 @@ def selftest():
         return image
 
     for scale in (1, 1.4, 2):
-        flags = ['on', 'pressed', 'off', 'on']
+        flags = ['on', 'pressed', 'off', 'on', 'on', 'pressed', 'off', 'on']
         read = read_marker(strip(scale, flags))
-        assert read == dict(zip(('inWorld', 'jumped', 'moved', 'turned'), flags)), (scale, read)
+        assert read == dict(zip(MARKER, flags)), (scale, read)
     assert read_marker(Image.new('RGB', (2340, 1080), (90, 10, 15))) is None
 
     charselect = Image.new('RGB', (2340, 1080), (30, 60, 90))
@@ -1041,6 +1114,8 @@ def main():
     run.add_argument('names', nargs='*', help='scenarios or groups (default: versions + touch)')
     run.add_argument('--serial')
     run.add_argument('--stop-on-failure', action='store_true')
+    run.add_argument('--touch-scale', choices=['0.75', '0.9', '1.1', '1.25', '1.5', '1.75'],
+                     help='interface size for touch scenarios (default: the app default)')
     restore = sub.add_parser('restore')
     restore.add_argument('--serial')
     sub.add_parser('selftest')
@@ -1067,6 +1142,8 @@ def main():
         return 0
 
     scenarios = expand(args.names)
+    global TOUCH_SCALE
+    TOUCH_SCALE = args.touch_scale
     if phone.locked():
         say('the phone is locked; ask the user to unlock it')
         return 2

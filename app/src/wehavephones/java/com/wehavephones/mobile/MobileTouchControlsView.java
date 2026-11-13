@@ -220,6 +220,9 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
                     .put("stick", new JSONArray().put(origin[0] + stickX).put(origin[1] + stickY).put(radius));
             if (lastViewport != null) json.put("viewport", new JSONArray().put(origin[0] + lastViewport.left)
                     .put(origin[1] + lastViewport.top).put(origin[0] + lastViewport.right).put(origin[1] + lastViewport.bottom));
+            // The action wheel's hub and unit, when it takes swipes.
+            if (WeHavePhonesConfig.isMobileTouchWheel(getContext()) && layout.wheelReach > 0) json.put("wheel",
+                    new JSONArray().put(origin[0] + layout.wheelX).put(origin[1] + layout.wheelY).put(layout.wheelUnit));
             JSONObject keys = new JSONObject();
             for (int i = 0; i < buttons.length; i++) {
                 RectF rect = buttons[i];
