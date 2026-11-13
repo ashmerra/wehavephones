@@ -60,6 +60,18 @@ public class ControllerSelfTest {
         move(c, new MotionEvent());
         check(!s.dpad[1], "centred hat releases the D-pad");
 
+        move(c, new MotionEvent().axis(MotionEvent.AXIS_X, -1f));
+        check(c.updateStateFromKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.FLAG_FALLBACK)),
+                "a fallback D-pad key synthesized from the left stick is consumed");
+        check(!s.dpad[3] && s.thumbLX == -1f, "the left stick does not press the D-pad through fallback keys (issue 39)");
+        key(c, KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_LEFT);
+        check(s.dpad[3], "a real D-pad press still registers while the left stick is deflected");
+        c.updateStateFromKeyEvent(new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.FLAG_FALLBACK));
+        check(s.dpad[3], "a fallback key release does not release the real D-pad press");
+        key(c, KeyEvent.ACTION_UP, KeyEvent.KEYCODE_DPAD_LEFT);
+        move(c, new MotionEvent());
+        check(!s.dpad[3], "the real D-pad releases");
+
         System.out.println("Controller self-test passed (" + checks + " checks)");
     }
 

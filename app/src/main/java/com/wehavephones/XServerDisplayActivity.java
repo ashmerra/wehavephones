@@ -1635,9 +1635,13 @@ import java.util.concurrent.Executors;
 
     @Override
     public boolean dispatchGenericMotionEvent(MotionEvent event) {
-        boolean handledByWinHandler = winHandler.onGenericMotionEvent(event);
-        if (handledByWinHandler) SessionInputExtras.onControllerInput(this);
-        return !handledByWinHandler && !touchpadView.onExternalMouseEvent(event) && super.dispatchGenericMotionEvent(event);
+        if (winHandler.onGenericMotionEvent(event)) {
+            SessionInputExtras.onControllerInput(this);
+            // Report the stick motion as consumed. Unconsumed joystick motion makes Android
+            // synthesize D-pad key events from the left stick, which then pressed the D-pad too.
+            return true;
+        }
+        return !touchpadView.onExternalMouseEvent(event) && super.dispatchGenericMotionEvent(event);
     }
 
     @Override

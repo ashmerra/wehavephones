@@ -207,6 +207,9 @@ public class ExternalController {
 
         int dpadIdx = getDpadIdxByKeyCode(keyCode);
         if (dpadIdx != -1) {
+            // Android synthesizes fallback D-pad keys from unconsumed stick and hat motion. The
+            // motion events already carry that input, so only real D-pad keys press the D-pad.
+            if ((event.getFlags() & KeyEvent.FLAG_FALLBACK) != 0) return true;
             dpadKey[dpadIdx] = pressed;
             updateDpad();
             return true;

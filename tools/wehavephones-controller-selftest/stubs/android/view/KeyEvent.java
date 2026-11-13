@@ -3,6 +3,7 @@ package android.view;
 /** Real Android key codes, so ExternalController's switch statements match the platform. */
 public class KeyEvent {
     public static final int ACTION_DOWN = 0, ACTION_UP = 1;
+    public static final int FLAG_FALLBACK = 0x400;
     public static final int KEYCODE_UNKNOWN = 0;
     public static final int KEYCODE_DPAD_UP = 19, KEYCODE_DPAD_DOWN = 20, KEYCODE_DPAD_LEFT = 21, KEYCODE_DPAD_RIGHT = 22;
     public static final int KEYCODE_BUTTON_A = 96, KEYCODE_BUTTON_B = 97, KEYCODE_BUTTON_C = 98;
@@ -11,11 +12,20 @@ public class KeyEvent {
     public static final int KEYCODE_BUTTON_THUMBL = 106, KEYCODE_BUTTON_THUMBR = 107;
     public static final int KEYCODE_BUTTON_START = 108, KEYCODE_BUTTON_SELECT = 109, KEYCODE_BUTTON_MODE = 110;
     public static final int KEYCODE_BUTTON_1 = 188, KEYCODE_BUTTON_16 = 203;
-    private final int action, keyCode;
+    private final int action, keyCode, flags;
 
     public KeyEvent(int action, int keyCode) {
+        this(action, keyCode, 0);
+    }
+
+    public KeyEvent(int action, int keyCode, int flags) {
         this.action = action;
         this.keyCode = keyCode;
+        this.flags = flags;
+    }
+
+    public int getFlags() {
+        return flags;
     }
 
     public int getAction() {
