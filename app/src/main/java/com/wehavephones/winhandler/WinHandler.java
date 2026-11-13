@@ -27,6 +27,7 @@ import java.util.ArrayDeque;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
+import java.util.function.BooleanSupplier;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class WinHandler {
@@ -490,6 +491,15 @@ public class WinHandler {
             }
             sendPacket(port);
         });
+    }
+
+    /**
+     * The result for an activity's dispatchGenericMotionEvent. Controller motion that WinHandler
+     * consumed must report as handled. Unconsumed joystick motion makes Android synthesize D-pad
+     * key events from the left stick, which then pressed the D-pad too (issue 39).
+     */
+    public static boolean dispatchGenericMotion(boolean handledByController, BooleanSupplier otherHandlers) {
+        return handledByController || otherHandlers.getAsBoolean();
     }
 
     public boolean onGenericMotionEvent(MotionEvent event) {

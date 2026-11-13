@@ -171,6 +171,12 @@ public class GamepadSelfTest {
             Files.deleteIfExists(evdev.resolve("event0"));
             Files.deleteIfExists(evdev);
         }
+        boolean[] fellThrough = {false};
+        check(WinHandler.dispatchGenericMotion(true, () -> { fellThrough[0] = true; return false; }),
+                "controller motion WinHandler consumed reports as handled, so Android synthesizes no D-pad keys (issue 39)");
+        check(!fellThrough[0], "consumed controller motion skips the touchpad and view handlers");
+        check(WinHandler.dispatchGenericMotion(false, () -> true), "motion another handler consumes reports as handled");
+        check(!WinHandler.dispatchGenericMotion(false, () -> false), "motion nobody consumes reports as unhandled");
         System.out.println("GamepadSelfTest: PASS (" + checks + " checks)");
     }
 
