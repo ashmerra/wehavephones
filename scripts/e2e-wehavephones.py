@@ -169,6 +169,9 @@ GROUPS = {
 }
 GROUPS['all'] = GROUPS['versions'] + GROUPS['touch'] + GROUPS['wheel'] + GROUPS['extra'] + GROUPS['apps']
 GROUPS['default'] = GROUPS['versions'] + GROUPS['touch'] + GROUPS['apps']
+# Release validation keeps the other games in Dev and tests Forever in the signed RC.
+GROUPS['release-dev'] = [name for group in ('versions', 'touch', 'wheel') for name in GROUPS[group]
+                         if not name.startswith('forever')]
 
 
 def say(message):

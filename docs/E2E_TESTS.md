@@ -11,12 +11,50 @@ scripts/e2e-wehavephones.py run --serial <adb serial>  # versions + touch
 scripts/e2e-wehavephones.py run forever-touch classic-era
 scripts/e2e-wehavephones.py run wheel --touch-scale 0.75  # action wheel at 75%
 scripts/e2e-wehavephones.py run apps                  # WowUp and CurseForge
+scripts/e2e-wehavephones.py run release-dev           # release games except Forever
 scripts/e2e-wehavephones.py restore                   # after an interrupted run
 scripts/e2e-wehavephones.py selftest                  # host check, no phone
 ```
 
 Run `selftest` after changing the runner. It checks the marker reader, the
 Enter World detector and the settings round trip on synthetic data.
+
+## Release validation
+
+Use the standard Dev build for every WoW version except Forever, then test
+Forever in the actual signed release candidate. Keep the other game installs
+in Dev. They do not need to be installed in the release app.
+
+1. Install the standard Dev build with `scripts/deploy-wehavephones.sh --serial
+   <serial>`. Do not use the private login module for release E2E tests.
+2. Run `scripts/e2e-wehavephones.py run release-dev --serial <serial>`. This
+   selects the default, touch and action wheel scenarios for Classic Era,
+   Anniversary, MoP, Titan and Retail, excluding every Forever scenario.
+   Confirm each intended game passed. A skipped game is not validation.
+3. Build and install the signed candidate with `scripts/deploy-wehavephones.sh
+   --release --serial <serial>`. This updates `com.wehavephones` in place and
+   preserves its data. Check for a live session before deployment and ask
+   before replacing one. Do not uninstall or clear data.
+4. Test Forever through the RC's own **Play** and Battle.net's saved sign-in.
+   Enter the world and check jumping with default controls. Then check touch
+   world entry, jumping, stick movement and camera turning. With the action
+   wheel enabled, check both swipe directions, hub taps and slot activation.
+   Use the RC's UI to change settings and restore the player's choices after
+   the checks. Save screenshots and compare Android's crash buffer before and
+   after testing. Keep the candidate APK and its checksum together.
+
+The automated runner requires `run-as` access to private app files and the
+debug-only touch layout. It cannot run against the production release package.
+Perform the Forever RC checks through the UI without enabling debugging or
+changing the APK. Record them separately from automated Dev results. Use the
+same signed APK for validation and publication. Rebuilds require a new RC check.
+
+Keep release evidence under `out/investigations/` and E2E results under
+`out/e2e/`. Record the source revision, APK checksum, device, game versions,
+passes, skips and failures. If the maintainer explicitly confirms the other
+versions are already tested for a release, retain that confirmation and run
+only the remaining Forever RC checks. Do not describe the confirmation as a
+new automated run.
 
 ## Before a run
 
@@ -50,6 +88,7 @@ Enter World detector and the settings round trip on synthetic data.
 Groups: `versions` (one per game line), `touch` (the same games with touch
 controls), `wheel` (the same games with the action wheel), `extra`, `apps` (`wowup` and `curseforge`), `default` (`versions`,
 `touch` and `apps`) and `all`. A game that is not installed is skipped.
+`release-dev` selects `versions`, `touch` and `wheel` without Forever.
 `--touch-scale` runs the touch and wheel scenarios at one interface size,
 from 0.75 to 1.75. Without it they use the app's default size.
 
