@@ -1580,6 +1580,14 @@ local function CreateWheel()
 end
 
 local function PlaceWheel()
+    -- Retail's main bar takes the mouse over its whole area, above a new UIParent child. Stack
+    -- the wheel with the stock action buttons, so windows cover it as they cover those.
+    local level = 1
+    for _, name in ipairs({"MainActionBar", "MainMenuBar", "ActionButton1"}) do
+        local object = _G[name]
+        if object and object.GetFrameLevel then level = math.max(level, object:GetFrameLevel()+1) end
+    end
+    if wheel:GetFrameLevel() < level then wheel:SetFrameLevel(level) end
     local hubX, hubY, wheelUnit = WheelHub()
     local size = WHEEL_SLOT*wheelUnit
     for i, slot in ipairs(wheel.slots) do

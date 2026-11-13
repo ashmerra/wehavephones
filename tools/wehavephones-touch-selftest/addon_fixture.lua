@@ -129,6 +129,8 @@ for _,name in ipairs({"RegisterEvent","RegisterUnitEvent","ClearAllPoints","SetF
     "SetTexture","SetJustifyH","SetBackdropColor","SetBackdropBorderColor","SetGradient","SetThickness",
     "SetColorTexture","SetAllPoints","SetHitRectInsets"}) do methods[name]=function() end end
 function methods:EnableMouse(enabled) self.mouse=enabled end
+function methods:GetFrameLevel() return self.level or 1 end
+function methods:SetFrameLevel(level) self.level=level end
 function methods:SetStartPoint(...) self.start={...} end
 function methods:SetEndPoint(...) self.finish={...} end
 function CreateColor(r,g,b,a) return {r=r,g=g,b=b,a=a} end
@@ -650,6 +652,8 @@ for _,name in ipairs({"MultiBar5","MultiBar6","MultiBar7"}) do
     object:SetPoint("BOTTOM",UIParent,"BOTTOM",0,200)
     object:Show()
 end
+-- Retail's main bar takes the mouse over its area at a high frame level.
+ActionButton1:SetFrameLevel(50)
 boot(true,nil,true)
 local wheel=objects.WeHavePhonesTouchWheel
 local slots={}
@@ -678,6 +682,7 @@ for _,scale in ipairs(TOUCH_SCALES) do
             assert(not wheel.visible and ActionButton1.visible and ActionButton9.visible,"tablet shapes keep the stock grid")
         else
             assert(wheel.visible and not ActionButton1.visible,"wide games show the wheel")
+            assert(wheel:GetFrameLevel()>50,"the wheel and its hub stack above the stock action bar, which takes the mouse")
             local rects={wheelRect(objects.WeHavePhonesTouchWheelHub)}
             local hubRect=rects[1]
             close(hubRect[3]-hubRect[1],height*.107*controls(),"the hub matches the native keys on a 16:9 game")
