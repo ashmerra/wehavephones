@@ -15,7 +15,7 @@ Built-in addon manager, with optional CurseForge and WowUp apps.
 
 [![WeHavePhones demo video](website/assets/gameplay-60s.jpg)](https://www.youtube.com/watch?v=4wet8as_QfA)
 
-![World of Warcraft Retail running on the Galaxy S23+ with touch controls](website/assets/retail-touch-controls.png)
+![World of Warcraft with the redesigned touch controls and action wheel](docs/images/touch-controls-blurred.png)
 
 ## Tested on
 
