@@ -24,9 +24,7 @@ public final class WeHavePhonesSessionLauncher {
         if (container == null || WowImportService.isRunning()) return false;
         // Found on the Pixel 8a: leftovers from earlier sessions pile up as
         // phantom processes and crashed Android 17's system_server.
-        if (XServerDisplayActivity.getActiveInstance() == null && !ProcessScanner.isWineSessionRunning()) {
-            ProcessScanner.reapLeftoverProcesses();
-        }
+        if (noSession()) ProcessScanner.reapLeftoverProcesses();
         try {
             context.startActivity(buildIntent(context, container, shortcutFile));
             return true;
@@ -34,5 +32,20 @@ public final class WeHavePhonesSessionLauncher {
         catch (Exception e) {
             return false;
         }
+    }
+
+    /**
+     * Reaps leftovers between sessions. The winebus thread left in a leftover
+     * winedevice keeps polling input about 1000 times a second, so a set from
+     * an ended session used a few percent of a core for hours on the S23.
+     * Skipped while Play is staging, a WoW import runs or any Wine program is live.
+     */
+    public static int reapLeftoversWhenIdle() {
+        if (RuntimeStageController.isRunning() || WowImportService.isRunning() || !noSession()) return 0;
+        return ProcessScanner.reapLeftoverProcesses();
+    }
+
+    private static boolean noSession() {
+        return XServerDisplayActivity.getActiveInstance() == null && !ProcessScanner.isWineSessionRunning();
     }
 }

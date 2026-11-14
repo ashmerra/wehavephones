@@ -4,6 +4,9 @@ import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -25,6 +28,9 @@ import com.wehavephones.SessionKeepAliveService;
 
 public class WeHavePhonesActivity extends AppCompatActivity {
     public static final byte PERMISSION_WRITE_EXTERNAL_STORAGE_REQUEST_CODE = 11;
+    private static final String TAG = "WeHavePhones";
+    /** Wine services become zombie leaders a few seconds after a session ends. */
+    private static final long LEFTOVER_REAP_DELAY_MS = 10_000L;
 
     public interface StageUpdater {
         void onStageUpdate(String message, boolean error);
@@ -41,6 +47,11 @@ public class WeHavePhonesActivity extends AppCompatActivity {
     private boolean notificationChannelPrepared;
     private Runnable afterStoragePermission;
     private AppUpdateUi appUpdateUi;
+    private final Handler handler = new Handler(Looper.getMainLooper());
+    private final Runnable reapLeftovers = () -> new Thread(() -> {
+        int reaped = WeHavePhonesSessionLauncher.reapLeftoversWhenIdle();
+        if (reaped > 0) Log.i(TAG, "Reaped " + reaped + " leftover Wine process(es)");
+    }, "wehavephones-reap").start();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -115,10 +126,12 @@ public class WeHavePhonesActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         appUpdateUi.onResume();
+        handler.postDelayed(reapLeftovers, LEFTOVER_REAP_DELAY_MS);
         if (firstRunShowing && WeHavePhonesInitialSetup.isComplete(this)) finishInitialSetup();
     }
 
     @Override protected void onPause() {
+        handler.removeCallbacks(reapLeftovers);
         appUpdateUi.onPause();
         super.onPause();
     }
