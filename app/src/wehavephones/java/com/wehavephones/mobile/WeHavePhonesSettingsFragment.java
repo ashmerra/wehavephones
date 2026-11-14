@@ -48,6 +48,13 @@ public class WeHavePhonesSettingsFragment extends Fragment {
             activity.updateStageStatus(getString(R.string.wehavephones_settings_saved), false);
         });
 
+        CheckBox disableVoiceChat = view.findViewById(R.id.CBDisableWowVoiceChat);
+        disableVoiceChat.setChecked(WeHavePhonesConfig.isWowVoiceChatDisabled(activity));
+        disableVoiceChat.setOnCheckedChangeListener((button, checked) -> {
+            WeHavePhonesConfig.setWowVoiceChatDisabled(activity, checked);
+            activity.updateStageStatus(getString(R.string.wehavephones_settings_saved), false);
+        });
+
         CheckBox disableGamepad = view.findViewById(R.id.CBDisableVirtualGamepad);
         CheckBox mobileTouch = view.findViewById(R.id.CBMobileTouch);
         mobileTouch.setChecked(WeHavePhonesConfig.isMobileTouchEnabled(activity));

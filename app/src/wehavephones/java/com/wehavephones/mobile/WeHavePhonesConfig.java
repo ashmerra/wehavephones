@@ -26,6 +26,7 @@ public final class WeHavePhonesConfig {
     public static final String KEY_LAST_STAGE_STATUS = "wehavephones_last_stage_status";
     public static final String KEY_PERFORMANCE_OVERLAY = "wehavephones_performance_overlay";
     public static final String KEY_SAVE_MEMORY = "wehavephones_save_memory";
+    public static final String KEY_DISABLE_WOW_VOICE_CHAT = "wehavephones_disable_wow_voice_chat";
     public static final String KEY_DISABLE_VIRTUAL_GAMEPAD = "wehavephones_disable_virtual_gamepad";
     public static final String KEY_MOBILE_TOUCH = "wehavephones_mobile_touch";
     private static final String KEY_MOBILE_TOUCH_SCALE = "wehavephones_mobile_touch_scale";
@@ -166,6 +167,19 @@ public final class WeHavePhonesConfig {
 
     public static void setSaveMemory(Context context, boolean enabled) {
         prefs(context).edit().putBoolean(KEY_SAVE_MEMORY, enabled).apply();
+    }
+
+    /**
+     * Keep WoW's voice chat process from starting (default on). It polls about
+     * 1,600 times a second under Wine even when no one uses voice chat.
+     * See {@link com.wehavephones.core.WowVoiceChat}.
+     */
+    public static boolean isWowVoiceChatDisabled(Context context) {
+        return prefs(context).getBoolean(KEY_DISABLE_WOW_VOICE_CHAT, true);
+    }
+
+    public static void setWowVoiceChatDisabled(Context context, boolean disabled) {
+        prefs(context).edit().putBoolean(KEY_DISABLE_WOW_VOICE_CHAT, disabled).apply();
     }
 
     public static boolean isVirtualGamepadDisabled(Context context) {

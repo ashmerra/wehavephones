@@ -129,6 +129,8 @@
     <string name="wehavephones_settings_saved">Setting saved.</string>
     <string name="wehavephones_settings_save_memory">Save memory with lower graphics</string>
     <string name="wehavephones_settings_save_memory_hint">Turns off shadows and multithreaded rendering.</string>
+    <string name="wehavephones_settings_disable_wow_voice_chat">Disable WoW voice chat</string>
+    <string name="wehavephones_settings_disable_wow_voice_chat_hint">Reduces CPU usage.</string>
     <string name="wehavephones_settings_container_title">Active container</string>
     <string name="wehavephones_settings_container_entry">%1$s (#%2$d)</string>
     <string name="wehavephones_settings_container_empty">No containers yet</string>

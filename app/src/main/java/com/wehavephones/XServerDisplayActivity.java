@@ -641,6 +641,7 @@ import java.util.concurrent.Executors;
         catch (java.io.IOException e) {
             Log.e(TAG_GUEST_DEBUG, "Could not update Wine audio codecs", e);
         }
+        SessionLaunchExtras.prepareWinePrefix(this, new File(container.getRootDir(), ".wine"));
 
         String startupSelection = String.valueOf(container.getStartupSelection());
         if (!startupSelection.equals(container.getExtra("startupSelection"))) {

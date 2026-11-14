@@ -23,6 +23,8 @@
 #      Battle.net's web pages draw Chinese and Korean text.
 #      WineAcmCodecsSelfTest: turn off system.ini's audio codec drivers, which
 #      held Battle.net's start for about 7 s, and restore them on request.
+#      WowVoiceChatSelfTest: the user.reg override that keeps WoW's voice chat
+#      process from loading, added and removed without touching other keys.
 #
 # No adb, no device. Exits non-zero when any check fails.
 set -euo pipefail
@@ -140,11 +142,13 @@ if [[ -n "$JAVAC" && -n "$JAVA" ]]; then
       "$ROOT_DIR/app/src/main/java/com/wehavephones/core/WineFontPaths.java" \
       "$ROOT_DIR/app/src/main/java/com/wehavephones/core/WineFontRegistry.java" \
       "$ROOT_DIR/app/src/main/java/com/wehavephones/core/WineAcmCodecs.java" \
+      "$ROOT_DIR/app/src/main/java/com/wehavephones/core/WowVoiceChat.java" \
       "$SELF_TEST_DIR/WineFontPathsSelfTest.java" "$SELF_TEST_DIR/WineFontRegistrySelfTest.java" \
-      "$SELF_TEST_DIR/WineAcmCodecsSelfTest.java"; then
+      "$SELF_TEST_DIR/WineAcmCodecsSelfTest.java" "$SELF_TEST_DIR/WowVoiceChatSelfTest.java"; then
     "$JAVA" -cp "$WORK_DIR" com.wehavephones.core.WineFontPathsSelfTest || fail "WineFontPathsSelfTest"
     "$JAVA" -cp "$WORK_DIR" com.wehavephones.core.WineFontRegistrySelfTest || fail "WineFontRegistrySelfTest"
     "$JAVA" -cp "$WORK_DIR" com.wehavephones.core.WineAcmCodecsSelfTest || fail "WineAcmCodecsSelfTest"
+    "$JAVA" -cp "$WORK_DIR" com.wehavephones.core.WowVoiceChatSelfTest || fail "WowVoiceChatSelfTest"
   else
     fail "javac failed for WineFontPathsSelfTest"
   fi

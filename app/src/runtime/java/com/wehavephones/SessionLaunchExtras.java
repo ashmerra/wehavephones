@@ -12,6 +12,9 @@ public final class SessionLaunchExtras {
 
     public static boolean canStartSession(XServerDisplayActivity activity) { return true; }
 
+    /** Changes to the stopped Wine prefix before the session starts; this flavor makes none. */
+    public static void prepareWinePrefix(XServerDisplayActivity activity, File prefix) {}
+
     /**
      * Guest path of a program that runs a batch file without a console
      * window, or null to start batch files normally.

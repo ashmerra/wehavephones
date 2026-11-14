@@ -13,9 +13,11 @@ import com.wehavephones.mobile.WeHavePhonesLaunchPlan;
 import com.wehavephones.mobile.devices.DeviceProfileSelector;
 import com.wehavephones.core.GraphicsPlan;
 import com.wehavephones.core.FileUtils;
+import com.wehavephones.core.WowVoiceChat;
 import com.wehavephones.xenvironment.ImageFs;
 
 import java.io.File;
+import java.io.IOException;
 
 /**
  * WeHavePhones session start: batch shortcuts (bnet.bat, wow.bat, wcstart.bat)
@@ -37,6 +39,19 @@ public final class SessionLaunchExtras {
         android.widget.Toast.makeText(activity, com.wehavephones.R.string.wehavephones_import_wait,
                 android.widget.Toast.LENGTH_LONG).show();
         return false;
+    }
+
+    /** Settings > Disable WoW voice chat, applied to the stopped prefix before each session. */
+    public static void prepareWinePrefix(XServerDisplayActivity activity, File prefix) {
+        boolean disabled = WeHavePhonesConfig.isWowVoiceChatDisabled(activity);
+        try {
+            if (WowVoiceChat.apply(prefix, disabled)) {
+                Log.i("WeHavePhones", (disabled ? "Turned off" : "Restored") + " WoW voice chat");
+            }
+        }
+        catch (IOException e) {
+            Log.w("WeHavePhones", "Could not update WoW voice chat", e);
+        }
     }
 
     /**

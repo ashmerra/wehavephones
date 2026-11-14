@@ -73,6 +73,16 @@
                     style="@style/WeHavePhonesHint"
                     android:layout_marginLeft="32dp"
                     android:text="@string/wehavephones_settings_save_memory_hint" />
+                <CheckBox
+                    android:id="@+id/CBDisableWowVoiceChat"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/wehavephones_settings_disable_wow_voice_chat" />
+                <TextView
+                    style="@style/WeHavePhonesHint"
+                    android:layout_marginLeft="32dp"
+                    android:text="@string/wehavephones_settings_disable_wow_voice_chat_hint" />
                 <TextView
                     style="@style/WeHavePhonesHint"
                     android:layout_marginTop="9dp"

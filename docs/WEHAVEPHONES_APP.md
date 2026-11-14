@@ -185,7 +185,14 @@ desktop wallpaper.
   (`MemoryTransforms.fittedScreenSizes`, #26, #27). The display keeps the
   X screen's aspect ratio, so a 16:9 size leaves bars on wider or squarer
   screens. **Save memory with lower graphics** (off by default, §8 Memory
-  behavior). **Keep the game running when you switch apps**
+  behavior). **Disable WoW voice chat** (on by default,
+  `wehavephones_disable_wow_voice_chat`): before each session
+  `core/WowVoiceChat` writes a per-program Wine DLL override in `user.reg`
+  that disables `vivoxsdk` for `WowVoiceProxy.exe`, or removes it when the
+  setting is off. The proxy then cannot load, WoW stops restarting it, and
+  voice chat is unavailable in game. Under Wine its `Sleep(1)` message loop
+  woke about 1,600 times a second and used 13% of a core on the S23. Game
+  files are untouched. **Keep the game running when you switch apps**
   (on by default, §6 item 11) and **Game region**. Not configurable (removed
   as settings 2026-10-04): Play always launches through Battle.net (the old
   *One-button launch* off mode only opened Battle.net, which **Open Battle.net**
