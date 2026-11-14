@@ -207,6 +207,11 @@ import java.util.concurrent.Executors;
         activeInstance = new WeakReference<>(this);
         AppUtils.hideSystemUI(this);
         AppUtils.keepScreenOn(this);
+        // Touch controls are in constant use. A touch boost would hold the panel at
+        // its peak rate and override the game surface's frame rate vote (XServerView).
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+            getWindow().setFrameRateBoostOnTouchEnabled(false);
+        }
         setContentView(R.layout.xserver_display_activity);
 
         final PreloaderDialog preloaderDialog = new PreloaderDialog(this);
