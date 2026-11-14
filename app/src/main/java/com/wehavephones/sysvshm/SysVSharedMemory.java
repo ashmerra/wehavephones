@@ -22,6 +22,8 @@ public class SysVSharedMemory {
         private int fd;
         private long size;
         private ByteBuffer data;
+        // Deleted by the guest while the X server still has it mapped.
+        private boolean deleted;
     }
 
     public int getFd(int shmid) {
@@ -48,13 +50,19 @@ public class SysVSharedMemory {
     }
 
     public void delete(int shmid) {
-        SHMemory shmemory = shmemories.get(shmid);
-        if (shmemory != null) {
+        // The guest deletes a segment on the SysV connection thread while the X server
+        // thread may be detaching it. Unlocked, detach could read the SparseArray's
+        // removed-entry marker and crash the app with a ClassCastException.
+        synchronized (shmemories) {
+            SHMemory shmemory = shmemories.get(shmid);
+            if (shmemory == null) return;
             if (shmemory.fd != -1) {
                 XConnectorEpoll.closeFd(shmemory.fd);
                 shmemory.fd = -1;
             }
-            shmemories.remove(shmid);
+            // Keep a mapped segment until detach, which is the only place that can unmap it.
+            if (shmemory.data != null) shmemory.deleted = true;
+            else shmemories.remove(shmid);
         }
     }
 
@@ -67,7 +75,7 @@ public class SysVSharedMemory {
     public ByteBuffer attach(int shmid) {
         synchronized (shmemories) {
             SHMemory shmemory = shmemories.get(shmid);
-            if (shmemory != null) {
+            if (shmemory != null && !shmemory.deleted) {
                 if (shmemory.data == null) shmemory.data = mapSHMSegment(shmemory.fd, shmemory.size, 0, true);
                 return shmemory.data;
             }
@@ -84,6 +92,7 @@ public class SysVSharedMemory {
                         unmapSHMSegment(shmemory.data, shmemory.size);
                         shmemory.data = null;
                     }
+                    if (shmemory.deleted) shmemories.removeAt(i);
                     break;
                 }
             }
