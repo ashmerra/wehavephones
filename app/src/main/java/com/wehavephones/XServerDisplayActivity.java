@@ -188,6 +188,9 @@ import java.util.concurrent.Executors;
     private ImeBridgeEditText imeBridgeView;
     private FrameLayout imeBridgeHost;
     private boolean wowImeFocused = false;
+    private static final long TEXT_FIELD_SETTLE_MS = 150L;
+    private boolean gameTextFieldFocused = false;
+    private final Runnable applyGameTextFieldFocus = this::applyGameTextFieldFocus;
     private boolean battleNetSignInShown = false;
     private boolean signInKeyboardPending = false;
     private boolean suppressImeUntilFocusReset = false;
@@ -912,6 +915,8 @@ import java.util.concurrent.Executors;
                 hideSoftKeyboard();
             }
         }));
+        winHandler.setOnTextFieldFocusListener((focused, program) ->
+                runOnUiThread(() -> onGameTextFieldFocus(focused, program)));
         if (new File(imageFs.getLibDir(), "libfakeinput.so").isFile()) {
             winHandler.setFakeGamepad(FakeGamepadWriter.create(new File(imageFs.getRootDir(), "dev/input")));
         }
@@ -1224,6 +1229,34 @@ import java.util.concurrent.Executors;
                 if (controller != null) controller.show(WindowInsets.Type.ime());
             }
         });
+    }
+
+    /**
+     * WoW gives its window an input context while one of its text fields, such as the chat
+     * box, has focus. The patched win32u.so reports that, so the keyboard opens with the
+     * field and closes when typing ends, without detecting chat ourselves.
+     */
+    private void onGameTextFieldFocus(boolean focused, String program) {
+        if (program == null || !program.toLowerCase(Locale.ROOT).startsWith("wow")) return;
+        Log.i(TAG_GUEST_DEBUG, "Text field " + (focused ? "focused" : "left") + " in " + program);
+        // WoW switches the context on and off many times while it loads, and a field can hand
+        // focus straight to another one. Act on the state once it has settled.
+        gameTextFieldFocused = focused;
+        View root = getWindow().getDecorView();
+        root.removeCallbacks(applyGameTextFieldFocus);
+        root.postDelayed(applyGameTextFieldFocus, TEXT_FIELD_SETTLE_MS);
+    }
+
+    private void applyGameTextFieldFocus() {
+        if (wowImeFocused) return;
+        if (!gameTextFieldFocused) {
+            if (imeBridgeView != null && !imeBridgeView.isPrivateInput()) hideSoftKeyboard();
+            return;
+        }
+        if (imeBridgeView != null && imeBridgeView.hasFocus()) return;
+        if (getResources().getConfiguration().hardKeyboardHidden == Configuration.HARDKEYBOARDHIDDEN_NO) return;
+        suppressImeUntilFocusReset = false;
+        showSoftKeyboard("text_field");
     }
 
     private void hideSoftKeyboard() {

@@ -71,9 +71,9 @@
           "executable": true
         },
         {
-          "asset": "win32u/win32u-copydata-10.0-34.so",
+          "asset": "win32u/win32u-copydata-textfield-10.0-34.so",
           "target": "opt/{wineVersion}/lib/wine/aarch64-unix/win32u.so",
-          "sha256": "1debaa4a1a3fbe4e713f5427b2baeba74c61782cdd35bfc62286aa4c4c3252db",
+          "sha256": "32f652d2af9ce793706f80facb0794dcaf90c2976ec0e44aec5d0a0c6ca10773",
           "executable": true
         },
         {

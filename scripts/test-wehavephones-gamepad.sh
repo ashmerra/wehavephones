@@ -21,6 +21,7 @@ mapfile -t STUBS < <(find "$TEST_DIR/stubs" -name '*.java' | sort)
   "$WEHAVEPHONES/addons/required/MobileTouchSetup.java" \
   "$MAIN/inputcontrols/GamepadState.java" "$MAIN/inputcontrols/FakeGamepadWriter.java" \
   "$MAIN/winhandler/WinHandler.java" "$MAIN/winhandler/RequestCodes.java" \
-  "$MAIN/winhandler/OnImeFocusListener.java" "$MAIN/winhandler/MouseEventFlags.java" \
+  "$MAIN/winhandler/OnImeFocusListener.java" "$MAIN/winhandler/OnTextFieldFocusListener.java" \
+  "$MAIN/winhandler/MouseEventFlags.java" \
   "$MAIN/winhandler/ProcessInfo.java" "$MAIN/winhandler/OnGetProcessInfoListener.java"
 "${JAVA_HOME:+$JAVA_HOME/bin/}java" -cp "$WORK_DIR:$JSON_JAR:$ANDROID_JAR" com.wehavephones.winhandler.GamepadSelfTest

@@ -607,7 +607,7 @@ Semantics:
 | `dll/arm64-libc++.dll` | 1 853 440 | `ed9edb58…` |
 | `dll/arm64-libunwind.dll` | 90 624 | `535c6c86…` |
 | `server/wineserver-android-owner-10.0-34` | 810 928 | `d7454aa4…` |
-| `win32u/win32u-copydata-10.0-34.so` | 1 449 320 | `1debaa4a…` |
+| `win32u/win32u-copydata-textfield-10.0-34.so` | 1 450 120 | `32f652d2…` |
 | `win32u/user32-copydata-10.0-34.dll` | 3 026 944 | `b1508e49…` |
 
   The 110 MB GE-Proton layer is bundled separately

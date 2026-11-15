@@ -1,0 +1,88 @@
+diff --git a/dlls/win32u/imm.c b/dlls/win32u/imm.c
+index 99dc3e5..12e00bc 100644
+--- a/dlls/win32u/imm.c
++++ b/dlls/win32u/imm.c
+@@ -25,6 +25,12 @@
+ #endif
+ 
+ #include <pthread.h>
++#include <stdlib.h>
++#include <string.h>
++#include <unistd.h>
++#include <sys/socket.h>
++#include <netinet/in.h>
++#include <arpa/inet.h>
+ #include "ntstatus.h"
+ #define WIN32_NO_STATUS
+ #include "win32u_private.h"
+@@ -179,6 +185,44 @@ UINT_PTR WINAPI NtUserQueryInputContext( HIMC handle, UINT attr )
+     return ret;
+ }
+ 
++/* WeHavePhones: tell the Android app when the focused window starts or stops
++ * taking text, so it can show or hide the on-screen keyboard. Programs give
++ * their focused window an input context while a text field (such as a chat box)
++ * has focus and remove it when typing ends. The app listens on UDP 7947. */
++static void report_text_field( BOOL focused )
++{
++    const WCHAR *path = NtCurrentTeb()->Peb->ProcessParameters->ImagePathName.Buffer;
++    const WCHAR *name = path;
++    const char *env = getenv( "WEHAVEPHONES_TEXT_FIELD_FOCUS" );
++    unsigned char packet[4 + 64];
++    struct sockaddr_in addr;
++    unsigned int len = 0;
++    int fd;
++
++    if (env && !strcmp( env, "0" )) return;
++    if (path)
++    {
++        const WCHAR *p;
++        for (p = path; *p; p++) if (*p == '\\' || *p == '/') name = p + 1;
++        while (name[len] && len < 64) len++;
++    }
++
++    packet[0] = 0x76;
++    packet[1] = focused ? 1 : 0;
++    packet[2] = len & 0xff;
++    packet[3] = 0;
++    /* Executable names are ASCII. Anything else is replaced. */
++    for (unsigned int i = 0; i < len; i++) packet[4 + i] = name[i] < 0x80 ? name[i] : '?';
++
++    if ((fd = socket( AF_INET, SOCK_DGRAM | SOCK_CLOEXEC, 0 )) < 0) return;
++    memset( &addr, 0, sizeof(addr) );
++    addr.sin_family = AF_INET;
++    addr.sin_port = htons( 7947 );
++    addr.sin_addr.s_addr = htonl( INADDR_LOOPBACK );
++    sendto( fd, packet, 4 + len, 0, (struct sockaddr *)&addr, sizeof(addr) );
++    close( fd );
++}
++
+ /******************************************************************************
+  *           NtUserAssociateInputContext   (win32u.@)
+  */
+@@ -186,6 +230,7 @@ UINT WINAPI NtUserAssociateInputContext( HWND hwnd, HIMC ctx, ULONG flags )
+ {
+     WND *win;
+     UINT ret = AICR_OK;
++    HIMC old, new;
+ 
+     TRACE( "%p %p %x\n", hwnd, ctx, (int)flags );
+ 
+@@ -214,14 +259,17 @@ UINT WINAPI NtUserAssociateInputContext( HWND hwnd, HIMC ctx, ULONG flags )
+     if (!(win = get_win_ptr( hwnd )) || win == WND_OTHER_PROCESS || win == WND_DESKTOP)
+         return AICR_FAILED;
+ 
++    old = win->imc;
+     if (ctx && win->tid != GetCurrentThreadId()) ret = AICR_FAILED;
+     else if (flags != IACE_IGNORENOCONTEXT || win->imc)
+     {
+         if (win->imc != ctx && get_focus() == hwnd) ret = AICR_FOCUS_CHANGED;
+         win->imc = ctx;
+     }
++    new = win->imc;
+ 
+     release_win_ptr( win );
++    if (!old != !new && get_focus() == hwnd) report_text_field( new != 0 );
+     return ret;
+ }
+ 

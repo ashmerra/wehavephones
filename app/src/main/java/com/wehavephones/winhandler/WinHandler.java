@@ -40,6 +40,8 @@ public class WinHandler {
     private static final byte LITE_REQUEST_TEXT = 0x01;
     /** openurl.exe: a link the container opened (ShellExecute on http/https). */
     private static final byte OPEN_URL = 0x75;
+    /** win32u.so: the focused window gained or lost its input context (a text field has focus). */
+    private static final byte TEXT_FIELD_FOCUS = 0x76;
     private static final int LITE_FLAG_SUBMIT = 0x00000001;
     private static final int LITE_MAX_UTF16_BYTES = 4096;
     private static final int RX_PACKET_MAX = 8192;
@@ -57,6 +59,7 @@ public class WinHandler {
     private final AtomicInteger liteReqSeq = new AtomicInteger(1);
     private OnGetProcessInfoListener onGetProcessInfoListener;
     private OnImeFocusListener onImeFocusListener;
+    private volatile OnTextFieldFocusListener onTextFieldFocusListener;
     private volatile ExternalController currentController;
     /** Keep the guest's device id across physical/virtual controller handoffs. */
     private volatile int gamepadGuestId = -1;
@@ -260,6 +263,10 @@ public class WinHandler {
         }
     }
 
+    public void setOnTextFieldFocusListener(OnTextFieldFocusListener listener) {
+        onTextFieldFocusListener = listener;
+    }
+
     private void startSendThread() {
         Executors.newSingleThreadExecutor().execute(() -> {
             while (running) {
@@ -400,6 +407,17 @@ public class WinHandler {
         }
     }
 
+    /** Packet: code, focused (0 or 1), name length (u16 LE), ASCII executable name. */
+    private void handleTextFieldFocus(int packetLen) {
+        OnTextFieldFocusListener listener = onTextFieldFocusListener;
+        if (listener == null || packetLen < 4) return;
+        boolean focused = receiveData.get() != 0;
+        int length = Math.min(receiveData.getShort() & 0xffff, packetLen - 4);
+        byte[] bytes = new byte[length];
+        receiveData.get(bytes);
+        listener.onTextFieldFocusChanged(focused, new String(bytes, StandardCharsets.US_ASCII));
+    }
+
     private void handleOpenUrl(int packetLen) {
         if (packetLen < 3) return;
         int length = receiveData.getShort() & 0xffff;
@@ -456,6 +474,11 @@ public class WinHandler {
                             // The socket listens on every interface; only the container may open links.
                             InetAddress sender = receivePacket.getAddress();
                             if (sender != null && sender.isLoopbackAddress()) handleOpenUrl(packetLen);
+                            continue;
+                        }
+                        if (requestCode == TEXT_FIELD_FOCUS) {
+                            InetAddress sender = receivePacket.getAddress();
+                            if (sender != null && sender.isLoopbackAddress()) handleTextFieldFocus(packetLen);
                             continue;
                         }
                         handleRequest(requestCode, receivePacket.getPort(), packetLen);

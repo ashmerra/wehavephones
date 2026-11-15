@@ -181,6 +181,12 @@ and returns the input to its stock anchor beside the compact chat frame.
 **Keyboard** leaves the pointer where you last tapped, which is normally the
 text field you want to type in.
 
+The Android keyboard also opens by itself whenever a WoW text field gets
+focus, such as chat opened with Enter, a whisper reply, a search box or a
+character name. It closes again when the field loses focus, for example after
+a chat message is sent or Escape closes the box. Nothing opens while a
+hardware keyboard is connected.
+
 Enemy nameplates are on in touch mode. They are steadier tap targets than
 moving creature models. **Menu → Targeting → Enemy nameplates** toggles them.
 

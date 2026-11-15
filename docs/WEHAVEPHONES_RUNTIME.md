@@ -44,7 +44,7 @@ Artifacts it installs:
 | `ntdll-grace-copysafe-10.0-34.so` | `opt/proton-10.0-34-arm64ec/lib/wine/aarch64-unix/ntdll.so` | `9f3e55a0…` |
 | `arm64-vkd3d.dll`, `arm64-libc++.dll`, `arm64-libunwind.dll` | `C:\arm64-*.dll` in the prefix | `f1c11399…`, `ed9edb58…`, `535c6c86…` |
 | `wineserver-android-owner-10.0-34` | `opt/proton-10.0-34-arm64ec/bin/wineserver` | `d7454aa4…` |
-| `win32u-copydata-10.0-34.so` | `opt/proton-10.0-34-arm64ec/lib/wine/aarch64-unix/win32u.so` | `1debaa4a…` |
+| `win32u-copydata-textfield-10.0-34.so` | `opt/proton-10.0-34-arm64ec/lib/wine/aarch64-unix/win32u.so` | `32f652d2…` |
 | `user32-copydata-10.0-34.dll` | `opt/proton-10.0-34-arm64ec/lib/wine/aarch64-windows/user32.dll` and prefix `drive_c/windows/system32/user32.dll` | `b1508e49…` |
 
 The APK bundles the SHA-256-pinned GE-Proton 10.0-34 layer. First-run setup
@@ -274,9 +274,28 @@ the icon bitmap, and WowUp 2.25's large Electron tray icon hung the session
 before its window appeared (issue #36). Both files must come from the same
 build, because each expects the other's message layout.
 
+## Text field focus in win32u
+
+`patches/wine/win32u-text-field-focus-wine10.patch` tells the app when a text
+field gets or loses focus, so the Android keyboard can open by itself. A
+program associates an input context with its focused window while a text
+field such as the WoW chat box has focus, and removes it when typing ends.
+`NtUserAssociateInputContext` notices when the focused window's context comes
+or goes and sends a UDP packet to the app's `WinHandler` on `127.0.0.1:7947`:
+code `0x76`, focused (0 or 1), the name length (u16, little-endian) and the
+ASCII executable name. The app only accepts it from loopback and only acts on
+WoW executables. `WEHAVEPHONES_TEXT_FIELD_FOCUS=0` in the container
+environment turns the report off.
+
+The idea comes from DroidDeck, whose Proton reports the same input context
+change from `winex11`. Wine 10 has no `EnableIMEContext` driver call, so the
+report lives in `win32u` instead, and `user32.dll` is unchanged.
+
 ### How win32u and user32 were built
 
-- Source: the `wineserver` tree above, plus the patch.
+- Source: the `wineserver` tree above, plus the `WM_COPYDATA` patch. The
+  shipped `win32u.so` also has the text field focus patch. `user32.dll` is
+  built without it.
 - Configure in a separate build directory like the `wineserver`, but with
   FreeType, Fontconfig and Vulkan enabled, because `win32u.so` loads them at
   run time. Use the headers from the Termux tree (`include/freetype2`,
