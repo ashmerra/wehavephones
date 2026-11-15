@@ -252,7 +252,7 @@ local function Collect()
                         local info = C_SpellBook.GetSpellBookItemInfo(slot, bank)
                         if info and info.itemType == Enum.SpellBookItemType.Spell and not info.isPassive and not info.isOffSpec then
                             local bookSlot = slot
-                            tinsert(entries, {name=info.name, icon=info.iconID,
+                            tinsert(entries, {name=info.name, icon=info.iconID, key="spell:" .. tostring(info.spellID),
                                 pickup=function() C_SpellBook.PickupSpellBookItem(bookSlot, bank) end})
                         end
                     end
@@ -263,12 +263,12 @@ local function Collect()
                 local _, _, offset, count, _, offSpec, hidden = GetSpellTabInfo(tab)
                 if (not offSpec or offSpec == 0) and not hidden then
                     for slot = offset + 1, offset + count do
-                        local kind = GetSpellBookItemInfo(slot, BOOKTYPE_SPELL)
+                        local kind, spellID = GetSpellBookItemInfo(slot, BOOKTYPE_SPELL)
                         if kind == "SPELL" and not IsPassiveSpell(slot, BOOKTYPE_SPELL) then
                             local name, rank = GetSpellBookItemName(slot, BOOKTYPE_SPELL)
                             local bookSlot = slot
                             if name then tinsert(entries, {name=name .. (rank and rank ~= "" and "\n" .. rank or ""),
-                                icon=GetSpellBookItemTexture(slot, BOOKTYPE_SPELL),
+                                icon=GetSpellBookItemTexture(slot, BOOKTYPE_SPELL), key="spell:" .. tostring(spellID),
                                 pickup=function() PickupSpellBookItem(bookSlot, BOOKTYPE_SPELL) end}) end
                         end
                     end
@@ -282,7 +282,7 @@ local function Collect()
                 if info and not info.isLocked then
                     local bagID, bagSlot = bag, slot
                     local name = (retail and C_Item.GetItemInfo or GetItemInfo)(info.hyperlink or info.itemID) or "Item"
-                    tinsert(entries, {name=name, icon=info.iconFileID,
+                    tinsert(entries, {name=name, icon=info.iconFileID, key="item:" .. tostring(info.itemID),
                         pickup=function() C_Container.PickupContainerItem(bagID, bagSlot) end})
                 end
             end
@@ -293,10 +293,41 @@ local function Collect()
             if i <= account or i > (MAX_ACCOUNT_MACROS or 120) then
                 local macro = i
                 local name, icon = GetMacroInfo(macro)
-                if name then tinsert(entries, {name=name, icon=icon, pickup=function() PickupMacro(macro) end}) end
+                if name then tinsert(entries, {name=name, icon=icon, key="macro:" .. macro,
+                    pickup=function() PickupMacro(macro) end}) end
             end
         end
     end
+end
+
+-- Where each action already sits on the bars the touch layout shows: the wheel's rings
+-- when it is on, otherwise the six pages of the main bar and its current form page.
+local function BarPlaces()
+    local places = {}
+    local function Add(slot, label)
+        local kind, id = GetActionInfo(slot)
+        if not kind or not id then return end
+        local key = kind .. ":" .. tostring(id)
+        places[key] = places[key] or label
+        if kind == "spell" and FindBaseSpellByID then
+            local base = FindBaseSpellByID(id)
+            if base and base ~= id then places["spell:" .. base] = places["spell:" .. base] or label end
+        end
+    end
+    if WheelWanted and WheelWanted() then
+        for ring = 1, WHEEL_RINGS do
+            for i = 1, WHEEL_SLOTS do Add(WHEEL_FIRST + (ring-1)*WHEEL_SLOTS + i - 1, "Ring " .. ring) end
+        end
+    else
+        local bonus = GetBonusBarOffset and GetBonusBarOffset() or 0
+        if bonus > 0 then
+            for i = 1, 12 do Add((5+bonus)*12 + i, "Bar 1") end
+        end
+        for bar = 1, 6 do
+            for i = 1, 12 do Add((bar-1)*12 + i, "Bar " .. bar) end
+        end
+    end
+    return places
 end
 
 local function Snapshot(slot)
@@ -340,6 +371,7 @@ end
 
 RefreshEditor = function()
     Collect()
+    local places = BarPlaces()
     local pages = math.max(1, math.ceil(#entries / 6))
     page = math.max(1, math.min(page, pages))
     editor.title:SetText("Choose action for slot " .. selectedSlot)
@@ -348,7 +380,10 @@ RefreshEditor = function()
         local entry = entries[(page - 1) * 6 + i]
         button.entry = entry
         button:SetShown(entry ~= nil)
+        local place = entry and entry.key and places[entry.key]
         if entry then button.icon:SetTexture(entry.icon) button.label:SetText(entry.name) end
+        button.check:SetShown(place ~= nil)
+        button.place:SetText(place or "")
     end
     editor.empty:SetShown(#entries == 0)
     editor.undo:SetEnabled(undo ~= nil)
@@ -382,6 +417,14 @@ OpenEditor = function(button)
             choice.label:SetPoint("LEFT", 50, 0)
             choice.label:SetWidth(146)
             choice.label:SetJustifyH("LEFT")
+            -- Marks a choice that is already on one of the bars, and names the first bar.
+            choice.check = choice:CreateTexture(nil, "OVERLAY")
+            choice.check:SetTexture("Interface\\RaidFrame\\ReadyCheck-Ready")
+            choice.check:SetSize(16, 16)
+            choice.check:SetPoint("BOTTOMRIGHT", choice.icon, "BOTTOMRIGHT", 4, -4)
+            choice.place = choice:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+            choice.place:SetPoint("TOPRIGHT", -6, -5)
+            choice.place:SetTextColor(.45, .9, .45)
             editor.choices[i] = choice
         end
         editor.empty = editor:CreateFontString(nil, "OVERLAY", "GameFontHighlight")

@@ -227,7 +227,7 @@ function GetSpellTabInfo(tab)
     end
     return "Test",nil,0,3
 end
-function GetSpellBookItemInfo(slot) return slot==4 and "FUTURESPELL" or "SPELL" end
+function GetSpellBookItemInfo(slot) return slot==4 and "FUTURESPELL" or "SPELL",100+slot end
 function IsPassiveSpell(slot) return slot==2 end
 function GetSpellBookItemName(slot) return "Spell "..slot,"Rank 1" end
 function GetSpellBookItemTexture(slot) return slot end
@@ -783,6 +783,13 @@ assert(wheel.visible and not ActionButton1.visible and not MultiBar6.visible,"th
 edit(slots[3])
 assert(objects.WeHavePhonesTouchEditor.visible and objects.WeHavePhonesTouchEditor.title.text=="Choose action for slot 147",
     "holding a wheel slot edits that slot")
+assert(not objects.WeHavePhonesTouchChoice1.check.visible,"with the wheel on, actions only on the hidden main bar are not marked")
+actions[156]={"spell",103}
+objects.WeHavePhonesTouchEditor:Hide()
+edit(slots[3])
+assert(objects.WeHavePhonesTouchChoice2.check.visible and objects.WeHavePhonesTouchChoice2.place.text=="Ring 2",
+    "with the wheel on, the picker names the ring an action is on")
+actions[156]=nil
 objects.WeHavePhonesTouchEditor:Hide()
 boot(true,nil,true)
 assert(objects.WeHavePhonesTouchWheelSlot1.action==145 and objects.WeHavePhonesTouchWheelHub.text=="1",
@@ -956,6 +963,9 @@ edit(ActionButton1)
 assert(objects.WeHavePhonesTouchEditor.visible and actions[1][2]==101)
 assert(objects.WeHavePhonesTouchChoice1.entry.name:find("Spell 1"))
 assert(objects.WeHavePhonesTouchChoice2.entry.name:find("Spell 3"),"passives excluded")
+assert(objects.WeHavePhonesTouchChoice1.check.visible and objects.WeHavePhonesTouchChoice1.place.text=="Bar 1"
+    and not objects.WeHavePhonesTouchChoice2.check.visible and objects.WeHavePhonesTouchChoice2.place.text=="",
+    "the picker marks spells already on a bar and names the bar")
 assert(not objects.WeHavePhonesTouchChoice3.visible,"future spells and hidden or inactive skill lines are excluded")
 objects.WeHavePhonesTouchChoice2.scripts.OnClick(objects.WeHavePhonesTouchChoice2)
 assert(actions[1][2]==103 and not cursor,"selection changes only the selected slot")
@@ -969,8 +979,13 @@ objects.WeHavePhonesTouchChoice1.scripts.OnClick(objects.WeHavePhonesTouchChoice
 assert(actions[61][1]=="macro" and actions[61][2]==1)
 edit(ActionButton1)
 clickText("Items")
+assert(not objects.WeHavePhonesTouchChoice1.check.visible,"an item that left the bars is not marked")
 objects.WeHavePhonesTouchChoice1.scripts.OnClick(objects.WeHavePhonesTouchChoice1)
 assert(actions[61][1]=="item" and actions[61][2]==500)
+edit(ActionButton1)
+clickText("Items")
+assert(objects.WeHavePhonesTouchChoice1.place.text=="Bar 6","items on a later page of the main bar are marked too")
+clickText("Cancel")
 pageClick("WeHavePhonesTouchPage2")
 edit(ActionButton1)
 clickText("Clear slot")
@@ -1108,7 +1123,7 @@ C_SpellBook={
     end,
     GetSpellBookItemInfo=function(slot,bank)
         assert(bank==0 and slot<=5,"hidden and inactive skill lines are not enumerated")
-        return {itemType=slot==3 and 2 or slot==5 and 4 or 1,name="Retail spell "..slot,iconID=slot,
+        return {itemType=slot==3 and 2 or slot==5 and 4 or 1,name="Retail spell "..slot,iconID=slot,spellID=200+slot,
             isPassive=slot==2,isOffSpec=slot==4}
     end,
     PickupSpellBookItem=function(slot,bank) assert(bank==0) retailPickup=slot cursor={"spell",200+slot} end,
@@ -1234,6 +1249,7 @@ assert(objects.WeHavePhonesTouchChoice1.entry.name=="Retail spell 1" and objects
 objects.WeHavePhonesTouchChoice1.scripts.OnClick(objects.WeHavePhonesTouchChoice1)
 assert(retailPickup==1 and actions[1][2]==201 and not cursor,"Retail spells retain their book slot and bank")
 edit(ActionButton1)
+assert(objects.WeHavePhonesTouchChoice1.place.text=="Bar 1","Retail spells on a bar are marked by spell ID")
 clickText("Undo")
 assert(actions[1][2]==101,"Retail spell Undo uses C_Spell without deprecated globals")
 edit(ActionButton1)
