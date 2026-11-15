@@ -1010,6 +1010,7 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
             case SKILLS: chord(ctrl, shift, XKeycode.KEY_F6); setWindows(true); break;
             case REPUTATION: chord(ctrl, shift, XKeycode.KEY_F7); setWindows(true); break;
             case HONOR: chord(ctrl, shift, XKeycode.KEY_F8); setWindows(true); break;
+            case GROUP_FINDER: chord(ctrl, shift, XKeycode.KEY_INSERT); setWindows(true); break;
             case PET_SPELLS: chord(ctrl, shift, XKeycode.KEY_F9); setWindows(true); break;
             case GAME_MENU: chord(ctrl, shift, XKeycode.KEY_F10); setWindows(true); break;
             case MACROS: chord(shift, XKeycode.KEY_F1); setWindows(true); break;

@@ -45,6 +45,7 @@ final class MobileTouchMenu {
         SKILLS(Category.WINDOWS, R.drawable.wehavephones_touch_ic_chart_bar, R.string.wehavephones_touch_act_skills),
         REPUTATION(Category.WINDOWS, R.drawable.wehavephones_touch_ic_handshake, R.string.wehavephones_touch_act_reputation),
         HONOR(Category.WINDOWS, R.drawable.wehavephones_touch_ic_flag_banner, R.string.wehavephones_touch_act_honor),
+        GROUP_FINDER(Category.WINDOWS, R.drawable.wehavephones_touch_ic_eye, R.string.wehavephones_touch_act_group_finder),
         PET_SPELLS(Category.WINDOWS, R.drawable.wehavephones_touch_ic_paw_print, R.string.wehavephones_touch_act_pet),
         MACROS(Category.WINDOWS, R.drawable.wehavephones_touch_ic_terminal_window, R.string.wehavephones_touch_act_macros),
         GAME_MENU(Category.WINDOWS, R.drawable.wehavephones_touch_ic_gear_six, R.string.wehavephones_touch_act_game_menu),

@@ -85,7 +85,7 @@ items in Menus.
 
 | Section | Entries |
 | --- | --- |
-| Windows | Character, Spellbook, Talents, Quest log, Map, Bags, Social, Skills, Reputation, Honor, Pet spells, Macros, Game menu, Help |
+| Windows | Character, Spellbook, Talents, Quest log, Map, Bags, Social, Skills, Reputation, Honor, Group finder, Pet spells, Macros, Game menu, Help |
 | Targeting | Self, Party 1–4, Next friend, Assist, Previous enemy, Nearby corpse, Enemy nameplates |
 | Movement | Auto run, Follow target, Walk or run, Sit or stand, Dive key |
 | Typing and items | Chat, Reply, Keyboard, Inspect, Shift, Ctrl, Alt, No modifier |

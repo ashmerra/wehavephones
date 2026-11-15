@@ -54,6 +54,8 @@ local bindings = {
     ["CTRL-SHIFT-F7"] = "TOGGLECHARACTER2", ["CTRL-SHIFT-F8"] = "TOGGLECHARACTER4", ["CTRL-SHIFT-F9"] = "TOGGLEPETBOOK",
     ["CTRL-SHIFT-F10"] = "TOGGLEGAMEMENU", ["CTRL-SHIFT-F11"] = "FOLLOWTARGET", ["CTRL-SHIFT-F12"] = "REPLY",
     ["SHIFT-F7"] = "NAMEPLATES",
+    -- Dungeons & Raids. Only the Retail-based clients are checked so far.
+    ["CTRL-SHIFT-INSERT"] = retail and "TOGGLEGROUPFINDER" or nil,
 }
 
 local function Notice(text)
