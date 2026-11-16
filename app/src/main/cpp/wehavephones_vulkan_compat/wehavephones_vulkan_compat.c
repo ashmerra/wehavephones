@@ -12,6 +12,7 @@
  *   For BC formats this layer ORs the emulated flags into the v2/v3 result
  *   and turns v2 buffer-to-image copies into v1 copies.
  * - Shaders: see the Mali shader fixes below.
+ * - Multi-draw indirect: see the emulation below.
  *
  * Everything else passes through. Enabled by ENABLE_WEHAVEPHONES_VULKAN_COMPAT=1
  * (see VulkanCompatLayer.java).
@@ -87,6 +88,9 @@ typedef struct {
     PFN_vkGetPhysicalDeviceFormatProperties formatProperties;
     PFN_vkGetPhysicalDeviceFormatProperties2 formatProperties2;
     PFN_vkGetPhysicalDeviceFormatProperties2 formatProperties2Khr;
+    PFN_vkGetPhysicalDeviceFeatures features;
+    PFN_vkGetPhysicalDeviceFeatures2 features2;
+    PFN_vkGetPhysicalDeviceFeatures2 features2Khr;
 } InstanceEntry;
 
 /* VK_KHR_copy_commands2 / Vulkan 1.3 buffer-to-image copy. */
@@ -122,6 +126,9 @@ typedef struct {
     PFN_vkCreateShaderModule createShaderModule;
     PFN_vkCreateGraphicsPipelines createGraphicsPipelines;
     PFN_vkCreateComputePipelines createComputePipelines;
+    int splitMultiDraw;
+    PFN_vkCmdDrawIndirect drawIndirect;
+    PFN_vkCmdDrawIndexedIndirect drawIndexedIndirect;
 } DeviceEntry;
 
 static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
@@ -245,6 +252,9 @@ static VKAPI_ATTR VkResult VKAPI_CALL layerCreateInstance(
     entry.formatProperties = (PFN_vkGetPhysicalDeviceFormatProperties)nextGipa(*instance, "vkGetPhysicalDeviceFormatProperties");
     entry.formatProperties2 = (PFN_vkGetPhysicalDeviceFormatProperties2)nextGipa(*instance, "vkGetPhysicalDeviceFormatProperties2");
     entry.formatProperties2Khr = (PFN_vkGetPhysicalDeviceFormatProperties2)nextGipa(*instance, "vkGetPhysicalDeviceFormatProperties2KHR");
+    entry.features = (PFN_vkGetPhysicalDeviceFeatures)nextGipa(*instance, "vkGetPhysicalDeviceFeatures");
+    entry.features2 = (PFN_vkGetPhysicalDeviceFeatures2)nextGipa(*instance, "vkGetPhysicalDeviceFeatures2");
+    entry.features2Khr = (PFN_vkGetPhysicalDeviceFeatures2)nextGipa(*instance, "vkGetPhysicalDeviceFeatures2KHR");
 
     pthread_mutex_lock(&lock);
     lastInstance = entry;
@@ -270,6 +280,97 @@ static VKAPI_ATTR void VKAPI_CALL layerDestroyInstance(VkInstance instance, cons
     if (entry.destroyInstance) entry.destroyInstance(instance, allocator);
 }
 
+/*
+ * Multi-draw indirect. DXVK requires multiDrawIndirect for D3D11 feature
+ * level 11_0, which retail WoW needs, and Samsung's Mali-G68 driver (Galaxy
+ * A35, driver 38.1) lacks it, so WoW reported an unsupported 3D accelerator.
+ * DXVK only issues counts above one when it merges consecutive D3D11
+ * indirect draws, so this layer reports the feature, keeps it out of device
+ * creation and replays such draws one at a time. It also hides
+ * drawIndirectCount, whose GPU-side count cannot be split. Set
+ * WEHAVEPHONES_VULKAN_COMPAT_SPLIT_MULTI_DRAW=1 to force this on a driver
+ * with the feature, or 0 to turn it off.
+ */
+#define STRUCTURE_TYPE_VULKAN_1_2_FEATURES ((VkStructureType)51)
+
+static int splitMultiDrawMode(void) {
+    const char *value = getenv("WEHAVEPHONES_VULKAN_COMPAT_SPLIT_MULTI_DRAW");
+    if (!value || !*value) return -1;
+    return value[0] == '1';
+}
+
+static int emulatesMultiDraw(const InstanceEntry *entry, VkPhysicalDevice physicalDevice) {
+    int mode = splitMultiDrawMode();
+    if (mode >= 0) return mode;
+    if (!entry->features) return 0;
+    VkPhysicalDeviceFeatures native;
+    memset(&native, 0, sizeof(native));
+    entry->features(physicalDevice, &native);
+    return !native.multiDrawIndirect;
+}
+
+static void reportMultiDraw(VkPhysicalDeviceFeatures *features, void *chain) {
+    features->multiDrawIndirect = VK_TRUE;
+    for (VkBaseOutStructure *next = chain; next; next = next->pNext) {
+        if (next->sType == STRUCTURE_TYPE_VULKAN_1_2_FEATURES) {
+            ((VkPhysicalDeviceVulkan12Features *)next)->drawIndirectCount = VK_FALSE;
+        }
+    }
+}
+
+static VKAPI_ATTR void VKAPI_CALL layerGetPhysicalDeviceFeatures(
+        VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures *features) {
+    InstanceEntry entry = findInstance(physicalDevice);
+    if (!entry.features) return;
+    entry.features(physicalDevice, features);
+    if (emulatesMultiDraw(&entry, physicalDevice)) reportMultiDraw(features, NULL);
+}
+
+static void getFeatures2(VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures2 *features, int khr) {
+    InstanceEntry entry = findInstance(physicalDevice);
+    PFN_vkGetPhysicalDeviceFeatures2 next = khr && entry.features2Khr ? entry.features2Khr
+            : entry.features2 ? entry.features2 : entry.features2Khr;
+    if (!next) return;
+    next(physicalDevice, features);
+    if (emulatesMultiDraw(&entry, physicalDevice)) reportMultiDraw(&features->features, features->pNext);
+}
+
+static VKAPI_ATTR void VKAPI_CALL layerGetPhysicalDeviceFeatures2(
+        VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures2 *features) {
+    getFeatures2(physicalDevice, features, 0);
+}
+
+static VKAPI_ATTR void VKAPI_CALL layerGetPhysicalDeviceFeatures2Khr(
+        VkPhysicalDevice physicalDevice, VkPhysicalDeviceFeatures2 *features) {
+    getFeatures2(physicalDevice, features, 1);
+}
+
+static VKAPI_ATTR void VKAPI_CALL layerCmdDrawIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer,
+        VkDeviceSize offset, uint32_t drawCount, uint32_t stride) {
+    DeviceEntry entry = findDevice(commandBuffer);
+    if (!entry.drawIndirect) return;
+    if (drawCount <= 1) {
+        entry.drawIndirect(commandBuffer, buffer, offset, drawCount, stride);
+        return;
+    }
+    for (uint32_t i = 0; i < drawCount; i++) {
+        entry.drawIndirect(commandBuffer, buffer, offset + (VkDeviceSize)i * stride, 1, stride);
+    }
+}
+
+static VKAPI_ATTR void VKAPI_CALL layerCmdDrawIndexedIndirect(VkCommandBuffer commandBuffer, VkBuffer buffer,
+        VkDeviceSize offset, uint32_t drawCount, uint32_t stride) {
+    DeviceEntry entry = findDevice(commandBuffer);
+    if (!entry.drawIndexedIndirect) return;
+    if (drawCount <= 1) {
+        entry.drawIndexedIndirect(commandBuffer, buffer, offset, drawCount, stride);
+        return;
+    }
+    for (uint32_t i = 0; i < drawCount; i++) {
+        entry.drawIndexedIndirect(commandBuffer, buffer, offset + (VkDeviceSize)i * stride, 1, stride);
+    }
+}
+
 static VKAPI_ATTR VkResult VKAPI_CALL layerCreateDevice(
         VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *createInfo,
         const VkAllocationCallbacks *allocator, VkDevice *device) {
@@ -286,7 +387,31 @@ static VKAPI_ATTR VkResult VKAPI_CALL layerCreateDevice(
     PFN_vkCreateDevice createDevice = (PFN_vkCreateDevice)nextGipa(instance.instance, "vkCreateDevice");
     if (!createDevice) return VK_ERROR_INITIALIZATION_FAILED;
 
-    VkResult result = createDevice(physicalDevice, createInfo, allocator, device);
+    /* An emulated multiDrawIndirect is not enabled on the driver. DXVK owns
+       the chained feature structs, so the flag is cleared and restored. */
+    int splitMultiDraw = emulatesMultiDraw(&instance, physicalDevice);
+    VkDeviceCreateInfo patchedInfo = *createInfo;
+    VkPhysicalDeviceFeatures enabledFeatures;
+    VkPhysicalDeviceFeatures2 *features2 = NULL;
+    VkBool32 features2MultiDraw = VK_FALSE;
+    if (splitMultiDraw) {
+        if (createInfo->pEnabledFeatures) {
+            enabledFeatures = *createInfo->pEnabledFeatures;
+            enabledFeatures.multiDrawIndirect = VK_FALSE;
+            patchedInfo.pEnabledFeatures = &enabledFeatures;
+        }
+        for (const VkBaseInStructure *next = createInfo->pNext; next; next = next->pNext) {
+            if (next->sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2) {
+                features2 = (VkPhysicalDeviceFeatures2 *)next;
+                features2MultiDraw = features2->features.multiDrawIndirect;
+                features2->features.multiDrawIndirect = VK_FALSE;
+                break;
+            }
+        }
+    }
+
+    VkResult result = createDevice(physicalDevice, &patchedInfo, allocator, device);
+    if (features2) features2->features.multiDrawIndirect = features2MultiDraw;
     if (result != VK_SUCCESS) return result;
 
     DeviceEntry entry = {0};
@@ -298,6 +423,10 @@ static VKAPI_ATTR VkResult VKAPI_CALL layerCreateDevice(
     entry.createShaderModule = (PFN_vkCreateShaderModule)nextGdpa(*device, "vkCreateShaderModule");
     entry.createGraphicsPipelines = (PFN_vkCreateGraphicsPipelines)nextGdpa(*device, "vkCreateGraphicsPipelines");
     entry.createComputePipelines = (PFN_vkCreateComputePipelines)nextGdpa(*device, "vkCreateComputePipelines");
+    entry.splitMultiDraw = splitMultiDraw;
+    entry.drawIndirect = (PFN_vkCmdDrawIndirect)nextGdpa(*device, "vkCmdDrawIndirect");
+    entry.drawIndexedIndirect = (PFN_vkCmdDrawIndexedIndirect)nextGdpa(*device, "vkCmdDrawIndexedIndirect");
+    if (splitMultiDraw) fprintf(stderr, LOG_PREFIX "multi-draw indirect is emulated with single draws\n");
     pthread_mutex_lock(&lock);
     for (int i = 0; i < MAX_ENTRIES; i++) {
         if (!devices[i].key || devices[i].key == entry.key) {
@@ -584,6 +713,9 @@ LAYER_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL WeHavePhonesVulkanCompat_G
     if (!strcmp(name, "vkDestroyDevice")) return (PFN_vkVoidFunction)layerDestroyDevice;
     if (!strcmp(name, "vkGetPhysicalDeviceFormatProperties2")) return (PFN_vkVoidFunction)layerGetPhysicalDeviceFormatProperties2;
     if (!strcmp(name, "vkGetPhysicalDeviceFormatProperties2KHR")) return (PFN_vkVoidFunction)layerGetPhysicalDeviceFormatProperties2Khr;
+    if (!strcmp(name, "vkGetPhysicalDeviceFeatures")) return (PFN_vkVoidFunction)layerGetPhysicalDeviceFeatures;
+    if (!strcmp(name, "vkGetPhysicalDeviceFeatures2")) return (PFN_vkVoidFunction)layerGetPhysicalDeviceFeatures2;
+    if (!strcmp(name, "vkGetPhysicalDeviceFeatures2KHR")) return (PFN_vkVoidFunction)layerGetPhysicalDeviceFeatures2Khr;
 
     InstanceEntry entry = findInstance(instance);
     return entry.nextGipa ? entry.nextGipa(instance, name) : NULL;
@@ -599,5 +731,7 @@ LAYER_EXPORT VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL WeHavePhonesVulkanCompat_G
     if (!strcmp(name, "vkCreateShaderModule") && entry.createShaderModule) return (PFN_vkVoidFunction)layerCreateShaderModule;
     if (!strcmp(name, "vkCreateGraphicsPipelines") && entry.createGraphicsPipelines) return (PFN_vkVoidFunction)layerCreateGraphicsPipelines;
     if (!strcmp(name, "vkCreateComputePipelines") && entry.createComputePipelines) return (PFN_vkVoidFunction)layerCreateComputePipelines;
+    if (entry.splitMultiDraw && !strcmp(name, "vkCmdDrawIndirect") && entry.drawIndirect) return (PFN_vkVoidFunction)layerCmdDrawIndirect;
+    if (entry.splitMultiDraw && !strcmp(name, "vkCmdDrawIndexedIndirect") && entry.drawIndexedIndirect) return (PFN_vkVoidFunction)layerCmdDrawIndexedIndirect;
     return entry.nextGdpa ? entry.nextGdpa(device, name) : NULL;
 }

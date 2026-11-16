@@ -23,6 +23,11 @@ and D3D12 through vkd3d-proton fails on Mali.
   rules v15 set `minAppVersionCode` to 11 and older apps keep their earlier rules. The S23's GPU is thermally limited in long sessions, so that work decides the frame
   rate. `d3d12.dll` stays enabled because the app writes `GxApi D3D11` before each launch.
 - Pixel 8a and other Mali phones: the phone's own Vulkan driver with the BCn compat layer, and D3D11.
+  DXVK needs `multiDrawIndirect` for the D3D11 feature level 11_0 that WoW requires. Some Mali
+  drivers lack it, such as the Mali-G68 in the Galaxy A35 (issue #37). WoW then reported an
+  unsupported 3D accelerator. On those drivers the compat layer reports the feature and replays
+  each multi-draw as single draws. `WEHAVEPHONES_VULKAN_COMPAT_SPLIT_MULTI_DRAW=1` forces this on
+  any GPU for testing, and `0` turns it off.
 - Adreno 840 and newer (Snapdragon 8 Elite Gen 5): WoW in D3D11 with the system driver. On a OnePlus 15
   every offered Turnip build drew glitches in WoW Retail, while the Qualcomm drivers played in-world
   (issue #13). The Turnip builds stay in the driver picker. The profile also disables `d3d12.dll`

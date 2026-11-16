@@ -14,6 +14,8 @@ import java.io.File;
  * through Vulkan 1.0 entry points; the layer routes DXVK's Vulkan 1.3 paths
  * to them. It also replaces the wrapper's OpConstantComposite pass, which
  * corrupts the heap, so that pass is switched off whenever the layer is used.
+ * On drivers without multiDrawIndirect (Galaxy A35, Mali-G68) it emulates
+ * that feature, which DXVK needs for the D3D11 feature level WoW requires.
  * See app/src/main/cpp/wehavephones_vulkan_compat.
  */
 public final class VulkanCompatLayer {
