@@ -403,13 +403,16 @@ public class InputControlsView extends View {
                     break;
                 }
                 case MotionEvent.ACTION_MOVE: {
-                    for (byte i = 0, count = (byte)event.getPointerCount(); i < count; i++) {
+                    for (int i = 0, count = event.getPointerCount(); i < count; i++) {
+                        // Elements track the pointer id from the down event. The index of a
+                        // pointer shifts when another finger lifts, so match by id here.
+                        int movePointerId = event.getPointerId(i);
                         float x = event.getX(i);
                         float y = event.getY(i);
 
                         handled = false;
                         for (ControlElement element : profile.getElements()) {
-                            if (element.handleTouchMove(i, x, y)) handled = true;
+                            if (element.handleTouchMove(movePointerId, x, y)) handled = true;
                         }
                         if (!handled) touchpadView.onTouchEvent(event);
                     }
