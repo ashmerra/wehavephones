@@ -151,6 +151,10 @@ import java.util.concurrent.Executors;
     private static final int GENERAL_PATCH_VERSION = 6;
     private XServerView xServerView;
     private volatile boolean bootFrameCap;
+    private volatile boolean smallWindowFrameCap;
+    private SessionPictureInPicture pictureInPicture;
+    /** The session is paused or at hidden frame pacing (onPause, or onStop in picture-in-picture). */
+    private boolean sessionHidden;
     private InputControlsView inputControlsView;
     private TouchpadView touchpadView;
     private XEnvironment environment;
@@ -403,21 +407,86 @@ import java.util.concurrent.Executors;
     public void onResume() {
         super.onResume();
         SessionInputExtras.onSessionResumed(this);
-        if (environment != null) {
-            xServerView.onResume();
-            if (keepRunningInBackground) setHiddenFramePacing(false);
-            else environment.onResume();
-        }
+        updatePictureInPictureParams();
+        showSession();
     }
 
     @Override
     public void onPause() {
         super.onPause();
-        if (environment != null) {
-            // With keep-alive the game keeps running (and stays online) while hidden, at 5 FPS.
-            if (keepRunningInBackground) setHiddenFramePacing(true);
-            else environment.onPause();
-            xServerView.onPause();
+        // In picture-in-picture the activity is paused but the game stays on screen.
+        // Android 12+ may only report the mode after onPause, so onStop hides the session then.
+        if (!isInPictureInPictureMode() && !canUsePictureInPicture()) hideSession();
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        if (isInPictureInPictureMode()) showSession();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        // Also reached when the picture-in-picture window is closed or the screen turns off.
+        hideSession();
+    }
+
+    private void showSession() {
+        if (environment == null || !sessionHidden) return;
+        sessionHidden = false;
+        xServerView.onResume();
+        if (keepRunningInBackground) setHiddenFramePacing(false);
+        else environment.onResume();
+    }
+
+    private void hideSession() {
+        if (environment == null || sessionHidden) return;
+        sessionHidden = true;
+        // With keep-alive the game keeps running (and stays online) while hidden, at 5 FPS.
+        if (keepRunningInBackground) setHiddenFramePacing(true);
+        else environment.onPause();
+        xServerView.onPause();
+    }
+
+    /**
+     * Settings > Picture-in-picture (off in the runtime flavor): the game
+     * keeps playing in a small window while another app is in front.
+     */
+    private boolean canUsePictureInPicture() {
+        return pictureInPicture != null && !shutdownCompleted && !restartRequested && !isFinishing()
+                && SessionPictureInPicture.isSupported(this)
+                && SessionLaunchExtras.pictureInPicture(this);
+    }
+
+    /** Before Android 12 the session enters picture-in-picture itself as the user leaves it. */
+    @Override
+    protected void onUserLeaveHint() {
+        super.onUserLeaveHint();
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S && !isInPictureInPictureMode() && canUsePictureInPicture()) {
+            SessionPictureInPicture.enter(this, pictureInPictureParams(false));
+        }
+    }
+
+    private android.app.PictureInPictureParams pictureInPictureParams(boolean autoEnter) {
+        return SessionPictureInPicture.params(xServer.screenInfo.width, xServer.screenInfo.height, autoEnter);
+    }
+
+    /** Any thread. Android 12+ enters picture-in-picture by itself while auto enter is on. */
+    private void updatePictureInPictureParams() {
+        if (pictureInPicture == null || !SessionPictureInPicture.isSupported(this)) return;
+        SessionPictureInPicture.apply(this, pictureInPictureParams(canUsePictureInPicture()));
+    }
+
+    @Override
+    public void onPictureInPictureModeChanged(boolean inPictureInPicture, @NonNull Configuration newConfig) {
+        super.onPictureInPictureModeChanged(inPictureInPicture, newConfig);
+        if (pictureInPicture != null) pictureInPicture.setActive(inPictureInPicture);
+        smallWindowFrameCap = inPictureInPicture;
+        applyBootFrameCap();
+        if (inPictureInPicture) {
+            if (drawerLayout.isDrawerOpen(GravityCompat.START)) drawerLayout.closeDrawer(GravityCompat.START, false);
+            hideSoftKeyboard();
         }
     }
 
@@ -428,7 +497,8 @@ import java.util.concurrent.Executors;
 
     /**
      * Caps the session at 30 FPS on screen (host frames and presenting
-     * clients) or lifts the cap. Any thread. A request made before the
+     * clients) or lifts the cap. The picture-in-picture window has its
+     * own 20 FPS cap. Any thread. A request made before the
      * X server and its view exist is applied once they do.
      */
     public void setBootFrameCap(boolean capped) {
@@ -441,9 +511,14 @@ import java.util.concurrent.Executors;
         XServerView view = xServerView;
         if (server == null || view == null) return;
         boolean capped = bootFrameCap;
+        boolean small = smallWindowFrameCap;
         PresentExtension presentExtension = server.getExtension(PresentExtension.MAJOR_OPCODE);
-        if (presentExtension != null) presentExtension.setBootFrameCap(capped);
-        view.getRenderer().setMinFrameIntervalMs(capped ? BOOT_FRAME_INTERVAL_MS : 0);
+        if (presentExtension != null) {
+            presentExtension.setBootFrameCap(capped);
+            presentExtension.setSmallWindowFrameCap(small);
+        }
+        view.getRenderer().setMinFrameIntervalMs(small ? SessionPictureInPicture.FRAME_INTERVAL_MS
+                : capped ? BOOT_FRAME_INTERVAL_MS : 0);
     }
 
     @Override
@@ -537,6 +612,8 @@ import java.util.concurrent.Executors;
             if (shutdownCompleted) return;
             shutdownCompleted = true;
         }
+        // Stop Android 12+ from moving the closing session into a small window.
+        updatePictureInPictureParams();
         SessionLaunchExtras.onSessionEnded(this);
         stopSessionLogging();
         stopGuestProgramFirst();
@@ -962,6 +1039,7 @@ import java.util.concurrent.Executors;
 
         xServer.setRenderer(renderer);
         rootView.addView(xServerView);
+        pictureInPicture = new SessionPictureInPicture(rootView, xServerView);
 
         globalCursorSpeed = preferences.getFloat("cursor_speed", 1.0f);
         touchpadView = new TouchpadView(this, xServer);

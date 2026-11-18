@@ -112,6 +112,8 @@ public final class LaunchOverlayController {
         if (existing != null && existing.getParent() == root) return;
         if (existing != null) existing.detach();
         LaunchOverlayView overlay = new LaunchOverlayView(activity);
+        // The launch screen covers the boot in the picture-in-picture window too.
+        overlay.setTag(R.id.keep_in_picture_in_picture, true);
         root.addView(overlay, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         view = new WeakReference<>(overlay);
         render();

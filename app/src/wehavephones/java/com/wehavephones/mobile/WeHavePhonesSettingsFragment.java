@@ -77,6 +77,13 @@ public class WeHavePhonesSettingsFragment extends Fragment {
             activity.updateStageStatus(getString(R.string.wehavephones_settings_saved), false);
         });
 
+        CheckBox pictureInPicture = view.findViewById(R.id.CBPictureInPicture);
+        pictureInPicture.setChecked(WeHavePhonesConfig.isPictureInPicture(activity));
+        pictureInPicture.setOnCheckedChangeListener((button, checked) -> {
+            WeHavePhonesConfig.setPictureInPicture(activity, checked);
+            activity.updateStageStatus(getString(R.string.wehavephones_settings_saved), false);
+        });
+
         CheckBox startInputBridge = view.findViewById(R.id.CBStartInputBridge);
         startInputBridge.setChecked(WeHavePhonesConfig.isStartInputBridge(activity));
         startInputBridge.setOnCheckedChangeListener((button, checked) -> {

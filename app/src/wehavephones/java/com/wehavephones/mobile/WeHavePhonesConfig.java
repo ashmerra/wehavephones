@@ -33,6 +33,7 @@ public final class WeHavePhonesConfig {
     private static final String KEY_MOBILE_TOUCH_WHEEL = "wehavephones_mobile_touch_wheel";
     private static final String KEY_MOBILE_TOUCH_GUIDE = "wehavephones_mobile_touch_guide_";
     public static final String KEY_KEEP_RUNNING_IN_BACKGROUND = "wehavephones_keep_running_in_background";
+    public static final String KEY_PICTURE_IN_PICTURE = "wehavephones_picture_in_picture";
     public static final String KEY_START_INPUT_BRIDGE = "wehavephones_start_input_bridge";
 
     private WeHavePhonesConfig() {}
@@ -236,6 +237,18 @@ public final class WeHavePhonesConfig {
 
     public static void setKeepRunningInBackground(Context context, boolean enabled) {
         prefs(context).edit().putBoolean(KEY_KEEP_RUNNING_IN_BACKGROUND, enabled).apply();
+    }
+
+    /**
+     * Keep the game playing in a small picture-in-picture window when the user
+     * switches apps (default on). The small window runs at 20 FPS.
+     */
+    public static boolean isPictureInPicture(Context context) {
+        return prefs(context).getBoolean(KEY_PICTURE_IN_PICTURE, true);
+    }
+
+    public static void setPictureInPicture(Context context, boolean enabled) {
+        prefs(context).edit().putBoolean(KEY_PICTURE_IN_PICTURE, enabled).apply();
     }
 
     /** Start the user's own Input Bridge helper (InputBridgeCompanion) with each session (default off). */

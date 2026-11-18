@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- View tag: a session overlay that stays visible in picture-in-picture. -->
+    <item name="keep_in_picture_in_picture" type="id" />
+</resources>

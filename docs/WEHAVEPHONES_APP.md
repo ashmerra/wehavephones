@@ -193,7 +193,9 @@ desktop wallpaper.
   voice chat is unavailable in game. Under Wine its `Sleep(1)` message loop
   woke about 1,600 times a second and used 13% of a core on the S23. Game
   files are untouched. **Keep the game running when you switch apps**
-  (on by default, §6 item 11) and **Game region**. Not configurable (removed
+  (on by default, §6 item 11), **Show the game in a small window when you
+  switch apps** (on by default, `wehavephones_picture_in_picture`, §6 item 13)
+  and **Game region**. Not configurable (removed
   as settings 2026-10-04): Play always launches through Battle.net (the old
   *One-button launch* off mode only opened Battle.net, which **Open Battle.net**
   does), the session always returns to the menu when WoW closes
@@ -720,6 +722,28 @@ Boot frame cap (2026-11-04):
     way (`PresentExtension.setBootFrameCap`). The hidden 5 FPS pacing wins
     while the session is in the background. WoW itself is never capped by
     this.
+
+Picture-in-picture (2026-11-18):
+
+13. With **Show the game in a small window when you switch apps** on
+    (`SessionLaunchExtras.pictureInPicture`, false in `runtime`), the game
+    keeps playing in Android's picture-in-picture window while another app
+    is in front. `XServerDisplayActivity` declares
+    `supportsPictureInPicture`. Android 12+ enters the window by itself
+    (`setAutoEnterEnabled`, set again on every resume so the setting applies
+    to a running session, and turned off in `shutdownRuntimeOnce`). Older
+    versions enter it from `onUserLeaveHint`. The window keeps the X screen's
+    aspect ratio. While the setting is on, `onPause` leaves the session
+    running and `onStop` hides it, because Android 12+ may report the mode
+    only after `onPause`. Closing the small window stops the activity like
+    any app switch, so the session keeps running in the background with
+    keep-alive. The app's Play brings it back. In the window the session
+    runs at no more than 20 FPS (`GLRenderer.setMinFrameIntervalMs` and
+    `PresentExtension.setSmallWindowFrameCap`). `SessionPictureInPicture`
+    hides the touch controls, on-screen controls and performance overlay by
+    alpha, not visibility, because showing the touch controls also changes
+    WoW's UI mode. Play's launch overlay is tagged
+    `R.id.keep_in_picture_in_picture` and stays.
 
 Everything else reuses existing public APIs: `ImageFs`, `ContainerManager`,
 `Container`, `Shortcut`, `WinHandler`, `ProcessHelper`, `HttpUtils`.

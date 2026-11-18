@@ -98,6 +98,11 @@ public final class SessionLaunchExtras {
         return WeHavePhonesConfig.isKeepRunningInBackground(activity);
     }
 
+    /** Settings > Picture-in-picture: keep the game playing in a small window while another app is in front. */
+    public static boolean pictureInPicture(XServerDisplayActivity activity) {
+        return WeHavePhonesConfig.isPictureInPicture(activity);
+    }
+
     /** False when Play's launch overlay covers the start instead of the "Starting up" dialog. */
     public static boolean showStartupPreloader(XServerDisplayActivity activity) {
         return !LaunchOverlayController.coversSessionStart();

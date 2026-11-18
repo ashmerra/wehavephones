@@ -38,6 +38,11 @@ public final class SessionLaunchExtras {
         return false;
     }
 
+    /** Keep the session playing in a small window when the user leaves it (upstream does not). */
+    public static boolean pictureInPicture(XServerDisplayActivity activity) {
+        return false;
+    }
+
     /** Show the "Starting up" dialog while the session starts. */
     public static boolean showStartupPreloader(XServerDisplayActivity activity) {
         return true;

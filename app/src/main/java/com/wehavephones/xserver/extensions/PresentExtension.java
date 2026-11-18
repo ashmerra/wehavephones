@@ -35,6 +35,8 @@ public class PresentExtension implements Extension {
     private static final int FAKE_INTERVAL = 1000000 / 60;
     private static final long HIDDEN_FRAME_INTERVAL_MS = 200;
     private static final long BOOT_FRAME_INTERVAL_MS = 1000 / 30;
+    /** 20 FPS in the picture-in-picture window. */
+    public static final long SMALL_WINDOW_FRAME_INTERVAL_MS = 1000 / 20;
     public enum Kind {PIXMAP, MSC_NOTIFY}
     public enum Mode {COPY, FLIP, SKIP}
     private final SparseArray<Event> events = new SparseArray<>();
@@ -43,6 +45,7 @@ public class PresentExtension implements Extension {
     private ScheduledExecutorService pacingExecutor;
     private boolean hidden;
     private boolean bootFrameCap;
+    private boolean smallWindowFrameCap;
 
     private static abstract class ClientOpcodes {
         private static final byte QUERY_VERSION = 0;
@@ -69,8 +72,16 @@ public class PresentExtension implements Extension {
         updatePacing();
     }
 
+    /** Holds presenting clients to 20 FPS while the game plays in the picture-in-picture window. */
+    public synchronized void setSmallWindowFrameCap(boolean smallWindowFrameCap) {
+        this.smallWindowFrameCap = smallWindowFrameCap;
+        updatePacing();
+    }
+
     private void updatePacing() {
-        pacer.setIntervalMs(hidden ? HIDDEN_FRAME_INTERVAL_MS : bootFrameCap ? BOOT_FRAME_INTERVAL_MS : 0);
+        pacer.setIntervalMs(hidden ? HIDDEN_FRAME_INTERVAL_MS
+                : smallWindowFrameCap ? SMALL_WINDOW_FRAME_INTERVAL_MS
+                : bootFrameCap ? BOOT_FRAME_INTERVAL_MS : 0);
     }
 
     @Override
