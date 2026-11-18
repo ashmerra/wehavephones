@@ -362,9 +362,9 @@
     <string name="wehavephones_launch_error">Launch failed: %1$s</string>
     <string name="wehavephones_settings_behavior_title">Behavior</string>
     <string name="wehavephones_settings_background_title">Switching apps</string>
-    <string name="wehavephones_settings_keep_running">Keep the game running when you switch apps</string>
+    <string name="wehavephones_settings_keep_running">Keep running in background</string>
     <string name="wehavephones_settings_keep_running_hint">Keeps WoW connected while another app is open or the screen is off, with a notification while it runs. In the background the game drops to 5 FPS but still uses battery and memory. When off, switching apps pauses the game and the server may disconnect you. Takes effect the next time the game starts.</string>
-    <string name="wehavephones_settings_picture_in_picture">Show the game in a small window when you switch apps</string>
+    <string name="wehavephones_settings_picture_in_picture">Floating game window</string>
     <string name="wehavephones_settings_diagnostics_title">Diagnostics</string>
     <string name="wehavephones_settings_performance_overlay">Show performance overlay</string>
     <string name="wehavephones_settings_performance_overlay_hint">Takes effect the next time the game starts.</string>

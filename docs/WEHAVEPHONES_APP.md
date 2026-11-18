@@ -192,9 +192,9 @@ desktop wallpaper.
   setting is off. The proxy then cannot load, WoW stops restarting it, and
   voice chat is unavailable in game. Under Wine its `Sleep(1)` message loop
   woke about 1,600 times a second and used 13% of a core on the S23. Game
-  files are untouched. **Keep the game running when you switch apps**
-  (on by default, §6 item 11), **Show the game in a small window when you
-  switch apps** (on by default, `wehavephones_picture_in_picture`, §6 item 13)
+  files are untouched. **Keep running in background**
+  (on by default, §6 item 11), **Floating game window** (on by default,
+  `wehavephones_picture_in_picture`, §6 item 13)
   and **Game region**. Not configurable (removed
   as settings 2026-10-04): Play always launches through Battle.net (the old
   *One-button launch* off mode only opened Battle.net, which **Open Battle.net**
@@ -725,7 +725,7 @@ Boot frame cap (2026-11-04):
 
 Picture-in-picture (2026-11-18):
 
-13. With **Show the game in a small window when you switch apps** on
+13. With **Floating game window** on
     (`SessionLaunchExtras.pictureInPicture`, false in `runtime`), the game
     keeps playing in Android's picture-in-picture window while another app
     is in front. `XServerDisplayActivity` declares
