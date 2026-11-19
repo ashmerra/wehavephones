@@ -94,8 +94,10 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
     private Drawable bannerIcon;
     private long bannerAt = -BANNER_MS, rippleAt = -RIPPLE_MS, pulseAt = -PULSE_MS;
     private float rippleX, rippleY, pulseX, pulseY;
-    // The keyboard pan when the gesture began.
+    // The keyboard pan when the gesture began, and when a touch last placed the pointer.
     private int gesturePan;
+    private long pointerPlacedAt = -TAPPED_FIELD_MS;
+    private static final long TAPPED_FIELD_MS = 1500;
     private boolean guide, swallowing;
     private final MobileTouchMenu menu;
 
@@ -906,6 +908,7 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
                 (int)((y - viewport.top) * xServer.screenInfo.height / viewport.height()) + gesturePan);
         if (guestX < 0 || guestY < 0 || guestX >= xServer.screenInfo.width || guestY >= xServer.screenInfo.height) return false;
         xServer.injectPointerMove(guestX, guestY);
+        pointerPlacedAt = SystemClock.uptimeMillis();
         return true;
     }
 
@@ -1102,6 +1105,17 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
      */
     private void parkPointerForChat() {
         xServer.injectPointerMove(xServer.screenInfo.width / 2, xServer.screenInfo.height / 5);
+    }
+
+    /**
+     * WoW gave one of its text fields focus. After a tap the pointer is on that field, and the
+     * keyboard pan keeps it in view. Otherwise WoW opened chat itself, for example with Enter
+     * or a whisper reply, and the touch addon raised it below the toolbar, out of the pan.
+     */
+    public void onGameTextField() {
+        if (getVisibility() != VISIBLE || SystemClock.uptimeMillis() - pointerPlacedAt < TAPPED_FIELD_MS) return;
+        setWindows(true);
+        parkPointerForChat();
     }
 
     /** Chat opened inside WoW needs the same keyboard position as the touch menu. */

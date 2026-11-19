@@ -185,7 +185,10 @@ The Android keyboard also opens by itself whenever a WoW text field gets
 focus, such as chat opened with Enter, a whisper reply, a search box or a
 character name. It closes again when the field loses focus, for example after
 a chat message is sent or Escape closes the box. Nothing opens while a
-hardware keyboard is connected.
+hardware keyboard is connected. A field that takes focus without a tap just
+before it is chat that WoW opened itself, so it gets the same Menus switch and
+pointer position as the touch menu's Chat. After a tap the pointer stays on the
+tapped field.
 
 While the Android keyboard is up, the game holds still as long as the pointer
 stays in the part shown above the keyboard. A lower pointer moves the game up

@@ -50,6 +50,11 @@ public final class SessionInputExtras {
         if (gamepad != null && gamepad.isFor(activity) && touch != null) touch.onTextFocus(boxName);
     }
 
+    /** A WoW text field took focus and the soft keyboard is about to open. */
+    public static void onGameTextField(XServerDisplayActivity activity) {
+        if (gamepad != null && gamepad.isFor(activity) && touch != null) touch.onGameTextField();
+    }
+
     /** Input Controls was confirmed (or a shortcut applied a profile). Keeps a changed choice. */
     public static void onControlsChosen(XServerDisplayActivity activity, ControlsProfile previous, boolean previousShown) {
         if (gamepad != null && gamepad.isFor(activity)) gamepad.onControlsChosen(previous, previousShown);

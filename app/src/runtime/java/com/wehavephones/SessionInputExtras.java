@@ -12,6 +12,8 @@ public final class SessionInputExtras {
 
     public static void onTextFocus(XServerDisplayActivity activity, String boxName) {}
 
+    public static void onGameTextField(XServerDisplayActivity activity) {}
+
     public static void onControlsChosen(XServerDisplayActivity activity, ControlsProfile previous, boolean previousShown) {}
 
     public static void onSessionDestroyed(XServerDisplayActivity activity) {}

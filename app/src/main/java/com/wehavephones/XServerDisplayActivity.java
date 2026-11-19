@@ -1334,8 +1334,9 @@ import java.util.concurrent.Executors;
             if (imeBridgeView != null && !imeBridgeView.isPrivateInput()) hideSoftKeyboard();
             return;
         }
-        if (imeBridgeView != null && imeBridgeView.hasFocus()) return;
         if (getResources().getConfiguration().hardKeyboardHidden == Configuration.HARDKEYBOARDHIDDEN_NO) return;
+        SessionInputExtras.onGameTextField(this);
+        if (imeBridgeView != null && imeBridgeView.hasFocus()) return;
         suppressImeUntilFocusReset = false;
         showSoftKeyboard("text_field");
     }
