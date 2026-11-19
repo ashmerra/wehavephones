@@ -1108,12 +1108,17 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
     }
 
     /**
-     * WoW gave one of its text fields focus. After a tap the pointer is on that field, and the
-     * keyboard pan keeps it in view. Otherwise WoW opened chat itself, for example with Enter
-     * or a whisper reply, and the touch addon raised it below the toolbar, out of the pan.
+     * WoW gave one of its text fields focus. Without a tap just before it, WoW opened chat
+     * itself, for example with Enter or a whisper reply. After a tap the pointer marks where the
+     * field was, but the touch addon raises a tapped chat input below the toolbar, so that spot
+     * must not pan the game either. A later touch pans as usual.
      */
     public void onGameTextField() {
-        if (getVisibility() != VISIBLE || SystemClock.uptimeMillis() - pointerPlacedAt < TAPPED_FIELD_MS) return;
+        if (getVisibility() != VISIBLE) return;
+        if (SystemClock.uptimeMillis() - pointerPlacedAt < TAPPED_FIELD_MS) {
+            if (xServer.getRenderer() != null) xServer.getRenderer().holdKeyboardPan();
+            return;
+        }
         setWindows(true);
         parkPointerForChat();
     }

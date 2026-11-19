@@ -57,6 +57,8 @@ public class GLRenderer implements GLSurfaceView.Renderer, WindowManager.OnWindo
     private volatile int keyboardTop = -1;
     // Guest pixels the picture is currently moved up while the keyboard is shown.
     private float keyboardPan = 0;
+    // A pointer row the pan ignores until the pointer moves off it.
+    private float heldPointerY = Float.NaN;
     private String[] unviewableWMClasses = null;
     private float magnifierZoom = 1.0f;
     private boolean magnifierEnabled = true;
@@ -475,6 +477,8 @@ public class GLRenderer implements GLSurfaceView.Renderer, WindowManager.OnWindo
         int viewTop = fullscreen ? 0 : viewTransformation.viewOffsetY;
         int viewHeight = fullscreen ? surfaceHeight : viewTransformation.viewHeight;
         float pointerY = xServer.pointer.getY();
+        if (pointerY == heldPointerY) return keyboardPan;
+        heldPointerY = Float.NaN;
         if (top < 0 || viewHeight <= 0) return Mathf.clamp(pointerY - height * 0.25f, 0, height * 0.5f);
         float visible = Mathf.clamp((top - viewTop) * height / viewHeight, 0, height);
         // Room for the pointer image below its hot spot.
@@ -492,9 +496,23 @@ public class GLRenderer implements GLSurfaceView.Renderer, WindowManager.OnWindo
         xServerView.requestRender();
     }
 
+    /**
+     * Keep the game still for the pointer where it is now, until it moves. A tap that focused a
+     * field the game then moved, such as chat raised below the toolbar, leaves the pointer
+     * where the field used to be.
+     */
+    public void holdKeyboardPan() {
+        synchronized (this) {
+            heldPointerY = xServer.pointer.getY();
+            keyboardPan = 0;
+        }
+        xServerView.requestRender();
+    }
+
     public void setScreenOffsetYRelativeToCursor(boolean screenOffsetYRelativeToCursor) {
         synchronized (this) {
             keyboardPan = 0;
+            if (!screenOffsetYRelativeToCursor) heldPointerY = Float.NaN;
         }
         this.screenOffsetYRelativeToCursor = screenOffsetYRelativeToCursor;
         xServerView.requestRender();

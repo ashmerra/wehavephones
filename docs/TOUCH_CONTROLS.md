@@ -188,7 +188,8 @@ a chat message is sent or Escape closes the box. Nothing opens while a
 hardware keyboard is connected. A field that takes focus without a tap just
 before it is chat that WoW opened itself, so it gets the same Menus switch and
 pointer position as the touch menu's Chat. After a tap the pointer stays on the
-tapped field.
+tapped field, but the game does not move for that spot. Tapping the input of
+expanded chat raises it below the toolbar, away from where you tapped.
 
 While the Android keyboard is up, the game holds still as long as the pointer
 stays in the part shown above the keyboard. A lower pointer moves the game up
