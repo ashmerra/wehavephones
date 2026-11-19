@@ -18,6 +18,9 @@
 #      and the Logs/ marker the launch overlay waits for.
 #   1d/1e. Java (GlueInputBridgeSelfTest, WowExitDetectorSelfTest): the
 #      pre-game controller bridge and the return to the menu when WoW closes.
+#   1j. Java (BattleNetAgentSelfTest): Agent request bodies and HTTP framing,
+#       progress and game answers recorded on a phone, the update check
+#       against .build.info and the game accounts in Battle.net's log.
 #   1i. Java (InputBridgeCompanionSelfTest): guest path of the user's own
 #      Input Bridge ib.exe through the container drive mappings.
 #   2. Python (tools/wehavephones-launch-selftest/reconnect_selftest.py): the
@@ -117,6 +120,30 @@ if [[ -n "$JAVAC" && -n "$JAVA" ]]; then
     [[ $STATUS -eq 0 ]] || fail "BattleNetGamesSelfTest exited $STATUS"
   else
     fail "javac failed for BattleNetGamesSelfTest"
+  fi
+  rm -rf "$WORK_DIR"
+fi
+
+echo
+echo "[test-wehavephones-launch] == 1j. Battle.net Agent requests, progress, update check and game accounts =="
+if [[ -n "$JAVAC" && -n "$JAVA" && -n "${JSON_JAR:-}" ]]; then
+  rm -rf "$WORK_DIR"
+  mkdir -p "$WORK_DIR"
+  SOURCES=(
+    "$SRC_DIR/BattleNetAgentApi.java"
+    "$SRC_DIR/BattleNetBuildInfo.java"
+    "$SRC_DIR/BattleNetUpdateCheck.java"
+    "$SRC_DIR/BattleNetGameAccounts.java"
+    "$SELF_TEST_DIR/BattleNetAgentSelfTest.java"
+  )
+  if "$JAVAC" -encoding UTF-8 -d "$WORK_DIR" -cp "$JSON_JAR" "${SOURCES[@]}"; then
+    set +e
+    "$JAVA" -cp "$WORK_DIR:$JSON_JAR" com.wehavephones.mobile.BattleNetAgentSelfTest "$SELF_TEST_DIR/fixtures"
+    STATUS=$?
+    set -e
+    [[ $STATUS -eq 0 ]] || fail "BattleNetAgentSelfTest exited $STATUS"
+  else
+    fail "javac failed for BattleNetAgentSelfTest"
   fi
   rm -rf "$WORK_DIR"
 fi

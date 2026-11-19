@@ -141,6 +141,7 @@ public class WeHavePhonesActivity extends AppCompatActivity {
     /** Landscape navigation rail; each entry replaces the screen on top of Play, so Back returns to Play. */
     private void setUpRail() {
         findViewById(R.id.RailPlay).setOnClickListener((v) -> showHome());
+        findViewById(R.id.RailGames).setOnClickListener((v) -> showSection(new GamesFragment()));
         findViewById(R.id.RailAddons).setOnClickListener((v) -> startActivity(new Intent(this, AddonsActivity.class)));
         findViewById(R.id.RailSetup).setOnClickListener((v) -> showSection(new SetupFragment()));
         findViewById(R.id.RailSettings).setOnClickListener((v) -> showSection(new WeHavePhonesSettingsFragment()));
@@ -159,6 +160,7 @@ public class WeHavePhonesActivity extends AppCompatActivity {
     private void highlightRail(Fragment current) {
         int[][] entries = {
                 {R.id.RailPlay, current instanceof HomeFragment ? 1 : 0},
+                {R.id.RailGames, current instanceof GamesFragment ? 1 : 0},
                 {R.id.RailSetup, current instanceof SetupFragment ? 1 : 0},
                 {R.id.RailSettings, current instanceof WeHavePhonesSettingsFragment ? 1 : 0},
                 {R.id.RailDiagnostics, current instanceof DiagnosticsFragment ? 1 : 0},

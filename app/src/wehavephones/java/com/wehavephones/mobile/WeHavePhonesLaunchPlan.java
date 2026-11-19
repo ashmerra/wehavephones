@@ -282,6 +282,15 @@ public final class WeHavePhonesLaunchPlan {
      * synthesized entry (uid derived from the directory, no exec codes) so the
      * direct and tap fallbacks still work.
      */
+    /** The table entry whose Battle.net uid is {@code uid}, or null. */
+    public Product forUid(String uid) {
+        if (uid == null || uid.isEmpty()) return null;
+        for (Product product : products.values()) {
+            if (uid.equalsIgnoreCase(product.uid) || uid.equalsIgnoreCase(product.launchUid)) return product;
+        }
+        return null;
+    }
+
     public Product resolve(String dir) {
         String key = dir != null && !dir.isEmpty() ? dir.toLowerCase(Locale.ROOT) : "_retail_";
         Product product = products.get(key);

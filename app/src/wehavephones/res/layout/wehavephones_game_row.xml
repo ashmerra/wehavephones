@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="6dp"
+    android:background="@drawable/wehavephones_card_background"
+    android:orientation="vertical"
+    android:paddingLeft="12dp"
+    android:paddingRight="10dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+        <FrameLayout
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:background="@drawable/wehavephones_badge_frame">
+            <View
+                android:id="@+id/VGameRowGem"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_margin="4dp"
+                android:background="@drawable/wehavephones_badge_face" />
+            <TextView
+                android:id="@+id/TVGameRowLetter"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:fontFamily="sans-serif-medium"
+                android:gravity="center"
+                android:textColor="@color/wehavephones_silver_light"
+                android:textSize="14sp" />
+        </FrameLayout>
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+            <TextView
+                android:id="@+id/TVGameRowTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="@color/wehavephones_text"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+            <TextView
+                android:id="@+id/TVGameRowStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:fontFeatureSettings="tnum"
+                android:maxLines="2"
+                android:textColor="@color/wehavephones_text_dim"
+                android:textSize="12.5sp" />
+        </LinearLayout>
+        <Button
+            android:id="@+id/BTGameRowPrimary"
+            style="@style/WeHavePhonesButtonCompactPrimary"
+            android:layout_marginStart="8dp" />
+        <Button
+            android:id="@+id/BTGameRowRepair"
+            style="@style/WeHavePhonesButtonCompact"
+            android:layout_marginStart="6dp"
+            android:text="@string/wehavephones_agent_action_repair" />
+        <Button
+            android:id="@+id/BTGameRowSettings"
+            style="@style/WeHavePhonesButtonCompact"
+            android:layout_marginStart="6dp"
+            android:drawableStart="@drawable/wehavephones_ic_settings"
+            android:contentDescription="@string/wehavephones_games_settings"
+            android:text="@string/wehavephones_games_settings" />
+        <Button
+            android:id="@+id/BTGameRowUninstall"
+            style="@style/WeHavePhonesButtonCompact"
+            android:layout_marginStart="6dp"
+            android:drawableStart="@drawable/wehavephones_ic_trash"
+            android:contentDescription="@string/wehavephones_agent_action_uninstall"
+            android:paddingLeft="10dp"
+            android:paddingRight="4dp" />
+    </LinearLayout>
+    <com.wehavephones.mobile.LaunchBarView
+        android:id="@+id/VGameRowBar"
+        android:layout_width="match_parent"
+        android:layout_height="10dp"
+        android:layout_marginTop="8dp"
+        android:visibility="gone" />
+</LinearLayout>

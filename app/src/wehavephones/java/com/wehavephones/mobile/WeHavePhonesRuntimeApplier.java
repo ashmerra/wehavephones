@@ -131,9 +131,10 @@ public final class WeHavePhonesRuntimeApplier {
             WowProduct product = resolveProduct(context, container, result);
             if (product != null) {
                 try {
-                    if (WowFirstBoot.prepare(product.directory, WeHavePhonesConfig.getGameRegion(context),
+                    if (WowFirstBoot.prepare(product.directory, WeHavePhonesConfig.effectiveGameRegion(context, product.directoryName),
                             product.getFlavor() == WowFlavor.RETAIL,
-                            WeHavePhonesConfig.getGameScreenSize(context), WeHavePhonesConfig.isGameRegionOverride(context),
+                            WeHavePhonesConfig.getGameScreenSize(context),
+                            WeHavePhonesConfig.effectiveGameRegionOverride(context, product.directoryName),
                             DeviceProfileSelector.wowApiArg(context),
                             product.getFlavor().family == WowFlavor.Family.FOREVER
                                     && !WeHavePhonesConfig.isMobileTouchEnabled(context))) result.step("WoW first-boot settings prepared");

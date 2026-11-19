@@ -1,0 +1,99 @@
+{
+ "active_config_key": "5604ce35a8644bdcf0e26c1daf979c15",
+ "background_download_available": false,
+ "background_download_complete": false,
+ "branch": "",
+ "build_config_kv_pairs": {
+  "build-name": "WOW-70576patch1.15.9_ClassicRetail",
+  "build-product": "WoW",
+  "build-uid": "wow_classic_era"
+ },
+ "current_version": 70576,
+ "download_complete": true,
+ "download_current": [
+  125939400,
+  0,
+  0
+ ],
+ "download_rate": 0,
+ "download_remaining": 0,
+ "download_total": [
+  125939400,
+  0,
+  0
+ ],
+ "estimated_time_in_sec": 0,
+ "extended_status": {
+  "current": 114218373,
+  "state": 1000,
+  "total": 114218373,
+  "unit_type": "bytes"
+ },
+ "ignore_disc": false,
+ "installed": true,
+ "local_version": "1.15.9.70576",
+ "needs_rebase": false,
+ "patch_application_complete": true,
+ "paused": false,
+ "playable": true,
+ "playable_progress": 1.0,
+ "product_family": "wow",
+ "progress": 1.0,
+ "region": "us",
+ "regional_version_info": {
+  "cn": {
+   "config_key": "5604ce35a8644bdcf0e26c1daf979c15",
+   "display_version": "1.15.9.70576",
+   "playable": true
+  },
+  "eu": {
+   "config_key": "5604ce35a8644bdcf0e26c1daf979c15",
+   "display_version": "1.15.9.70576",
+   "playable": true
+  },
+  "kr": {
+   "config_key": "5604ce35a8644bdcf0e26c1daf979c15",
+   "display_version": "1.15.9.70576",
+   "playable": true
+  },
+  "tw": {
+   "config_key": "5604ce35a8644bdcf0e26c1daf979c15",
+   "display_version": "1.15.9.70576",
+   "playable": true
+  },
+  "us": {
+   "config_key": "5604ce35a8644bdcf0e26c1daf979c15",
+   "display_version": "1.15.9.70576",
+   "playable": true,
+   "selected": true
+  }
+ },
+ "shared_container_info": {
+  "subpath": "_classic_era_",
+  "uids": [
+   "wow_classic_anniversary",
+   "wow",
+   "wowf",
+   "wow_classic_era"
+  ]
+ },
+ "state": 1004,
+ "thresholds": [
+  1.0,
+  1.0,
+  1.0
+ ],
+ "update_applied": true,
+ "update_bytes_current": [
+  227286648,
+  0,
+  0
+ ],
+ "update_bytes_total": [
+  227286648,
+  0,
+  0
+ ],
+ "using_media": false,
+ "write_rate": 0
+}

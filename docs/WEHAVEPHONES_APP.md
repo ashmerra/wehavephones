@@ -315,15 +315,74 @@ registered on this device, do not appear until Battle.net records them
 (for example after they are selected there once). The account's full
 entitlement list lives on Blizzard's servers and is not read.
 
-**Install** runs `Battle.net.exe --game=<uid or product code> --install`:
-forwarded to a running client through `C:\wcinstall.bat` + `WinHandler.exec`,
-or, with no session, the runtime is applied and Battle.net starts with the
-flags via `C:\wcstart.bat` / the `WeHavePhones Play` shortcut. The user
-confirms the install in the Battle.net window. **Not exercised on device.**
+**Install** (Play's Install button and the Games screen) runs through
+Blizzard's Agent without the Battle.net window (§3c).
+`WeHavePhonesPlayController.install` still starts
+`Battle.net.exe --game=<uid or product code> --install` and is kept as a
+fallback, but nothing calls it now.
 
 The scanner also now reads versions from the Agent's root `.build.info` (by
 the folder's `.flavor.info` code). It used to read `.build.info` inside the
 product folder only, which current installs do not have.
+
+## 3c. Games screen and Battle.net's Agent
+
+**Games** (`GamesFragment`, rail entry under Play) lists every WoW game
+Battle.net has registered on this device (§3b) plus the live catalog
+(Retail, Forever, MoP Classic, Anniversary, Classic Era), each with
+**Install**, **Update**, **Check files**, **Uninstall** and **Account**.
+Installed games read "Up to date" or "Update available" from
+`BattleNetUpdateCheck`: the build key in the Agent's root `.build.info`
+against Blizzard's public version service
+(`<region>.version.battle.net/v2/products/<product>/versions`), cached for
+30 minutes. Uninstall asks first. It deletes the game, its `WTF` and caches
+and keeps `Interface`.
+
+The jobs run in `BattleNetAgentJobs`, which drives Blizzard's Agent the way
+Battle.net does. The idea comes from DroidDeck's Battle.net store, and the
+requests follow barncastle's Battle.Net-Installer and wowdev.wiki/Agent:
+
+1. The job writes `C:\wehavephones-agent.bat`, which starts the newest
+   `C:\ProgramData\Battle.net\Agent\Agent.<build>\Agent.exe
+   --internalclienttools` and `C:\windows\agentpipe.exe <port> <secret>`.
+   With no session it starts one (`WeHavePhones Agent` shortcut, intent extra
+   `wehavephones_agent_session`). Such a session always keeps running in the
+   background and never becomes a floating window. In a live session the job
+   closes Battle.net and its Agent first, because the Agent Battle.net starts
+   (`--session=N`) answers only Battle.net.
+2. The Agent's HTTP port is in `Agent.dat`. It answers only callers it finds
+   in the Windows TCP table, which Wine builds from its own sockets, so a
+   request from the app's Java code gets HTTP 401. `agentpipe.exe`
+   (`tools/agentpipe`, built by `tools/agentpipe/scripts/build_agentpipe.sh`
+   into `assets/wehavephones/agentpipe.exe`) runs in the container and copies
+   bytes between the app and the Agent. A client first sends
+   `WHP <secret>\n`, a random secret per job. The Agent also wants
+   `Host: 127.0.0.1:<agent port>` and the User-Agent `phoenix-agent/1.0`.
+   `GET /agent` returns the token for the `Authorization` header.
+3. Install: `POST /install` (product, `http://<region>.patch.battle.net:1119/<product>`),
+   then `POST /install/<uid>` with the shared `World of Warcraft` folder, the
+   language and countries of the other installed WoW games, and polling of
+   `GET /install/<uid>`. A game Battle.net registered earlier continues with
+   `POST /update`. Update, Check files and Uninstall use `POST /update`,
+   `POST /repair` and `POST /uninstall` (with compaction). Agent error 5016
+   ("Failed to initialize the tact instance") and other failures are retried
+   three times with `POST /update`.
+4. `AgentJobOverlayView` covers the session with Play's overlay layout: the
+   game, the stage, bytes, speed and time left, and the bar over Runtime,
+   Battle.net, Download and Install. Progress comes from `download_current`
+   and `download_total` while downloading, then `extended_status` (state
+   500 bytes written, 2000 patches applied, 1000 files checked). Cancel stops
+   watching and closes the Agent. Battle.net continues the download next time.
+5. When the job ends the app closes the Agent. A session that existed only
+   for the job returns to the menu after a few seconds.
+
+**Account** (`GameAccountDialog`) shows the WoW game accounts Battle.net
+listed for the game and region in its log (`GameAccount(WoW:<uid> region=US
+... name=WoW1)`, read by `BattleNetGameAccounts`, names and regions only) and
+sets the game's own region. Play writes that region as the game's `portal`
+(`WeHavePhonesConfig.effectiveGameRegion`), so one game can use European
+realms while the others follow Settings. Battle.net itself picks the game
+account above its Play button when an account has several.
 
 ## 4. Flows
 

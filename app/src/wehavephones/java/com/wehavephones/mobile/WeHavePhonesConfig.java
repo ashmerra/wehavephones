@@ -59,6 +59,29 @@ public final class WeHavePhonesConfig {
         return prefs(context).getBoolean(KEY_GAME_REGION_OVERRIDE + getContainerId(context), false);
     }
 
+    /** Games > Account: this game's own region ("" when it follows Settings). */
+    public static String getGameRegionFor(Context context, String productDir) {
+        String region = prefs(context).getString(KEY_GAME_REGION + getContainerId(context) + "_" + productDir, "");
+        return WowFirstBoot.validRegion(region) ? region : "";
+    }
+
+    public static void setGameRegionFor(Context context, String productDir, String region) {
+        String key = KEY_GAME_REGION + getContainerId(context) + "_" + productDir;
+        if (WowFirstBoot.validRegion(region)) prefs(context).edit().putString(key, region).apply();
+        else prefs(context).edit().remove(key).apply();
+    }
+
+    /** The region Play writes for a game: its own choice first, then Settings. */
+    public static String effectiveGameRegion(Context context, String productDir) {
+        String own = getGameRegionFor(context, productDir);
+        return own.isEmpty() ? getGameRegion(context) : own;
+    }
+
+    /** A game with its own region always replaces the portal WoW saved. */
+    public static boolean effectiveGameRegionOverride(Context context, String productDir) {
+        return !getGameRegionFor(context, productDir).isEmpty() || isGameRegionOverride(context);
+    }
+
     public static boolean isInitialSetupComplete(Context context) {
         return prefs(context).getBoolean(KEY_INITIAL_SETUP_COMPLETE, false);
     }

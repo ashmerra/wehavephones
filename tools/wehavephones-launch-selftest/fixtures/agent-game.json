@@ -1,0 +1,122 @@
+{
+ "account_country": "USA",
+ "active_config_key": "5604ce35a8644bdcf0e26c1daf979c15",
+ "additional_tags": [],
+ "allow_arm_emulation": true,
+ "background_download_available": false,
+ "background_download_complete": false,
+ "background_download_progress": 0.0,
+ "binaries": {
+  "game": {
+   "launch_arguments": [],
+   "regex": "",
+   "relative_path": "_classic_era_/WowClassic-arm64.exe",
+   "switcher": false
+  }
+ },
+ "binary_launch_path": "",
+ "binary_launch_path64": "",
+ "branch": "",
+ "current_version": 70576,
+ "display_locales": [
+  "enUS",
+  "esMX",
+  "ptBR",
+  "deDE",
+  "esES",
+  "frFR",
+  "ruRU",
+  "koKR",
+  "zhTW",
+  "zhCN"
+ ],
+ "download_complete": true,
+ "geo_ip_country": "US",
+ "install_dir": "C:/Program Files (x86)/World of Warcraft",
+ "installed": true,
+ "installed_locales": [
+  "enus"
+ ],
+ "launch_arguments": [],
+ "local_version": "1.15.9.70576",
+ "patch_application_complete": true,
+ "playable": true,
+ "product": "wow_classic_era",
+ "product_family": "wow",
+ "region": "us",
+ "regional_version_info": {
+  "cn": {
+   "config_key": "5604ce35a8644bdcf0e26c1daf979c15",
+   "display_version": "1.15.9.70576",
+   "playable": true
+  },
+  "eu": {
+   "config_key": "5604ce35a8644bdcf0e26c1daf979c15",
+   "display_version": "1.15.9.70576",
+   "playable": true
+  },
+  "kr": {
+   "config_key": "5604ce35a8644bdcf0e26c1daf979c15",
+   "display_version": "1.15.9.70576",
+   "playable": true
+  },
+  "tw": {
+   "config_key": "5604ce35a8644bdcf0e26c1daf979c15",
+   "display_version": "1.15.9.70576",
+   "playable": true
+  },
+  "us": {
+   "config_key": "5604ce35a8644bdcf0e26c1daf979c15",
+   "display_version": "1.15.9.70576",
+   "playable": true,
+   "selected": true
+  }
+ },
+ "required_os_version": "6.1.0.0",
+ "selected_asset_locale": "enus",
+ "selected_locale": "enus",
+ "shared_container_info": {
+  "subpath": "_classic_era_",
+  "uids": [
+   "wow_classic_anniversary",
+   "wow",
+   "wowf",
+   "wow_classic_era"
+  ]
+ },
+ "speech_languages": [
+  "enus"
+ ],
+ "supported_speech_languages": [
+  "enUS",
+  "esMX",
+  "ptBR",
+  "deDE",
+  "esES",
+  "frFR",
+  "ruRU",
+  "koKR",
+  "zhTW",
+  "zhCN"
+ ],
+ "supported_text_languages": [
+  "enUS",
+  "esMX",
+  "ptBR",
+  "deDE",
+  "esES",
+  "frFR",
+  "ruRU",
+  "koKR",
+  "zhTW",
+  "zhCN"
+ ],
+ "supports_32bit": false,
+ "supports_multibox": true,
+ "text_languages": [
+  "enus"
+ ],
+ "update_method": "ngdp",
+ "update_progress": 1.0,
+ "version_cooldown": 0
+}

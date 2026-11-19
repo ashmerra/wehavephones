@@ -83,4 +83,21 @@ final class GameVersionAdapter extends ArrayAdapter<BattleNetGames.Game> {
     private static int dp(Context context, int value) {
         return Math.round(value * context.getResources().getDisplayMetrics().density);
     }
+
+    /** The crest letter: F, C, T, A, E or W by family. */
+    static String monogram(BattleNetGames.Game game) {
+        WowFlavor.Family family = game.flavor.family;
+        if (family == null) {
+            String name = game.getDisplayName();
+            return name.isEmpty() ? "?" : name.substring(0, 1).toUpperCase(java.util.Locale.US);
+        }
+        switch (family) {
+            case FOREVER: return "F";
+            case CLASSIC: return "C";
+            case TITAN: return "T";
+            case ANNIVERSARY: return "A";
+            case CLASSIC_ERA: return "E";
+            default: return "W";
+        }
+    }
 }

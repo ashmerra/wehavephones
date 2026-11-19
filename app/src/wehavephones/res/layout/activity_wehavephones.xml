@@ -59,6 +59,11 @@
                 android:drawableStart="@drawable/wehavephones_ic_play"
                 android:text="@string/wehavephones_play" />
             <TextView
+                android:id="@+id/RailGames"
+                style="@style/WeHavePhonesRailItem"
+                android:drawableStart="@drawable/wehavephones_ic_download"
+                android:text="@string/wehavephones_games_title" />
+            <TextView
                 android:id="@+id/RailAddons"
                 style="@style/WeHavePhonesRailItem"
                 android:drawableStart="@drawable/wehavephones_ic_addons"

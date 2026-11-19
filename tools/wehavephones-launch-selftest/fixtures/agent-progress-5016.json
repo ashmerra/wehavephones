@@ -1,0 +1,73 @@
+{
+ "active_config_key": "00000000000000000000000000000000",
+ "background_download_available": false,
+ "background_download_complete": false,
+ "branch": "",
+ "current_version": 70576,
+ "download_complete": false,
+ "download_rate": 0,
+ "download_remaining": 0,
+ "error": 5016,
+ "error_details": {
+  "message": "Failed to initialize the tact instance"
+ },
+ "error_message": "Failed to initialize the tact instance",
+ "estimated_time_in_sec": 0,
+ "extended_status": {
+  "current": 0,
+  "state": 0,
+  "total": 0,
+  "unit_type": "bytes"
+ },
+ "ignore_disc": false,
+ "installed": false,
+ "local_version": "",
+ "needs_rebase": false,
+ "patch_application_complete": false,
+ "paused": false,
+ "playable": false,
+ "playable_progress": 0.0,
+ "product_family": "wow",
+ "progress": 0.0,
+ "region": "us",
+ "regional_version_info": {
+  "cn": {
+   "config_key": "5604ce35a8644bdcf0e26c1daf979c15",
+   "display_version": "1.15.9.70576",
+   "playable": false
+  },
+  "eu": {
+   "config_key": "5604ce35a8644bdcf0e26c1daf979c15",
+   "display_version": "1.15.9.70576",
+   "playable": false
+  },
+  "kr": {
+   "config_key": "5604ce35a8644bdcf0e26c1daf979c15",
+   "display_version": "1.15.9.70576",
+   "playable": false
+  },
+  "tw": {
+   "config_key": "5604ce35a8644bdcf0e26c1daf979c15",
+   "display_version": "1.15.9.70576",
+   "playable": false
+  },
+  "us": {
+   "config_key": "5604ce35a8644bdcf0e26c1daf979c15",
+   "display_version": "1.15.9.70576",
+   "playable": false,
+   "selected": true
+  }
+ },
+ "shared_container_info": {
+  "subpath": "_classic_era_",
+  "uids": [
+   "wow_classic_anniversary",
+   "wow",
+   "wowf",
+   "wow_classic_era"
+  ]
+ },
+ "state": 1200,
+ "using_media": false,
+ "write_rate": 0
+}

@@ -1,0 +1,98 @@
+{
+ "active_config_key": "00000000000000000000000000000000",
+ "background_download_available": false,
+ "background_download_complete": false,
+ "branch": "",
+ "build_config_kv_pairs": {
+  "build-name": "WOW-70576patch1.15.9_ClassicRetail",
+  "build-product": "WoW",
+  "build-uid": "wow_classic_era"
+ },
+ "current_version": 70576,
+ "download_complete": false,
+ "download_current": [
+  415514,
+  0,
+  0
+ ],
+ "download_rate": 41551,
+ "download_remaining": 125523886,
+ "download_total": [
+  125939400,
+  0,
+  0
+ ],
+ "estimated_time_in_sec": 3021,
+ "extended_status": {
+  "current": 796296,
+  "state": 500,
+  "total": 227286648,
+  "unit_type": "bytes"
+ },
+ "ignore_disc": false,
+ "installed": false,
+ "local_version": "",
+ "needs_rebase": false,
+ "patch_application_complete": false,
+ "paused": false,
+ "playable": false,
+ "playable_progress": 0.0035034878071676257,
+ "product_family": "wow",
+ "progress": 0.0035034878071676257,
+ "region": "us",
+ "regional_version_info": {
+  "cn": {
+   "config_key": "5604ce35a8644bdcf0e26c1daf979c15",
+   "display_version": "1.15.9.70576",
+   "playable": false
+  },
+  "eu": {
+   "config_key": "5604ce35a8644bdcf0e26c1daf979c15",
+   "display_version": "1.15.9.70576",
+   "playable": false
+  },
+  "kr": {
+   "config_key": "5604ce35a8644bdcf0e26c1daf979c15",
+   "display_version": "1.15.9.70576",
+   "playable": false
+  },
+  "tw": {
+   "config_key": "5604ce35a8644bdcf0e26c1daf979c15",
+   "display_version": "1.15.9.70576",
+   "playable": false
+  },
+  "us": {
+   "config_key": "5604ce35a8644bdcf0e26c1daf979c15",
+   "display_version": "1.15.9.70576",
+   "playable": false,
+   "selected": true
+  }
+ },
+ "shared_container_info": {
+  "subpath": "_classic_era_",
+  "uids": [
+   "wow_classic_anniversary",
+   "wow",
+   "wowf",
+   "wow_classic_era"
+  ]
+ },
+ "state": 1003,
+ "thresholds": [
+  1.0,
+  1.0,
+  1.0
+ ],
+ "update_bytes_current": [
+  796296,
+  0,
+  0
+ ],
+ "update_bytes_total": [
+  227286648,
+  0,
+  0
+ ],
+ "using_media": false,
+ "write_rate": 79629
+}

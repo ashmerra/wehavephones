@@ -90,11 +90,14 @@ public class HomeFragment extends Fragment {
                 return;
             }
             if (selectedGame != null && !selectedGame.installed) {
-                WeHavePhonesPlayController.install(activity, selectedGame);
+                // Battle.net's Agent installs it behind a progress screen, without the Battle.net window.
+                String code = !selectedGame.productCode.isEmpty() ? selectedGame.productCode : selectedGame.flavor.productCode;
+                GamesFragment.start(activity, new GamesFragment.Entry(selectedGame, selectedGame.bnetGameId(), code),
+                        BattleNetAgentJobs.Action.INSTALL);
                 return;
             }
             LaunchOverlayController.setGame(selectedGame == null ? null : new LaunchOverlayController.Game(
-                    selectedGame.getTitle(), selectedGame.version, GameVersionAdapter.accent(selectedGame), monogram(selectedGame)));
+                    selectedGame.getTitle(), selectedGame.version, GameVersionAdapter.accent(selectedGame), GameVersionAdapter.monogram(selectedGame)));
             WeHavePhonesPlayController.play(activity);
         });
         openBattleNet.setOnClickListener((v) ->
@@ -162,7 +165,7 @@ public class HomeFragment extends Fragment {
         String detail = game.installed ? game.version : getString(R.string.wehavephones_game_not_installed_short);
         if (edition.isEmpty()) gameEdition.setText(detail);
         else gameEdition.setText(detail.isEmpty() ? edition : edition + "  \u00b7  " + detail);
-        tintCrest(GameVersionAdapter.accent(game), monogram(game));
+        tintCrest(GameVersionAdapter.accent(game), GameVersionAdapter.monogram(game));
     }
 
     private void tintCrest(int accent, String letter) {
@@ -170,22 +173,6 @@ public class HomeFragment extends Fragment {
         gem.setTintMode(PorterDuff.Mode.MULTIPLY);
         gem.setTint(0xFF0D315A);
         crestLetter.setText(letter);
-    }
-
-    private static String monogram(BattleNetGames.Game game) {
-        WowFlavor.Family family = game.flavor.family;
-        if (family == null) {
-            String name = game.getDisplayName();
-            return name.isEmpty() ? "?" : name.substring(0, 1).toUpperCase(java.util.Locale.US);
-        }
-        switch (family) {
-            case FOREVER: return "F";
-            case CLASSIC: return "C";
-            case TITAN: return "T";
-            case ANNIVERSARY: return "A";
-            case CLASSIC_ERA: return "E";
-            default: return "W";
-        }
     }
 
     /**

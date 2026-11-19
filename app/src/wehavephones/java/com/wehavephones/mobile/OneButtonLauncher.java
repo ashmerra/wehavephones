@@ -203,9 +203,10 @@ public final class OneButtonLauncher {
             return;
         }
         product = plan.resolve(installed.directoryName);
-        WowFirstBoot.prepare(installed.directory, WeHavePhonesConfig.getGameRegion(appContext),
+        WowFirstBoot.prepare(installed.directory, WeHavePhonesConfig.effectiveGameRegion(appContext, installed.directoryName),
                 installed.getFlavor() == WowFlavor.RETAIL,
-                WeHavePhonesConfig.getGameScreenSize(appContext), WeHavePhonesConfig.isGameRegionOverride(appContext),
+                WeHavePhonesConfig.getGameScreenSize(appContext),
+                WeHavePhonesConfig.effectiveGameRegionOverride(appContext, installed.directoryName),
                 DeviceProfileSelector.wowApiArg(appContext),
                 installed.getFlavor().family == WowFlavor.Family.FOREVER);
         // The scanned exe (native ARM64 first) wins; the table's exe is the fallback.

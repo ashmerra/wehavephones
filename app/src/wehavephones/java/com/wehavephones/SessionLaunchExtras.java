@@ -6,6 +6,7 @@ import android.util.Log;
 import android.view.ViewGroup;
 
 import com.wehavephones.container.Container;
+import com.wehavephones.mobile.BattleNetAgentJobs;
 import com.wehavephones.mobile.InputBridgeCompanion;
 import com.wehavephones.mobile.LaunchOverlayController;
 import com.wehavephones.mobile.WeHavePhonesConfig;
@@ -95,22 +96,24 @@ public final class SessionLaunchExtras {
 
     /** Settings > Background: keep the game running (and online) while another app is in front. */
     public static boolean keepRunningInBackground(XServerDisplayActivity activity) {
-        return WeHavePhonesConfig.isKeepRunningInBackground(activity);
+        // A Battle.net Agent job keeps downloading while another app is in front.
+        return WeHavePhonesConfig.isKeepRunningInBackground(activity) || BattleNetAgentJobs.isAgentSession(activity);
     }
 
     /** Settings > Picture-in-picture: keep the game playing in a small window while another app is in front. */
     public static boolean pictureInPicture(XServerDisplayActivity activity) {
-        return WeHavePhonesConfig.isPictureInPicture(activity);
+        return WeHavePhonesConfig.isPictureInPicture(activity) && !BattleNetAgentJobs.isAgentSession(activity);
     }
 
     /** False when Play's launch overlay covers the start instead of the "Starting up" dialog. */
     public static boolean showStartupPreloader(XServerDisplayActivity activity) {
-        return !LaunchOverlayController.coversSessionStart();
+        return !LaunchOverlayController.coversSessionStart() && !BattleNetAgentJobs.coversSessionStart();
     }
 
     /** The session's views exist: Play's launch overlay goes on top of them. */
     public static void onSessionViewsCreated(XServerDisplayActivity activity, ViewGroup root) {
         LaunchOverlayController.attach(activity, root);
+        BattleNetAgentJobs.attach(activity, root);
     }
 
     /** Cancel the launch before stopping Wine so exit cannot look like a launch failure. */
@@ -118,6 +121,7 @@ public final class SessionLaunchExtras {
         com.wehavephones.mobile.OneButtonLauncher.cancelActive();
         WeHavePhonesConfig.clearLastStageStatusForSessionExit(activity);
         LaunchOverlayController.onSessionEnded();
+        BattleNetAgentJobs.onSessionEnded();
     }
 
     /** The first application window was mapped (any thread). */
