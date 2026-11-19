@@ -108,6 +108,15 @@ public class GamepadSelfTest {
             requestState(win, guestId);
             drain(win);
             check(buffer(socket.last).getShort(6) == 4, "guest can read restored virtual buttons");
+            SessionInputExtras.holds = true;
+            requestState(win, guestId);
+            drain(win);
+            check(buffer(socket.last).getInt(2) == guestId && buffer(socket.last).getShort(6) == 0,
+                    "Battle.net pointer mode shows the guest an idle pad");
+            SessionInputExtras.holds = false;
+            requestState(win, guestId);
+            drain(win);
+            check(buffer(socket.last).getShort(6) == 4, "the guest reads the pad again after pointer mode");
 
             WeHavePhonesConfig.setVirtualGamepadDisabled(activity, true);
             check(activity.view.profile == null, "setting immediately disables and releases touch controls");
