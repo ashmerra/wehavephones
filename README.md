@@ -35,9 +35,9 @@ See the [full device and driver chart](docs/TESTED_DEVICES.md) for details and c
 
 1. Download the latest APK from [Releases](https://github.com/ashmerra/wehavephones/releases).
 2. Allow your browser or file manager to install unknown apps, then open the APK.
-3. Open WeHavePhones and follow Setup: prepare the container, install Battle.net, sign in, and download your WoW version (or import existing files as described below).
-4. When the game finishes installing, close Battle.net: swipe in from the left edge of the screen to open the side menu, then tap Exit. Launching the game from the Battle.net window is not recommended.
-5. Back in the WeHavePhones app, press Play.
+3. Open WeHavePhones and follow Setup: prepare the container, install Battle.net and sign in (or import existing files as described below). Then close Battle.net: swipe in from the left edge of the screen to open the side menu, then tap Exit.
+4. Open **Games** and tap **Install** next to your WoW version. Battle.net's own installer downloads it in the background while WeHavePhones shows the progress, then returns to the menu.
+5. Press Play.
 
 Already have WoW installed on a Windows PC? Once the container and Battle.net are ready:
 
