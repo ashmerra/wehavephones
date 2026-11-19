@@ -438,6 +438,13 @@ public final class BattleNetAgentJobs {
             case QUEUED:
                 publish(Phase.QUEUED, appContext.getString(R.string.wehavephones_agent_queued), "", -1);
                 break;
+            case CHECKING: {
+                String detail = appContext.getString(R.string.wehavephones_agent_download_detail,
+                        BattleNetAgentApi.formatBytes(p.phaseCurrent), BattleNetAgentApi.formatBytes(p.phaseTotal));
+                publish(Phase.DOWNLOADING, appContext.getString(R.string.wehavephones_agent_checking_percent,
+                        Math.round(p.fraction() * 100)), detail, p.fraction());
+                break;
+            }
             case DOWNLOADING: {
                 String detail = appContext.getString(R.string.wehavephones_agent_download_detail,
                         BattleNetAgentApi.formatBytes(p.downloadCurrent), BattleNetAgentApi.formatBytes(p.downloadTotal));

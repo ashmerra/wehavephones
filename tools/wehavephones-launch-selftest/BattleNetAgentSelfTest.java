@@ -98,6 +98,13 @@ public final class BattleNetAgentSelfTest {
                 .put("extended_status", new JSONObject().put("state", 1000).put("unit_type", "bytes").put("current", 5).put("total", 10)));
         check("finishing", BattleNetAgentApi.Step.FINISHING, finishing.step());
         check("finishing fraction", 0.5, finishing.fraction());
+        // Check files, as recorded on the S23: progress plus bytes verified, no download.
+        BattleNetAgentApi.Progress checking = BattleNetAgentApi.parseProgress(new JSONObject()
+                .put("state", 1003).put("progress", 0.038047975580702706)
+                .put("extended_status", new JSONObject().put("state", 0).put("unit_type", "bytes")
+                        .put("current", 5659005083L).put("total", 148733408194L)));
+        check("check files step", BattleNetAgentApi.Step.CHECKING, checking.step());
+        check("check files fraction", true, Math.abs(checking.fraction() - 0.038) < 0.001);
         BattleNetAgentApi.Progress done = BattleNetAgentApi.parseProgress(fixture("agent-progress-done.json"));
         check("done", true, done.done());
         check("done step", BattleNetAgentApi.Step.DONE, done.step());

@@ -264,6 +264,8 @@ public final class BattleNetAgentApi {
             if (phase == PHASE_FINISH && (downloadTotal > 0 || progress >= 1.0)) return Step.FINISHING;
             if (downloadTotal > 0 && downloadCurrent >= downloadTotal) return Step.WRITING;
             if (downloadTotal > 0) return Step.DOWNLOADING;
+            // Check files: no download, extended_status counts the bytes verified.
+            if (phase == 0 && phaseTotal > 0 && state == STATE_WORKING) return Step.CHECKING;
             if (state == STATE_QUEUED) return Step.QUEUED;
             return Step.PREPARING;
         }
@@ -279,6 +281,8 @@ public final class BattleNetAgentApi {
                 case DONE: return 1.0;
                 case DOWNLOADING:
                     return downloadTotal > 0 ? Math.min(1.0, (double)downloadCurrent / downloadTotal) : clamp(progress);
+                case CHECKING:
+                    return Math.max(clamp(progress), Math.max(0.0, phaseFraction()));
                 case WRITING:
                 case APPLYING:
                 case FINISHING:
@@ -305,7 +309,7 @@ public final class BattleNetAgentApi {
         }
     }
 
-    public enum Step { QUEUED, PREPARING, DOWNLOADING, WRITING, APPLYING, FINISHING, DONE, FAILED }
+    public enum Step { QUEUED, PREPARING, CHECKING, DOWNLOADING, WRITING, APPLYING, FINISHING, DONE, FAILED }
 
     public static Progress parseProgress(JSONObject json) {
         Progress p = new Progress();

@@ -535,6 +535,7 @@ World of Warcraft, Warcraft, Battle.net and Blizzard Entertainment are trademark
     <string name="wehavephones_agent_queued">Waiting in Battle.net\'s queue</string>
     <string name="wehavephones_agent_preparing">Preparing the download</string>
     <string name="wehavephones_agent_checking_files">Checking game files</string>
+    <string name="wehavephones_agent_checking_percent">Checking game files %1$d%%</string>
     <string name="wehavephones_agent_retrying">Trying again</string>
     <string name="wehavephones_agent_downloading">Downloading %1$d%%</string>
     <string name="wehavephones_agent_download_detail">%1$s of %2$s</string>
@@ -554,7 +555,7 @@ World of Warcraft, Warcraft, Battle.net and Blizzard Entertainment are trademark
     <string name="wehavephones_agent_done_detail">Battle.net can be opened again from the menu.</string>
     <string name="wehavephones_agent_failed">Battle.net\'s installer stopped: %1$s</string>
     <string name="wehavephones_agent_failed_detail">Try again from Games. Diagnostics has the logs.</string>
-    <string name="wehavephones_agent_cancelled">Cancelled. Battle.net continues the download next time.</string>
+    <string name="wehavephones_agent_cancelled">Cancelled. Battle.net picks up where it stopped next time.</string>
     <string name="wehavephones_agent_missing">Battle.net\'s installer (Agent) is missing. Open Battle.net once so it can update itself.</string>
     <string name="wehavephones_agent_no_answer">Battle.net\'s installer did not answer.</string>
     <string name="wehavephones_agent_not_started">Battle.net\'s installer did not start the download.</string>
@@ -562,7 +563,7 @@ World of Warcraft, Warcraft, Battle.net and Blizzard Entertainment are trademark
     <string name="wehavephones_agent_stalled">No progress for 10 minutes. Check the connection and try again.</string>
     <string name="wehavephones_agent_error">Battle.net error %1$d</string>
     <string name="wehavephones_agent_refused">Battle.net refused the request (HTTP %1$d, error %2$d)</string>
-    <string name="wehavephones_agent_tip">Battle.net\'s own installer does this work in the background, the same one the Battle.net app uses. You can switch apps. The download continues.</string>
+    <string name="wehavephones_agent_tip">Battle.net\'s own installer does this work in the background, the same one the Battle.net app uses. You can switch apps while it works.</string>
     <string name="wehavephones_agent_action_install">Install</string>
     <string name="wehavephones_agent_action_update">Update</string>
     <string name="wehavephones_agent_action_repair">Check files</string>
