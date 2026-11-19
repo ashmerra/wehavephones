@@ -67,14 +67,17 @@ public final class BattleNetAgentJobs {
         public final String title;
         public final String letter;
         public final int accent;
+        /** The game's folder under World of Warcraft ("_classic_era_"), or "" when unknown. */
+        public final String directory;
 
-        public Job(Action action, String uid, String productCode, String title, String letter, int accent) {
+        public Job(Action action, String uid, String productCode, String title, String letter, int accent, String directory) {
             this.action = action;
             this.uid = uid;
             this.productCode = productCode;
             this.title = title;
             this.letter = letter;
             this.accent = accent;
+            this.directory = directory == null ? "" : directory;
         }
     }
 
@@ -512,9 +515,11 @@ public final class BattleNetAgentJobs {
             }
             publish(Phase.DONE, appContext.getString(message, job.title), appContext.getString(ownSession
                     ? R.string.wehavephones_agent_done_detail_menu : R.string.wehavephones_agent_done_detail), 1);
-            if (job.action == Action.INSTALL || job.action == Action.UPDATE) {
-                WeHavePhonesConfig.setProductDir(appContext, BattleNetGames.SELECTION_PREFIX + job.uid);
+            // A new install becomes the selected game; installed games are selected by their folder.
+            if (job.action == Action.INSTALL && !job.directory.isEmpty()) {
+                WeHavePhonesConfig.setProductDir(appContext, job.directory);
             }
+            BattleNetUpdateCheck.clear();
         }
         if (active == this) active = null;
         if (ownSession && success && !cancelled) {

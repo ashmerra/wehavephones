@@ -282,7 +282,8 @@ public class GamesFragment extends Fragment {
     static void start(WeHavePhonesActivity activity, Entry entry, BattleNetAgentJobs.Action action) {
         BattleNetGames.Game game = entry.game;
         BattleNetAgentJobs.Job job = new BattleNetAgentJobs.Job(action, entry.uid, entry.productCode,
-                title(game), GameVersionAdapter.monogram(game), GameVersionAdapter.accent(game));
+                title(game), GameVersionAdapter.monogram(game), GameVersionAdapter.accent(game),
+                !game.directoryName.isEmpty() ? game.directoryName : game.flavor.directoryName);
         String error = BattleNetAgentJobs.start(activity, job);
         if (error != null) activity.updateStageStatus(error, true);
         if (error != null) android.widget.Toast.makeText(activity, error, android.widget.Toast.LENGTH_LONG).show();
