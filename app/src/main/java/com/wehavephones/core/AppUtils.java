@@ -223,6 +223,28 @@ public abstract class AppUtils {
         }
     }
 
+    /** The row of view where the soft keyboard begins, in the view's own pixels, or -1 when it is hidden. */
+    public static int softKeyboardTop(View view) {
+        View root = view.getRootView();
+        int keyboard;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            WindowInsets insets = root.getRootWindowInsets();
+            if (insets == null || !insets.isVisible(WindowInsets.Type.ime())) return -1;
+            keyboard = insets.getInsets(WindowInsets.Type.ime()).bottom;
+        }
+        else {
+            Rect rect = new Rect();
+            root.getWindowVisibleDisplayFrame(rect);
+            keyboard = root.getHeight() - rect.bottom;
+            if (keyboard <= root.getHeight() * 0.15f) return -1;
+        }
+        if (keyboard <= 0) return -1;
+        int[] rootAt = new int[2], viewAt = new int[2];
+        root.getLocationOnScreen(rootAt);
+        view.getLocationOnScreen(viewAt);
+        return rootAt[1] + root.getHeight() - keyboard - viewAt[1];
+    }
+
     public static void observeSoftKeyboardVisibility(View rootView, Callback<Boolean> callback) {
         final boolean[] visible = {false};
         rootView.getViewTreeObserver().addOnGlobalLayoutListener(() -> {

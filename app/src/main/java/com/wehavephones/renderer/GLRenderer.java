@@ -53,6 +53,10 @@ public class GLRenderer implements GLSurfaceView.Renderer, WindowManager.OnWindo
     // Set by an overlay that drives the pointer itself, independent of the session's own visibility.
     private boolean cursorHidden = false;
     private boolean screenOffsetYRelativeToCursor = false;
+    // Surface row where the soft keyboard begins, or -1 when that is unknown.
+    private volatile int keyboardTop = -1;
+    // Guest pixels the picture is currently moved up while the keyboard is shown.
+    private float keyboardPan = 0;
     private String[] unviewableWMClasses = null;
     private float magnifierZoom = 1.0f;
     private boolean magnifierEnabled = true;
@@ -170,9 +174,12 @@ public class GLRenderer implements GLSurfaceView.Renderer, WindowManager.OnWindo
                 pointerX = Mathf.clamp(xServer.pointer.getX() * magnifierZoom - xServer.screenInfo.width * 0.5f, 0, xServer.screenInfo.width * Math.abs(1.0f - magnifierZoom));
             }
 
-            if (screenOffsetYRelativeToCursor || magnifierZoom != 1.0f) {
-                float scaleY = magnifierZoom != 1.0f ? Math.abs(1.0f - magnifierZoom) : 0.5f;
-                float offsetY = xServer.screenInfo.height * (screenOffsetYRelativeToCursor ? 0.25f : 0.5f);
+            if (screenOffsetYRelativeToCursor) {
+                pointerY = keyboardPan();
+            }
+            else if (magnifierZoom != 1.0f) {
+                float scaleY = Math.abs(1.0f - magnifierZoom);
+                float offsetY = xServer.screenInfo.height * 0.5f;
                 pointerY = Mathf.clamp(xServer.pointer.getY() * magnifierZoom - offsetY, 0, xServer.screenInfo.height * scaleY);
             }
 
@@ -453,11 +460,42 @@ public class GLRenderer implements GLSurfaceView.Renderer, WindowManager.OnWindo
     /** Guest pixels the picture is moved up to keep the pointer above the soft keyboard. */
     public int getScreenOffsetY() {
         if (!screenOffsetYRelativeToCursor || !magnifierEnabled) return 0;
+        return Math.round(keyboardPan());
+    }
+
+    /**
+     * The picture holds still while the pointer stays in the part above the keyboard. It moves
+     * up only as far as a lower pointer needs, never so far that empty space shows between the
+     * picture and the keyboard, and drops back once the pointer goes above the shown part.
+     * Without a known keyboard height the pointer is kept a quarter of the way down.
+     */
+    private synchronized float keyboardPan() {
         float height = xServer.screenInfo.height;
-        return Math.round(Mathf.clamp(xServer.pointer.getY() - height * 0.25f, 0, height * 0.5f));
+        int top = keyboardTop;
+        int viewTop = fullscreen ? 0 : viewTransformation.viewOffsetY;
+        int viewHeight = fullscreen ? surfaceHeight : viewTransformation.viewHeight;
+        float pointerY = xServer.pointer.getY();
+        if (top < 0 || viewHeight <= 0) return Mathf.clamp(pointerY - height * 0.25f, 0, height * 0.5f);
+        float visible = Mathf.clamp((top - viewTop) * height / viewHeight, 0, height);
+        // Room for the pointer image below its hot spot.
+        float margin = height * 0.04f;
+        float needed = pointerY + margin - visible;
+        if (keyboardPan < needed || pointerY < keyboardPan) keyboardPan = needed;
+        keyboardPan = Mathf.clamp(keyboardPan, 0, height - visible);
+        return keyboardPan;
+    }
+
+    /** The surface row where the soft keyboard begins, or -1 when it is hidden or unknown. */
+    public void setKeyboardTop(int keyboardTop) {
+        if (this.keyboardTop == keyboardTop) return;
+        this.keyboardTop = keyboardTop;
+        xServerView.requestRender();
     }
 
     public void setScreenOffsetYRelativeToCursor(boolean screenOffsetYRelativeToCursor) {
+        synchronized (this) {
+            keyboardPan = 0;
+        }
         this.screenOffsetYRelativeToCursor = screenOffsetYRelativeToCursor;
         xServerView.requestRender();
     }

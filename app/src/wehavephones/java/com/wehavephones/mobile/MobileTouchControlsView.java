@@ -94,6 +94,8 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
     private Drawable bannerIcon;
     private long bannerAt = -BANNER_MS, rippleAt = -RIPPLE_MS, pulseAt = -PULSE_MS;
     private float rippleX, rippleY, pulseX, pulseY;
+    // The keyboard pan when the gesture began.
+    private int gesturePan;
     private boolean guide, swallowing;
     private final MobileTouchMenu menu;
 
@@ -275,6 +277,10 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
             return true;
         }
         int index = event.getActionIndex(), id = event.getPointerId(index);
+        if (action == MotionEvent.ACTION_DOWN) {
+            // Placing the pointer moves the pan, so a whole gesture keeps the pan it started with.
+            gesturePan = xServer.getRenderer() != null ? xServer.getRenderer().getScreenOffsetY() : 0;
+        }
         switch (action) {
             case MotionEvent.ACTION_DOWN:
             case MotionEvent.ACTION_POINTER_DOWN:
@@ -897,7 +903,7 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
         int guestX = Math.min(xServer.screenInfo.width - 1,
                 (int)((x - viewport.left) * xServer.screenInfo.width / viewport.width()));
         int guestY = Math.min(xServer.screenInfo.height - 1,
-                (int)((y - viewport.top) * xServer.screenInfo.height / viewport.height()));
+                (int)((y - viewport.top) * xServer.screenInfo.height / viewport.height()) + gesturePan);
         if (guestX < 0 || guestY < 0 || guestX >= xServer.screenInfo.width || guestY >= xServer.screenInfo.height) return false;
         xServer.injectPointerMove(guestX, guestY);
         return true;

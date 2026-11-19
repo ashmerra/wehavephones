@@ -1096,6 +1096,9 @@ import java.util.concurrent.Executors;
                 destroyImeBridgeView("keyboard_hidden", true);
             }
         });
+        // The renderer pans only as far as the keyboard actually reaches.
+        drawerLayout.getViewTreeObserver().addOnGlobalLayoutListener(() ->
+                renderer.setKeyboardTop(AppUtils.softKeyboardTop(xServerView)));
         setupImeBridge();
     }
 

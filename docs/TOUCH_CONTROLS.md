@@ -187,6 +187,13 @@ character name. It closes again when the field loses focus, for example after
 a chat message is sent or Escape closes the box. Nothing opens while a
 hardware keyboard is connected.
 
+While the Android keyboard is up, the game holds still as long as the pointer
+stays in the part shown above the keyboard. A lower pointer moves the game up
+only as far as it needs, never far enough to leave empty space between the game
+and the keyboard. The game drops back once the pointer goes above the shown
+part. Touches keep the position that was on screen when they began, so a tap
+lands where it was shown.
+
 Enemy nameplates are on in touch mode. They are steadier tap targets than
 moving creature models. **Menu → Targeting → Enemy nameplates** toggles them.
 
