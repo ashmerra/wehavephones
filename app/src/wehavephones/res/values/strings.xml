@@ -46,6 +46,7 @@
     <string name="wehavephones_missing_container">The game container isn\'t set up yet.</string>
     <string name="wehavephones_missing_bnet">Battle.net isn\'t installed yet.</string>
 
+    <string name="wehavephones_home_update_available">Update %1$s available, Play installs it</string>
     <string name="wehavephones_home_plan_battlenet">Play opens Battle.net for sign-in and patches, then enters the game.</string>
     <string name="wehavephones_stage_idle">Ready.</string>
 

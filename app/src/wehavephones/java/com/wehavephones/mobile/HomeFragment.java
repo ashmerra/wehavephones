@@ -163,9 +163,29 @@ public class HomeFragment extends Fragment {
         gameTitle.setText(game.getTitle());
         String edition = game.getEdition();
         String detail = game.installed ? game.version : getString(R.string.wehavephones_game_not_installed_short);
-        if (edition.isEmpty()) gameEdition.setText(detail);
-        else gameEdition.setText(detail.isEmpty() ? edition : edition + "  \u00b7  " + detail);
+        final String line = edition.isEmpty() ? detail : detail.isEmpty() ? edition : edition + "  \u00b7  " + detail;
+        gameEdition.setText(line);
         tintCrest(GameVersionAdapter.accent(game), GameVersionAdapter.monogram(game));
+        showUpdate(game, line);
+    }
+
+    /** Blizzard's version service against the installed build; Play's Battle.net then patches it. */
+    private void showUpdate(final BattleNetGames.Game game, final String line) {
+        if (!game.installed || game.productCode.isEmpty() || status == null || status.container == null) return;
+        final java.io.File root = WeHavePhonesPaths.wowRootFor(status.container);
+        STATUS_EXECUTOR.execute(() -> {
+            BattleNetUpdateCheck.Result result = BattleNetUpdateCheck.check(root, game.productCode, false);
+            if (result == null || !result.updateAvailable || !isAdded()) return;
+            requireActivity().runOnUiThread(() -> {
+                if (!isAdded() || selectedGame != game) return;
+                SpannableStringBuilder text = new SpannableStringBuilder(line).append("  \u00b7  ");
+                int start = text.length();
+                text.append(getString(R.string.wehavephones_home_update_available, result.latestVersion));
+                text.setSpan(new ForegroundColorSpan(requireContext().getColor(R.color.wehavephones_accent)),
+                        start, text.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                gameEdition.setText(text);
+            });
+        });
     }
 
     private void tintCrest(int accent, String letter) {
