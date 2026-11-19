@@ -452,19 +452,24 @@ def read_marker(image):
     size = right - left + 1
     if size < 8:
         return None
-    # Squares are 26 units with 4-unit gaps.
-    pitch = size * 30 / 26
     cx = (left + right) / 2
+    # Filtering can narrow the visible magenta square. Use the nominal
+    # 26-unit squares and 4-unit gaps to locate cyan, then measure the pitch.
+    intervals = len(MARKER) + 1
+    expected_end = int(cx + intervals * size * 30 / 26)
+    search_radius = size * 3 // 2
+    cyan = [x for x in range(max(0, expected_end - search_radius), min(width, expected_end + search_radius + 1))
+            if CYAN(pixels[x, mid_y])]
+    if len(cyan) < size / 2:
+        return None
+    pitch = (cyan[len(cyan) // 2] - cx) / intervals
     flags = {}
     for index, name in enumerate(MARKER, 1):
         x = int(cx + index * pitch)
-        if x >= width:
-            return None
         r, g, b = pixels[x, mid_y]
         flags[name] = 'on' if g > 150 and r < 100 and b < 100 else 'pressed' if r > 150 and g > 150 and b < 100 \
             else 'off' if r < 60 and g < 60 and b < 60 else '?'
-    end = int(cx + (len(MARKER) + 1) * pitch)
-    if end >= width or not CYAN(pixels[end, mid_y]) or '?' in flags.values():
+    if '?' in flags.values():
         return None
     return flags
 
@@ -1040,10 +1045,15 @@ def selftest():
             x += size + gap
         return image
 
+    flags = ['on', 'pressed', 'off', 'on', 'on', 'pressed', 'off', 'on']
     for scale in (1, 1.4, 2):
-        flags = ['on', 'pressed', 'off', 'on', 'on', 'pressed', 'off', 'on']
         read = read_marker(strip(scale, flags))
         assert read == dict(zip(MARKER, flags)), (scale, read)
+    inset_edges = strip(1.5, flags)
+    draw = ImageDraw.Draw(inset_edges)
+    draw.rectangle([1000, 200, 1001, 238], fill=(140, 70, 150))
+    draw.rectangle([1037, 200, 1038, 238], fill=(140, 70, 150))
+    assert read_marker(inset_edges) == dict(zip(MARKER, flags)), 'filtered marker edges'
     assert read_marker(Image.new('RGB', (2340, 1080), (90, 10, 15))) is None
 
     charselect = Image.new('RGB', (2340, 1080), (30, 60, 90))
