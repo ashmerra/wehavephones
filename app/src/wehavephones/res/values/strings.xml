@@ -542,6 +542,7 @@ World of Warcraft, Warcraft, Battle.net and Blizzard Entertainment are trademark
     <string name="wehavephones_agent_eta">%1$s left</string>
     <string name="wehavephones_agent_writing">Installing %1$d%%</string>
     <string name="wehavephones_agent_applying">Installing %1$d%%</string>
+    <string name="wehavephones_agent_finishing_detail">Battle.net checks the installed files.</string>
     <string name="wehavephones_agent_finishing">Checking the install %1$d%%</string>
     <string name="wehavephones_agent_applying_detail">Battle.net writes the downloaded files into the game.</string>
     <string name="wehavephones_agent_removing">Removing %1$s</string>

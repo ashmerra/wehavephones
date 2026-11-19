@@ -49,8 +49,10 @@ public final class BattleNetAgentJobs {
     private static final long NOT_STARTED_MS = 180_000L;
     private static final long STALL_MS = 10 * 60_000L;
     private static final long UNINSTALL_WAIT_MS = 60 * 60_000L;
+    private static final long UNINSTALL_RESEND_MS = 15_000L;
     private static final long CLOSE_AFTER_DONE_MS = 4_000L;
     private static final int RETRIES = 3;
+    private static final long ETA_MIN_RATE = 200_000L;
     private static final int PIPE_IDLE_SECONDS = 900;
 
     public enum Action { INSTALL, UPDATE, REPAIR, UNINSTALL }
@@ -406,13 +408,23 @@ public final class BattleNetAgentJobs {
         BattleNetAgentApi.Response sent = client.post("/uninstall", BattleNetAgentApi.uninstallRequest(job.uid, true));
         if (sent == null || !sent.ok()) return failure(sent);
         long deadline = SystemClock.elapsedRealtime() + UNINSTALL_WAIT_MS;
+        long sentAt = SystemClock.elapsedRealtime();
+        int resent = 0;
         while (!cancelled && SystemClock.elapsedRealtime() < deadline) {
             BattleNetAgentApi.Response game = client.get("/game/" + job.uid);
             if (game != null && (game.status == 404 || game.ok() && !BattleNetAgentApi.parseGame(job.uid, game.json()).installed)) {
                 return null;
             }
             BattleNetAgentApi.Response progress = client.get("/uninstall/" + job.uid);
-            if (progress != null && progress.ok()) {
+            if (progress != null && progress.status == 404 && SystemClock.elapsedRealtime() - sentAt > UNINSTALL_RESEND_MS) {
+                // An operation the Agent resumed (an interrupted Check files) can swallow the request.
+                if (++resent > RETRIES) return appContext.getString(R.string.wehavephones_agent_not_started);
+                Log.i(TAG, "the Agent has no uninstall of " + job.uid + "; asking again (" + resent + "/" + RETRIES + ")");
+                sent = client.post("/uninstall", BattleNetAgentApi.uninstallRequest(job.uid, true));
+                if (sent == null || !sent.ok()) return failure(sent);
+                sentAt = SystemClock.elapsedRealtime();
+            }
+            else if (progress != null && progress.ok()) {
                 BattleNetAgentApi.Progress p = BattleNetAgentApi.parseProgress(progress.json());
                 if (p.failed()) return appContext.getString(R.string.wehavephones_agent_error, p.error);
                 double fraction = p.progress > 0 ? p.progress : -1;
@@ -449,8 +461,9 @@ public final class BattleNetAgentJobs {
                 String detail = appContext.getString(R.string.wehavephones_agent_download_detail,
                         BattleNetAgentApi.formatBytes(p.downloadCurrent), BattleNetAgentApi.formatBytes(p.downloadTotal));
                 if (p.downloadRate > 0) detail += "  \u00b7  " + BattleNetAgentApi.formatRate(p.downloadRate);
-                if (p.etaSeconds > 0) detail += "  \u00b7  " + appContext.getString(R.string.wehavephones_agent_eta,
-                        BattleNetAgentApi.formatEta(p.etaSeconds));
+                // The first seconds of a download crawl, and the Agent's estimate then reads hours.
+                if (p.etaSeconds > 0 && p.downloadRate >= ETA_MIN_RATE) detail += "  \u00b7  "
+                        + appContext.getString(R.string.wehavephones_agent_eta, BattleNetAgentApi.formatEta(p.etaSeconds));
                 publish(Phase.DOWNLOADING, appContext.getString(R.string.wehavephones_agent_downloading,
                         Math.round(p.fraction() * 100)), detail, p.fraction());
                 break;
@@ -461,7 +474,8 @@ public final class BattleNetAgentJobs {
                 int headline = p.step() == BattleNetAgentApi.Step.WRITING ? R.string.wehavephones_agent_writing
                         : p.step() == BattleNetAgentApi.Step.APPLYING ? R.string.wehavephones_agent_applying
                         : R.string.wehavephones_agent_finishing;
-                String detail = appContext.getString(R.string.wehavephones_agent_applying_detail);
+                String detail = appContext.getString(p.step() == BattleNetAgentApi.Step.FINISHING
+                        ? R.string.wehavephones_agent_finishing_detail : R.string.wehavephones_agent_applying_detail);
                 if (p.etaSeconds > 0) detail += "  \u00b7  " + appContext.getString(R.string.wehavephones_agent_eta,
                         BattleNetAgentApi.formatEta(p.etaSeconds));
                 publish(Phase.APPLYING, appContext.getString(headline, Math.round(p.installFraction() * 100)), detail, p.installFraction());
