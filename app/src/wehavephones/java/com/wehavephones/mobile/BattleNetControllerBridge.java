@@ -27,6 +27,7 @@ import java.lang.ref.WeakReference;
 public final class BattleNetControllerBridge {
     private static final String TAG = "WeHavePhonesPadBnet";
     private static final long POLL_MS = 1_000L;
+    private static final long GAME_POLL_MS = 5_000L;
 
     private static final BattleNetPadInput INPUT = new BattleNetPadInput();
     private static final Handler MAIN = new Handler(Looper.getMainLooper());
@@ -59,10 +60,11 @@ public final class BattleNetControllerBridge {
     private static void poll(XServerDisplayActivity activity) {
         while (!Thread.currentThread().isInterrupted() && !activity.isDestroyed()) {
             boolean on;
+            boolean gameRunning = false;
             try {
-                on = activity.isSessionActive() && !BattleNetAgentJobs.isAgentSession(activity) && !debugOff()
-                        && !LaunchOverlayController.isCovering()
-                        && ProcessScanner.isBattleNetRunning() && ProcessScanner.findWowProcess() == null;
+                gameRunning = ProcessScanner.findWowProcess() != null;
+                on = !gameRunning && activity.isSessionActive() && !BattleNetAgentJobs.isAgentSession(activity) && !debugOff()
+                        && !LaunchOverlayController.isCovering() && ProcessScanner.isBattleNetRunning();
             }
             catch (Throwable throwable) {
                 on = false;
@@ -73,7 +75,8 @@ public final class BattleNetControllerBridge {
                 if (!on) MAIN.post(() -> release(activity));
             }
             try {
-                Thread.sleep(POLL_MS);
+                // While the game runs the bridge only waits for it to close.
+                Thread.sleep(gameRunning ? GAME_POLL_MS : POLL_MS);
             }
             catch (InterruptedException e) {
                 break;
