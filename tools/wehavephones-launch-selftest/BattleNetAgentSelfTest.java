@@ -28,6 +28,7 @@ public final class BattleNetAgentSelfTest {
         formatting();
         updateCheck();
         accounts();
+        pad();
         System.out.println("[bnet-agent-selftest] " + checks + " checks, " + failures + " failure(s)");
         System.exit(failures == 0 ? 0 : 1);
     }
@@ -168,6 +169,105 @@ public final class BattleNetAgentSelfTest {
         check("retail second region", "EU", all.get("retail").get(1).region);
         check("retail key", "retail", BattleNetGameAccounts.key("wow"));
         check("other key", "wowf", BattleNetGameAccounts.key("wowf"));
+    }
+
+    static void pad() {
+        final StringBuilder log = new StringBuilder();
+        final int[] moved = {0, 0};
+        final int[] scrolled = {0};
+        BattleNetPadInput.Sink sink = new BattleNetPadInput.Sink() {
+            public void key(int key, boolean down) { log.append(down ? "+k" : "-k").append(key).append(' '); }
+            public void button(int button, boolean down) { log.append(down ? "+b" : "-b").append(button).append(' '); }
+            public void move(int dx, int dy) { moved[0] += dx; moved[1] += dy; }
+            public void scroll(int steps) { scrolled[0] += steps; }
+            public void keyboard() { log.append("kbd "); }
+            public void pointerMode(boolean on) { log.append(on ? "ptr+ " : "ptr- "); }
+        };
+        BattleNetPadInput pad = new BattleNetPadInput();
+        BattleNetPadInput.State s = new BattleNetPadInput.State();
+        // Normal mode: Battle.net's own navigation keeps A, the d-pad and the sticks.
+        s.buttons = BattleNetPadInput.A | BattleNetPadInput.DOWN;
+        s.leftX = 1f;
+        pad.onState(s, 0, sink);
+        check("normal mode leaves A and the d-pad to Battle.net", "", log.toString());
+        check("normal mode does not move the pointer", false, pad.moving());
+        s.buttons = BattleNetPadInput.Y;
+        s.leftX = 0;
+        pad.onState(s, 10, sink);
+        check("Y opens the keyboard in normal mode", "kbd ", log.toString());
+        s.buttons = 0;
+        pad.onState(s, 20, sink);
+        log.setLength(0);
+        // View turns pointer mode on.
+        s.buttons = BattleNetPadInput.SELECT;
+        pad.onState(s, 30, sink);
+        check("View turns pointer mode on", "ptr+ ", log.toString());
+        check("pointer mode flag", true, pad.pointerMode());
+        s.buttons = 0;
+        pad.onState(s, 40, sink);
+        log.setLength(0);
+        s.buttons = BattleNetPadInput.A;
+        pad.onState(s, 50, sink);
+        check("A presses the left button", "+b1 ", log.toString());
+        pad.onState(s, 60, sink);
+        check("held A sends nothing more", "+b1 ", log.toString());
+        s.buttons = 0;
+        pad.onState(s, 70, sink);
+        check("release A", "+b1 -b1 ", log.toString());
+        log.setLength(0);
+        s.buttons = BattleNetPadInput.LB;
+        pad.onState(s, 80, sink);
+        s.buttons = 0;
+        pad.onState(s, 90, sink);
+        check("LB is Shift+Tab, released in reverse", "+k4 +k3 -k3 -k4 ", log.toString());
+        log.setLength(0);
+        s.buttons = BattleNetPadInput.B;
+        pad.onState(s, 100, sink);
+        s.buttons = 0;
+        pad.onState(s, 110, sink);
+        check("B is Escape", "+k2 -k2 ", log.toString());
+        log.setLength(0);
+        s.buttons = BattleNetPadInput.DOWN;
+        pad.onState(s, 1000, sink);
+        check("d-pad arrow", "+k6 ", log.toString());
+        check("held arrow ticks", true, pad.moving());
+        pad.tick(1100, 0.016f, 1280, sink);
+        check("no repeat before the delay", "+k6 ", log.toString());
+        pad.tick(1000 + BattleNetPadInput.REPEAT_FIRST_MS, 0.016f, 1280, sink);
+        check("repeat after the delay", "+k6 -k6 +k6 ", log.toString());
+        s.buttons = 0;
+        pad.onState(s, 1500, sink);
+        check("arrow released, no ticks", false, pad.moving());
+        s.leftX = 1f;
+        pad.onState(s, 1600, sink);
+        for (int i = 0; i < 60; i++) pad.tick(1600 + i * 16, 1f / 60f, 1280, sink);
+        check("full stick crosses most of the screen in a second", true, moved[0] > 900 && moved[0] < 1200 && moved[1] == 0);
+        s.leftX = 0.1f;
+        pad.onState(s, 3000, sink);
+        int before = moved[0];
+        pad.tick(3016, 1f / 60f, 1280, sink);
+        check("dead zone", before, moved[0]);
+        s.leftX = 0;
+        s.buttons = BattleNetPadInput.RT;
+        pad.onState(s, 4000, sink);
+        for (int i = 0; i < 60; i++) pad.tick(4000 + i * 16, 1f / 60f, 1280, sink);
+        check("right trigger scrolls down", true, scrolled[0] >= 12 && scrolled[0] <= 15);
+        s.buttons = BattleNetPadInput.A | BattleNetPadInput.RB;
+        pad.onState(s, 5000, sink);
+        log.setLength(0);
+        s.buttons |= BattleNetPadInput.SELECT;
+        pad.onState(s, 5100, sink);
+        check("View with buttons held releases them and leaves pointer mode", true,
+                log.toString().contains("-b1") && log.toString().contains("-k3") && log.toString().endsWith("ptr- "));
+        check("left pointer mode", false, pad.pointerMode());
+        s.buttons = 0;
+        pad.onState(s, 5200, sink);
+        s.buttons = BattleNetPadInput.SELECT;
+        pad.onState(s, 5300, sink);
+        log.setLength(0);
+        pad.reset(sink);
+        check("reset leaves pointer mode", "ptr- ", log.toString());
+        check("reset stops ticks", false, pad.moving());
     }
 
     private static JSONObject fixture(String name) throws Exception {

@@ -20,4 +20,9 @@ public final class SessionInputExtras {
 
     /** Controller input that WinHandler consumed. */
     public static void onControllerInput(XServerDisplayActivity activity) {}
+
+    /** True while a session hook uses the controller itself and the guest sees an idle pad. */
+    public static boolean holdsGamepad(XServerDisplayActivity activity) {
+        return false;
+    }
 }

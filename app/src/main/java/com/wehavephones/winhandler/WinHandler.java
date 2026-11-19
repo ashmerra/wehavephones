@@ -503,7 +503,8 @@ public class WinHandler {
     private void queueGamepadState(int port, int id, GamepadState state) {
         // Queued replies must not dereference a controller that a hotplug event has removed.
         final GamepadState snapshot = state != null ? new GamepadState() : null;
-        if (snapshot != null) snapshot.copy(state);
+        // A session hook that drives the desktop with the controller hides it from the guest meanwhile.
+        if (snapshot != null && !SessionInputExtras.holdsGamepad(activity)) snapshot.copy(state);
         addAction(() -> {
             sendData.rewind();
             sendData.put(RequestCodes.GET_GAMEPAD_STATE);
@@ -572,6 +573,7 @@ public class WinHandler {
     private void onGamepadStateChanged() {
         sendGamepadState();
         GamepadState state = getGamepadState();
+        if (state != null && SessionInputExtras.holdsGamepad(activity)) state = new GamepadState();
         if (fakeGamepad != null && state != null) fakeGamepad.write(state);
     }
 

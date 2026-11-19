@@ -1232,6 +1232,11 @@ import java.util.concurrent.Executors;
     }
 
     /** Battle.net's email or password form appeared or went away; called from any thread. */
+    /** A controller asked for the keyboard (Battle.net's controller bridge). */
+    public void showKeyboardForController() {
+        runOnUiThread(() -> showSoftKeyboard("controller"));
+    }
+
     public void setBattleNetSignInFormShown(boolean shown) {
         runOnUiThread(() -> {
             battleNetSignInShown = shown;

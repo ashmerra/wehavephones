@@ -384,6 +384,29 @@ sets the game's own region. Play writes that region as the game's `portal`
 realms while the others follow Settings. Battle.net itself picks the game
 account above its Play button when an account has several.
 
+## 3d. Controller in Battle.net
+
+Battle.net reads the XInput pad Wine exposes and has its own navigation: the
+d-pad and left stick move a highlight, A activates, LB and RB page the news
+carousel and the right stick scrolls. `BattleNetControllerBridge` (logic in
+the host-tested `BattleNetPadInput`) adds what it lacks while Battle.net runs
+without a game and Play's loading screen is not covering it:
+
+- **Y** opens the Android keyboard for search and sign-in fields.
+- **View** (Select) turns pointer mode on and off, with a short note on screen.
+  In pointer mode WinHandler sends Battle.net an idle pad
+  (`SessionInputExtras.holdsGamepad`), so its highlight stays still. The
+  left stick moves the X pointer, A clicks and holds (to drag), X
+  right-clicks, the right stick and the triggers scroll, the d-pad sends
+  arrow keys with key repeat, LB and RB send Shift+Tab and Tab, B is Escape
+  and Start is Enter.
+
+The keys follow DroidDeck's controller navigation for store launchers (arrows,
+Enter, Escape, tab switching, stick scrolling), with a pointer added because
+some of Battle.net's controls are out of the highlight's reach. WoW's own
+screens keep their controller handling (`GlueControllerBridge`, ConsolePort).
+Debug builds turn the bridge off with `adb shell setprop debug.whp.bnetpad 0`.
+
 ## 4. Flows
 
 ### First-run setup

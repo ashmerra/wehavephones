@@ -3,6 +3,7 @@ package com.wehavephones;
 import android.view.ViewGroup;
 
 import com.wehavephones.inputcontrols.ControlsProfile;
+import com.wehavephones.mobile.BattleNetControllerBridge;
 import com.wehavephones.mobile.BattleNetSignInWatcher;
 import com.wehavephones.mobile.GlueControllerBridge;
 import com.wehavephones.mobile.WowExitWatcher;
@@ -11,7 +12,8 @@ import com.wehavephones.mobile.MobileTouchControlsView;
 
 /**
  * WeHavePhones session hooks: the controller bridge for WoW's pre-game screens,
- * the keyboard for Battle.net's sign-in and the return to the menu when the game closes.
+ * the keyboard for Battle.net's sign-in, controller navigation of Battle.net's window
+ * and the return to the menu when the game closes.
  */
 public final class SessionInputExtras {
     private static VirtualGamepadController gamepad;
@@ -40,6 +42,7 @@ public final class SessionInputExtras {
         GlueControllerBridge.start(activity);
         WowExitWatcher.start(activity);
         BattleNetSignInWatcher.start(activity);
+        BattleNetControllerBridge.start(activity);
     }
 
     public static void onSessionResumed(XServerDisplayActivity activity) {
@@ -76,5 +79,11 @@ public final class SessionInputExtras {
     /** Controller input that WinHandler consumed. */
     public static void onControllerInput(XServerDisplayActivity activity) {
         GlueControllerBridge.onControllerInput(activity);
+        BattleNetControllerBridge.onControllerInput(activity);
+    }
+
+    /** Battle.net's pointer mode: the guest sees an idle pad so Battle.net's own navigation stays still. */
+    public static boolean holdsGamepad(XServerDisplayActivity activity) {
+        return BattleNetControllerBridge.holdsGamepad();
     }
 }

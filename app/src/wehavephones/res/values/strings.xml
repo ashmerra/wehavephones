@@ -600,4 +600,7 @@ World of Warcraft, Warcraft, Battle.net and Blizzard Entertainment are trademark
     <string name="wehavephones_account_save">Save</string>
     <string name="wehavephones_account_saved">%1$s now plays in %2$s.</string>
     <string name="wehavephones_account_saved_follow">%1$s follows the region in Settings.</string>
+    <!-- Battle.net controller pointer mode -->
+    <string name="wehavephones_pad_pointer_on">Pointer on: left stick moves, A clicks, X right-clicks, B goes back. View turns it off.</string>
+    <string name="wehavephones_pad_pointer_off">Pointer off. The controller moves Battle.net\'s highlight again.</string>
 </resources>
