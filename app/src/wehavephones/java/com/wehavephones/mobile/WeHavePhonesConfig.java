@@ -65,12 +65,6 @@ public final class WeHavePhonesConfig {
         return WowFirstBoot.validRegion(region) ? region : "";
     }
 
-    public static void setGameRegionFor(Context context, String productDir, String region) {
-        String key = KEY_GAME_REGION + getContainerId(context) + "_" + productDir;
-        if (WowFirstBoot.validRegion(region)) prefs(context).edit().putString(key, region).apply();
-        else prefs(context).edit().remove(key).apply();
-    }
-
     /** The region Play writes for a game: its own choice first, then Settings. */
     public static String effectiveGameRegion(Context context, String productDir) {
         String own = getGameRegionFor(context, productDir);

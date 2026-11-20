@@ -95,7 +95,7 @@
                 android:id="@+id/BTPlay"
                 android:layout_width="0dp"
                 android:layout_height="72dp"
-                android:layout_weight="1.6"
+                android:layout_weight="1"
                 android:layout_marginRight="10dp"
                 android:background="@drawable/wehavephones_button_primary"
                 android:clickable="true"
@@ -119,15 +119,99 @@
                     android:textSize="22sp"
                     android:text="@string/wehavephones_play" />
             </LinearLayout>
-            <Button
-                android:id="@+id/BTOpenBattleNet"
-                style="@style/WeHavePhonesButtonOutline"
-                android:layout_width="0dp"
+            <LinearLayout
+                android:layout_width="wrap_content"
                 android:layout_height="72dp"
+                android:orientation="vertical">
+                <Button
+                    android:id="@+id/BTOpenBattleNet"
+                    style="@style/WeHavePhonesButtonOutline"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:layout_marginTop="0dp"
+                    android:textSize="14sp"
+                    android:text="@string/wehavephones_open_bnet" />
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="32dp"
+                    android:layout_marginTop="4dp"
+                    android:gravity="center"
+                    android:orientation="horizontal">
+                    <Button
+                        android:id="@+id/BTVerifyGame"
+                        android:enabled="false"
+                        style="@style/WeHavePhonesButtonCompact"
+                        android:layout_width="72dp"
+                        android:layout_height="match_parent"
+                        android:paddingStart="4dp"
+                        android:paddingEnd="4dp"
+                        android:textSize="12sp"
+                        android:layout_marginEnd="5dp"
+                        android:contentDescription="@string/wehavephones_verify_game_files"
+                        android:text="@string/wehavephones_verify_game" />
+                    <Button
+                        android:id="@+id/BTUninstallGame"
+                        android:enabled="false"
+                        style="@style/WeHavePhonesButtonCompact"
+                        android:layout_width="72dp"
+                        android:layout_height="match_parent"
+                        android:paddingStart="4dp"
+                        android:paddingEnd="4dp"
+                        android:textSize="12sp"
+                        android:textColor="@color/wehavephones_error"
+                        android:text="@string/wehavephones_games_uninstall_confirm" />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:baselineAligned="false"
+            android:orientation="horizontal">
+            <LinearLayout
+                android:id="@+id/LLAccountSection"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:layout_marginTop="0dp"
-                android:textSize="18sp"
-                android:text="@string/wehavephones_open_bnet" />
+                android:orientation="vertical"
+                android:visibility="gone">
+                <TextView
+                    style="@style/WeHavePhonesPlayPickerLabel"
+                    android:text="@string/wehavephones_game_account" />
+                <LinearLayout
+                    android:id="@+id/LLAccountSwitch"
+                    style="@style/WeHavePhonesPlayPicker"
+                    android:contentDescription="@string/wehavephones_game_account">
+                    <TextView
+                        android:id="@+id/TVAccountName"
+                        style="@style/WeHavePhonesPlayPickerValue"
+                        android:text="@string/wehavephones_account_bnet_default" />
+                    <ImageView style="@style/WeHavePhonesPlayPickerCaret" />
+                </LinearLayout>
+            </LinearLayout>
+            <LinearLayout
+                android:id="@+id/LLDriverSection"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:visibility="gone">
+                <TextView
+                    style="@style/WeHavePhonesPlayPickerLabel"
+                    android:text="@string/wehavephones_driver_title" />
+                <LinearLayout
+                    android:id="@+id/LLDriverSwitch"
+                    style="@style/WeHavePhonesPlayPicker"
+                    android:contentDescription="@string/wehavephones_driver_title">
+                    <TextView
+                        android:id="@+id/TVDriverName"
+                        style="@style/WeHavePhonesPlayPickerValue"
+                        android:text="@string/wehavephones_driver_automatic" />
+                    <ImageView style="@style/WeHavePhonesPlayPickerCaret" />
+                </LinearLayout>
+            </LinearLayout>
         </LinearLayout>
         <LinearLayout
             android:layout_width="match_parent"
@@ -156,71 +240,6 @@
                 android:textSize="13sp"
                 android:text="@string/wehavephones_setup_details"
                 android:visibility="gone" />
-        </LinearLayout>
-        <Button
-            android:id="@+id/BTGameOptions"
-            style="@style/WeHavePhonesButtonCompact"
-            android:text="@string/wehavephones_game_options"
-            android:visibility="gone" />
-        <LinearLayout
-            android:id="@+id/LLDriverSection"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
-            android:orientation="vertical"
-            android:visibility="gone">
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
-                <TextView
-                    style="@style/WeHavePhonesSectionLabel"
-                    android:layout_width="wrap_content"
-                    android:layout_marginTop="0dp"
-                    android:layout_marginBottom="0dp"
-                    android:textColor="@color/wehavephones_text_title"
-                    android:textSize="17sp"
-                    android:text="@string/wehavephones_driver_title" />
-                <LinearLayout
-                    android:id="@+id/LLDriverSwitch"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginLeft="14dp"
-                    android:minHeight="36dp"
-                    android:background="@drawable/wehavephones_card_background"
-                    android:paddingLeft="12dp"
-                    android:paddingRight="8dp"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center_vertical"
-                    android:contentDescription="@string/wehavephones_driver_title"
-                    android:orientation="horizontal">
-                    <TextView
-                        android:id="@+id/TVDriverName"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:maxWidth="220dp"
-                        android:fontFamily="sans-serif-medium"
-                        android:textColor="@color/wehavephones_text_title"
-                        android:textSize="14sp"
-                        android:maxLines="1"
-                        android:ellipsize="end"
-                        android:text="@string/wehavephones_driver_automatic"
-                        android:includeFontPadding="false" />
-                    <ImageView
-                        android:layout_width="18dp"
-                        android:layout_height="18dp"
-                        android:layout_marginLeft="6dp"
-                        android:src="@drawable/wehavephones_ic_caret_down"
-                        android:tint="@color/wehavephones_text_title"
-                        android:importantForAccessibility="no" />
-                </LinearLayout>
-            </LinearLayout>
-            <TextView
-                style="@style/WeHavePhonesHint"
-                android:layout_marginTop="6dp"
-                android:text="@string/wehavephones_driver_hint" />
         </LinearLayout>
     </LinearLayout>
 </ScrollView>

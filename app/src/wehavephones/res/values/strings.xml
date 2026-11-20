@@ -160,7 +160,6 @@
     <string name="wehavephones_driver_row_downloaded">Downloaded</string>
     <string name="wehavephones_driver_row_download">Downloads when picked</string>
     <string name="wehavephones_driver_title">Graphics driver</string>
-    <string name="wehavephones_driver_hint">If the game shows graphical glitches or crashes, try another driver.</string>
     <string name="wehavephones_driver_downloading">Downloading %1$s...</string>
     <string name="wehavephones_driver_saved">%1$s will be used the next time the game starts.</string>
     <string name="wehavephones_driver_failed">Could not download %1$s: %2$s</string>
@@ -575,28 +574,18 @@ World of Warcraft, Warcraft, Battle.net and Blizzard Entertainment are trademark
     <string name="wehavephones_agent_step_install">Install</string>
     <string name="wehavephones_agent_step_remove">Remove</string>
     <!-- Game management on Play -->
-    <string name="wehavephones_game_options">Game options</string>
-    <string name="wehavephones_games_checking_updates">Checking for updates…</string>
+    <string name="wehavephones_verify_game">Verify</string>
+    <string name="wehavephones_verify_game_files">Verify game files</string>
+    <string name="wehavephones_game_account">Account</string>
+    <string name="wehavephones_account_bnet_default">Battle.net selection</string>
+    <string name="wehavephones_account_choose_in_bnet">Choose in Battle.net</string>
     <string name="wehavephones_games_update_unknown">Could not check for updates</string>
-    <string name="wehavephones_games_check_updates">Check for updates</string>
-    <string name="wehavephones_games_settings">Account &amp; region</string>
     <string name="wehavephones_games_up_to_date">Up to date</string>
     <string name="wehavephones_games_update">Update</string>
     <string name="wehavephones_games_uninstall_title">Uninstall %1$s?</string>
     <string name="wehavephones_games_uninstall_message">Battle.net deletes the game files, its settings folder (WTF) and caches. Add-ons in the Interface folder stay. Other WoW games are not touched.</string>
     <string name="wehavephones_games_uninstall_confirm">Uninstall</string>
     <string name="wehavephones_games_cancel">Cancel</string>
-    <!-- Games > Account -->
-    <string name="wehavephones_account_title">Account for %1$s</string>
-    <string name="wehavephones_account_game_accounts">WoW game accounts in Battle.net</string>
-    <string name="wehavephones_account_none">Battle.net has not listed a game account for this game yet. Open Battle.net once while signed in.</string>
-    <string name="wehavephones_account_pick_in_bnet">Battle.net uses the account chosen above its Play button.</string>
-    <string name="wehavephones_account_region">Region for this game</string>
-    <string name="wehavephones_account_region_follow">Same as Settings (%1$s)</string>
-    <string name="wehavephones_account_region_hint">Play sets this region in the game before it starts, so this game can use other realms than your other games.</string>
-    <string name="wehavephones_account_save">Save</string>
-    <string name="wehavephones_account_saved">%1$s now plays in %2$s.</string>
-    <string name="wehavephones_account_saved_follow">%1$s follows the region in Settings.</string>
     <!-- Battle.net controller pointer mode -->
     <string name="wehavephones_pad_pointer_on">Pointer on: left stick moves, A clicks, X right-clicks, B goes back. View turns it off.</string>
     <string name="wehavephones_pad_pointer_off">Pointer off. The controller moves Battle.net\'s highlight again.</string>

@@ -325,15 +325,14 @@ product folder only, which current installs do not have.
 
 The selected game determines the main action on Play. Choose an available
 game to **Install** it, or choose an installed game to **Play** or **Update**.
-The game selector includes **Check for updates**. **Game options** opens
-account and region settings. Installed games also offer **Check files**
-and **Uninstall**, which asks for confirmation. Uninstall removes the game,
+**Verify** and **Uninstall** sit below **Open Battle.net** and operate on the
+selected installed game. Uninstall asks for confirmation. It removes the game,
 its `WTF` settings folder and caches, and keeps `Interface`.
 
-`BattleNetUpdateCheck` compares the build key in the Agent's root
-`.build.info` with Blizzard's public version service
-(`<region>.version.battle.net/v2/products/<product>/versions`). Results are
-cached for 30 minutes. **Check for updates** refreshes all installed titles.
+`BattleNetUpdateCheck` automatically checks the selected installed game.
+It compares the build key in the Agent's root `.build.info` with Blizzard's
+version service and caches results for 30 minutes. Battle.net also checks
+for patches during launch.
 
 The jobs run in `BattleNetAgentJobs`, which drives Blizzard's Agent the way
 Battle.net does. The idea comes from DroidDeck's Battle.net store, and the
@@ -360,7 +359,7 @@ requests follow barncastle's Battle.Net-Installer and wowdev.wiki/Agent:
    then `POST /install/<uid>` with the shared `World of Warcraft` folder, the
    language and countries of the other installed WoW games, and polling of
    `GET /install/<uid>`. A game Battle.net registered earlier continues with
-   `POST /update`. Update, Check files and Uninstall use `POST /update`,
+   `POST /update`. Update, Verify and Uninstall use `POST /update`,
    `POST /repair` and `POST /uninstall` (with compaction). Agent error 5016
    ("Failed to initialize the tact instance") and other failures are retried
    three times with `POST /update`.
@@ -373,13 +372,10 @@ requests follow barncastle's Battle.Net-Installer and wowdev.wiki/Agent:
 5. When the job ends the app closes the Agent. A session that existed only
    for the job returns to the menu after a few seconds.
 
-**Account** (`GameAccountDialog`) shows the WoW game accounts Battle.net
-listed for the game and region in its log (`GameAccount(WoW:<uid> region=US
-... name=WoW1)`, read by `BattleNetGameAccounts`, names and regions only) and
-sets the game's own region. Play writes that region as the game's `portal`
-(`WeHavePhonesConfig.effectiveGameRegion`), so one game can use European
-realms while the others follow Settings. Battle.net itself picks the game
-account above its Play button when an account has several.
+The **Account** dropdown lists WoW licenses that Battle.net reported for the
+selected game. **Choose in Battle.net** opens the launcher, where you can
+switch licenses above its Play button. The app reads license names from
+Battle.net's local log with `BattleNetGameAccounts`.
 
 ## 3d. Controller in Battle.net
 
