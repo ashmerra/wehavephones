@@ -38,7 +38,6 @@
     <string name="wehavephones_install_starting">Opening Battle.net to install %1$s\u2026</string>
     <string name="wehavephones_install_sent">Battle.net is installing %1$s. Confirm the location in the Battle.net window. It then appears here as installed.</string>
     <string name="wehavephones_install_unknown_id">Battle.net did not report an id for %1$s. Install it from Battle.net\'s Game Version menu.</string>
-    <string name="wehavephones_products_empty">No World of Warcraft game detected yet. Install one through Battle.net (choose it in the Game Version menu), then come back.</string>
 
     <string name="wehavephones_finish_setup">Finish setup</string>
     <string name="wehavephones_setup_details">Details</string>
@@ -46,7 +45,7 @@
     <string name="wehavephones_missing_container">The game container isn\'t set up yet.</string>
     <string name="wehavephones_missing_bnet">Battle.net isn\'t installed yet.</string>
 
-    <string name="wehavephones_home_update_available">Update %1$s available, Play installs it</string>
+    <string name="wehavephones_home_update_available">Update %1$s available</string>
     <string name="wehavephones_home_plan_battlenet">Play opens Battle.net for sign-in and patches, then enters the game.</string>
     <string name="wehavephones_stage_idle">Ready.</string>
 
@@ -76,7 +75,7 @@
     <string name="wehavephones_settings_region_hint">Changes apply the next time you launch the game.</string>
     <string name="wehavephones_settings_region_china">China uses its own Battle.net app, so this container\'s Battle.net can\'t switch to or from it. Use "Add New" in Setup and pick the region there.</string>
     <string name="wehavephones_open_bnet">Open Battle.net</string>
-    <string name="wehavephones_home_setup_complete">Setup complete. Sign in to Battle.net and install your WoW version.</string>
+    <string name="wehavephones_home_setup_complete">Setup complete. Sign in to Battle.net and choose a game version to install.</string>
 
     <string name="wehavephones_setup_title">First-run setup</string>
     <string name="wehavephones_setup_intro">Set up the active container, then install Battle.net, sign in, and download WoW. Each step is marked complete after it is confirmed.</string>
@@ -575,19 +574,14 @@ World of Warcraft, Warcraft, Battle.net and Blizzard Entertainment are trademark
     <string name="wehavephones_agent_step_check">Check</string>
     <string name="wehavephones_agent_step_install">Install</string>
     <string name="wehavephones_agent_step_remove">Remove</string>
-    <!-- Games screen -->
-    <string name="wehavephones_games_title">Games</string>
-    <string name="wehavephones_games_hint">Install, update and remove each WoW game here. Battle.net\'s own installer does the work in the background, without the Battle.net window.</string>
+    <!-- Game management on Play -->
+    <string name="wehavephones_game_options">Game options</string>
+    <string name="wehavephones_games_checking_updates">Checking for updates…</string>
+    <string name="wehavephones_games_update_unknown">Could not check for updates</string>
     <string name="wehavephones_games_check_updates">Check for updates</string>
-    <string name="wehavephones_games_settings">Account</string>
-    <string name="wehavephones_games_installed">Installed  \u00b7  %1$s</string>
-    <string name="wehavephones_games_up_to_date">Installed  \u00b7  %1$s  \u00b7  Up to date</string>
-    <string name="wehavephones_games_update_available">Update available  \u00b7  %1$s to %2$s</string>
-    <string name="wehavephones_games_not_installed">Not installed</string>
-    <string name="wehavephones_games_registered">Not installed  \u00b7  Battle.net knows this game</string>
+    <string name="wehavephones_games_settings">Account &amp; region</string>
+    <string name="wehavephones_games_up_to_date">Up to date</string>
     <string name="wehavephones_games_update">Update</string>
-    <string name="wehavephones_games_play">Select</string>
-    <string name="wehavephones_games_selected">Selected</string>
     <string name="wehavephones_games_uninstall_title">Uninstall %1$s?</string>
     <string name="wehavephones_games_uninstall_message">Battle.net deletes the game files, its settings folder (WTF) and caches. Add-ons in the Interface folder stay. Other WoW games are not touched.</string>
     <string name="wehavephones_games_uninstall_confirm">Uninstall</string>

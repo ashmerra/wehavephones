@@ -14,6 +14,7 @@ import androidx.annotation.NonNull;
 import com.wehavephones.R;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Rows of the Home "Game version" dropdown: a gem in the game's accent color,
@@ -24,30 +25,26 @@ final class GameVersionAdapter extends ArrayAdapter<BattleNetGames.Game> {
     /** Gem color for games outside the catalog: the game-font yellow. */
     static final int DEFAULT_ACCENT = 0xFF0D315A;
 
-    /** List rows everywhere: the Play screen opens this as a popup, not a closed dropdown. */
-    private final boolean popupRows;
+    private final Map<BattleNetGames.Game, BattleNetUpdateCheck.Result> updates;
 
-    GameVersionAdapter(Context context, List<BattleNetGames.Game> games) {
-        this(context, games, false);
-    }
-
-    GameVersionAdapter(Context context, List<BattleNetGames.Game> games, boolean popupRows) {
+    GameVersionAdapter(Context context, List<BattleNetGames.Game> games,
+                       Map<BattleNetGames.Game, BattleNetUpdateCheck.Result> updates) {
         super(context, R.layout.wehavephones_game_version_item, games);
-        this.popupRows = popupRows;
+        this.updates = updates;
     }
 
     @NonNull
     @Override
     public View getView(int position, View convertView, @NonNull ViewGroup parent) {
-        return bind(position, convertView, parent, popupRows);
+        return bind(position, convertView, parent);
     }
 
     @Override
     public View getDropDownView(int position, View convertView, @NonNull ViewGroup parent) {
-        return bind(position, convertView, parent, true);
+        return bind(position, convertView, parent);
     }
 
-    private View bind(int position, View convertView, ViewGroup parent, boolean dropDown) {
+    private View bind(int position, View convertView, ViewGroup parent) {
         View view = convertView != null ? convertView
                 : LayoutInflater.from(getContext()).inflate(R.layout.wehavephones_game_version_item, parent, false);
         BattleNetGames.Game game = getItem(position);
@@ -59,15 +56,20 @@ final class GameVersionAdapter extends ArrayAdapter<BattleNetGames.Game> {
         name.setText(game.getDisplayName());
         name.setTextColor(context.getColor(game.installed ? R.color.wehavephones_accent : R.color.wehavephones_text_dim));
         if (game.installed) {
-            meta.setText(game.version.isEmpty() ? context.getString(R.string.wehavephones_game_installed) : game.version);
+            BattleNetUpdateCheck.Result result = updates.get(game);
+            if (result != null) {
+                meta.setText(result.updateAvailable
+                        ? context.getString(R.string.wehavephones_home_update_available, result.latestVersion)
+                        : context.getString(R.string.wehavephones_games_up_to_date));
+            } else if (updates.containsKey(game)) {
+                meta.setText(R.string.wehavephones_games_update_unknown);
+            } else {
+                meta.setText(game.version.isEmpty() ? context.getString(R.string.wehavephones_game_installed) : game.version);
+            }
         }
         else {
             meta.setText(R.string.wehavephones_game_not_installed_entry);
         }
-        // The closed dropdown leaves room for the chevron; open rows use the full width.
-        view.setPaddingRelative(view.getPaddingStart(), view.getPaddingTop(),
-                dropDown ? view.getPaddingStart() : dp(context, 36), view.getPaddingBottom());
-
         Drawable gem = view.findViewById(R.id.VGameGem).getBackground().mutate();
         gem.setTintMode(PorterDuff.Mode.MULTIPLY);
         gem.setTint(DEFAULT_ACCENT);
@@ -78,10 +80,6 @@ final class GameVersionAdapter extends ArrayAdapter<BattleNetGames.Game> {
     static int accent(BattleNetGames.Game game) {
         WowFlavor.Family family = game.flavor.family;
         return family != null ? family.accentColor : DEFAULT_ACCENT;
-    }
-
-    private static int dp(Context context, int value) {
-        return Math.round(value * context.getResources().getDisplayMetrics().density);
     }
 
     /** The crest letter: F, C, T, A, E or W by family. */

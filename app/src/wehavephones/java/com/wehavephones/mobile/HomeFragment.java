@@ -10,21 +10,31 @@ import android.text.style.ForegroundColorSpan;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ListPopupWindow;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.widget.PopupMenu;
 import androidx.fragment.app.Fragment;
 
 import com.wehavephones.R;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class HomeFragment extends Fragment {
     private static final ExecutorService STATUS_EXECUTOR = Executors.newSingleThreadExecutor();
+
+    private static final ExecutorService UPDATE_EXECUTOR = Executors.newSingleThreadExecutor();
 
     private WeHavePhonesActivity activity;
     private TextView stageStatus;
@@ -33,15 +43,21 @@ public class HomeFragment extends Fragment {
     private View crestGem;
     private TextView crestLetter;
     private View gameSwitch;
-    private View gameSwitchCaret;
-    private TextView gameVersionsHint;
     private View playButton;
     private TextView playLabel;
     private ImageView playIcon;
     private View openBattleNet;
     private View setupDetails;
+    private View gameOptions;
+    private ListPopupWindow gamePopup;
+    private GameVersionAdapter gameAdapter;
+    private Button checkUpdatesButton;
     private DriverPicker driverPicker;
-    private BattleNetGames.Game selectedGame;
+    private BattleNetGameActions.Entry selectedEntry;
+    private List<BattleNetGameActions.Entry> entries = Collections.emptyList();
+    private final Map<BattleNetGames.Game, BattleNetUpdateCheck.Result> updates = new HashMap<>();
+    private boolean checkingUpdates;
+    private int updateRun;
     private WeHavePhonesStatus status;
     private String stageMessage = "";
     private boolean stageError;
@@ -51,6 +67,12 @@ public class HomeFragment extends Fragment {
         stageMessage = message;
         stageError = error;
         renderStageStatus();
+    };
+
+    private final BattleNetAgentJobs.Listener jobListener = (job) -> {
+        if (getView() == null) return;
+        if (job.finished() && !BattleNetAgentJobs.isRunning()) refresh();
+        renderGameActions();
     };
 
     @Nullable
@@ -69,13 +91,13 @@ public class HomeFragment extends Fragment {
         crestGem = view.findViewById(R.id.VCrestGem);
         crestLetter = view.findViewById(R.id.TVCrestLetter);
         gameSwitch = view.findViewById(R.id.LLGameSwitch);
-        gameSwitchCaret = view.findViewById(R.id.IVGameSwitch);
         playButton = view.findViewById(R.id.BTPlay);
         playLabel = view.findViewById(R.id.TVPlayLabel);
-        gameVersionsHint = view.findViewById(R.id.TVGameVersionsHint);
         playIcon = view.findViewById(R.id.IVPlayIcon);
         openBattleNet = view.findViewById(R.id.BTOpenBattleNet);
         setupDetails = view.findViewById(R.id.TVSetupDetails);
+        gameOptions = view.findViewById(R.id.BTGameOptions);
+        gameOptions.setOnClickListener(v -> showGameOptions());
         driverPicker = new DriverPicker(this, view.findViewById(R.id.LLDriverSection),
                 view.findViewById(R.id.LLDriverSwitch), view.findViewById(R.id.TVDriverName));
 
@@ -85,19 +107,18 @@ public class HomeFragment extends Fragment {
                 activity.showSection(new SetupFragment());
                 return;
             }
-            if (selectedGame == null) {
-                WeHavePhonesPlayController.openBattleNet(activity, activity::updateStageStatus);
+            if (selectedEntry == null) {
+                showGameVersions();
                 return;
             }
-            if (selectedGame != null && !selectedGame.installed) {
-                // Battle.net's Agent installs it behind a progress screen, without the Battle.net window.
-                String code = !selectedGame.productCode.isEmpty() ? selectedGame.productCode : selectedGame.flavor.productCode;
-                GamesFragment.start(activity, new GamesFragment.Entry(selectedGame, selectedGame.bnetGameId(), code),
-                        BattleNetAgentJobs.Action.INSTALL);
+            BattleNetGames.Game game = selectedEntry.game;
+            if (!game.installed || hasUpdate(game)) {
+                BattleNetGameActions.start(activity, selectedEntry,
+                        game.installed ? BattleNetAgentJobs.Action.UPDATE : BattleNetAgentJobs.Action.INSTALL);
                 return;
             }
-            LaunchOverlayController.setGame(selectedGame == null ? null : new LaunchOverlayController.Game(
-                    selectedGame.getTitle(), selectedGame.version, GameVersionAdapter.accent(selectedGame), GameVersionAdapter.monogram(selectedGame)));
+            LaunchOverlayController.setGame(new LaunchOverlayController.Game(
+                    game.getTitle(), game.version, GameVersionAdapter.accent(game), GameVersionAdapter.monogram(game)));
             WeHavePhonesPlayController.play(activity);
         });
         openBattleNet.setOnClickListener((v) ->
@@ -110,6 +131,7 @@ public class HomeFragment extends Fragment {
     public void onResume() {
         super.onResume();
         activity.setStageUpdater(stageUpdater);
+        BattleNetAgentJobs.addListener(jobListener);
         activity.setAtmosphereAnimated(true);
         refresh();
         driverPicker.refresh();
@@ -117,6 +139,8 @@ public class HomeFragment extends Fragment {
 
     @Override
     public void onPause() {
+        BattleNetAgentJobs.removeListener(jobListener);
+        if (gamePopup != null) gamePopup.dismiss();
         activity.setStageUpdater(null);
         activity.setAtmosphereAnimated(false);
         super.onPause();
@@ -124,106 +148,187 @@ public class HomeFragment extends Fragment {
 
     public void refresh() {
         final Context context = getContext();
-        if (context == null) return;
+        final View view = getView();
+        if (context == null || view == null) return;
         final Context appContext = context.getApplicationContext();
+        final WeHavePhonesActivity host = activity;
         STATUS_EXECUTOR.execute(() -> {
             final WeHavePhonesStatus loaded;
+            final List<BattleNetGameActions.Entry> loadedEntries;
             try {
                 loaded = WeHavePhonesStatus.load(appContext);
+                loadedEntries = BattleNetGameActions.entries(appContext, loaded.games);
             }
             catch (Throwable throwable) {
                 return;
             }
-            if (!isAdded()) return;
-            requireActivity().runOnUiThread(() -> {
-                if (!isAdded()) return;
+            host.runOnUiThread(() -> {
+                if (getView() != view) return;
+                if (gamePopup != null) gamePopup.dismiss();
                 status = loaded;
+                entries = loadedEntries;
+                updateRun++;
+                checkingUpdates = false;
+                updates.clear();
                 render();
             });
         });
     }
 
     private void render() {
-        BattleNetGames.Game selected = BattleNetGames.pick(status.games, WeHavePhonesConfig.getProductDir(requireContext()));
-        renderGameVersions(selected);
-        renderGame(selected);
-        renderSetupState();
-        renderStageStatus();
+        BattleNetGames.Game selected = BattleNetGames.pick(games(), WeHavePhonesConfig.getProductDir(requireContext()));
+        selectedEntry = null;
+        for (BattleNetGameActions.Entry entry : entries) {
+            if (entry.game == selected) {
+                selectedEntry = entry;
+                break;
+            }
+        }
+        setupDetails.setVisibility(missingSetup() != 0 ? View.VISIBLE : View.GONE);
+        renderGame();
+        checkSelectedGame();
     }
 
-    private void renderGame(BattleNetGames.Game game) {
-        selectedGame = game;
-        renderPlayButton();
+    private List<BattleNetGames.Game> games() {
+        List<BattleNetGames.Game> games = new ArrayList<>();
+        for (BattleNetGameActions.Entry entry : entries) games.add(entry.game);
+        return games;
+    }
+
+    private void renderGame() {
+        BattleNetGames.Game game = selectedEntry == null ? null : selectedEntry.game;
         if (game == null) {
             gameTitle.setText(R.string.wehavephones_game_default_title);
             gameEdition.setText(R.string.wehavephones_game_not_installed);
-            tintCrest(GameVersionAdapter.DEFAULT_ACCENT, "W");
-            return;
-        }
-        gameTitle.setText(game.getTitle());
-        String edition = game.getEdition();
-        String detail = game.installed ? game.version : getString(R.string.wehavephones_game_not_installed_short);
-        final String line = edition.isEmpty() ? detail : detail.isEmpty() ? edition : edition + "  \u00b7  " + detail;
-        gameEdition.setText(line);
-        tintCrest(GameVersionAdapter.accent(game), GameVersionAdapter.monogram(game));
-        showUpdate(game, line);
-    }
-
-    /** Blizzard's version service against the installed build; Play's Battle.net then patches it. */
-    private void showUpdate(final BattleNetGames.Game game, final String line) {
-        if (!game.installed || game.productCode.isEmpty() || status == null || status.container == null) return;
-        final java.io.File root = WeHavePhonesPaths.wowRootFor(status.container);
-        STATUS_EXECUTOR.execute(() -> {
-            BattleNetUpdateCheck.Result result = BattleNetUpdateCheck.check(root, game.productCode, false);
-            if (result == null || !result.updateAvailable || !isAdded()) return;
-            requireActivity().runOnUiThread(() -> {
-                if (!isAdded() || selectedGame != game) return;
-                SpannableStringBuilder text = new SpannableStringBuilder(line).append("  \u00b7  ");
+            tintCrest("W");
+        } else {
+            gameTitle.setText(game.getTitle());
+            String edition = game.getEdition();
+            String detail = game.installed ? game.version : getString(R.string.wehavephones_game_not_installed_short);
+            String line = edition.isEmpty() ? detail : detail.isEmpty() ? edition : edition + "  \u00b7  " + detail;
+            if (hasUpdate(game)) {
+                SpannableStringBuilder text = new SpannableStringBuilder(line);
+                if (!line.isEmpty()) text.append("  \u00b7  ");
                 int start = text.length();
-                text.append(getString(R.string.wehavephones_home_update_available, result.latestVersion));
+                text.append(getString(R.string.wehavephones_home_update_available, updates.get(game).latestVersion));
                 text.setSpan(new ForegroundColorSpan(requireContext().getColor(R.color.wehavephones_accent)),
                         start, text.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                 gameEdition.setText(text);
+            } else {
+                gameEdition.setText(line);
+            }
+            tintCrest(GameVersionAdapter.monogram(game));
+        }
+        renderGameActions();
+        renderStageStatus();
+    }
+
+    private boolean hasUpdate(BattleNetGames.Game game) {
+        BattleNetUpdateCheck.Result result = updates.get(game);
+        return result != null && result.updateAvailable;
+    }
+
+    private void checkSelectedGame() {
+        if (selectedEntry != null && selectedEntry.game.installed && !updates.containsKey(selectedEntry.game)) {
+            checkUpdates(Collections.singletonList(selectedEntry), false);
+        }
+    }
+
+    private void checkUpdates(List<BattleNetGameActions.Entry> candidates, boolean force) {
+        if (status == null || status.container == null || checkingUpdates) return;
+        if (force) {
+            checkingUpdates = true;
+            renderCheckUpdatesButton();
+        }
+        final int run = ++updateRun;
+        final File root = WeHavePhonesPaths.wowRootFor(status.container);
+        final WeHavePhonesActivity host = activity;
+        final View view = getView();
+        UPDATE_EXECUTOR.execute(() -> {
+            Map<BattleNetGames.Game, BattleNetUpdateCheck.Result> results = new HashMap<>();
+            for (BattleNetGameActions.Entry entry : candidates) {
+                if (entry.game.installed && !entry.productCode.isEmpty()) {
+                    results.put(entry.game, BattleNetUpdateCheck.check(root, entry.productCode, force));
+                }
+            }
+            host.runOnUiThread(() -> {
+                if (getView() != view || run != updateRun) return;
+                updates.putAll(results);
+                if (force) checkingUpdates = false;
+                renderGame();
+                if (gameAdapter != null) gameAdapter.notifyDataSetChanged();
+                renderCheckUpdatesButton();
             });
         });
     }
 
-    private void tintCrest(int accent, String letter) {
+    private void tintCrest(String letter) {
         Drawable gem = crestGem.getBackground().mutate();
         gem.setTintMode(PorterDuff.Mode.MULTIPLY);
         gem.setTint(0xFF0D315A);
         crestLetter.setText(letter);
     }
 
-    /**
-     * The title opens the game version list: what the Battle.net client on
-     * this device reports (installed games first, then games it lists but has
-     * not installed); the choice drives Play/Install and Add-ons.
-     */
-    private void renderGameVersions(BattleNetGames.Game selected) {
-        boolean empty = status.games.isEmpty();
-        gameSwitch.setEnabled(!empty);
-        gameSwitchCaret.setVisibility(empty ? View.GONE : View.VISIBLE);
-        gameVersionsHint.setVisibility(empty ? View.VISIBLE : View.GONE);
-    }
-
     private void showGameVersions() {
-        if (status == null || status.games.isEmpty()) return;
+        if (entries.isEmpty() || gamePopup != null) return;
         Context context = requireContext();
+        List<BattleNetGameActions.Entry> choices = entries;
         final ListPopupWindow popup = new ListPopupWindow(context);
+        gamePopup = popup;
+        gameAdapter = new GameVersionAdapter(context, games(), updates);
         popup.setAnchorView(gameSwitch);
-        popup.setAdapter(new GameVersionAdapter(context, status.games, true));
+        popup.setAdapter(gameAdapter);
         popup.setWidth(Math.round(320 * context.getResources().getDisplayMetrics().density));
         popup.setBackgroundDrawable(context.getDrawable(R.drawable.wehavephones_card_background));
         popup.setModal(true);
+        if (choices.stream().anyMatch(entry -> entry.game.installed)) {
+            checkUpdatesButton = (Button)getLayoutInflater().inflate(R.layout.wehavephones_game_update_button, null);
+            popup.setPromptPosition(ListPopupWindow.POSITION_PROMPT_BELOW);
+            popup.setPromptView(checkUpdatesButton);
+            checkUpdatesButton.setOnClickListener(v -> checkUpdates(choices, true));
+            renderCheckUpdatesButton();
+        }
+        popup.setOnDismissListener(() -> {
+            gamePopup = null;
+            gameAdapter = null;
+            checkUpdatesButton = null;
+        });
         popup.setOnItemClickListener((parent, item, position, id) -> {
             popup.dismiss();
-            if (!isAdded() || position >= status.games.size()) return;
-            BattleNetGames.Game game = status.games.get(position);
-            WeHavePhonesConfig.setProductDir(requireContext(), game.selectionKey());
-            renderGame(game);
+            selectedEntry = choices.get(position);
+            WeHavePhonesConfig.setProductDir(context, selectedEntry.game.selectionKey());
+            renderGame();
+            checkSelectedGame();
         });
         popup.show();
+    }
+
+    private void renderCheckUpdatesButton() {
+        if (checkUpdatesButton == null) return;
+        checkUpdatesButton.setEnabled(!checkingUpdates && !BattleNetAgentJobs.isRunning());
+        checkUpdatesButton.setText(checkingUpdates ? R.string.wehavephones_games_checking_updates
+                : R.string.wehavephones_games_check_updates);
+    }
+
+    private void showGameOptions() {
+        BattleNetGameActions.Entry entry = selectedEntry;
+        if (entry == null || BattleNetAgentJobs.isRunning()) return;
+        PopupMenu menu = new PopupMenu(requireContext(), gameOptions);
+        menu.getMenu().add(R.string.wehavephones_games_settings).setOnMenuItemClickListener(item -> {
+            GameAccountDialog.show(activity, status.container, entry);
+            return true;
+        });
+        if (entry.game.installed) {
+            menu.getMenu().add(R.string.wehavephones_agent_action_repair).setOnMenuItemClickListener(item -> {
+                BattleNetGameActions.start(activity, entry, BattleNetAgentJobs.Action.REPAIR);
+                return true;
+            });
+            menu.getMenu().add(R.string.wehavephones_games_uninstall_confirm).setOnMenuItemClickListener(item -> {
+                BattleNetGameActions.confirmUninstall(activity, entry);
+                return true;
+            });
+        }
+        menu.show();
     }
 
     /** The first missing piece Play needs, as a message, or 0 when setup is complete. */
@@ -235,21 +340,26 @@ public class HomeFragment extends Fragment {
         return 0;
     }
 
-    /** Missing setup turns Play into a red "Finish setup" button; otherwise it plays, installs or opens Battle.net. */
-    private void renderPlayButton() {
+    private void renderGameActions() {
         boolean blocked = missingSetup() != 0;
-        BattleNetGames.Game game = selectedGame;
+        boolean busy = BattleNetAgentJobs.isRunning();
+        BattleNetGames.Game game = selectedEntry == null ? null : selectedEntry.game;
+        int label = blocked ? R.string.wehavephones_finish_setup
+                : game == null ? R.string.wehavephones_game_version
+                : !game.installed ? R.string.wehavephones_install
+                : hasUpdate(game) ? R.string.wehavephones_games_update : R.string.wehavephones_play;
+        int icon = blocked ? R.drawable.wehavephones_ic_setup
+                : label == R.string.wehavephones_play ? R.drawable.wehavephones_ic_play_fill
+                : game == null ? R.drawable.wehavephones_ic_caret_down : R.drawable.wehavephones_ic_download;
         playButton.setBackgroundResource(blocked ? R.drawable.wehavephones_button_warn : R.drawable.wehavephones_button_primary);
-        playIcon.setImageResource(blocked ? R.drawable.wehavephones_ic_setup : R.drawable.wehavephones_ic_play_fill);
-        playLabel.setText(blocked ? R.string.wehavephones_finish_setup : game == null ? R.string.wehavephones_open_bnet
-                : !game.installed ? R.string.wehavephones_install : R.string.wehavephones_play);
-        playLabel.setTextSize(blocked ? 22 : game == null ? 18 : 26);
-    }
-
-    private void renderSetupState() {
-        renderPlayButton();
-        openBattleNet.setEnabled(status.bnetInstalled);
-        setupDetails.setVisibility(missingSetup() != 0 ? View.VISIBLE : View.GONE);
+        playButton.setEnabled(!busy && status != null);
+        openBattleNet.setEnabled(!busy && status != null && status.bnetInstalled);
+        playIcon.setImageResource(icon);
+        playLabel.setText(label);
+        playLabel.setTextSize(label == R.string.wehavephones_play ? 26 : 22);
+        gameOptions.setVisibility(!blocked && game != null ? View.VISIBLE : View.GONE);
+        gameOptions.setEnabled(!busy);
+        renderCheckUpdatesButton();
     }
 
     /** "<stage>. <what Play will do>", or the error alone in red. */
@@ -262,7 +372,7 @@ public class HomeFragment extends Fragment {
             stageStatus.setText(text);
             return;
         }
-        if (status != null && selectedGame == null && !stageError
+        if (status != null && selectedEntry == null && !stageError
                 && (stageMessage.isEmpty() || !activity.hasStageFromThisRun())) {
             stageStatus.setText(R.string.wehavephones_home_setup_complete);
             return;
@@ -276,7 +386,9 @@ public class HomeFragment extends Fragment {
         }
         else {
             text.setSpan(new ForegroundColorSpan(context.getColor(R.color.wehavephones_text)), 0, text.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-            text.append(' ').append(getString(R.string.wehavephones_home_plan_battlenet));
+            if (selectedEntry != null && selectedEntry.game.installed && !hasUpdate(selectedEntry.game)) {
+                text.append(' ').append(getString(R.string.wehavephones_home_plan_battlenet));
+            }
         }
         stageStatus.setText(text);
     }

@@ -85,12 +85,6 @@
                 android:tint="@color/wehavephones_text_title"
                 android:importantForAccessibility="no" />
         </LinearLayout>
-        <TextView
-            android:id="@+id/TVGameVersionsHint"
-            style="@style/WeHavePhonesHint"
-            android:layout_marginTop="6dp"
-            android:text="@string/wehavephones_products_empty"
-            android:visibility="gone" />
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -163,6 +157,11 @@
                 android:text="@string/wehavephones_setup_details"
                 android:visibility="gone" />
         </LinearLayout>
+        <Button
+            android:id="@+id/BTGameOptions"
+            style="@style/WeHavePhonesButtonCompact"
+            android:text="@string/wehavephones_game_options"
+            android:visibility="gone" />
         <LinearLayout
             android:id="@+id/LLDriverSection"
             android:layout_width="match_parent"

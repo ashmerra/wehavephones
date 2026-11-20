@@ -22,6 +22,7 @@ import java.util.Map;
 public final class BattleNetUpdateCheck {
     private static final long CACHE_MS = 30 * 60_000L;
     private static final Map<String, Object[]> CACHE = new HashMap<>();
+    private static int cacheGeneration;
 
     private BattleNetUpdateCheck() {}
 
@@ -71,7 +72,9 @@ public final class BattleNetUpdateCheck {
     public static Result check(File wowRoot, String product, boolean force) {
         if (wowRoot == null || product == null || product.isEmpty()) return null;
         String key = wowRoot.getPath() + "|" + product;
+        final int generation;
         synchronized (CACHE) {
+            generation = cacheGeneration;
             Object[] cached = CACHE.get(key);
             if (!force && cached != null && System.currentTimeMillis() - (Long)cached[0] < CACHE_MS) return (Result)cached[1];
         }
@@ -82,7 +85,9 @@ public final class BattleNetUpdateCheck {
         Result result = compare(product, buildInfo, fetch(versionsUrl(region, product)));
         if (result != null) {
             synchronized (CACHE) {
-                CACHE.put(key, new Object[] {System.currentTimeMillis(), result});
+                if (generation == cacheGeneration) {
+                    CACHE.put(key, new Object[] {System.currentTimeMillis(), result});
+                }
             }
         }
         return result;
@@ -92,6 +97,7 @@ public final class BattleNetUpdateCheck {
     public static void clear() {
         synchronized (CACHE) {
             CACHE.clear();
+            cacheGeneration++;
         }
     }
 

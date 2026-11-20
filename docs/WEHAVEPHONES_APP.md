@@ -304,19 +304,15 @@ by folder, product code or uid. Diagnostics shows each game's `from=` sources:
 | product.db | `C:\ProgramData\Battle.net\Agent\product.db` (protobuf, `BattleNetProductDb`) | uid, product code, installed/playable, version. Product-config codes the Agent has fetched |
 | launcher log | newest main `battle.net-*.log`, `InstallState (<uid>)` | uid, `installed`, `sharedContainerSubpath` (folder), `localVersion` |
 
-Only WoW game product codes are kept (`wow`, `wowt`, `wowxptr`, `wow_*`, not
-`wowdev`, the Agent or other games). Games with a folder and exe are
-*installed* (Play). The rest are games Battle.net has registered on this device
-but not installed (Install). With no Battle.net data the list is the folders.
+The selector shows installed WoW games first, followed by available games.
+Available games include titles registered by the local Battle.net client
+and the built-in live catalog (Retail, Forever, MoP Classic, Anniversary
+and Classic Era). Other account-specific titles appear after Battle.net
+registers them locally. WeHavePhones does not read the account's full
+entitlement list.
 
-**Limit:** the list is what the client has written locally. Games the account
-can see only in Battle.net's own Game Version menu, which the client never
-registered on this device, do not appear until Battle.net records them
-(for example after they are selected there once). The account's full
-entitlement list lives on Blizzard's servers and is not read.
-
-**Install** (Play's Install button and the Games screen) runs through
-Blizzard's Agent without the Battle.net window (§3c).
+**Install** on Play runs through Blizzard's Agent without the Battle.net
+window (§3c).
 `WeHavePhonesPlayController.install` still starts
 `Battle.net.exe --game=<uid or product code> --install` and is kept as a
 fallback, but nothing calls it now.
@@ -325,18 +321,19 @@ The scanner also now reads versions from the Agent's root `.build.info` (by
 the folder's `.flavor.info` code). It used to read `.build.info` inside the
 product folder only, which current installs do not have.
 
-## 3c. Games screen and Battle.net's Agent
+## 3c. Managing games from Play
 
-**Games** (`GamesFragment`, rail entry under Play) lists every WoW game
-Battle.net has registered on this device (§3b) plus the live catalog
-(Retail, Forever, MoP Classic, Anniversary, Classic Era), each with
-**Install**, **Update**, **Check files**, **Uninstall** and **Account**.
-Installed games read "Up to date" or "Update available" from
-`BattleNetUpdateCheck`: the build key in the Agent's root `.build.info`
-against Blizzard's public version service
-(`<region>.version.battle.net/v2/products/<product>/versions`), cached for
-30 minutes. Uninstall asks first. It deletes the game, its `WTF` and caches
-and keeps `Interface`.
+The selected game determines the main action on Play. Choose an available
+game to **Install** it, or choose an installed game to **Play** or **Update**.
+The game selector includes **Check for updates**. **Game options** opens
+account and region settings. Installed games also offer **Check files**
+and **Uninstall**, which asks for confirmation. Uninstall removes the game,
+its `WTF` settings folder and caches, and keeps `Interface`.
+
+`BattleNetUpdateCheck` compares the build key in the Agent's root
+`.build.info` with Blizzard's public version service
+(`<region>.version.battle.net/v2/products/<product>/versions`). Results are
+cached for 30 minutes. **Check for updates** refreshes all installed titles.
 
 The jobs run in `BattleNetAgentJobs`, which drives Blizzard's Agent the way
 Battle.net does. The idea comes from DroidDeck's Battle.net store, and the

@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.concurrent.Executors;
 
 /**
- * Games > Account: the account side of one game. Its region (which realms
+ * Account and region settings for the selected game. Its region (which realms
  * and which Battle.net region WoW signs in to) can differ from the other
  * games, and Play writes it as WoW's portal for this game only. The WoW game
  * accounts Battle.net listed for the game (WoW1, WoW2) are shown from its log.
@@ -25,7 +25,7 @@ import java.util.concurrent.Executors;
 final class GameAccountDialog {
     private GameAccountDialog() {}
 
-    static void show(WeHavePhonesActivity activity, Container container, GamesFragment.Entry entry) {
+    static void show(WeHavePhonesActivity activity, Container container, BattleNetGameActions.Entry entry) {
         final Context context = activity;
         final String dir = !entry.game.directoryName.isEmpty() ? entry.game.directoryName : entry.game.flavor.directoryName;
         Executors.newSingleThreadExecutor().execute(() -> {
@@ -38,7 +38,7 @@ final class GameAccountDialog {
     }
 
     private static void build(WeHavePhonesActivity activity, Context context, String dir,
-            GamesFragment.Entry entry, List<BattleNetGameAccounts.Account> accounts) {
+            BattleNetGameActions.Entry entry, List<BattleNetGameAccounts.Account> accounts) {
         int pad = Math.round(20 * context.getResources().getDisplayMetrics().density);
         LinearLayout content = new LinearLayout(context);
         content.setOrientation(LinearLayout.VERTICAL);
@@ -82,15 +82,15 @@ final class GameAccountDialog {
         android.widget.ScrollView scroll = new android.widget.ScrollView(context);
         scroll.addView(content);
         new AlertDialog.Builder(context)
-                .setTitle(context.getString(R.string.wehavephones_account_title, GamesFragment.title(entry.game)))
+                .setTitle(context.getString(R.string.wehavephones_account_title, BattleNetGameActions.title(entry.game)))
                 .setView(scroll)
                 .setPositiveButton(R.string.wehavephones_account_save, (dialog, which) -> {
                     View checked = group.findViewById(group.getCheckedRadioButtonId());
                     String region = checked != null && checked.getTag() != null ? checked.getTag().toString() : "";
                     WeHavePhonesConfig.setGameRegionFor(context, dir, region);
                     activity.updateStageStatus(region.isEmpty()
-                            ? context.getString(R.string.wehavephones_account_saved_follow, GamesFragment.title(entry.game))
-                            : context.getString(R.string.wehavephones_account_saved, GamesFragment.title(entry.game), regionName(context, region)), false);
+                            ? context.getString(R.string.wehavephones_account_saved_follow, BattleNetGameActions.title(entry.game))
+                            : context.getString(R.string.wehavephones_account_saved, BattleNetGameActions.title(entry.game), regionName(context, region)), false);
                 })
                 .setNegativeButton(R.string.wehavephones_games_cancel, null)
                 .show();

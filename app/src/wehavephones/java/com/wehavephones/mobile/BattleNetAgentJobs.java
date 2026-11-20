@@ -232,9 +232,9 @@ public final class BattleNetAgentJobs {
         }
         finally {
             if (cancelled && failure == null) failure = appContext.getString(R.string.wehavephones_agent_cancelled);
-            if (failure != null) publish(Phase.FAILED, failure, appContext.getString(R.string.wehavephones_agent_failed_detail), -1);
             stopAgent();
             running = false;
+            if (failure != null) publish(Phase.FAILED, failure, appContext.getString(R.string.wehavephones_agent_failed_detail), -1);
             finish(failure == null);
         }
     }
@@ -513,13 +513,13 @@ public final class BattleNetAgentJobs {
                 case INSTALL:
                 default: message = R.string.wehavephones_agent_done_install;
             }
-            publish(Phase.DONE, appContext.getString(message, job.title), appContext.getString(ownSession
-                    ? R.string.wehavephones_agent_done_detail_menu : R.string.wehavephones_agent_done_detail), 1);
             // A new install becomes the selected game; installed games are selected by their folder.
             if (job.action == Action.INSTALL && !job.directory.isEmpty()) {
                 WeHavePhonesConfig.setProductDir(appContext, job.directory);
             }
             BattleNetUpdateCheck.clear();
+            publish(Phase.DONE, appContext.getString(message, job.title), appContext.getString(ownSession
+                    ? R.string.wehavephones_agent_done_detail_menu : R.string.wehavephones_agent_done_detail), 1);
         }
         if (active == this) active = null;
         if (ownSession && success && !cancelled) {
