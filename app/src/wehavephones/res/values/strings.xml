@@ -46,7 +46,6 @@
     <string name="wehavephones_missing_bnet">Battle.net isn\'t installed yet.</string>
 
     <string name="wehavephones_home_update_available">Update %1$s available</string>
-    <string name="wehavephones_stage_idle">Ready.</string>
 
     <string name="wehavephones_first_run_label">FIRST-TIME SETUP</string>
     <string name="wehavephones_first_run_title">Set up your phone</string>

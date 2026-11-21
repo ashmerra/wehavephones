@@ -420,7 +420,7 @@ public class HomeFragment extends Fragment {
         }
     }
 
-    /** The current stage, or the error in red. */
+    /** The current stage, the error in red, or nothing when idle. */
     private void renderStageStatus() {
         Context context = requireContext();
         int missing = missingSetup();
@@ -436,9 +436,11 @@ public class HomeFragment extends Fragment {
             return;
         }
         // A message restored from an earlier app run ("Still logging in...") is stale.
-        String message = stageMessage.isEmpty() || !activity.hasStageFromThisRun()
-                ? getString(R.string.wehavephones_stage_idle) : stageMessage;
-        SpannableStringBuilder text = new SpannableStringBuilder(message);
+        if (stageMessage.isEmpty() || !activity.hasStageFromThisRun()) {
+            stageStatus.setText("");
+            return;
+        }
+        SpannableStringBuilder text = new SpannableStringBuilder(stageMessage);
         if (stageError) {
             text.setSpan(new ForegroundColorSpan(context.getColor(R.color.wehavephones_error)), 0, text.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         }

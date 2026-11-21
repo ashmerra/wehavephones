@@ -226,7 +226,6 @@
                 style="@style/WeHavePhonesHint"
                 android:layout_width="0dp"
                 android:layout_weight="1"
-                android:text="@string/wehavephones_stage_idle"
                 android:textSize="13sp" />
             <TextView
                 android:id="@+id/TVSetupDetails"
