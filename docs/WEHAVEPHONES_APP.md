@@ -372,10 +372,29 @@ requests follow barncastle's Battle.Net-Installer and wowdev.wiki/Agent:
 5. When the job ends the app closes the Agent. A session that existed only
    for the job returns to the menu after a few seconds.
 
-The **Account** dropdown lists WoW licenses that Battle.net reported for the
-selected game. **Choose in Battle.net** opens the launcher, where you can
-switch licenses above its Play button. The app reads license names from
-Battle.net's local log with `BattleNetGameAccounts`.
+The **Account** dropdown lists the WoW licenses (WoW1, WoW2 and so on) that
+Battle.net reported for the selected game. The app reads their names and
+Battle.net's current selection from Battle.net's local log with
+`BattleNetGameAccounts`. It shows the license Play will use: the one picked
+here, otherwise Battle.net's own selection. With one license it only shows the
+name. Picking a license saves it for that game and changes nothing until Play.
+
+Battle.net keeps its selection to itself, so Play applies the choice through
+Battle.net's Play panel. Battle.net logs the license it selected when it
+starts. When that is another license, `OneButtonLauncher` waits for the page
+to paint and clicks the license dropdown above Battle.net's Play button. The
+menu opens upward with one row per license, sorted by name. Once the pixels
+where the chosen row will appear change (the menu has opened), the launcher
+clicks that row, then Play. `accountFromPlay`, `accountLastRowAbove` and
+`accountRowHeight` in the launch table hold the positions. A page that has not
+painted costs one Play attempt, like a dropped Play click. A menu that does not
+open twice stops the launch.
+
+Battle.net does not log a change made in the dropdown, so the check comes at
+launch. Battle.net logs the license it starts the game with
+(`Game launch options: programId=WoW GAME_ACCOUNT=WoW1 REGION=US`). If that is
+not the chosen license, the app closes the game before it signs in, stops with
+a message and shows the Battle.net window.
 
 ## 3d. Controller in Battle.net
 

@@ -176,6 +176,40 @@ public final class BattleNetAgentSelfTest {
         check("retail second region", "EU", all.get("retail").get(1).region);
         check("retail key", "retail", BattleNetGameAccounts.key("wow"));
         check("other key", "wowf", BattleNetGameAccounts.key("wowf"));
+
+        String selections = log
+                + "D 2026 [GameController] {Main} Picked default selection by type for product group: WoW account=GameAccount(WoW:retail region=US entity=2:1:2 name=WoW1)\n"
+                + "D 2026 [GameController] {Main} New selection for product group WoW: account=GameAccount(WoW:retail region=US entity=2:1:2 name=WoW1)\n"
+                + "D 2026 [GameController] {Main} New selection for product group WoW: account=GameAccount(WoW:wow_classic_era region=US entity=2:1:2 name=WoW1)\n"
+                + "D 2026 [GameController] {Main} New selection for product group WoW: account=GameAccount(WoW:retail region=EU entity=2:1:3 name=WoW2)\n";
+        BattleNetGameAccounts.Account retail = BattleNetGameAccounts.selection(selections, "retail");
+        check("retail selection", "EU/WoW2", retail != null ? retail.id() : "");
+        check("era selection", "US/WoW1", BattleNetGameAccounts.selection(selections, "wow_classic_era").id());
+        check("no selection", null, BattleNetGameAccounts.selection(selections, "wowf"));
+        check("id round trip", "EU/WoW2", BattleNetGameAccounts.Account.fromId("EU/WoW2").id());
+        check("bad id", null, BattleNetGameAccounts.Account.fromId("WoW2"));
+
+        BattleNetGameAccounts.Account wow1 = BattleNetGameAccounts.Account.fromId("US/WoW1");
+        BattleNetGameAccounts.Account wow2 = BattleNetGameAccounts.Account.fromId("US/WoW2");
+        BattleNetGameAccounts.Account wow10 = BattleNetGameAccounts.Account.fromId("US/WoW10");
+        List<BattleNetGameAccounts.Account> three = java.util.Arrays.asList(wow10, wow2, wow1);
+        List<BattleNetGameAccounts.Account> sorted = BattleNetGameAccounts.sorted(three);
+        check("natural order", "WoW1 WoW2 WoW10", sorted.get(0).name + " " + sorted.get(1).name + " " + sorted.get(2).name);
+        check("steps down", 2, BattleNetGameAccounts.steps(three, wow1, wow10));
+        check("steps up", -1, BattleNetGameAccounts.steps(three, wow2, wow1));
+        check("steps unknown", null, BattleNetGameAccounts.steps(three, wow1, BattleNetGameAccounts.Account.fromId("EU/WoW3")));
+        BattleNetGameAccounts.Account eu1 = BattleNetGameAccounts.Account.fromId("EU/WoW1");
+        check("steps ambiguous name", null, BattleNetGameAccounts.steps(java.util.Arrays.asList(wow1, eu1, wow2), wow2, eu1));
+
+        BattleNetLauncherLog launcher = new BattleNetLauncherLog();
+        for (String line : selections.split("\n")) launcher.feed(line);
+        check("launcher log selection", "EU/WoW2", launcher.accountSelection("wow").id());
+        check("launcher log selection count", 2, launcher.accountSelections("wow"));
+        check("launcher log no selection", null, launcher.accountSelection("wowf"));
+        check("no launch account yet", null, launcher.launchAccount());
+        launcher.feed("I 2026-11-21 00:17:45.573517 [InstallManager] {Main} Game launch options: programId=WoW GAME_ACCOUNT=WoW1 REGION=US LOCALE=enUS LOCALE_AUDIO=enUS LAUNCH_64BIT=0");
+        launcher.feed("I 2026-11-21 00:17:45.577718 [InstallManager] {Main} Game launch options: programId=WoW ACCOUNT=(hidden) ACCOUNT_TS=1795220265");
+        check("launch account", "US/WoW1", launcher.launchAccount() != null ? launcher.launchAccount().id() : "");
     }
 
     static void pad() {

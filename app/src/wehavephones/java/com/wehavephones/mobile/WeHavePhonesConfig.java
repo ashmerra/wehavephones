@@ -23,6 +23,8 @@ public final class WeHavePhonesConfig {
     public static final String KEY_MEMORY_SNAPSHOT = "wehavephones_memory_snapshot";
     public static final String KEY_CONTAINER_ID = "wehavephones_container_id";
     public static final String KEY_PRODUCT_DIR = "wehavephones_product_dir";
+    /** Followed by Battle.net's game key ("retail", "wowf", ...). */
+    public static final String KEY_GAME_ACCOUNT_PREFIX = "wehavephones_game_account_";
     public static final String KEY_LAST_STAGE_STATUS = "wehavephones_last_stage_status";
     public static final String KEY_PERFORMANCE_OVERLAY = "wehavephones_performance_overlay";
     public static final String KEY_SAVE_MEMORY = "wehavephones_save_memory";
@@ -151,6 +153,15 @@ public final class WeHavePhonesConfig {
 
     public static void setProductDir(Context context, String productDir) {
         prefs(context).edit().putString(KEY_PRODUCT_DIR, productDir).apply();
+    }
+
+    /** The WoW license chosen on Play for this game ({@link BattleNetGameAccounts.Account#id}), or null for Battle.net's choice. */
+    public static String getGameAccount(Context context, String uid) {
+        return prefs(context).getString(KEY_GAME_ACCOUNT_PREFIX + BattleNetGameAccounts.key(uid), null);
+    }
+
+    public static void setGameAccount(Context context, String uid, String accountId) {
+        prefs(context).edit().putString(KEY_GAME_ACCOUNT_PREFIX + BattleNetGameAccounts.key(uid), accountId).apply();
     }
 
     public static String getLastStageStatus(Context context) {

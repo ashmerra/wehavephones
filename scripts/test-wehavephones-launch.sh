@@ -75,6 +75,7 @@ else
     mkdir -p "$WORK_DIR"
     SOURCES=(
       "$SRC_DIR/BattleNetLauncherLog.java"
+      "$SRC_DIR/BattleNetGameAccounts.java"
       "$SRC_DIR/BattleNetPlayButton.java"
       "$SRC_DIR/WeHavePhonesLaunchPlan.java"
       "$SRC_DIR/WeHavePhonesBnetConfig.java"
@@ -107,6 +108,7 @@ if [[ -n "$JAVAC" && -n "$JAVA" ]]; then
     "$SRC_DIR/BattleNetBuildInfo.java"
     "$SRC_DIR/BattleNetGames.java"
     "$SRC_DIR/BattleNetLauncherLog.java"
+    "$SRC_DIR/BattleNetGameAccounts.java"
     "$SRC_DIR/WeHavePhonesLaunchPlan.java"
     "$SRC_DIR/WowFlavor.java"
     "$SRC_DIR/WowProduct.java"
@@ -135,6 +137,7 @@ if [[ -n "$JAVAC" && -n "$JAVA" && -n "${JSON_JAR:-}" ]]; then
     "$SRC_DIR/BattleNetBuildInfo.java"
     "$SRC_DIR/BattleNetUpdateCheck.java"
     "$SRC_DIR/BattleNetGameAccounts.java"
+    "$SRC_DIR/BattleNetLauncherLog.java"
     "$SRC_DIR/BattleNetPadInput.java"
     "$SELF_TEST_DIR/BattleNetAgentSelfTest.java"
   )

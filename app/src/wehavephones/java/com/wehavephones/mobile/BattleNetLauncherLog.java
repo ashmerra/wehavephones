@@ -37,6 +37,11 @@ import java.util.regex.Pattern;
  *   the preceding {@code UAuth: begin loading: <url>}
  *   is {@code …/login/en/password?app=app} for the password page of the
  *   remembered account, otherwise the email page (verified on device 2026-09-28).</li>
+ *   <li>{@code [GameController] … New selection for product group WoW: account=GameAccount(WoW:<key> region=US entity=… name=WoW1)}:
+ *   the WoW license the Play panel selected when Battle.net started or a game launched
+ *   (a change in its dropdown is not logged; see {@link BattleNetGameAccounts}).</li>
+ *   <li>{@code [InstallManager] … Game launch options: programId=WoW GAME_ACCOUNT=WoW1 REGION=US …}:
+ *   the license a launch uses, logged just before {@code Launched}.</li>
  * </ul>
  */
 public final class BattleNetLauncherLog {
@@ -82,6 +87,7 @@ public final class BattleNetLauncherLog {
     private static final Pattern UPDATE_STARTING = Pattern.compile("\\[InstallManager\\].*? Starting \\[\\w+\\] (?:UPDATE|INSTALL|REPAIR) operation for \"([^\"]+)\"");
     private static final Pattern UPDATE_FAILED = Pattern.compile("\\[InstallManager\\].*? (?:Update|Install|Repair) failed: (\\S+)");
     private static final Pattern AGENT_ERROR = Pattern.compile("\\[InstallManager\\].*? An agent error occurred: ([^,\\s]+), code=(\\d+) url=/(?:update|install|repair)/");
+    private static final Pattern LAUNCH_ACCOUNT = Pattern.compile("Game launch options: programId=WoW GAME_ACCOUNT=([A-Za-z0-9]+) REGION=([A-Z]{2})\\b");
     private static final Pattern UID_ARG = Pattern.compile("-uid\\s+(\\S+)");
     private static final Pattern IPC_MODE = Pattern.compile("IPC shared memory\\..*mode=(server|client)");
     private static final Pattern TIMESTAMP = Pattern.compile("^[A-Z] (\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d+)");
@@ -103,6 +109,9 @@ public final class BattleNetLauncherLog {
     private final HashMap<String, Integer> updateStarts = new HashMap<>();
     private final HashMap<String, Integer> updateFailures = new HashMap<>();
     private final HashMap<String, String> agentErrors = new HashMap<>();
+    private final HashMap<String, BattleNetGameAccounts.Account> accountSelections = new HashMap<>();
+    private final HashMap<String, Integer> accountSelectionCounts = new HashMap<>();
+    private BattleNetGameAccounts.Account launchAccount;
     private String ipcMode = "";
     private String commandLine = "";
     private boolean loggedIn;
@@ -140,6 +149,17 @@ public final class BattleNetLauncherLog {
         }
         if (line.contains(LOGIN_FAILED)) {
             webLoginComplete = false;
+            return;
+        }
+        Object[] selection = BattleNetGameAccounts.selectionLine(line);
+        if (selection != null) {
+            accountSelections.put((String)selection[0], (BattleNetGameAccounts.Account)selection[1]);
+            accountSelectionCounts.merge((String)selection[0], 1, Integer::sum);
+            return;
+        }
+        if (line.contains("Game launch options: programId=WoW GAME_ACCOUNT=")) {
+            Matcher account = LAUNCH_ACCOUNT.matcher(line);
+            if (account.find()) launchAccount = BattleNetGameAccounts.Account.fromId(account.group(2) + "/" + account.group(1));
             return;
         }
         Matcher matcher = INSTALL_STATE.matcher(line);
@@ -233,6 +253,22 @@ public final class BattleNetLauncherLog {
 
     public void feedAll(Iterable<String> lines) {
         for (String line : lines) feed(line);
+    }
+
+    /** The WoW license Battle.net selected last for {@code uid}, or null. */
+    public BattleNetGameAccounts.Account accountSelection(String uid) {
+        return accountSelections.get(BattleNetGameAccounts.key(uid));
+    }
+
+    /** The WoW license of the last game launch, or null. */
+    public BattleNetGameAccounts.Account launchAccount() {
+        return launchAccount;
+    }
+
+    /** Selection lines seen for {@code uid}, to notice a new one. */
+    public int accountSelections(String uid) {
+        Integer count = accountSelectionCounts.get(BattleNetGameAccounts.key(uid));
+        return count != null ? count : 0;
     }
 
     public boolean isLoggedIn() {

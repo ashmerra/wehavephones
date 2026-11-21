@@ -356,6 +356,8 @@
     <string name="wehavephones_launch_update_failed">Battle.net could not update World of Warcraft (Agent error %1$s). Press Update in Battle.net to try again. If it keeps failing, use Scan and Repair from the game\'s settings menu in Battle.net.</string>
     <string name="wehavephones_launch_update_timeout">The World of Warcraft update did not finish within %1$d s. Leave Battle.net running and press Play again.</string>
     <string name="wehavephones_launch_failed">Battle.net did not start World of Warcraft (tried %1$s). Press Play in the Battle.net window.</string>
+    <string name="wehavephones_launch_account_failed">Could not select %1$s in Battle.net, so the game did not start. Pick it above Play in the Battle.net window, or choose another account on Play.</string>
+    <string name="wehavephones_launch_account_wrong">Battle.net started %1$s instead of %2$s, so the game was closed. Pick %2$s above Play in the Battle.net window, or choose another account on Play.</string>
     <string name="wehavephones_launch_play_unavailable">Play is not available: Battle.net\'s Play button is greyed out for this game (pre-installed or not released yet). See the Battle.net window.</string>
     <string name="wehavephones_launch_exited">World of Warcraft exited right after starting. See Diagnostics → last launch.</string>
     <string name="wehavephones_launch_error">Launch failed: %1$s</string>
@@ -577,8 +579,8 @@ World of Warcraft, Warcraft, Battle.net and Blizzard Entertainment are trademark
     <string name="wehavephones_verify_game">Verify</string>
     <string name="wehavephones_verify_game_files">Verify game files</string>
     <string name="wehavephones_game_account">Account</string>
-    <string name="wehavephones_account_bnet_default">Battle.net selection</string>
-    <string name="wehavephones_account_choose_in_bnet">Choose in Battle.net</string>
+    <string name="wehavephones_account_bnet_default">Battle.net\'s choice</string>
+    <string name="wehavephones_account_with_region">%1$s (%2$s)</string>
     <string name="wehavephones_games_update_unknown">Could not check for updates</string>
     <string name="wehavephones_games_up_to_date">Up to date</string>
     <string name="wehavephones_games_update">Update</string>

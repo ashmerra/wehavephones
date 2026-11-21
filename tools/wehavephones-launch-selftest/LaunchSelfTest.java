@@ -77,6 +77,7 @@ public final class LaunchSelfTest {
         check("forever exe comes from the scan", "", plan.resolve("_forever_").exe);
         check("play button from left", 155, plan.playFromLeft);
         check("play button from bottom", 108, plan.playFromBottom);
+        check("license dropdown above play", 53, plan.accountFromPlay);
         check("play attempts", 6, plan.playAttempts);
         check("launcher restarts", 2, plan.launcherRestarts);
         check("play wait", 10, plan.playWaitSeconds);

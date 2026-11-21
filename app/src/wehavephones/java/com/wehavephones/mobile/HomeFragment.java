@@ -52,9 +52,12 @@ public class HomeFragment extends Fragment {
     private View accountSection;
     private View accountSwitch;
     private TextView accountName;
+    private View accountCaret;
     private View driverSection;
     private ListPopupWindow accountPopup;
-    private List<String> accountNames = Collections.emptyList();
+    /** The selected game's WoW licenses in Battle.net's order, and Battle.net's own selection. */
+    private List<BattleNetGameAccounts.Account> accounts = Collections.emptyList();
+    private BattleNetGameAccounts.Account battleNetAccount;
     private ListPopupWindow gamePopup;
     private GameVersionAdapter gameAdapter;
     private DriverPicker driverPicker;
@@ -105,6 +108,7 @@ public class HomeFragment extends Fragment {
         accountSection = view.findViewById(R.id.LLAccountSection);
         accountSwitch = view.findViewById(R.id.LLAccountSwitch);
         accountName = view.findViewById(R.id.TVAccountName);
+        accountCaret = view.findViewById(R.id.IVAccountCaret);
         driverSection = view.findViewById(R.id.LLDriverSection);
         driverPicker = new DriverPicker(this, driverSection,
                 view.findViewById(R.id.LLDriverSwitch), view.findViewById(R.id.TVDriverName));
@@ -265,55 +269,73 @@ public class HomeFragment extends Fragment {
 
     private void loadAccounts() {
         if (accountPopup != null) accountPopup.dismiss();
-        accountNames = Collections.emptyList();
-        accountName.setText(R.string.wehavephones_account_bnet_default);
+        accounts = Collections.emptyList();
+        battleNetAccount = null;
+        renderAccount();
         BattleNetGameActions.Entry entry = selectedEntry;
         if (entry == null || status.container == null) return;
         final File logs = WeHavePhonesPaths.bnetLogsDir(status.container);
         final WeHavePhonesActivity host = activity;
         final View view = getView();
         STATUS_EXECUTOR.execute(() -> {
-            List<String> names = new ArrayList<>();
-            for (BattleNetGameAccounts.Account account : BattleNetGameAccounts.forGame(logs, entry.uid)) {
-                if (!names.contains(account.name)) names.add(account.name);
-            }
+            BattleNetGameAccounts.Snapshot snapshot = BattleNetGameAccounts.read(logs, entry.uid);
             host.runOnUiThread(() -> {
                 if (getView() != view || selectedEntry != entry) return;
                 if (accountPopup != null) accountPopup.dismiss();
-                accountNames = names;
-                if (names.size() == 1) accountName.setText(names.get(0));
+                accounts = snapshot.accounts;
+                battleNetAccount = snapshot.selected;
+                renderAccount();
             });
         });
     }
 
+    /** The license Play will use: the one chosen here, else Battle.net's own selection. */
+    private BattleNetGameAccounts.Account playAccount() {
+        if (selectedEntry == null) return null;
+        BattleNetGameAccounts.Account chosen = BattleNetGameAccounts.Account.fromId(
+                WeHavePhonesConfig.getGameAccount(requireContext(), selectedEntry.uid));
+        if (chosen != null && accounts.contains(chosen)) return chosen;
+        if (battleNetAccount != null && accounts.contains(battleNetAccount)) return battleNetAccount;
+        return accounts.isEmpty() ? null : accounts.get(0);
+    }
+
+    private String accountLabel(BattleNetGameAccounts.Account account) {
+        for (BattleNetGameAccounts.Account other : accounts) {
+            if (!other.region.equals(account.region)) {
+                return getString(R.string.wehavephones_account_with_region, account.name, account.region);
+            }
+        }
+        return account.name;
+    }
+
+    private void renderAccount() {
+        BattleNetGameAccounts.Account account = playAccount();
+        if (account == null) accountName.setText(R.string.wehavephones_account_bnet_default);
+        else accountName.setText(accountLabel(account));
+        renderGameActions();
+    }
+
     private void showAccounts() {
-        if (accountPopup != null || !accountSwitch.isEnabled()) return;
+        if (accountPopup != null || !accountSwitch.isEnabled() || accounts.size() < 2) return;
         Context context = requireContext();
-        List<String> rows = new ArrayList<>(accountNames);
-        rows.add(getString(R.string.wehavephones_account_choose_in_bnet));
-        int chooseInBattleNet = rows.size() - 1;
+        final List<BattleNetGameAccounts.Account> choices = accounts;
+        final BattleNetGameActions.Entry entry = selectedEntry;
+        List<String> rows = new ArrayList<>();
+        for (BattleNetGameAccounts.Account account : choices) rows.add(accountLabel(account));
         ListPopupWindow popup = new ListPopupWindow(context);
         accountPopup = popup;
         popup.setAnchorView(accountSwitch);
         popup.setWidth(accountSwitch.getWidth());
         popup.setBackgroundDrawable(context.getDrawable(R.drawable.wehavephones_card_background));
         popup.setModal(true);
-        popup.setAdapter(new ArrayAdapter<String>(context, android.R.layout.simple_list_item_1, rows) {
-            @Override
-            public boolean areAllItemsEnabled() {
-                return false;
-            }
-
-            @Override
-            public boolean isEnabled(int position) {
-                return position == chooseInBattleNet;
-            }
-        });
+        popup.setAdapter(new ArrayAdapter<>(context, android.R.layout.simple_list_item_1, rows));
         popup.setOnDismissListener(() -> accountPopup = null);
         popup.setOnItemClickListener((parent, item, position, id) -> {
-            if (position != chooseInBattleNet) return;
             popup.dismiss();
-            openBattleNet.performClick();
+            if (entry != selectedEntry) return;
+            // Applied by Play (OneButtonLauncher), which selects it in Battle.net before clicking Play.
+            WeHavePhonesConfig.setGameAccount(context, entry.uid, choices.get(position).id());
+            renderAccount();
         });
         popup.show();
     }
@@ -388,7 +410,8 @@ public class HomeFragment extends Fragment {
         uninstallGame.setEnabled(manage);
         boolean showAccount = !blocked && game != null;
         accountSection.setVisibility(showAccount ? View.VISIBLE : View.GONE);
-        accountSwitch.setEnabled(showAccount && openBattleNet.isEnabled());
+        accountSwitch.setEnabled(showAccount && !busy && accounts.size() > 1);
+        accountCaret.setVisibility(accounts.size() > 1 ? View.VISIBLE : View.INVISIBLE);
         ViewGroup.MarginLayoutParams driverLayout = (ViewGroup.MarginLayoutParams)driverSection.getLayoutParams();
         int driverMargin = showAccount ? Math.round(10 * getResources().getDisplayMetrics().density) : 0;
         if (driverLayout.getMarginStart() != driverMargin) {

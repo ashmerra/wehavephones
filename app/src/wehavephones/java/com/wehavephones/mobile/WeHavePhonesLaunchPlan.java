@@ -185,6 +185,21 @@ public final class WeHavePhonesLaunchPlan {
     public int playFromLeft = 155;
     public int playFromBottom = 108;
     /**
+     * Battle.net's WoW license dropdown, in X pixels above the Play click
+     * point. With more than one license the Play panel shows it directly
+     * above Play, in the slot the game version dropdown takes otherwise
+     * (measured from that dropdown on the S23: about 30 high, its centre 53
+     * above Play's).
+     */
+    public int accountFromPlay = 53;
+    /**
+     * The dropdown's menu opens upward: its last row's centre is
+     * {@code accountLastRowAbove} above the dropdown's, and rows are
+     * {@code accountRowHeight} apart (S23, Battle.net 2.53).
+     */
+    public int accountLastRowAbove = 45;
+    public int accountRowHeight = 32;
+    /**
      * Play clicks before giving up, {@code playWaitSeconds} apart. Battle.net's
      * page can take minutes to render after sign-in on a phone and drops
      * clicks until then, so the click repeats until the game starts.
@@ -258,6 +273,9 @@ public final class WeHavePhonesLaunchPlan {
         if (play != null) {
             playFromLeft = play.optInt("fromLeft", playFromLeft);
             playFromBottom = play.optInt("fromBottom", playFromBottom);
+            accountFromPlay = play.optInt("accountFromPlay", accountFromPlay);
+            accountLastRowAbove = play.optInt("accountLastRowAbove", accountLastRowAbove);
+            accountRowHeight = play.optInt("accountRowHeight", accountRowHeight);
             playAttempts = Math.max(1, play.optInt("attempts", playAttempts));
             playWaitSeconds = Math.max(1, play.optInt("waitSeconds", playWaitSeconds));
             launcherRestarts = Math.max(0, play.optInt("restarts", launcherRestarts));

@@ -74,6 +74,10 @@ public final class OneButtonLauncher {
     private static final int PLAY_FILL_OFFSET = -95;
     private static final int GEAR_FILL_OFFSET = 140;
     private static final int PROBE_RADIUS = 2;
+    /** How long the license menu may take to open (Battle.net may paint at 2-3 FPS). */
+    private static final long ACCOUNT_OPEN_WAIT_MS = 8000L;
+    /** Readings this far left and right of the row's centre, inside the menu (about 230 wide). */
+    private static final int ROW_PROBE_SPREAD = 70;
 
     private static volatile OneButtonLauncher active;
     private static final java.util.concurrent.atomic.AtomicInteger GENERATION = new java.util.concurrent.atomic.AtomicInteger();
@@ -95,8 +99,16 @@ public final class OneButtonLauncher {
     private final JSONArray attemptsJson = new JSONArray();
     private final long startedAt = SystemClock.elapsedRealtime();
     private long gameSeenAt;
-    /** Battle.net's Play button reads as greyed out: stop the ladder instead of retrying. */
-    private boolean playUnavailable;
+    /**
+     * Stop the ladder instead of retrying: Battle.net's Play button reads as
+     * greyed out, or the WoW license chosen on Play could not be selected.
+     */
+    private boolean launchStopped;
+    /** The license chosen on Play that Battle.net should launch, or null for its own choice. */
+    private BattleNetGameAccounts.Account expectedAccount;
+    /** The Battle.net log during which the license was switched. */
+    private File accountSwitchedIn;
+    private int accountMenuMisses;
     /** Update clicks after Agent failed an update, for the whole launch. */
     private int updateRetries;
     /** The log whose update failures were counted; a restarted Battle.net starts over. */
@@ -322,7 +334,7 @@ public final class OneButtonLauncher {
                 return true;
             }
             event("attempt " + attempt.describe() + (sent ? " did not start the game" : " could not be sent"));
-            if (playUnavailable) return true;
+            if (launchStopped) return true;
         }
         return false;
     }
@@ -460,7 +472,7 @@ public final class OneButtonLauncher {
                 + "); clicking Update (" + updateRetries + "/" + plan.updateRetries + ")");
         int startsBefore = log.updateStarts(product.uid);
         if (!clickMainButton("Update", false)) {
-            if (!running || playUnavailable) return false;
+            if (!running || launchStopped) return false;
             return failUpdate(log);
         }
         startsBeforeRetry = startsBefore;
@@ -605,15 +617,180 @@ public final class OneButtonLauncher {
             // pre-release like the Forever Stress Test): clicking it does
             // nothing, so the normal retries and Battle.net restarts would
             // only delay the same outcome.
-            playUnavailable = true;
+            launchStopped = true;
             bringSessionToFront();
             fail(appContext.getString(R.string.wehavephones_launch_play_unavailable));
             return false;
         }
         if (!running) return false;
+        if (probe) {
+            AccountStep step = selectGameAccount(xServer, target[0], target[1]);
+            if (step == AccountStep.STOP) launchStopped = true;
+            if (step != AccountStep.DONE) return false;
+        }
+        if (!running) return false;
         SessionInput.click(xServer, target[0], target[1]);
         event("clicked " + label + " at X " + target[0] + "," + target[1] + " (Battle.net window " + found[0] + ")");
         return true;
+    }
+
+    /**
+     * Selects the WoW license chosen on Play when Battle.net has another one
+     * selected. Battle.net keeps its choice to itself, so this goes through
+     * its Play panel: a click on the license dropdown above Play opens its
+     * menu upward, and a click on the chosen row (rows are sorted by name)
+     * selects it. Battle.net logs its selection when it starts
+     * but not a change in the dropdown, so the switch is checked when the game
+     * starts instead ({@link #checkLaunchedAccount}). With no choice saved (or
+     * one Battle.net does not list) Battle.net's own selection stays.
+     */
+    private enum AccountStep {
+        /** Play may be clicked. */
+        DONE,
+        /** The page has not painted: this attempt is not sent, the ladder goes on (and restarts Battle.net). */
+        RETRY,
+        /** The launch failed or was cancelled. */
+        STOP
+    }
+
+    private AccountStep selectGameAccount(XServer xServer, int playX, int playY) {
+        BattleNetGameAccounts.Account wanted = BattleNetGameAccounts.Account.fromId(
+                WeHavePhonesConfig.getGameAccount(appContext, product.uid));
+        if (wanted == null) return AccountStep.DONE;
+        File logsDir = WeHavePhonesPaths.bnetLogsDir(container);
+        BattleNetLauncherLog log = pollLog(logsDir);
+        if (log == null) return AccountStep.DONE;
+        // Already switched in this Battle.net run: its log still shows the old selection.
+        if (tail.file.equals(accountSwitchedIn)) return AccountStep.DONE;
+        BattleNetGameAccounts.Snapshot snapshot = BattleNetGameAccounts.read(logsDir, product.uid);
+        if (!snapshot.accounts.contains(wanted)) {
+            event("Battle.net does not list the chosen license " + wanted.name + "; keeping its selection");
+            return AccountStep.DONE;
+        }
+        expectedAccount = wanted;
+        BattleNetGameAccounts.Account current = log.accountSelection(product.uid);
+        if (wanted.equals(current)) return AccountStep.DONE;
+        Integer steps = current != null ? BattleNetGameAccounts.steps(snapshot.accounts, current, wanted) : null;
+        if (steps == null) {
+            event("cannot place " + wanted.name + " in Battle.net's license list (selected: "
+                    + (current != null ? current.name : "unknown") + ")");
+            return failGameAccount(wanted);
+        }
+        // Battle.net drops clicks until its page has painted. Play's accent fill marks that.
+        // Like a Play click, a page that does not paint costs this attempt only.
+        long readyBy = SystemClock.elapsedRealtime() + plan.playWaitSeconds * 1000L;
+        BattleNetPlayButton.State state;
+        while ((state = readPlayButton(xServer, playX, playY)) != BattleNetPlayButton.State.ENABLED) {
+            if (!running) return AccountStep.STOP;
+            if (SystemClock.elapsedRealtime() > readyBy) {
+                event("Battle.net's Play panel has not painted (" + state + "); " + wanted.name + " not selected yet");
+                return AccountStep.RETRY;
+            }
+            sleep(1000);
+        }
+        // The menu opens upward over the page: its last row sits just above
+        // the dropdown, the others above that, one row height apart.
+        int rows = snapshot.accounts.size();
+        int dropdownY = playY - plan.accountFromPlay;
+        int rowY = dropdownY - plan.accountLastRowAbove
+                - (rows - 1 - snapshot.accounts.indexOf(wanted)) * plan.accountRowHeight;
+        // The page keeps loading for a moment after Play paints.
+        sleep(2000);
+        if (!running) return AccountStep.STOP;
+        int[] before = rowPixels(xServer, playX, rowY);
+        SessionInput.click(xServer, playX, dropdownY);
+        event("clicked the license dropdown at X " + playX + "," + dropdownY + " to switch " + current.name + " -> "
+                + wanted.name + " (row " + (snapshot.accounts.indexOf(wanted) + 1) + " of " + rows + " at y " + rowY + ")");
+        // Battle.net can paint at 2-3 FPS here. Click the row only once the
+        // menu covers it, or the click would land on the page below it.
+        long openBy = SystemClock.elapsedRealtime() + ACCOUNT_OPEN_WAIT_MS;
+        int[] after = before;
+        while (running && !menuCovers(before, after)) {
+            if (SystemClock.elapsedRealtime() > openBy) {
+                event("the license menu did not open (row pixels " + describe(before) + " -> " + describe(after) + ")");
+                // Play was not clicked, so another try is harmless. Escape closes a menu that opened late.
+                SessionInput.key(xServer, XKeycode.KEY_ESC);
+                return ++accountMenuMisses < 2 ? AccountStep.RETRY : failGameAccount(wanted);
+            }
+            sleep(300);
+            after = rowPixels(xServer, playX, rowY);
+        }
+        if (!running) return AccountStep.STOP;
+        sleep(500);
+        SessionInput.click(xServer, playX, rowY);
+        event("clicked license row " + wanted.name + " at X " + playX + "," + rowY + " (row pixels "
+                + describe(before) + " -> " + describe(after) + ")");
+        accountSwitchedIn = tail.file;
+        sleep(1500);
+        return running ? AccountStep.DONE : AccountStep.STOP;
+    }
+
+    /** Three readings across the menu row's width (the menu is as wide as Play and its gear). */
+    private static int[] rowPixels(XServer xServer, int x, int y) {
+        return new int[] {
+                SessionInput.averagePixel(xServer, x - ROW_PROBE_SPREAD, y, PROBE_RADIUS),
+                SessionInput.averagePixel(xServer, x, y, PROBE_RADIUS),
+                SessionInput.averagePixel(xServer, x + ROW_PROBE_SPREAD, y, PROBE_RADIUS),
+        };
+    }
+
+    private static String describe(int[] pixels) {
+        StringBuilder out = new StringBuilder();
+        for (int pixel : pixels) out.append(out.length() > 0 ? " " : "").append(BattleNetPlayButton.hex(pixel));
+        return out.toString();
+    }
+
+    /**
+     * True when the readings changed as the menu covers the page. On the S23
+     * the menu changed the row spot by 15 to 17 summed RGB levels at each
+     * point (2026-11-20). A false reading costs little: the launch still
+     * checks the license Battle.net starts.
+     */
+    static boolean menuCovers(int[] before, int[] after) {
+        int total = 0;
+        for (int i = 0; i < before.length; i++) {
+            int a = before[i];
+            int b = after[i];
+            if (a < 0 || b < 0) return false;
+            total += Math.abs(((a >> 16) & 0xFF) - ((b >> 16) & 0xFF)) + Math.abs(((a >> 8) & 0xFF) - ((b >> 8) & 0xFF))
+                    + Math.abs((a & 0xFF) - (b & 0xFF));
+        }
+        return total >= 9 * before.length;
+    }
+
+    /**
+     * Battle.net logs the license it starts the game with
+     * ({@code Game launch options: programId=WoW GAME_ACCOUNT=WoW1 REGION=US}).
+     * True when it is the chosen one (or none was chosen). Otherwise the game
+     * is closed at once, before it signs in, and the launch fails.
+     */
+    private boolean checkLaunchedAccount(ProcessScanner.Entry wow) {
+        BattleNetGameAccounts.Account wanted = expectedAccount;
+        if (wanted == null) return true;
+        BattleNetGameAccounts.Account launched = tail != null ? tail.log.launchAccount() : null;
+        if (launched == null) {
+            event("Battle.net did not log the license it launched; expected " + wanted.name);
+            return true;
+        }
+        put("gameAccount", launched.name);
+        if (wanted.equals(launched)) {
+            event("Battle.net launched license " + launched.name);
+            return true;
+        }
+        event("Battle.net launched license " + launched.name + " instead of " + wanted.name + "; closing the game");
+        // Before sign-in: WoW is still loading with Battle.net's login ticket.
+        android.os.Process.killProcess(wow.pid);
+        put("gameAccountFailed", wanted.name);
+        bringSessionToFront();
+        fail(appContext.getString(R.string.wehavephones_launch_account_wrong, launched.name, wanted.name));
+        return false;
+    }
+
+    private AccountStep failGameAccount(BattleNetGameAccounts.Account wanted) {
+        put("gameAccountFailed", wanted.name);
+        bringSessionToFront();
+        fail(appContext.getString(R.string.wehavephones_launch_account_failed, wanted.name));
+        return AccountStep.STOP;
     }
 
     /**
@@ -626,19 +803,23 @@ public final class OneButtonLauncher {
      */
     private boolean probePlayButton(XServer xServer, int playX, int playY) {
         for (int attempt = 0; attempt < 2; attempt++) {
-            int playFill = SessionInput.averagePixel(xServer, playX + PLAY_FILL_OFFSET, playY, PROBE_RADIUS);
-            int gearFill = SessionInput.averagePixel(xServer, playX + GEAR_FILL_OFFSET, playY, PROBE_RADIUS);
-            BattleNetPlayButton.State state = BattleNetPlayButton.classify(playFill, gearFill);
-            put("playFill", BattleNetPlayButton.hex(playFill));
-            put("gearFill", BattleNetPlayButton.hex(gearFill));
-            put("playButton", state.name().toLowerCase(Locale.ROOT));
-            event("Play button probe: " + state + " (fill " + BattleNetPlayButton.hex(playFill)
-                    + ", gear " + BattleNetPlayButton.hex(gearFill) + ")");
-            if (state != BattleNetPlayButton.State.DISABLED) return false;
+            if (readPlayButton(xServer, playX, playY) != BattleNetPlayButton.State.DISABLED) return false;
             if (!running) return false;
             if (attempt == 0) sleep(800);
         }
         return true;
+    }
+
+    private BattleNetPlayButton.State readPlayButton(XServer xServer, int playX, int playY) {
+        int playFill = SessionInput.averagePixel(xServer, playX + PLAY_FILL_OFFSET, playY, PROBE_RADIUS);
+        int gearFill = SessionInput.averagePixel(xServer, playX + GEAR_FILL_OFFSET, playY, PROBE_RADIUS);
+        BattleNetPlayButton.State state = BattleNetPlayButton.classify(playFill, gearFill);
+        put("playFill", BattleNetPlayButton.hex(playFill));
+        put("gearFill", BattleNetPlayButton.hex(gearFill));
+        put("playButton", state.name().toLowerCase(Locale.ROOT));
+        event("Play button probe: " + state + " (fill " + BattleNetPlayButton.hex(playFill)
+                + ", gear " + BattleNetPlayButton.hex(gearFill) + ")");
+        return state;
     }
 
     private boolean waitForSpawn(long timeoutMs, int launchesBefore) {
@@ -678,6 +859,7 @@ public final class OneButtonLauncher {
             fail(appContext.getString(R.string.wehavephones_launch_exited));
             return;
         }
+        if (!checkLaunchedAccount(wow)) return;
         put("wowPid", wow.pid);
         event("WoW process " + wow.pid + " (" + wow.name + ") via " + path);
         bringSessionToFront();

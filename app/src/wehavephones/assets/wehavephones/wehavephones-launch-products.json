@@ -17,9 +17,12 @@
     { "dir": "_forever_", "uid": "wowf", "execCodes": ["WoWF"], "exe": "", "confidence": "community", "note": "World of Warcraft: Forever (product wowf, directory _forever_); offered since 2026-10-15 as the October 19 Forever Stress Test and reused for the live game launching 2026-11-04. uid and product come from the launcher's InstallState/ProductManager data; the scanner picks the real exe and the direct rung uses the -uid from the launcher log. Hot-fix with launch-overrides.json." }
   ],
   "playButton": {
-    "comment": "Battle.net's Play button in X pixels from the main window's left and bottom edges, measured on the S23 (1280x720 X screen, Battle.net 2.53; the button spans 39-272 across and 81-136 up). Battle.net starts with --game=<uid> on the game's page; Play is clicked every waitSeconds until the game starts (the page can take minutes to render); after attempts clicks Battle.net is restarted, up to restarts times (it sometimes hangs before its page renders).",
+    "comment": "Battle.net's Play button in X pixels from the main window's left and bottom edges, measured on the S23 (1280x720 X screen, Battle.net 2.53; the button spans 39-272 across and 81-136 up). Battle.net starts with --game=<uid> on the game's page; Play is clicked every waitSeconds until the game starts (the page can take minutes to render); after attempts clicks Battle.net is restarted, up to restarts times (it sometimes hangs before its page renders). accountFromPlay is the WoW license dropdown's centre above the Play click point: with more than one license Battle.net shows it directly above Play, where the game version dropdown sits otherwise (about 30 high, centre 53 above Play's). Its menu opens upward: the last row's centre is accountLastRowAbove above the dropdown's and rows are accountRowHeight apart, sorted by name.",
     "fromLeft": 155,
     "fromBottom": 108,
+    "accountFromPlay": 53,
+    "accountLastRowAbove": 45,
+    "accountRowHeight": 32,
     "attempts": 6,
     "waitSeconds": 10,
     "restarts": 2,

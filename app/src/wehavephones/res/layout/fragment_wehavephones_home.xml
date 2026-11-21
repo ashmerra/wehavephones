@@ -188,7 +188,9 @@
                         android:id="@+id/TVAccountName"
                         style="@style/WeHavePhonesPlayPickerValue"
                         android:text="@string/wehavephones_account_bnet_default" />
-                    <ImageView style="@style/WeHavePhonesPlayPickerCaret" />
+                    <ImageView
+                        android:id="@+id/IVAccountCaret"
+                        style="@style/WeHavePhonesPlayPickerCaret" />
                 </LinearLayout>
             </LinearLayout>
             <LinearLayout
