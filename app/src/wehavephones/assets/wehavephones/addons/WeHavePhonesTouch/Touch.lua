@@ -56,6 +56,8 @@ local bindings = {
     ["SHIFT-F7"] = "NAMEPLATES",
     -- Dungeons & Raids. Only the Retail-based clients are checked so far.
     ["CTRL-SHIFT-INSERT"] = retail and "TOGGLEGROUPFINDER" or nil,
+    -- Guild & Communities. Checked on Forever.
+    ["CTRL-SHIFT-HOME"] = retail and "TOGGLEGUILDTAB" or nil,
 }
 
 local function Notice(text)

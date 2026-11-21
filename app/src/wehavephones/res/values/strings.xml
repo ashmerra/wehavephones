@@ -493,6 +493,7 @@ World of Warcraft, Warcraft, Battle.net and Blizzard Entertainment are trademark
     <string name="wehavephones_touch_act_talents">Talents</string>
     <string name="wehavephones_touch_act_quests">Quest log</string>
     <string name="wehavephones_touch_act_social">Social</string>
+    <string name="wehavephones_touch_act_guild">Guild</string>
     <string name="wehavephones_touch_act_skills">Skills</string>
     <string name="wehavephones_touch_act_reputation">Reputation</string>
     <string name="wehavephones_touch_act_honor">Honor</string>

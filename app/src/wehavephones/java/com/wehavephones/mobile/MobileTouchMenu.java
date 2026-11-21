@@ -42,6 +42,7 @@ final class MobileTouchMenu {
         MAP(Category.WINDOWS, R.drawable.wehavephones_touch_ic_map_trifold, R.string.wehavephones_touch_map),
         BAGS(Category.WINDOWS, R.drawable.wehavephones_touch_ic_backpack, R.string.wehavephones_touch_bags),
         SOCIAL(Category.WINDOWS, R.drawable.wehavephones_touch_ic_users_three, R.string.wehavephones_touch_act_social),
+        GUILD(Category.WINDOWS, R.drawable.wehavephones_touch_ic_shield_chevron, R.string.wehavephones_touch_act_guild),
         SKILLS(Category.WINDOWS, R.drawable.wehavephones_touch_ic_chart_bar, R.string.wehavephones_touch_act_skills),
         REPUTATION(Category.WINDOWS, R.drawable.wehavephones_touch_ic_handshake, R.string.wehavephones_touch_act_reputation),
         HONOR(Category.WINDOWS, R.drawable.wehavephones_touch_ic_flag_banner, R.string.wehavephones_touch_act_honor),
