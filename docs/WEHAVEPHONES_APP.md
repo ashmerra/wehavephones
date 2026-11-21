@@ -381,14 +381,20 @@ name. Picking a license saves it for that game and changes nothing until Play.
 
 Battle.net keeps its selection to itself, so Play applies the choice through
 Battle.net's Play panel. Battle.net logs the license it selected when it
-starts. When that is another license, `OneButtonLauncher` waits for the page
-to paint and clicks the license dropdown above Battle.net's Play button. The
+starts, but not a change made in its dropdown. So when Play started Battle.net
+and that license is the chosen one, nothing is clicked. Otherwise, and always
+when Battle.net was already open (for example after updating there),
+`OneButtonLauncher` waits for the page to paint and clicks the license dropdown
+above Battle.net's Play button. The
 menu opens upward with one row per license, sorted by name. Once the pixels
 where the chosen row will appear change (the menu has opened), the launcher
 clicks that row, then Play. `accountFromPlay`, `accountLastRowAbove` and
-`accountRowHeight` in the launch table hold the positions. A page that has not
-painted costs one Play attempt, like a dropped Play click. A menu that does not
-open twice stops the launch.
+`accountRowHeight` in the launch table hold the positions. This runs after the
+update gate, so a game Battle.net patches first gets the license the same way.
+A page that has not painted or a menu that does not open (What's New after an
+update, or a Battle.net that hangs half drawn) costs one Play attempt, like a
+dropped Play click, so the usual Battle.net restarts apply. When the attempts
+run out after such misses, the launch stops with the license message.
 
 Battle.net does not log a change made in the dropdown, so the check comes at
 launch. Battle.net logs the license it starts the game with

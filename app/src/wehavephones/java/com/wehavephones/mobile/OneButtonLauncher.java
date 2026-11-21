@@ -109,6 +109,12 @@ public final class OneButtonLauncher {
     /** The Battle.net log during which the license was switched. */
     private File accountSwitchedIn;
     private int accountMenuMisses;
+    /**
+     * This launch started the Battle.net that is running, so the selection it
+     * logged at startup is still its selection. In a Battle.net that was
+     * already open the player may have changed it, which Battle.net does not log.
+     */
+    private boolean bnetStartedHere;
     /** Update clicks after Agent failed an update, for the whole launch. */
     private int updateRetries;
     /** The log whose update failures were counted; a restarted Battle.net starts over. */
@@ -244,6 +250,7 @@ public final class OneButtonLauncher {
         File logsDir = WeHavePhonesPaths.bnetLogsDir(container);
         boolean launcherRunning = ProcessScanner.isLauncherRunning();
         if (!warm || !launcherRunning) logsNewerThan = newestLogName(logsDir);
+        bnetStartedHere = !(warm && launcherRunning);
 
         prepareBnetConfig(launcherRunning);
         // A cold --exec could start a streaming install before the update gate.
@@ -311,9 +318,14 @@ public final class OneButtonLauncher {
             sleep(3000);
             logsNewerThan = newestLogName(logsDir);
             tail = null;
+            bnetStartedHere = true;
             if (!execInSession(liveWinHandler(), WeHavePhonesLaunchPlan.START_BAT_GUEST)) break;
         }
         bringSessionToFront();
+        if (accountMenuMisses > 0 && expectedAccount != null) {
+            fail(appContext.getString(R.string.wehavephones_launch_account_failed, expectedAccount.name));
+            return;
+        }
         fail(appContext.getString(R.string.wehavephones_launch_failed, String.join(", ", tried)));
     }
 
@@ -668,12 +680,13 @@ public final class OneButtonLauncher {
             return AccountStep.DONE;
         }
         expectedAccount = wanted;
+        // With one license Battle.net shows no license dropdown, and there is nothing to switch.
+        if (snapshot.accounts.size() < 2) return AccountStep.DONE;
         BattleNetGameAccounts.Account current = log.accountSelection(product.uid);
-        if (wanted.equals(current)) return AccountStep.DONE;
-        Integer steps = current != null ? BattleNetGameAccounts.steps(snapshot.accounts, current, wanted) : null;
-        if (steps == null) {
-            event("cannot place " + wanted.name + " in Battle.net's license list (selected: "
-                    + (current != null ? current.name : "unknown") + ")");
+        if (bnetStartedHere && wanted.equals(current)) return AccountStep.DONE;
+        // The row is found by name. Licenses with equal names have no fixed order.
+        if (BattleNetGameAccounts.steps(snapshot.accounts, wanted, wanted) == null) {
+            event("cannot place " + wanted.name + " in Battle.net's license list");
             return failGameAccount(wanted);
         }
         // Battle.net drops clicks until its page has painted. Play's accent fill marks that.
@@ -699,8 +712,9 @@ public final class OneButtonLauncher {
         if (!running) return AccountStep.STOP;
         int[] before = rowPixels(xServer, playX, rowY);
         SessionInput.click(xServer, playX, dropdownY);
-        event("clicked the license dropdown at X " + playX + "," + dropdownY + " to switch " + current.name + " -> "
-                + wanted.name + " (row " + (snapshot.accounts.indexOf(wanted) + 1) + " of " + rows + " at y " + rowY + ")");
+        event("clicked the license dropdown at X " + playX + "," + dropdownY + " to select " + wanted.name
+                + " (Battle.net " + (current != null ? current.name : "unknown")
+                + (bnetStartedHere ? "" : ", already open") + ", row " + (snapshot.accounts.indexOf(wanted) + 1) + " of " + rows + " at y " + rowY + ")");
         // Battle.net can paint at 2-3 FPS here. Click the row only once the
         // menu covers it, or the click would land on the page below it.
         long openBy = SystemClock.elapsedRealtime() + ACCOUNT_OPEN_WAIT_MS;
@@ -709,8 +723,11 @@ public final class OneButtonLauncher {
             if (SystemClock.elapsedRealtime() > openBy) {
                 event("the license menu did not open (row pixels " + describe(before) + " -> " + describe(after) + ")");
                 // Play was not clicked, so another try is harmless. Escape closes a menu that opened late.
+                // After an update Battle.net's What's New can cover the page (each attempt sends Escape
+                // first), and a Battle.net that hangs half drawn is restarted by the ladder, as for Play.
                 SessionInput.key(xServer, XKeycode.KEY_ESC);
-                return ++accountMenuMisses < 2 ? AccountStep.RETRY : failGameAccount(wanted);
+                accountMenuMisses++;
+                return AccountStep.RETRY;
             }
             sleep(300);
             after = rowPixels(xServer, playX, rowY);
