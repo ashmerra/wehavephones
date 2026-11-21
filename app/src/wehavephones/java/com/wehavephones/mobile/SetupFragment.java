@@ -203,7 +203,6 @@ public class SetupFragment extends Fragment {
                     return;
                 }
                 WeHavePhonesContainers.remember(activity, container);
-                activity.updateStageStatus(getString(R.string.wehavephones_settings_container_selected, container.getName()), false);
             }
 
             @Override

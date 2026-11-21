@@ -420,7 +420,7 @@ public class HomeFragment extends Fragment {
         }
     }
 
-    /** "<stage>. <what Play will do>", or the error alone in red. */
+    /** The current stage, or the error in red. */
     private void renderStageStatus() {
         Context context = requireContext();
         int missing = missingSetup();
@@ -444,9 +444,6 @@ public class HomeFragment extends Fragment {
         }
         else {
             text.setSpan(new ForegroundColorSpan(context.getColor(R.color.wehavephones_text)), 0, text.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-            if (selectedEntry != null && selectedEntry.game.installed && !hasUpdate(selectedEntry.game)) {
-                text.append(' ').append(getString(R.string.wehavephones_home_plan_battlenet));
-            }
         }
         stageStatus.setText(text);
     }

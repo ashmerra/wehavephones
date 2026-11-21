@@ -46,7 +46,6 @@
     <string name="wehavephones_missing_bnet">Battle.net isn\'t installed yet.</string>
 
     <string name="wehavephones_home_update_available">Update %1$s available</string>
-    <string name="wehavephones_home_plan_battlenet">Play opens Battle.net for sign-in and patches, then enters the game.</string>
     <string name="wehavephones_stage_idle">Ready.</string>
 
     <string name="wehavephones_first_run_label">FIRST-TIME SETUP</string>
@@ -137,7 +136,6 @@
     <string name="wehavephones_settings_container_hint">Play, Battle.net, and Add-ons use this container. Close the running session before switching.</string>
     <string name="wehavephones_settings_container_manage">Manage</string>
     <string name="wehavephones_settings_container_new">Add New</string>
-    <string name="wehavephones_settings_container_selected">Active container: %1$s.</string>
     <string name="wehavephones_settings_container_busy">Close the running session before changing containers.</string>
 
     <string name="wehavephones_diag_refresh">Refresh</string>
