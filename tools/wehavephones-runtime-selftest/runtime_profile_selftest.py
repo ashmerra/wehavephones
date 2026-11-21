@@ -67,9 +67,9 @@ EXPECTED_P10_GE34_NTDLL = [
     ("ntdll/ntdll-grace-copysafe-10.0-34.dll",
      "container:.wine/drive_c/windows/system32/ntdll.dll",
      "09adc21f8400fe3d2c46e227d1c423e0e06a91b338b5343beddc0da014df9cd8"),
-    ("ntdll/ntdll-grace-copysafe-10.0-34.so",
+    ("ntdll/ntdll-grace-copysafe-reuse-10.0-34.so",
      "opt/{wineVersion}/lib/wine/aarch64-unix/ntdll.so",
-     "9f3e55a032b2a22fb025676b9c010ec97a454c84b8d955036d452699b3b0cd16"),
+     "8641dcc2e79aad22e565ba8a303d5596e28aad482d63384a87383b7f9680e0a9"),
 ]
 
 EXPECTED_P10_GE34_FILES = [
@@ -191,8 +191,8 @@ def main():
         for role, asset, source_name in (
             ("ntdll-pe-patched", "ntdll/ntdll-grace-copysafe-10.0-34.dll",
              "ntdll-grace-copysafe-10.0-34.dll"),
-            ("ntdll-unix-patched", "ntdll/ntdll-grace-copysafe-10.0-34.so",
-             "ntdll-grace-copysafe-10.0-34.so"),
+            ("ntdll-unix-patched", "ntdll/ntdll-grace-copysafe-reuse-10.0-34.so",
+             "ntdll-grace-copysafe-reuse-10.0-34.so"),
             ("wow-d3d12", "dll/arm64-vkd3d.dll", "d3d12.dll"),
             ("wow-libcxx", "dll/arm64-libc++.dll", "libc++.dll"),
             ("wow-libunwind", "dll/arm64-libunwind.dll", "libunwind.dll"),

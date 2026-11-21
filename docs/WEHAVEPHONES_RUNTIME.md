@@ -32,7 +32,7 @@ The profile is
 | --- | --- |
 | `wineVersion` | `proton-10.0-34-arm64ec` |
 | Battle.net flags (`bnet.bat`) | `--disable-gpu --enable-features=NetworkServiceInProcess2` |
-| Environment | `FEX_MULTIBLOCK=0`, `MESA_SHADER_CACHE_DISABLE=false`, `WINE_FDSAN_LEVEL=off` |
+| Environment | `FEX_MULTIBLOCK=0`, `MESA_SHADER_CACHE_DISABLE=false`, `WINE_FDSAN_LEVEL=off`, `WINE_ESYNC_RECYCLE=` the WoW executables (see [Event reuse](#event-reuse-in-ntdll)) |
 | Graphics driver | `turnip26.3.0-devel-1b51639c20` |
 
 Artifacts it installs:
@@ -41,7 +41,7 @@ Artifacts it installs:
 | --- | --- | --- |
 | layer `GE-proton-10.0-34-arm64ec.wcp` | `files/imagefs/opt/proton-10.0-34-arm64ec` | `50344ec9…` |
 | `ntdll-grace-copysafe-10.0-34.dll` | `opt/proton-10.0-34-arm64ec/lib/wine/aarch64-windows/ntdll.dll` and prefix `drive_c/windows/system32/ntdll.dll` | `09adc21f…` |
-| `ntdll-grace-copysafe-10.0-34.so` | `opt/proton-10.0-34-arm64ec/lib/wine/aarch64-unix/ntdll.so` | `9f3e55a0…` |
+| `ntdll-grace-copysafe-reuse-10.0-34.so` | `opt/proton-10.0-34-arm64ec/lib/wine/aarch64-unix/ntdll.so` | `8641dcc2…` |
 | `arm64-vkd3d.dll`, `arm64-libc++.dll`, `arm64-libunwind.dll` | `C:\arm64-*.dll` in the prefix | `f1c11399…`, `ed9edb58…`, `535c6c86…` |
 | `wineserver-android-owner-10.0-34` | `opt/proton-10.0-34-arm64ec/bin/wineserver` | `d7454aa4…` |
 | `win32u-copydata-textfield-10.0-34.so` | `opt/proton-10.0-34-arm64ec/lib/wine/aarch64-unix/win32u.so` | `32f652d2…` |
@@ -218,8 +218,63 @@ WoW starts and Battle.net still renders.
   contained x86-64 libraries. The GUI drivers come from the GE layer. The host
   `wine-tools` build needed `--without-freetype`, and a stray x86-64
   `libunwind.a` had to be moved out of the way.
-- The resulting `ntdll.dll` and `ntdll.so` are the two files pinned by SHA-256 in
-  the runtime profile.
+- The resulting `ntdll.dll` is pinned by SHA-256 in the runtime profile. The
+  `ntdll.so` from this build was later replaced by the one described in
+  [Event reuse in ntdll](#event-reuse-in-ntdll).
+
+## Event reuse in ntdll
+
+`patches/wine/esync-event-reuse-wine10.patch` changes only the unix side of
+`ntdll` (`ntdll.so`). Under esync, creating an event costs a `wineserver`
+call, an `eventfd` and a file descriptor transfer, and closing it costs another
+server call. For a few minutes after entering the world, WoW's three
+`Net Queue` threads each create and close an unnamed event thousands of times a
+second. On a Galaxy S23+ in Forever that kept `wineserver` at about 40% of a
+core, and WoW's two `TACT Task Threads` spun on a lock for most of another core
+each.
+
+For the programs listed in `WINE_ESYNC_RECYCLE` (comma separated executable
+names, case-insensitive), `NtClose` on an unnamed event keeps the server object
+and its `eventfd`. The handle is reset and parked, and the next unnamed event of
+the same type and access is that handle again, with no server call. At most 64
+handles of each event type are parked per process. Only events that the process
+created itself with no name, root directory, security descriptor or inherit
+flag qualify. Duplicating a handle or changing its handle flags makes it
+ineligible, and closing a parked handle again returns `STATUS_INVALID_HANDLE`.
+Another process can duplicate a handle out of WoW without `ntdll` noticing,
+which would make a reused event shared. The profile therefore lists only the
+WoW executables, and Battle.net, its Chromium processes and Wine's own
+services close events as before. Without the variable the patched `ntdll.so`
+behaves like the stock one. The variable's value is read once per process, and
+the first match is logged to the session's Wine log as
+`esync: reusing unnamed events in <exe>`.
+
+Measured in Forever on the S23+ over the first 2.5 minutes in the world, with
+the same build for both runs: `wineserver` went from about 41% to 10% of a core
+and the WoW process from about 3.6 to 1.8 cores. The `Net Queue` and
+`TACT Task Threads` no longer showed up among WoW's busiest threads. The frame
+rate did not change, because the game was at its 60 FPS cap. About a million
+events were reused per session.
+
+Turning esync off (`WINEESYNC=0`) is not an alternative. In the same
+comparison it raised `wineserver` to about 61% of a core.
+
+### How the event reuse ntdll.so was built
+
+- Source: the `wineserver` tree below (the Android patch list, then
+  `build-scripts/apply-ge-patches.sh`), plus the `include/wine/asm.h`,
+  `dlls/ntdll/thread.c` and `syscall_dispatcher` parts of
+  `arm64-copyable-syscalls-grace-wine10.patch`, plus
+  `esync-event-reuse-wine10.patch`. The other hunks of the copyable-syscalls
+  patch are GE changes that this tree already has.
+- Configure in a separate build directory with the `wineserver`'s cross
+  configure (NDK r28b, `aarch64-linux-android28-clang`,
+  `-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES`, `-Wl,-z,max-page-size=16384`), then
+  build only `dlls/ntdll/ntdll.so`.
+- Without the event reuse patch the same build differs from the earlier
+  `ntdll.so` by 232 bytes and has the same exported symbols and library
+  dependencies. `ntdll.dll` is unchanged, because the patch touches only the
+  unix side.
 
 ## The patched wineserver
 

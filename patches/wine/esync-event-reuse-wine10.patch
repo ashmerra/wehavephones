@@ -1,0 +1,278 @@
+diff --git a/dlls/ntdll/unix/esync.c b/dlls/ntdll/unix/esync.c
+index 275d099..aeed243 100644
+--- a/dlls/ntdll/unix/esync.c
++++ b/dlls/ntdll/unix/esync.c
+@@ -27,6 +27,10 @@
+ #include <assert.h>
+ #include <errno.h>
+ #include <fcntl.h>
++#include <ctype.h>
++#include <string.h>
++#include <strings.h>
++#include <pthread.h>
+ #include <stdarg.h>
+ #include <stdint.h>
+ #include <stdlib.h>
+@@ -76,6 +80,9 @@ struct esync
+     enum esync_type type;
+     int fd;
+     void *shm;
++    ACCESS_MASK access;   /* access of a recyclable event */
++    LONG recyclable;      /* unnamed event created here and never duplicated */
++    LONG parked;          /* closed by the program, kept open for reuse */
+ };
+ 
+ struct semaphore
+@@ -274,6 +281,8 @@ NTSTATUS esync_close( HANDLE handle )
+ 
+     if (entry < ESYNC_LIST_ENTRIES && esync_list[entry])
+     {
++        InterlockedExchange( &esync_list[entry][idx].recyclable, 0 );
++        InterlockedExchange( &esync_list[entry][idx].parked, 0 );
+         if (InterlockedExchange((LONG *)&esync_list[entry][idx].type, 0))
+         {
+             close( esync_list[entry][idx].fd );
+@@ -284,6 +293,144 @@ NTSTATUS esync_close( HANDLE handle )
+     return STATUS_INVALID_HANDLE;
+ }
+ 
++/* Event reuse (WeHavePhones).
++ *
++ * Under esync every event a program creates costs a server call, an eventfd
++ * and an fd transfer, and closing it costs another server call. Some programs
++ * create and close an unnamed event on every pass of a busy loop. For the
++ * executables listed in WINE_ESYNC_RECYCLE (comma separated, case-insensitive),
++ * closing an unnamed event that this process created and never duplicated
++ * keeps the server object and its eventfd. The handle is parked, reset, and
++ * returned by the next create of an unnamed event of the same type and access.
++ * The handle stays valid on the server while parked. */
++
++#define ESYNC_PARK_MAX 64
++
++static inline void small_pause(void);
++
++static pthread_mutex_t park_mutex = PTHREAD_MUTEX_INITIALIZER;
++static HANDLE parked_events[2][ESYNC_PARK_MAX];
++static int parked_count[2];
++static LONG recycle_reused, recycle_created, recycle_parked, recycle_other_creates;
++
++static int recycle_enabled(void)
++{
++    static int enabled = -1;
++    const char *list, *p;
++    const UNICODE_STRING *path;
++    char name[MAX_PATH];
++    size_t len = 0;
++    int i, start;
++
++    if (enabled != -1) return enabled;
++    if (!(list = getenv( "WINE_ESYNC_RECYCLE" )) || !*list) return enabled = 0;
++    if (!peb || !peb->ProcessParameters) return 0; /* decide once the image is known */
++    path = &peb->ProcessParameters->ImagePathName;
++    if (!path->Buffer) return 0;
++    start = path->Length / sizeof(WCHAR);
++    while (start > 0 && path->Buffer[start - 1] != '\\' && path->Buffer[start - 1] != '/') start--;
++    for (i = start; i < path->Length / sizeof(WCHAR) && len < sizeof(name) - 1; i++)
++    {
++        WCHAR c = path->Buffer[i];
++        name[len++] = c < 0x80 ? tolower( (char)c ) : '?';
++    }
++    name[len] = 0;
++
++    enabled = 0;
++    for (p = list; *p; )
++    {
++        const char *end = strchr( p, ',' );
++        size_t n = end ? (size_t)(end - p) : strlen( p );
++        if (n == len && !strncasecmp( p, name, n )) enabled = 1;
++        if (!end) break;
++        p = end + 1;
++    }
++    if (enabled) MESSAGE( "esync: reusing unnamed events in %s\n", name );
++    return enabled;
++}
++
++static int is_plain_event( enum esync_type type, const OBJECT_ATTRIBUTES *attr )
++{
++    if (type != ESYNC_AUTO_EVENT && type != ESYNC_MANUAL_EVENT) return 0;
++    if (!attr) return 1;
++    return !attr->ObjectName && !attr->RootDirectory && !attr->SecurityDescriptor &&
++           !(attr->Attributes & OBJ_INHERIT);
++}
++
++static void recycle_stats(void)
++{
++    LONG reused = recycle_reused;
++    if (reused && !(reused % 200000))
++        MESSAGE( "esync: %d events reused, %d created reusable, %d parked, %d other creates\n",
++                 (int)reused, (int)recycle_created, (int)recycle_parked, (int)recycle_other_creates );
++}
++
++/* Clears the reuse mark of a handle that is now shared or flagged. */
++void esync_handle_shared( HANDLE handle )
++{
++    UINT_PTR entry, idx = handle_to_index( handle, &entry );
++
++    if ((INT_PTR)handle <= 0) return;
++    if (entry < ESYNC_LIST_ENTRIES && esync_list[entry])
++        InterlockedExchange( &esync_list[entry][idx].recyclable, 0 );
++}
++
++/* NtClose: STATUS_SUCCESS when parked, STATUS_INVALID_HANDLE for an already
++ * parked handle, STATUS_NOT_SUPPORTED to close normally. */
++NTSTATUS esync_park( HANDLE handle )
++{
++    UINT_PTR entry, idx = handle_to_index( handle, &entry );
++    struct esync *obj;
++    struct event *event;
++    uint64_t value;
++    int slot;
++
++    if (!recycle_enabled() || (INT_PTR)handle <= 0) return STATUS_NOT_SUPPORTED;
++    if (entry >= ESYNC_LIST_ENTRIES || !esync_list[entry]) return STATUS_NOT_SUPPORTED;
++    obj = &esync_list[entry][idx];
++    if (obj->parked) return STATUS_INVALID_HANDLE;
++    if (!obj->recyclable) return STATUS_NOT_SUPPORTED;
++    if (obj->type != ESYNC_AUTO_EVENT && obj->type != ESYNC_MANUAL_EVENT) return STATUS_NOT_SUPPORTED;
++    slot = obj->type == ESYNC_AUTO_EVENT ? 0 : 1;
++
++    pthread_mutex_lock( &park_mutex );
++    if (parked_count[slot] >= ESYNC_PARK_MAX || InterlockedExchange( &obj->parked, 1 ))
++    {
++        pthread_mutex_unlock( &park_mutex );
++        return STATUS_NOT_SUPPORTED;
++    }
++    /* Reset like NtResetEvent, so the next owner starts unsignaled. */
++    event = obj->shm;
++    if (obj->type == ESYNC_MANUAL_EVENT)
++        while (InterlockedCompareExchange( (LONG *)&event->locked, 1, 0 )) small_pause();
++    InterlockedExchange( (LONG *)&event->signaled, 0 );
++    while (read( obj->fd, &value, sizeof(value) ) > 0) ;
++    if (obj->type == ESYNC_MANUAL_EVENT) event->locked = 0;
++    parked_events[slot][parked_count[slot]++] = handle;
++    pthread_mutex_unlock( &park_mutex );
++    InterlockedIncrement( &recycle_parked );
++    return STATUS_SUCCESS;
++}
++
++static HANDLE unpark( enum esync_type type, ACCESS_MASK access )
++{
++    int slot = type == ESYNC_AUTO_EVENT ? 0 : 1, i;
++    HANDLE handle = 0;
++
++    pthread_mutex_lock( &park_mutex );
++    for (i = parked_count[slot] - 1; i >= 0; i--)
++    {
++        struct esync *obj = get_cached_object( parked_events[slot][i] );
++        if (!obj || !obj->recyclable || obj->access != access || obj->type != type) continue;
++        handle = parked_events[slot][i];
++        parked_events[slot][i] = parked_events[slot][--parked_count[slot]];
++        InterlockedExchange( &obj->parked, 0 );
++        break;
++    }
++    pthread_mutex_unlock( &park_mutex );
++    return handle;
++}
++
+ static NTSTATUS create_esync( enum esync_type type, HANDLE *handle, ACCESS_MASK access,
+                               const OBJECT_ATTRIBUTES *attr, int initval, int max )
+ {
+@@ -295,6 +442,23 @@ static NTSTATUS create_esync( enum esync_type type, HANDLE *handle, ACCESS_MASK
+     sigset_t sigset;
+     int fd;
+ 
++    if (recycle_enabled())
++    {
++        if (is_plain_event( type, attr ))
++        {
++            HANDLE reused = unpark( type, access );
++            if (reused)
++            {
++                *handle = reused;
++                InterlockedIncrement( &recycle_reused );
++                recycle_stats();
++                if (initval) esync_set_event( reused );
++                return STATUS_SUCCESS;
++            }
++        }
++        else InterlockedIncrement( &recycle_other_creates );
++    }
++
+     if ((ret = alloc_object_attributes( attr, &objattr, &len ))) return ret;
+ 
+     /* We have to synchronize on the fd cache CS so that our calls to
+@@ -322,7 +486,14 @@ static NTSTATUS create_esync( enum esync_type type, HANDLE *handle, ACCESS_MASK
+ 
+     if (!ret || ret == STATUS_OBJECT_NAME_EXISTS)
+     {
+-        add_to_list( *handle, type, fd, shm_idx ? get_shm( shm_idx ) : 0 );
++        struct esync *obj = add_to_list( *handle, type, fd, shm_idx ? get_shm( shm_idx ) : 0 );
++        if (obj && !ret && recycle_enabled() && is_plain_event( type, attr ))
++        {
++            obj->access = access;
++            obj->parked = 0;
++            InterlockedExchange( &obj->recyclable, 1 );
++            InterlockedIncrement( &recycle_created );
++        }
+         TRACE("-> handle %p, fd %d.\n", *handle, fd);
+     }
+ 
+diff --git a/dlls/ntdll/unix/esync.h b/dlls/ntdll/unix/esync.h
+index 59f8809..6ba46f3 100644
+--- a/dlls/ntdll/unix/esync.h
++++ b/dlls/ntdll/unix/esync.h
+@@ -21,6 +21,8 @@
+ extern int do_esync(void);
+ extern void esync_init(void);
+ extern NTSTATUS esync_close( HANDLE handle );
++extern NTSTATUS esync_park( HANDLE handle );
++extern void esync_handle_shared( HANDLE handle );
+ 
+ extern NTSTATUS esync_create_semaphore(HANDLE *handle, ACCESS_MASK access,
+     const OBJECT_ATTRIBUTES *attr, LONG initial, LONG max);
+diff --git a/dlls/ntdll/unix/file.c b/dlls/ntdll/unix/file.c
+index 8884efb..51d97e6 100644
+--- a/dlls/ntdll/unix/file.c
++++ b/dlls/ntdll/unix/file.c
+@@ -121,6 +121,7 @@
+ #include "wine/list.h"
+ #include "wine/debug.h"
+ #include "unix_private.h"
++#include "esync.h"
+ 
+ WINE_DEFAULT_DEBUG_CHANNEL(file);
+ WINE_DECLARE_DEBUG_CHANNEL(winediag);
+@@ -7947,6 +7948,7 @@ NTSTATUS WINAPI NtSetInformationObject( HANDLE handle, OBJECT_INFORMATION_CLASS
+         OBJECT_HANDLE_FLAG_INFORMATION* p = ptr;
+ 
+         if (len < sizeof(*p)) return STATUS_INVALID_BUFFER_SIZE;
++        if (do_esync()) esync_handle_shared( handle );
+ 
+         SERVER_START_REQ( set_handle_info )
+         {
+diff --git a/dlls/ntdll/unix/server.c b/dlls/ntdll/unix/server.c
+index 4c0bbaa..49473d7 100644
+--- a/dlls/ntdll/unix/server.c
++++ b/dlls/ntdll/unix/server.c
+@@ -1823,6 +1823,8 @@ NTSTATUS WINAPI NtDuplicateObject( HANDLE source_process, HANDLE source, HANDLE
+ 
+     if (dest) *dest = 0;
+ 
++    if (do_esync() && source_process == NtCurrentProcess()) esync_handle_shared( source );
++
+     if ((options & DUPLICATE_CLOSE_SOURCE) && source_process != NtCurrentProcess())
+     {
+         union apc_call call;
+@@ -1915,6 +1917,12 @@ NTSTATUS WINAPI NtClose( HANDLE handle )
+     if (HandleToLong( handle ) >= ~5 && HandleToLong( handle ) <= ~0)
+         return STATUS_SUCCESS;
+ 
++    if (do_esync())
++    {
++        NTSTATUS parked = esync_park( handle );
++        if (parked != STATUS_NOT_SUPPORTED) return parked;
++    }
++
+     server_enter_uninterrupted_section( &fd_cache_mutex, &sigset );
+ 
+     /* always remove the cached fd; if the server request fails we'll just

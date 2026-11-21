@@ -649,9 +649,9 @@ below is kept (only `WeHavePhonesRuntimeProfiles` needs touching otherwise).
           "sha256": "09adc21f…"
         },
         {
-          "asset": "ntdll/ntdll-grace-copysafe-10.0-34.so",
+          "asset": "ntdll/ntdll-grace-copysafe-reuse-10.0-34.so",
           "target": "opt/{wineVersion}/lib/wine/aarch64-unix/ntdll.so",
-          "sha256": "9f3e55a0…"
+          "sha256": "8641dcc2…"
         }
       ],
       "files": [
@@ -704,7 +704,7 @@ Semantics:
 | Asset | Size | sha256 (prefix) |
 | --- | --- | --- |
 | `ntdll/ntdll-grace-copysafe-10.0-34.dll` | 1 658 880 | `09adc21f…` |
-| `ntdll/ntdll-grace-copysafe-10.0-34.so` | 629 624 | `9f3e55a0…` |
+| `ntdll/ntdll-grace-copysafe-reuse-10.0-34.so` | 632 472 | `8641dcc2…` |
 | `dll/arm64-vkd3d.dll` | 2 105 344 | `f1c11399…` |
 | `dll/arm64-libc++.dll` | 1 853 440 | `ed9edb58…` |
 | `dll/arm64-libunwind.dll` | 90 624 | `535c6c86…` |

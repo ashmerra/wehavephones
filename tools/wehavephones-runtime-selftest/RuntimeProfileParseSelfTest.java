@@ -70,14 +70,19 @@ public final class RuntimeProfileParseSelfTest {
                 "single runtime re-enables the shader cache on existing containers");
         check("off".equals(p10.env.get("WINE_FDSAN_LEVEL")),
                 "single runtime requests the Wine fd ownership workaround");
+        check(p10.env.get("WINE_ESYNC_RECYCLE") != null
+                        && p10.env.get("WINE_ESYNC_RECYCLE").contains("wow-arm64.exe")
+                        && p10.env.get("WINE_ESYNC_RECYCLE").contains("wowclassic-arm64.exe")
+                        && !p10.env.get("WINE_ESYNC_RECYCLE").contains("battle.net"),
+                "single runtime reuses esync events in WoW only");
         check(p10.ntdll.size() == 3, "p10-ge34 has 3 ntdll artifacts");
         check("ntdll/ntdll-grace-copysafe-10.0-34.dll".equals(p10.ntdll.get(0).asset),
                 "p10-ge34 PE asset name");
         check("09adc21f8400fe3d2c46e227d1c423e0e06a91b338b5343beddc0da014df9cd8"
                 .equals(p10.ntdll.get(0).sha256), "p10-ge34 PE sha256");
-        check("ntdll/ntdll-grace-copysafe-10.0-34.so".equals(p10.ntdll.get(2).asset),
+        check("ntdll/ntdll-grace-copysafe-reuse-10.0-34.so".equals(p10.ntdll.get(2).asset),
                 "p10-ge34 unix asset name");
-        check("9f3e55a032b2a22fb025676b9c010ec97a454c84b8d955036d452699b3b0cd16"
+        check("8641dcc2e79aad22e565ba8a303d5596e28aad482d63384a87383b7f9680e0a9"
                 .equals(p10.ntdll.get(2).sha256), "p10-ge34 unix sha256");
         check(p10.files.size() == 7, "p10-ge34 has 7 generic files");
         check("container:.wine/drive_c/arm64-vkd3d.dll".equals(p10.files.get(0).target),

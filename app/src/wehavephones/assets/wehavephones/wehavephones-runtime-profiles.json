@@ -15,12 +15,13 @@
   "wowBat": "@echo off\r\ncd /d \"{wowDir}\\{productDir}\"\r\ncopy /Y \"C:\\arm64-vkd3d.dll\" \"C:\\windows\\system32\\d3d12.dll\" >NUL\r\nif errorlevel 1 exit /b 1\r\ncopy /Y \"C:\\arm64-libc++.dll\" \"C:\\windows\\system32\\libc++.dll\" >NUL\r\nif errorlevel 1 exit /b 1\r\ncopy /Y \"C:\\arm64-libunwind.dll\" \"C:\\windows\\system32\\libunwind.dll\" >NUL\r\nif errorlevel 1 exit /b 1\r\n{exe} {apiArg}\r\n",
   "profiles": {
     "p10-ge34": {
-      "description": "Verified single runtime: GE-Proton 10.0-34 arm64ec with the copyable-syscall/grace ntdll pair. Battle.net uses an in-process CEF network service to avoid utility-process crashes; WoW runs with no runtime switch.",
+      "description": "Verified single runtime: GE-Proton 10.0-34 arm64ec with the copyable-syscall/grace ntdll pair, whose unix side lets WoW reuse unnamed esync events. Battle.net uses an in-process CEF network service to avoid utility-process crashes; WoW runs with no runtime switch.",
       "wineVersion": "proton-10.0-34-arm64ec",
       "env": {
         "FEX_MULTIBLOCK": "0",
         "MESA_SHADER_CACHE_DISABLE": "false",
-        "WINE_FDSAN_LEVEL": "off"
+        "WINE_FDSAN_LEVEL": "off",
+        "WINE_ESYNC_RECYCLE": "wow-arm64.exe,wowt-arm64.exe,wowb-arm64.exe,wowclassic-arm64.exe,wowclassict-arm64.exe,wowclassicb-arm64.exe"
       },
       "bnetFlags": "--disable-gpu --enable-features=NetworkServiceInProcess2",
       "layer": {
@@ -43,9 +44,9 @@
           "sha256": "09adc21f8400fe3d2c46e227d1c423e0e06a91b338b5343beddc0da014df9cd8"
         },
         {
-          "asset": "ntdll/ntdll-grace-copysafe-10.0-34.so",
+          "asset": "ntdll/ntdll-grace-copysafe-reuse-10.0-34.so",
           "target": "opt/{wineVersion}/lib/wine/aarch64-unix/ntdll.so",
-          "sha256": "9f3e55a032b2a22fb025676b9c010ec97a454c84b8d955036d452699b3b0cd16"
+          "sha256": "8641dcc2e79aad22e565ba8a303d5596e28aad482d63384a87383b7f9680e0a9"
         }
       ],
       "files": [
