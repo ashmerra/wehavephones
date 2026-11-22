@@ -185,6 +185,7 @@ public final class TouchSelfTest {
         check(!input.isInspectMode(), "Play exits inspection");
         checkAutoRunAndFeedback();
         checkLayouts();
+        checkMovedBounds();
         checkWheel();
         if (args.length > 0) checkAddonGeometry(Path.of(args[0]));
         Path root = Files.createTempDirectory("wehavephones-touch-fixture");
@@ -391,6 +392,25 @@ public final class TouchSelfTest {
         check(Math.abs(viewport.top - 150) < .01f && viewport.left == 0, "4:3 hosts letterbox the vertical axis correctly");
         viewport = MobileTouchLayout.viewport(1600, 1200, 1920, 1080, true);
         check(viewport.width() == 1600 && viewport.height() == 1200, "stretched guests use independent axis scaling");
+    }
+
+    private static void checkMovedBounds() {
+        MobileTouchLayout.Bounds screen = MobileTouchLayout.viewport(2340, 1080, 2340, 1080, true);
+        MobileTouchLayout.Bounds safe = MobileTouchLayout.viewport(2340, 1080, 1920, 1080, false);
+        for (float size : MobileTouchSetup.SCALES) {
+            MobileTouchLayout layout = new MobileTouchLayout(2340, 1080, 2.75f, 100, 50, 100, 50, screen, false,
+                    MobileTouchLayout.controlScale(size));
+            MobileTouchLayout.Bounds jump = layout.buttons[MobileTouchLayout.JUMP];
+            MobileTouchLayout.Bounds moved = jump.centeredInside(420, 400, safe);
+            check(Math.abs(moved.width() - jump.width()) < .01f && Math.abs(moved.height() - jump.height()) < .01f,
+                    "moving preserves the button dimensions at every interface size");
+            check(Math.abs(moved.left + moved.width() / 2 - 420) < .01f &&
+                    Math.abs(moved.top + moved.height() / 2 - 400) < .01f,
+                    "scaling around a custom center preserves its position");
+            MobileTouchLayout.Bounds corner = jump.centeredInside(0, 1080, safe);
+            check(Math.abs(corner.left - safe.left) < .01f && Math.abs(corner.bottom - safe.bottom) < .01f,
+                    "moving to a corner keeps the whole hit target inside the safe area");
+        }
     }
 
     private static void checkLayout(MobileTouchLayout layout, float width, float height, float density, float inset,

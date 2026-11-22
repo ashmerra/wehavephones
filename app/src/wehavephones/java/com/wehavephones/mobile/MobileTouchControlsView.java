@@ -1,5 +1,6 @@
 package com.wehavephones.mobile;
 
+import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.res.Configuration;
 import android.graphics.Canvas;
@@ -7,6 +8,7 @@ import android.graphics.DashPathEffect;
 import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.PointF;
 import android.graphics.RectF;
 import android.graphics.Shader;
 import android.graphics.Typeface;
@@ -27,7 +29,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
 
 import org.json.JSONArray;
@@ -48,6 +52,8 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
             SILVER_LIGHT = 0xFFEFF4F8, SILVER = 0xFFBAC7D6, BLUE_LIGHT = 0xFF2C91E5, WHITE = 0xFFFFFFFF,
             SHADE = 0x9906162D, PANEL = 0xF20B2344;
     private static final long BANNER_MS = 3400, RIPPLE_MS = 260, PULSE_MS = 380, HOLD_DELAY_MS = 120;
+    private static final int STICK = MobileTouchLayout.COUNT, EDIT_DONE = STICK + 1, EDIT_RESET = STICK + 2;
+    private static final String POSITION_PREFIX = "wehavephones_mobile_touch_position_";
     private static final MobileTouchInput.Zone[] ZONES = {MobileTouchInput.Zone.ESCAPE, MobileTouchInput.Zone.MAP,
             MobileTouchInput.Zone.BAGS, MobileTouchInput.Zone.MORE, MobileTouchInput.Zone.TARGET, MobileTouchInput.Zone.INTERACT,
             MobileTouchInput.Zone.JUMP, MobileTouchInput.Zone.PLAY, MobileTouchInput.Zone.MENUS, MobileTouchInput.Zone.KEYBOARD,
@@ -79,6 +85,7 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
     private final Drawable dive, skull, runner, expand;
     private MobileTouchLayout layout;
     private MobileTouchLayout.Bounds lastViewport;
+    private MobileTouchLayout.Bounds safeArea;
     private float stickX, stickY, radius, knobX, knobY;
     private int stickPointer = -1;
     private XKeycode nextModifier, heldModifier;
@@ -100,13 +107,26 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
     private static final long TAPPED_FIELD_MS = 1500;
     private boolean guide, swallowing;
     private final MobileTouchMenu menu;
+    private final PointF[] positions = new PointF[STICK + 1];
+    private final RectF editDone = new RectF(), editReset = new RectF();
+    private final int touchSlop;
+    private boolean editing, movedControl;
+    private int editPointer = -1, editTarget = -1;
+    private float editDownX, editDownY, grabX, grabY;
 
     public MobileTouchControlsView(XServerDisplayActivity activity) {
         super(activity);
         this.activity = activity;
         xServer = activity.getXServer();
         density = getResources().getDisplayMetrics().density;
-        input = new MobileTouchInput(this, ViewConfiguration.get(activity).getScaledTouchSlop());
+        touchSlop = ViewConfiguration.get(activity).getScaledTouchSlop();
+        input = new MobileTouchInput(this, touchSlop);
+        SharedPreferences prefs = WeHavePhonesConfig.prefs(activity);
+        for (int i = 0; i < positions.length; i++) {
+            String key = positionKey(i);
+            float x = prefs.getFloat(key + "_x", Float.NaN), y = prefs.getFloat(key + "_y", Float.NaN);
+            if (x >= 0 && x <= 1 && y >= 0 && y <= 1) positions[i] = new PointF(x, y);
+        }
         paint.setTypeface(medium);
         text.setTypeface(medium);
         holdCheck = () -> input.advanceTime(SystemClock.uptimeMillis());
@@ -131,6 +151,7 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
         cancelTouches();
         nextModifier = null;
         guide = false;
+        editing = false;
         // Login, realm selection and character creation need the whole screen.
         // Play explicitly returns to movement after entering the world.
         if (show) {
@@ -190,22 +211,36 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
         layout = new MobileTouchLayout(getWidth(), getHeight(), density, left, top, right, bottom, lastViewport, input.isUiMode(),
                 MobileTouchLayout.controlScale(WeHavePhonesConfig.getMobileTouchScale(getContext())));
         insetLeft = left; insetTop = top; insetRight = right; insetBottom = bottom;
+        safeArea = new MobileTouchLayout.Bounds(left, top, Math.max(left + 1, getWidth() - right),
+                Math.max(top + 1, getHeight() - bottom));
         radius = layout.radius;
-        stickX = layout.stickX;
-        stickY = layout.stickY;
         input.setWheel(layout.wheelX, layout.wheelY, MobileTouchLayout.WHEEL_DEAD * layout.wheelUnit);
-        knobX = stickX;
-        knobY = stickY;
+        applyPositions();
+        labels[MobileTouchLayout.JUMP] = getContext().getString(diving ? R.string.wehavephones_touch_dive : R.string.wehavephones_touch_jump);
+        syncCursor();
+        invalidate();
+        writeTestLayout();
+    }
+
+    private void applyPositions() {
+        stickX = knobX = layout.stickX;
+        stickY = knobY = layout.stickY;
         for (int i = 0; i < buttons.length; i++) {
             MobileTouchLayout.Bounds bounds = layout.buttons[i];
             if (bounds == null || toolbarCollapsed) buttons[i].setEmpty();
             else buttons[i].set(bounds.left, bounds.top, bounds.right, bounds.bottom);
         }
-        labels[MobileTouchLayout.JUMP] = getContext().getString(diving ? R.string.wehavephones_touch_dive : R.string.wehavephones_touch_jump);
-        if (toolbarCollapsed) updateHandle();
-        syncCursor();
-        invalidate();
-        writeTestLayout();
+        if (toolbarCollapsed) {
+            updateHandle();
+            return;
+        }
+        for (int i = 0; i < positions.length; i++) {
+            PointF position = positions[i];
+            if (position == null || i == MobileTouchLayout.MENUS || i == MobileTouchLayout.HANDLE) continue;
+            if (i == STICK ? input.isUiMode() : buttons[i].isEmpty()) continue;
+            placeControl(i, safeArea.left + safeArea.width() * position.x, safeArea.top + safeArea.height() * position.y);
+        }
+        if (editing) layoutEditActions();
     }
 
     /**
@@ -221,7 +256,12 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
                     .put("mode", toolbarCollapsed ? "collapsed" : input.isInspectMode() ? "inspect" : input.isUiMode() ? "menus" : "play")
                     .put("visible", getVisibility() == VISIBLE)
                     .put("guide", guide)
+                    .put("editing", editing)
                     .put("stick", new JSONArray().put(origin[0] + stickX).put(origin[1] + stickY).put(radius));
+            if (editing) {
+                json.put("editDone", new JSONArray().put(origin[0] + editDone.centerX()).put(origin[1] + editDone.centerY()));
+                json.put("editReset", new JSONArray().put(origin[0] + editReset.centerX()).put(origin[1] + editReset.centerY()));
+            }
             if (lastViewport != null) json.put("viewport", new JSONArray().put(origin[0] + lastViewport.left)
                     .put(origin[1] + lastViewport.top).put(origin[0] + lastViewport.right).put(origin[1] + lastViewport.bottom));
             // The action wheel's hub and unit, when it takes swipes.
@@ -231,7 +271,7 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
             for (int i = 0; i < buttons.length; i++) {
                 RectF rect = buttons[i];
                 if (rect.isEmpty()) continue;
-                keys.put(ZONES[i].name().toLowerCase(java.util.Locale.ROOT), new JSONArray().put(origin[0] + rect.left)
+                keys.put(ZONES[i].name().toLowerCase(Locale.ROOT), new JSONArray().put(origin[0] + rect.left)
                         .put(origin[1] + rect.top).put(origin[0] + rect.right).put(origin[1] + rect.bottom));
             }
             json.put("keys", keys);
@@ -253,11 +293,153 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
         buttons[MobileTouchLayout.HANDLE].set(handle.left, handle.top, handle.right, handle.bottom);
     }
 
+    private static String positionKey(int control) {
+        return POSITION_PREFIX + (control == STICK ? "stick" : ZONES[control].name().toLowerCase(Locale.ROOT));
+    }
+
+    private RectF controlBounds(int control) {
+        if (control == STICK) {
+            float reach = radius * 1.2f;
+            return new RectF(stickX - reach, stickY - reach, stickX + reach, stickY + reach);
+        }
+        if (control == MobileTouchLayout.PLAY) {
+            RectF bounds = new RectF(buttons[control]);
+            bounds.union(buttons[MobileTouchLayout.MENUS]);
+            return bounds;
+        }
+        return buttons[control];
+    }
+
+    private void placeControl(int control, float x, float y) {
+        RectF bounds = controlBounds(control);
+        MobileTouchLayout.Bounds area = safeArea;
+        if (control == STICK) {
+            // The auto-run target needs to stay reachable above the movement stick.
+            float runRoom = radius * (MobileTouchInput.RUN_LOCK_OFFSET + MobileTouchInput.RUN_LOCK_RADIUS - 1.2f);
+            area = new MobileTouchLayout.Bounds(area.left, area.top + runRoom, area.right, area.bottom);
+        }
+        MobileTouchLayout.Bounds placed = new MobileTouchLayout.Bounds(bounds.left, bounds.top, bounds.right, bounds.bottom)
+                .centeredInside(x, y, area);
+        if (control == STICK) {
+            stickX = knobX = placed.left + placed.width() / 2;
+            stickY = knobY = placed.top + placed.height() / 2;
+        } else {
+            float dx = placed.left - bounds.left, dy = placed.top - bounds.top;
+            buttons[control].offset(dx, dy);
+            if (control == MobileTouchLayout.PLAY) buttons[MobileTouchLayout.MENUS].offset(dx, dy);
+        }
+    }
+
+    private void savePosition(int control) {
+        RectF bounds = controlBounds(control);
+        PointF position = new PointF((bounds.centerX() - safeArea.left) / safeArea.width(),
+                (bounds.centerY() - safeArea.top) / safeArea.height());
+        positions[control] = position;
+        String key = positionKey(control);
+        WeHavePhonesConfig.prefs(getContext()).edit().putFloat(key + "_x", position.x)
+                .putFloat(key + "_y", position.y).apply();
+    }
+
+    private void resetPositions() {
+        SharedPreferences.Editor prefs = WeHavePhonesConfig.prefs(getContext()).edit();
+        for (int i = 0; i < positions.length; i++) {
+            String key = positionKey(i);
+            prefs.remove(key + "_x").remove(key + "_y");
+        }
+        prefs.apply();
+        Arrays.fill(positions, null);
+        applyPositions();
+    }
+
+    private void layoutEditActions() {
+        float center = safeArea.left + safeArea.width() / 2;
+        float width = Math.min(116 * density, safeArea.width() * .23f);
+        float height = 44 * density, gap = 4 * density;
+        float bottom = safeArea.bottom - 8 * density;
+        editReset.set(center - gap - width, bottom - height, center - gap, bottom);
+        editDone.set(center + gap, bottom - height, center + gap + width, bottom);
+        RectF row = new RectF(editReset);
+        row.union(editDone);
+        for (RectF button : buttons) {
+            if (RectF.intersects(row, button)) {
+                moveEditActionsToTop();
+                return;
+            }
+        }
+        if (!input.isUiMode() && RectF.intersects(row, controlBounds(STICK))) moveEditActionsToTop();
+    }
+
+    private void moveEditActionsToTop() {
+        float dy = safeArea.top + 8 * density - editDone.top;
+        editReset.offset(0, dy);
+        editDone.offset(0, dy);
+    }
+
+    private boolean editTouch(MotionEvent event) {
+        int action = event.getActionMasked();
+        int index = event.getActionIndex();
+        if (action == MotionEvent.ACTION_DOWN) {
+            editPointer = event.getPointerId(index);
+            editDownX = event.getX(index);
+            editDownY = event.getY(index);
+            if (editDone.contains(editDownX, editDownY)) editTarget = EDIT_DONE;
+            else if (editReset.contains(editDownX, editDownY)) editTarget = EDIT_RESET;
+            else {
+                editTarget = buttonAt(editDownX, editDownY);
+                if (editTarget == MobileTouchLayout.MENUS) editTarget = MobileTouchLayout.PLAY;
+                if (editTarget == -1 && !input.isUiMode() && hitsStick(editDownX, editDownY)) editTarget = STICK;
+                if (editTarget != -1) {
+                    RectF bounds = controlBounds(editTarget);
+                    grabX = editDownX - bounds.centerX();
+                    grabY = editDownY - bounds.centerY();
+                }
+            }
+        } else if (action == MotionEvent.ACTION_MOVE && editTarget >= 0 && editTarget <= STICK) {
+            int pointer = event.findPointerIndex(editPointer);
+            if (pointer != -1) dragControl(event.getX(pointer), event.getY(pointer));
+        } else if ((action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_POINTER_UP)
+                && event.getPointerId(index) == editPointer) {
+            float x = event.getX(index), y = event.getY(index);
+            if (editTarget == EDIT_DONE && editDone.contains(x, y)) {
+                editing = false;
+                swallowing = action == MotionEvent.ACTION_POINTER_UP;
+            } else if (editTarget == EDIT_RESET && editReset.contains(x, y)) resetPositions();
+            else if (editTarget >= 0 && editTarget <= STICK) {
+                dragControl(x, y);
+                if (movedControl) savePosition(editTarget);
+                layoutEditActions();
+            }
+            editPointer = editTarget = -1;
+            movedControl = false;
+            writeTestLayout();
+        } else if (action == MotionEvent.ACTION_CANCEL) cancelTouches();
+        invalidate();
+        return true;
+    }
+
+    private void dragControl(float x, float y) {
+        if (!movedControl && Math.hypot(x - editDownX, y - editDownY) <= touchSlop) return;
+        movedControl = true;
+        placeControl(editTarget, x - grabX, y - grabY);
+    }
+
+    private int buttonAt(float x, float y) {
+        // Keep the menu reachable if another customized control covers its position.
+        if (buttons[MobileTouchLayout.MORE].contains(x, y)) return MobileTouchLayout.MORE;
+        for (int i = buttons.length - 1; i >= 0; i--) if (buttons[i].contains(x, y)) return i;
+        return -1;
+    }
+
+    private boolean hitsStick(float x, float y) {
+        return Math.hypot(x - stickX, y - stickY) <= radius * 1.2f;
+    }
+
     private MobileTouchInput.Zone zone(float x, float y) {
-        for (int i = 0; i < buttons.length; i++) if (buttons[i].contains(x, y)) return ZONES[i];
+        int key = buttonAt(x, y);
+        if (key != -1) return ZONES[key];
         if (toolbarCollapsed || input.isUiMode()) return MobileTouchInput.Zone.UI;
+        if (hitsStick(x, y)) return MobileTouchInput.Zone.STICK;
         if (WeHavePhonesConfig.isMobileTouchWheel(getContext()) && layout.inWheel(x, y)) return MobileTouchInput.Zone.WHEEL;
-        if (Math.hypot(x - stickX, y - stickY) <= radius * 1.2f) return MobileTouchInput.Zone.STICK;
         MobileTouchLayout.Bounds viewport = viewport();
         if (viewport.contains(x, y) && MobileTouchInput.isCameraArea(x - viewport.left, y - viewport.top,
                 viewport.width(), viewport.height())) return MobileTouchInput.Zone.CAMERA;
@@ -266,6 +448,7 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
 
     @Override public boolean onTouchEvent(MotionEvent event) {
         if (event.isFromSource(InputDevice.SOURCE_MOUSE)) return false;
+        if (editing) return editTouch(event);
         int action = event.getActionMasked();
         // The guide closes on the first touch. That gesture never reaches the game.
         if (guide && action == MotionEvent.ACTION_DOWN) {
@@ -348,18 +531,16 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
 
     @Override protected void onDraw(Canvas canvas) {
         if (layout == null) return;
+        if (editing) {
+            drawEditor(canvas);
+            return;
+        }
         long now = SystemClock.uptimeMillis();
         input.advanceTime(now);
         boolean animating = input.isRunLockPending();
         boolean menus = input.isUiMode();
         if (menus && !toolbarCollapsed) drawModeBadge(canvas);
-        if (!menus && !toolbarCollapsed) drawStick(canvas);
-        for (int i = 0; i < buttons.length; i++) {
-            if (buttons[i].isEmpty() || i == MobileTouchLayout.MENUS) continue;
-            if (i == MobileTouchLayout.PLAY) drawSwitch(canvas);
-            else if (i == MobileTouchLayout.HANDLE) drawHandle(canvas);
-            else drawKey(canvas, i);
-        }
+        drawControls(canvas);
         // Keep animating from the first touch: a still finger sends no move events.
         MobileTouchInput.Hold hold = input.pendingHold(now, 0);
         if (hold != null) animating = true;
@@ -399,6 +580,56 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
         }
         if (guide) drawGuide(canvas);
         if (animating) postInvalidateOnAnimation();
+    }
+
+    private void drawControls(Canvas canvas) {
+        if (!input.isUiMode() && !toolbarCollapsed) drawStick(canvas);
+        for (int i = 0; i < buttons.length; i++) {
+            if (buttons[i].isEmpty() || i == MobileTouchLayout.MENUS || i == MobileTouchLayout.MORE) continue;
+            drawControl(canvas, i);
+        }
+        if (!buttons[MobileTouchLayout.MORE].isEmpty()) drawKey(canvas, MobileTouchLayout.MORE);
+    }
+
+    private void drawControl(Canvas canvas, int control) {
+        if (control == STICK) drawStick(canvas);
+        else if (control == MobileTouchLayout.PLAY) drawSwitch(canvas);
+        else if (control == MobileTouchLayout.HANDLE) drawHandle(canvas);
+        else drawKey(canvas, control);
+    }
+
+    private void drawEditor(Canvas canvas) {
+        paint.setStyle(Paint.Style.FILL);
+        paint.setColor(0x6606162D);
+        canvas.drawRect(0, 0, getWidth(), getHeight(), paint);
+        drawControls(canvas);
+        if (editTarget >= 0 && editTarget <= STICK) {
+            drawControl(canvas, editTarget);
+            scratch.set(controlBounds(editTarget));
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeWidth(2 * density);
+            paint.setColor(ACTIVE_EDGE);
+            if (editTarget == STICK) canvas.drawOval(scratch, paint);
+            else canvas.drawRoundRect(scratch, 9 * density, 9 * density, paint);
+        }
+        drawEditAction(canvas, editReset, R.string.wehavephones_touch_move_reset, false, editTarget == EDIT_RESET);
+        drawEditAction(canvas, editDone, R.string.wehavephones_touch_move_done, true, editTarget == EDIT_DONE);
+        boolean atTop = editDone.centerY() < getHeight() / 2f;
+        pill(canvas, getContext().getString(R.string.wehavephones_touch_move_hint),
+                safeArea.left + safeArea.width() / 2, atTop ? editDone.bottom + 4 * density : editDone.top - 4 * density,
+                0, atTop ? -1 : 1);
+    }
+
+    private void drawEditAction(Canvas canvas, RectF bounds, int labelId, boolean primary, boolean pressed) {
+        drawFace(canvas, bounds, primary, pressed);
+        String label = getContext().getString(labelId);
+        text.setTypeface(medium);
+        text.setTextAlign(Paint.Align.CENTER);
+        text.setTextSize(14 * density);
+        float width = text.measureText(label);
+        if (width > bounds.width() * .85f) text.setTextSize(text.getTextSize() * bounds.width() * .85f / width);
+        text.setColor(SILVER_LIGHT);
+        canvas.drawText(label, face.centerX(), face.centerY() - (text.ascent() + text.descent()) / 2, text);
     }
 
     /** Center and radius of a hold ring: around the finger, or around the Target key. */
@@ -1075,6 +1306,14 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
             case SIZE_125: setScale(1.25f, shift, XKeycode.KEY_F4); break;
             case SIZE_150: setScale(1.5f, shift, XKeycode.KEY_F5); break;
             case SIZE_175: setScale(1.75f, shift, XKeycode.KEY_F6); break;
+            case MOVE:
+                if (getVisibility() != VISIBLE || toolbarCollapsed) break;
+                cancelTouches();
+                guide = false;
+                bannerAt = -BANNER_MS;
+                editing = true;
+                refreshLayout();
+                break;
             case GUIDE: showGuide(); break;
             case HIDE:
                 setWindows(true);
@@ -1218,6 +1457,9 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
         releaseModifier();
         stickPointer = -1;
         handlePointer = -1;
+        if (movedControl) applyPositions();
+        editPointer = editTarget = -1;
+        movedControl = false;
         knobX = stickX;
         knobY = stickY;
         invalidate();

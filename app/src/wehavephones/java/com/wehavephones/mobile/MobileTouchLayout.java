@@ -36,6 +36,13 @@ public final class MobileTouchLayout {
         public boolean contains(float x, float y) { return x >= left && x < right && y >= top && y < bottom; }
         public float width() { return right - left; }
         public float height() { return bottom - top; }
+
+        /** Translate these bounds to a new center, keeping their size and fitting them inside the given area. */
+        public Bounds centeredInside(float x, float y, Bounds area) {
+            float left = Math.max(area.left, Math.min(area.right - width(), x - width() / 2));
+            float top = Math.max(area.top, Math.min(area.bottom - height(), y - height() / 2));
+            return new Bounds(left, top, left + width(), top + height());
+        }
     }
 
     public final Bounds[] buttons = new Bounds[COUNT];

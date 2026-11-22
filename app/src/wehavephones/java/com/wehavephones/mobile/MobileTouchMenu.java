@@ -84,6 +84,7 @@ final class MobileTouchMenu {
         SIZE_125(Category.TOUCH, R.drawable.wehavephones_touch_ic_text_aa, R.string.wehavephones_touch_act_size, 125),
         SIZE_150(Category.TOUCH, R.drawable.wehavephones_touch_ic_text_aa, R.string.wehavephones_touch_act_size, 150),
         SIZE_175(Category.TOUCH, R.drawable.wehavephones_touch_ic_text_aa, R.string.wehavephones_touch_act_size, 175),
+        MOVE(Category.TOUCH, R.drawable.wehavephones_touch_ic_hand_grabbing, R.string.wehavephones_touch_act_move),
         GUIDE(Category.TOUCH, R.drawable.wehavephones_touch_ic_hand_pointing, R.string.wehavephones_touch_act_guide),
         HIDE(Category.TOUCH, R.drawable.wehavephones_touch_ic_arrows_in_simple, R.string.wehavephones_touch_act_hide),
         UNDO(Category.TOUCH, R.drawable.wehavephones_touch_ic_arrow_counter_clockwise, R.string.wehavephones_touch_act_undo),

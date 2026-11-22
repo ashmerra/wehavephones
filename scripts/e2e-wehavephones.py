@@ -86,6 +86,7 @@ APPDATA = 'files/imagefs/home/xuser-%s/.wine/drive_c/users/xuser/AppData/Roaming
 # Exact keys, plus key prefixes ending in "_". The game choice, region, setup state and
 # touch guide flags stay: they are not settings a player tunes.
 DEFAULT_MAIN = ['wehavephones_mobile_touch', 'wehavephones_mobile_touch_scale',
+                'wehavephones_mobile_touch_position_',
                 'wehavephones_disable_virtual_gamepad', 'wehavephones_performance_overlay',
                 'wehavephones_runtime_profile', 'wehavephones_game_screen_size',
                 'wehavephones_game_screen_size_', 'wehavephones_keep_running_in_background',
@@ -1076,6 +1077,8 @@ def selftest():
     original = parse_prefs("""<?xml version='1.0' encoding='utf-8' standalone='yes' ?>
 <map>
     <boolean name="wehavephones_mobile_touch" value="true" />
+    <float name="wehavephones_mobile_touch_position_jump_x" value="0.75" />
+    <float name="wehavephones_mobile_touch_position_jump_y" value="0.60" />
     <string name="wehavephones_game_screen_size_2340x1080">1280x720</string>
     <string name="wehavephones_product_dir">_forever_</string>
     <int name="wehavephones_container_id" value="1" />

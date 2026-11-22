@@ -89,7 +89,7 @@ items in Menus.
 | Targeting | Self, Party 1–4, Next friend, Assist, Previous enemy, Nearby corpse, Enemy nameplates |
 | Movement | Auto run, Follow target, Walk or run, Sit or stand, Dive key |
 | Typing and items | Chat, Reply, Keyboard, Inspect, Shift, Ctrl, Alt, No modifier |
-| Touch controls | Interface size 75%, 90%, 110%, 125%, 150% or 175%, Touch guide, Hide controls, Undo hotbar edit, Next action page |
+| Touch controls | Interface size 75%, 90%, 110%, 125%, 150% or 175%, Move controls, Touch guide, Hide controls, Undo hotbar edit, Next action page |
 
 Entries use WoW's own key bindings as session-only overrides. Windows with no
 stock binding, such as Macros and Help, and the size and Undo entries use
@@ -104,14 +104,21 @@ The native controls follow the interface size at half its rate: the stick,
 the toolbar, Target, Use and Jump, the action wheel and the stances beside it.
 At 75% the interface is half its default size and the controls are three
 quarters of theirs, so they stay easy to tap. At 175% the controls are 8%
-larger. Target, Use and Jump keep their bottom right corner, and the stick
-keeps its center, at every size. The standard hotbar is part of the interface,
-so its buttons shrink at the full rate. A size chosen during combat changes
-the native controls at once and the wheel when combat ends.
+larger. At their default positions, Target, Use and Jump keep their bottom
+right corner, and the stick keeps its center, at every size. The standard hotbar
+is part of the interface, so its buttons shrink at the full rate. A size chosen
+during combat changes the native controls at once and the wheel when combat ends.
+
+Choose **Menu → Touch controls → Move controls** to drag the native buttons
+and movement stick in the current mode. The Play/Menus switch moves as one
+control. Tap **Done** to resume play. The app remembers the positions between
+sessions, and controls shared by Play and Menus use the same positions.
+**Reset positions** restores the default placement in both modes. Use the
+interface-size toggles to resize the controls.
 
 ## Screen layout
 
-The native toolbar and the touch addon share fixed regions, measured in
+By default, the native toolbar and the touch addon share regions, measured in
 fractions of the game's height at the default interface size. The toolbar band
 and the wheel follow the control size. The stock HUD stays clear of the native keys,
 apart from compact chat, which shares the movement corner.
