@@ -440,29 +440,33 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
         chord(XKeycode.KEY_CTRL_L, XKeycode.KEY_SHIFT_L, wheelPosition == null ? XKeycode.KEY_DEL : XKeycode.KEY_END);
     }
 
+    /**
+     * Done and Reset sit at the bottom center. When controls cover that spot, they take the first
+     * free row from the top down, so they never cover a key the player wants to move or hide.
+     */
     private void layoutEditActions() {
         float center = safeArea.left + safeArea.width() / 2;
         float width = Math.min(116 * density, safeArea.width() * .23f);
-        float height = 44 * density, gap = 4 * density;
-        float bottom = safeArea.bottom - 8 * density;
-        editReset.set(center - gap - width, bottom - height, center - gap, bottom);
-        editDone.set(center + gap, bottom - height, center + gap + width, bottom);
-        RectF row = new RectF(editReset);
-        row.union(editDone);
-        for (RectF button : buttons) {
-            if (RectF.intersects(row, button)) {
-                moveEditActionsToTop();
-                return;
+        float height = 44 * density, gap = 4 * density, margin = 8 * density;
+        float top = safeArea.bottom - margin - height;
+        if (editActionsBlocked(center, width, height, gap, top)) {
+            top = safeArea.top + (safeArea.height() - height) / 2;
+            for (float y = safeArea.top + margin; y + height <= safeArea.bottom - margin; y += height / 4) {
+                if (!editActionsBlocked(center, width, height, gap, y)) {
+                    top = y;
+                    break;
+                }
             }
         }
-        if ((!input.isUiMode() && RectF.intersects(row, controlBounds(STICK)))
-                || (wheel != null && RectF.intersects(row, controlBounds(WHEEL_CONTROL)))) moveEditActionsToTop();
+        editReset.set(center - gap - width, top, center - gap, top + height);
+        editDone.set(center + gap, top, center + gap + width, top + height);
     }
 
-    private void moveEditActionsToTop() {
-        float dy = safeArea.top + 8 * density - editDone.top;
-        editReset.offset(0, dy);
-        editDone.offset(0, dy);
+    private boolean editActionsBlocked(float center, float width, float height, float gap, float top) {
+        RectF row = new RectF(center - gap - width, top, center + gap + width, top + height);
+        for (RectF button : buttons) if (RectF.intersects(row, button)) return true;
+        return (!input.isUiMode() && RectF.intersects(row, controlBounds(STICK)))
+                || (wheel != null && RectF.intersects(row, controlBounds(WHEEL_CONTROL)));
     }
 
     private boolean editTouch(MotionEvent event) {
