@@ -400,6 +400,10 @@ public final class TouchSelfTest {
     }
 
     private static void checkMovedBounds() {
+        check(!MobileTouchLayout.canHide(MobileTouchLayout.MORE) && !MobileTouchLayout.canHide(MobileTouchLayout.HANDLE),
+                "the editor never hides the Menu key or the Controls tab");
+        check(MobileTouchLayout.canHide(MobileTouchLayout.JUMP) && MobileTouchLayout.canHide(MobileTouchLayout.PLAY)
+                && MobileTouchLayout.canHide(MobileTouchLayout.COUNT), "other keys and the stick can be hidden");
         MobileTouchLayout.Bounds screen = MobileTouchLayout.viewport(2340, 1080, 2340, 1080, true);
         MobileTouchLayout.Bounds safe = MobileTouchLayout.viewport(2340, 1080, 1920, 1080, false);
         for (float size : MobileTouchSetup.SCALES) {

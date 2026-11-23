@@ -54,7 +54,8 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
     private static final long BANNER_MS = 3400, RIPPLE_MS = 260, PULSE_MS = 380, HOLD_DELAY_MS = 120;
     private static final int STICK = MobileTouchLayout.COUNT, WHEEL_CONTROL = STICK + 1,
             EDIT_DONE = WHEEL_CONTROL + 1, EDIT_RESET = WHEEL_CONTROL + 2;
-    private static final String POSITION_PREFIX = "wehavephones_mobile_touch_position_";
+    private static final String POSITION_PREFIX = "wehavephones_mobile_touch_position_",
+            HIDDEN_PREFIX = "wehavephones_mobile_touch_hidden_";
     private static final MobileTouchInput.Zone[] ZONES = {MobileTouchInput.Zone.ESCAPE, MobileTouchInput.Zone.MAP,
             MobileTouchInput.Zone.BAGS, MobileTouchInput.Zone.MORE, MobileTouchInput.Zone.TARGET, MobileTouchInput.Zone.INTERACT,
             MobileTouchInput.Zone.JUMP, MobileTouchInput.Zone.PLAY, MobileTouchInput.Zone.MENUS, MobileTouchInput.Zone.KEYBOARD,
@@ -83,7 +84,7 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
     private final RectF[] buttons = new RectF[MobileTouchLayout.COUNT];
     private final Drawable[] icons = new Drawable[MobileTouchLayout.COUNT];
     private final String[] labels = new String[MobileTouchLayout.COUNT];
-    private final Drawable dive, skull, runner, expand;
+    private final Drawable dive, skull, runner, expand, prohibit;
     private MobileTouchLayout layout;
     private MobileTouchLayout.Bounds lastViewport;
     private MobileTouchLayout.Bounds safeArea;
@@ -113,6 +114,8 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
     private boolean guide, swallowing;
     private final MobileTouchMenu menu;
     private final PointF[] positions = new PointF[STICK + 1];
+    /** Controls hidden in the layout editor. Play and Menus share the switch's entry. */
+    private final boolean[] hidden = new boolean[STICK + 1];
     private final RectF editDone = new RectF(), editReset = new RectF();
     private final int touchSlop;
     private boolean editing, movedControl;
@@ -132,6 +135,7 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
             String key = positionKey(i);
             float x = prefs.getFloat(key + "_x", Float.NaN), y = prefs.getFloat(key + "_y", Float.NaN);
             if (x >= 0 && x <= 1 && y >= 0 && y <= 1) positions[i] = new PointF(x, y);
+            hidden[i] = MobileTouchLayout.canHide(i) && prefs.getBoolean(HIDDEN_PREFIX + controlName(i), false);
         }
         paint.setTypeface(medium);
         text.setTypeface(medium);
@@ -145,6 +149,7 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
         skull = activity.getDrawable(R.drawable.wehavephones_touch_ic_skull).mutate();
         runner = activity.getDrawable(R.drawable.wehavephones_touch_ic_person_simple_run).mutate();
         expand = activity.getDrawable(R.drawable.wehavephones_touch_ic_caret_down).mutate();
+        prohibit = activity.getDrawable(R.drawable.wehavephones_touch_ic_prohibit).mutate();
         menu = new MobileTouchMenu(activity, this);
         setLayoutParams(new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         setContentDescription(activity.getString(R.string.wehavephones_settings_mobile_touch));
@@ -246,7 +251,9 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
             if (i == STICK ? input.isUiMode() : buttons[i].isEmpty()) continue;
             placeControl(i, safeArea.left + safeArea.width() * position.x, safeArea.top + safeArea.height() * position.y);
         }
+        // The editor keeps hidden controls on screen, so a tap can show them again.
         if (editing) layoutEditActions();
+        else for (int i = 0; i < buttons.length; i++) if (isHidden(i)) buttons[i].setEmpty();
     }
 
     /**
@@ -263,6 +270,7 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
                     .put("visible", getVisibility() == VISIBLE)
                     .put("guide", guide)
                     .put("editing", editing)
+                    .put("hidden", hiddenNames())
                     .put("stick", new JSONArray().put(origin[0] + stickX).put(origin[1] + stickY).put(radius));
             if (editing) {
                 json.put("editDone", new JSONArray().put(origin[0] + editDone.centerX()).put(origin[1] + editDone.centerY()));
@@ -299,8 +307,41 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
         buttons[MobileTouchLayout.HANDLE].set(handle.left, handle.top, handle.right, handle.bottom);
     }
 
+    private static String controlName(int control) {
+        return control == STICK ? "stick" : ZONES[control].name().toLowerCase(Locale.ROOT);
+    }
+
     private static String positionKey(int control) {
-        return POSITION_PREFIX + (control == STICK ? "stick" : ZONES[control].name().toLowerCase(Locale.ROOT));
+        return POSITION_PREFIX + controlName(control);
+    }
+
+    private boolean isHidden(int control) {
+        if (control == WHEEL_CONTROL) return !WeHavePhonesConfig.isMobileTouchWheel(getContext());
+        return hidden[control == MobileTouchLayout.MENUS ? MobileTouchLayout.PLAY : control];
+    }
+
+    private JSONArray hiddenNames() {
+        JSONArray names = new JSONArray();
+        for (int i = 0; i < hidden.length; i++) if (hidden[i]) names.put(controlName(i));
+        if (wheel != null && isHidden(WHEEL_CONTROL)) names.put("wheel");
+        return names;
+    }
+
+    /**
+     * A tap in the editor hides or shows a control. A hidden wheel turns the Action wheel setting
+     * off, so the stock action grid returns, the same as the menu entry.
+     */
+    private void toggleHidden(int control) {
+        if (!MobileTouchLayout.canHide(control)) return;
+        if (control == WHEEL_CONTROL) {
+            setWheel(isHidden(WHEEL_CONTROL), false);
+            return;
+        }
+        hidden[control] = !hidden[control];
+        SharedPreferences.Editor prefs = WeHavePhonesConfig.prefs(getContext()).edit();
+        if (hidden[control]) prefs.putBoolean(HIDDEN_PREFIX + controlName(control), true);
+        else prefs.remove(HIDDEN_PREFIX + controlName(control));
+        prefs.apply();
     }
 
     private RectF controlBounds(int control) {
@@ -367,10 +408,12 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
         SharedPreferences.Editor prefs = WeHavePhonesConfig.prefs(getContext()).edit();
         for (int i = 0; i < positions.length; i++) {
             String key = positionKey(i);
-            prefs.remove(key + "_x").remove(key + "_y");
+            prefs.remove(key + "_x").remove(key + "_y").remove(HIDDEN_PREFIX + controlName(i));
         }
         prefs.apply();
         Arrays.fill(positions, null);
+        Arrays.fill(hidden, false);
+        if (wheel != null && isHidden(WHEEL_CONTROL)) setWheel(true, false);
         if (wheelPosition != null) {
             wheelPosition = null;
             WeHavePhonesConfig.setMobileTouchWheelPosition(getContext(), null);
@@ -413,7 +456,7 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
             }
         }
         if ((!input.isUiMode() && RectF.intersects(row, controlBounds(STICK)))
-                || (wheelEnabled() && RectF.intersects(row, controlBounds(WHEEL_CONTROL)))) moveEditActionsToTop();
+                || (wheel != null && RectF.intersects(row, controlBounds(WHEEL_CONTROL)))) moveEditActionsToTop();
     }
 
     private void moveEditActionsToTop() {
@@ -435,7 +478,7 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
                 editTarget = buttonAt(editDownX, editDownY);
                 if (editTarget == MobileTouchLayout.MENUS) editTarget = MobileTouchLayout.PLAY;
                 if (editTarget == -1 && !input.isUiMode() && hitsStick(editDownX, editDownY)) editTarget = STICK;
-                if (editTarget == -1 && wheelEnabled() && wheel.contains(editDownX, editDownY)) editTarget = WHEEL_CONTROL;
+                if (editTarget == -1 && wheel != null && wheel.contains(editDownX, editDownY)) editTarget = WHEEL_CONTROL;
                 if (editTarget == WHEEL_CONTROL) {
                     grabX = editDownX - wheel.x;
                     grabY = editDownY - wheel.y;
@@ -454,10 +497,12 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
             if (editTarget == EDIT_DONE && editDone.contains(x, y)) {
                 editing = false;
                 swallowing = action == MotionEvent.ACTION_POINTER_UP;
+                applyPositions();
             } else if (editTarget == EDIT_RESET && editReset.contains(x, y)) resetPositions();
             else if (editTarget >= 0 && editTarget <= WHEEL_CONTROL) {
                 dragControl(x, y);
                 if (movedControl) savePosition(editTarget);
+                else toggleHidden(editTarget);
                 layoutEditActions();
             }
             editPointer = editTarget = -1;
@@ -482,7 +527,7 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
     }
 
     private boolean hitsStick(float x, float y) {
-        return Math.hypot(x - stickX, y - stickY) <= radius * 1.2f;
+        return (editing || !hidden[STICK]) && Math.hypot(x - stickX, y - stickY) <= radius * 1.2f;
     }
 
     private MobileTouchInput.Zone zone(float x, float y) {
@@ -634,10 +679,10 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
     }
 
     private void drawControls(Canvas canvas) {
-        if (!input.isUiMode() && !toolbarCollapsed) drawStick(canvas);
+        if (!input.isUiMode() && !toolbarCollapsed && (editing || !hidden[STICK])) drawEditable(canvas, STICK);
         for (int i = 0; i < buttons.length; i++) {
             if (buttons[i].isEmpty() || i == MobileTouchLayout.MENUS || i == MobileTouchLayout.MORE) continue;
-            drawControl(canvas, i);
+            drawEditable(canvas, i);
         }
         if (!buttons[MobileTouchLayout.MORE].isEmpty()) drawKey(canvas, MobileTouchLayout.MORE);
     }
@@ -649,14 +694,41 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
         else drawKey(canvas, control);
     }
 
+    /** Draws a control, faded and marked in the editor when it is hidden in play. */
+    private void drawEditable(Canvas canvas, int control) {
+        if (!editing || !isHidden(control)) {
+            drawControl(canvas, control);
+            return;
+        }
+        RectF bounds = new RectF(controlBounds(control));
+        int save = canvas.saveLayerAlpha(bounds, 90);
+        drawControl(canvas, control);
+        canvas.restoreToCount(save);
+        drawHiddenBadge(canvas, bounds);
+    }
+
+    private void drawHiddenBadge(Canvas canvas, RectF bounds) {
+        float r = Math.max(9 * density, Math.min(bounds.width(), bounds.height()) * .16f);
+        float cx = bounds.right - r * .8f, cy = bounds.top + r * .8f;
+        paint.setShader(null);
+        paint.setStyle(Paint.Style.FILL);
+        paint.setColor(PANEL);
+        canvas.drawCircle(cx, cy, r, paint);
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(1.2f * density);
+        paint.setColor(ACTIVE_EDGE);
+        canvas.drawCircle(cx, cy, r, paint);
+        drawIcon(canvas, prohibit, cx, cy, r * 1.3f, SILVER_LIGHT);
+    }
+
     private void drawEditor(Canvas canvas) {
         paint.setStyle(Paint.Style.FILL);
         paint.setColor(0x6606162D);
         canvas.drawRect(0, 0, getWidth(), getHeight(), paint);
-        if (wheelEnabled()) drawWheelEditor(canvas);
+        if (wheel != null) drawWheelEditor(canvas);
         drawControls(canvas);
         if (editTarget >= 0 && editTarget <= STICK) {
-            drawControl(canvas, editTarget);
+            drawEditable(canvas, editTarget);
             scratch.set(controlBounds(editTarget));
             paint.setStyle(Paint.Style.STROKE);
             paint.setStrokeWidth(2 * density);
@@ -673,6 +745,8 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
     }
 
     private void drawWheelEditor(Canvas canvas) {
+        boolean wheelHidden = isHidden(WHEEL_CONTROL);
+        int save = wheelHidden ? canvas.saveLayerAlpha(null, 90) : -1;
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(2 * density);
         paint.setColor(ACTIVE_EDGE);
@@ -688,6 +762,10 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
         drawFace(canvas, scratch, editTarget == WHEEL_CONTROL, false);
         drawIcon(canvas, icons[MobileTouchLayout.MORE], face.centerX(), face.centerY(),
                 Math.min(face.width(), face.height()) * .5f, SILVER_LIGHT);
+        if (wheelHidden) {
+            canvas.restoreToCount(save);
+            drawHiddenBadge(canvas, new RectF(scratch));
+        }
     }
 
     private void wheelRect(float x, float y, float size) {
@@ -1400,18 +1478,19 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
                 break;
             case UNDO: chord(shift, XKeycode.KEY_F3); break;
             case PAGE: tap(XKeycode.KEY_N); break;
-            case WHEEL: {
-                boolean wheel = !WeHavePhonesConfig.isMobileTouchWheel(getContext());
-                WeHavePhonesConfig.setMobileTouchWheel(getContext(), wheel);
-                // Ctrl-F11 shows the wheel and Ctrl-F12 returns the stock grid, after combat if needed.
-                chord(XKeycode.KEY_CTRL_L, wheel ? XKeycode.KEY_F11 : XKeycode.KEY_F12);
-                banner(activity.getDrawable(R.drawable.wehavephones_touch_ic_squares_four).mutate(),
-                        getContext().getString(wheel ? R.string.wehavephones_touch_wheel_on : R.string.wehavephones_touch_wheel_off),
-                        wheel ? getContext().getString(R.string.wehavephones_touch_wheel_hint) : null);
-                break;
-            }
+            case WHEEL: setWheel(!WeHavePhonesConfig.isMobileTouchWheel(getContext()), true); break;
         }
         invalidate();
+    }
+
+    private void setWheel(boolean wheel, boolean announce) {
+        WeHavePhonesConfig.setMobileTouchWheel(getContext(), wheel);
+        // Ctrl-F11 shows the wheel and Ctrl-F12 returns the stock grid, after combat if needed.
+        chord(XKeycode.KEY_CTRL_L, wheel ? XKeycode.KEY_F11 : XKeycode.KEY_F12);
+        if (!announce) return;
+        banner(activity.getDrawable(R.drawable.wehavephones_touch_ic_squares_four).mutate(),
+                getContext().getString(wheel ? R.string.wehavephones_touch_wheel_on : R.string.wehavephones_touch_wheel_off),
+                wheel ? getContext().getString(R.string.wehavephones_touch_wheel_hint) : null);
     }
 
     /**

@@ -26,6 +26,12 @@ public final class MobileTouchLayout {
     public static final float[] WHEEL_ANGLES = {180, 143, 107, 70, 180, 154, 129, 104, 78};
     /** How far the wheel's touch area reaches from the hub, past the outer slots. */
     public static final float WHEEL_REACH = WHEEL_OUTER + WHEEL_SLOT * .7f;
+    /**
+     * Whether the layout editor may hide a control. The Menu key opens the editor, so it always
+     * stays, and the collapsed Controls tab is the only way back to the toolbar.
+     */
+    public static boolean canHide(int control) { return control != MORE && control != HANDLE; }
+
     /** Each Play or Menus segment is narrower than a key. The two form one switch. */
     static final float SEGMENT = .85f, GAP = .16f;
 

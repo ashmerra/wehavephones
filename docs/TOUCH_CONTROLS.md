@@ -111,10 +111,14 @@ during combat changes the native controls at once and the wheel when combat ends
 
 Choose **Menu → Touch controls → Move controls** to drag the native buttons
 and movement stick in the current mode. The Play/Menus switch moves as one
-control. Tap **Done** to resume play. The app remembers the positions between
-sessions, and controls shared by Play and Menus use the same positions.
-**Reset positions** restores the default placement in both modes. Use the
-interface-size toggles to resize the controls.
+control. Tap a control without dragging it to hide it. Hidden controls stay
+faded with a crossed-out badge while you edit, so another tap shows them again.
+The Menu key cannot be hidden, because it opens this editor. Tap **Done** to
+resume play. Hidden keys and the hidden stick leave their space to the camera.
+The app remembers positions and hidden controls between sessions, and controls
+shared by Play and Menus share both. **Reset layout** restores the default
+placement in both modes and shows every hidden control, including the action
+wheel. Use the interface-size toggles to resize the controls.
 
 ## Screen layout
 
@@ -272,8 +276,10 @@ is kept for the next launch. Tablet shapes keep the stock grid.
 
 In the world, open **Menu → Touch controls → Move controls** and drag the
 outlined wheel by any slot or its center key. All four rings and their swipe
-area share the new position. **Reset positions** puts the wheel back in the
-lower right. The interface-size toggles still size the wheel. WoW applies
+area share the new position. Tap the wheel without dragging it to hide it,
+which turns **Action wheel** off and returns the stock action grid. Tap it
+again to show it. **Reset layout** puts the wheel back in the lower right and
+turns it on. The interface-size toggles still size the wheel. WoW applies
 wheel moves made in combat once combat ends.
 
 The wheel has nine slots in two arcs around a hub. Four rings of nine slots

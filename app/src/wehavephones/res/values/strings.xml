@@ -518,9 +518,9 @@ World of Warcraft, Warcraft, Battle.net and Blizzard Entertainment are trademark
     <string name="wehavephones_touch_act_clear_modifier">No modifier</string>
     <string name="wehavephones_touch_act_size">%1$d%%</string>
     <string name="wehavephones_touch_act_move">Move controls</string>
-    <string name="wehavephones_touch_move_hint">Drag controls to move them</string>
+    <string name="wehavephones_touch_move_hint">Drag to move a control. Tap to hide or show it</string>
     <string name="wehavephones_touch_move_done">Done</string>
-    <string name="wehavephones_touch_move_reset">Reset positions</string>
+    <string name="wehavephones_touch_move_reset">Reset layout</string>
     <string name="wehavephones_touch_act_guide">Touch guide</string>
     <string name="wehavephones_touch_act_hide">Hide controls</string>
     <string name="wehavephones_touch_act_undo">Undo hotbar edit</string>

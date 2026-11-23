@@ -86,7 +86,7 @@ APPDATA = 'files/imagefs/home/xuser-%s/.wine/drive_c/users/xuser/AppData/Roaming
 # Exact keys, plus key prefixes ending in "_". The game choice, region, setup state and
 # touch guide flags stay: they are not settings a player tunes.
 DEFAULT_MAIN = ['wehavephones_mobile_touch', 'wehavephones_mobile_touch_scale',
-                'wehavephones_mobile_touch_position_',
+                'wehavephones_mobile_touch_position_', 'wehavephones_mobile_touch_hidden_',
                 'wehavephones_disable_virtual_gamepad', 'wehavephones_performance_overlay',
                 'wehavephones_runtime_profile', 'wehavephones_game_screen_size',
                 'wehavephones_game_screen_size_', 'wehavephones_keep_running_in_background',
