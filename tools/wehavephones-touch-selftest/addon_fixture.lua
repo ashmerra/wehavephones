@@ -987,7 +987,10 @@ GameTooltip:Show()
 menuChord("SHIFT-F9")
 assert(GameTooltip.visible,"hotbar tooltip suppression leaves inventory and world tooltips available")
 GameTooltip_SetDefaultAnchor(GameTooltip)
-assert(GameTooltip.point[2]==ChatFrame1,"default world and experience tooltips cannot cover the thumb controls")
+assert(GameTooltip.anchor=="ANCHOR_NONE" and GameTooltip.point[1]=="TOPRIGHT" and GameTooltip.point[2]==UIParent
+    and GameTooltip.point[5]<0,"default world and experience tooltips open in the blank space under the minimap")
+assert(objects.WeHavePhonesTouchPointerRest.visible and objects.WeHavePhonesTouchPointerRest.mouse
+    and objects.WeHavePhonesTouchPointerRest.point[1]=="TOPLEFT","a blank frame catches the pointer after camera drags")
 edit(ActionButton1)
 assert(objects.WeHavePhonesTouchEditor.visible and actions[1][2]==101)
 assert(objects.WeHavePhonesTouchChoice1.entry.name:find("Spell 1"))
@@ -1495,4 +1498,22 @@ CloseAllBags()
 boot(false)
 assert(MicroMenu.visible and ObjectiveTrackerFrame.point[3]=="TOPRIGHT","Forever restores its stock HUD on opt-out")
 assert(editModeCalls==0,"Forever's Edit Mode frames move, hide and restore through their Base methods")
+-- A preference the player changes after touch mode set it stays, also after opt-out.
+WeHavePhonesTouchDB=nil
+values.SoftTargetInteract, values.lootUnderMouse, values.nameplateShowEnemies="0", "1", "0"
+boot(true)
+assert(values.SoftTargetInteract=="3" and values.lootUnderMouse=="0","touch mode sets its preferences on its first start")
+values.SoftTargetInteract="0"
+boot(true)
+assert(values.SoftTargetInteract=="0" and values.lootUnderMouse=="0" and values.nameplateShowEnemies=="1",
+    "a reload keeps the player's own preference and the rest of touch mode's")
+boot(false)
+assert(values.SoftTargetInteract=="0" and values.lootUnderMouse=="1" and values.nameplateShowEnemies=="0",
+    "opting out keeps the player's choice and restores the others")
+-- Earlier versions set the preferences at every login without recording them.
+WeHavePhonesTouchDB={cvars={SoftTargetInteract="0", lootUnderMouse="1"}}
+values.SoftTargetInteract, values.lootUnderMouse="1", "0"
+boot(true)
+assert(values.SoftTargetInteract=="1" and values.lootUnderMouse=="0","a choice made under an earlier version stays")
+boot(false)
 print("Touch addon PASS ("..workspaceScenarios.." window and inventory scenarios, paged actions, editing, combat and restoration)")

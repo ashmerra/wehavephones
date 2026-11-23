@@ -78,6 +78,29 @@ local function SaveCVar(name, value)
     SetCVar(name, value)
 end
 
+local function SameCVar(a, b)
+    local x, y = tonumber(a), tonumber(b)
+    if x and y then return x == y end
+    return a == b
+end
+
+-- Gameplay preferences touch mode sets on its first start. A value that differs from the one
+-- touch mode set was the player's own choice, in the options or with /console. It stays,
+-- including after opt-out.
+local function SavePreference(name, value)
+    local db = WeHavePhonesTouchDB
+    db.preferences, db.playerCVars = db.preferences or {}, db.playerCVars or {}
+    local current = GetCVar(name)
+    if current == nil or db.playerCVars[name] then return end
+    -- Earlier versions set the value at every login without recording it.
+    if db.cvars[name] ~= nil and not SameCVar(current, db.preferences[name] or value) then
+        db.playerCVars[name] = true
+        return
+    end
+    SaveCVar(name, value)
+    db.preferences[name] = GetCVar(name)
+end
+
 -- Size of the native controls and the wheel, 1 at the default 150%. They change half as much
 -- as the interface. Keep in step with MobileTouchLayout.controlScale. It changes with the
 -- interface size, so a size chosen in combat moves the wheel only once combat ends.
@@ -570,11 +593,37 @@ local function PositionActionTooltip(button)
 end
 
 local tooltipHooked
+-- Where world tooltips open: the blank space under the minimap, as distances from the
+-- top-right corner. PositionAuras sets it. Chat is the fallback for unsupported layouts.
+local tooltipRight, tooltipTop
 local function PositionDefaultTooltip(tooltip)
-    if not enabled or tooltip ~= GameTooltip or not ChatFrame1 then return end
-    tooltip:SetAnchorType("ANCHOR_NONE")
-    tooltip:ClearAllPoints()
-    tooltip:SetPoint("BOTTOMLEFT", ChatFrame1, "BOTTOMLEFT", 0, 0)
+    if not enabled or tooltip ~= GameTooltip then return end
+    if tooltipTop then
+        local relative = tooltip:GetEffectiveScale()/UIParent:GetEffectiveScale()
+        tooltip:SetAnchorType("ANCHOR_NONE")
+        tooltip:ClearAllPoints()
+        tooltip:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -tooltipRight/relative, -tooltipTop/relative)
+    elseif ChatFrame1 then
+        tooltip:SetAnchorType("ANCHOR_NONE")
+        tooltip:ClearAllPoints()
+        tooltip:SetPoint("BOTTOMLEFT", ChatFrame1, "BOTTOMLEFT", 0, 0)
+    end
+end
+
+-- The app rests the pointer in the top-left corner after a camera drag. Over the world there,
+-- anything passing under it would show a tooltip. This blank frame catches the pointer instead.
+local pointerRest
+local function ShowPointerRest(show)
+    if show and not pointerRest then
+        pointerRest = CreateFrame("Frame", "WeHavePhonesTouchPointerRest", UIParent)
+        pointerRest:SetFrameStrata("TOOLTIP")
+        pointerRest:SetPoint("TOPLEFT", UIParent, "TOPLEFT", 0, 0)
+        pointerRest:EnableMouse(true)
+    end
+    if not pointerRest then return end
+    -- At least 8 game pixels at any interface size.
+    pointerRest:SetSize(8/pointerRest:GetEffectiveScale(), 8/pointerRest:GetEffectiveScale())
+    pointerRest:SetShown(show)
 end
 
 -- Fit stock panels and their bags as one workspace. Never reparent secure frames,
@@ -1165,6 +1214,13 @@ PositionAuras = function()
     local top = compact and minimapBottom+4 or TOOLBAR_BAND*controlScale*height+4
     local rows = BuffRows()
     auraLeft = width-right-11*AURA_ICON
+    -- Wide games keep the auras left of the minimap, so tooltips start right under it.
+    -- Narrower games stack them under the auras, which take that space.
+    if compact then
+        tooltipRight, tooltipTop = right, top+(rows+1)*AURA_ROW+4
+    else
+        tooltipRight, tooltipTop = width-minimapLeft, minimapBottom+4
+    end
     for _, aura in ipairs({{"BuffFrame", 0, 0}, {"DebuffFrame", 0, rows*AURA_ROW}}) do
         local object = _G[aura[1]]
         if object then
@@ -1849,13 +1905,13 @@ local function Apply()
             SaveCVar("uiScale", "1")
             -- Native touch is mouse input. Enable Blizzard's nearby interact target
             -- without relying on the gamepad-only default or pixel-perfect corpse taps.
-            SaveCVar("SoftTargetInteract", "3")
-            SaveCVar("SoftTargetInteractArc", "1")
-            SaveCVar("SoftTargetIconInteract", "1")
-            SaveCVar("lootUnderMouse", "0")
-            SaveCVar("alwaysCompareItems", "1")
+            SavePreference("SoftTargetInteract", "3")
+            SavePreference("SoftTargetInteractArc", "1")
+            SavePreference("SoftTargetIconInteract", "1")
+            SavePreference("lootUnderMouse", "0")
+            SavePreference("alwaysCompareItems", "1")
             -- Nameplates are steadier tap targets than moving creature models.
-            SaveCVar("nameplateShowEnemies", "1")
+            SavePreference("nameplateShowEnemies", "1")
             if not retail and SupportedLayout() and GetActionBarToggles then
                 local toggles = {GetActionBarToggles()}
                 for i = 1, 7 do toggles[i] = toggles[i] == true or toggles[i] == 1 end
@@ -1920,9 +1976,14 @@ local function Apply()
         end
         UniformScale()
         Layout()
+        ShowPointerRest(true)
     else
-        for name, value in pairs(db.cvars) do SetCVar(name, value) end
-        db.cvars = {}
+        db.playerCVars = db.playerCVars or {}
+        for name, value in pairs(db.cvars) do
+            if not db.playerCVars[name] then SetCVar(name, value) end
+        end
+        db.cvars, db.preferences = {}, nil
+        ShowPointerRest(false)
         if db.originalRootScale then UIParent:SetScale(db.originalRootScale) db.originalRootScale=nil end
         if db.actionBars and SetActionBarToggles then
             SetActionBarToggles(unpack(db.actionBars))
@@ -1975,7 +2036,7 @@ frame:SetScript("OnEvent", function(_, event)
         if chatLarge then SetChatLarge(false) end
         if inventoryStrip then inventoryStrip:Hide() end
     elseif event == "UI_SCALE_CHANGED" or event == "DISPLAY_SIZE_CHANGED" then
-        C_Timer.After(0, function() if enabled and applied then UniformScale() Layout() end end)
+        C_Timer.After(0, function() if enabled and applied then UniformScale() Layout() ShowPointerRest(true) end end)
     elseif event == "QUEST_LOG_UPDATE" or event == "QUEST_WATCH_UPDATE" or event == "UPDATE_SHAPESHIFT_FORMS" or event == "UNIT_PET" or event == "GROUP_ROSTER_UPDATE" then
         if enabled and applied then QueueHud() end
     else Apply() end

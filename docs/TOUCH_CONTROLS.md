@@ -164,8 +164,9 @@ cannot switch tabs or pull a tab out into its own window. Expanded chat's tabs
 work as usual. Stock
 chat retains its touch anchor during combat. Protected replacement chat frames
 defer their layout until combat ends. Hotbar tooltips appear only in Inspect,
-so casting leaves the screen clear. Inspect and default world tooltips appear
-over chat.
+so casting leaves the screen clear. Inspect hotbar tooltips appear over chat.
+World and other default tooltips open in the blank space under the minimap, or
+under the buffs on narrower games, clear of chat and the stick.
 
 The stock quest tracker sits in the upper left, under the player frame and
 anything below it such as the pet frame, class bars or party frames, and above
@@ -339,11 +340,16 @@ is kept. Direct corpse taps and long presses remain available.
 
 Touch mode enables the native interact key for mouse input, widens its front
 cone and shows the interaction icon. It preserves the player's auto-loot
-preference and never scans or automatically loots world objects.
+preference and never scans or automatically loots world objects. It sets these
+preferences, loot under mouse, equipment comparison and enemy nameplates once.
+A value the player changes later, in the options or with `/console`, stays,
+also after opting out.
 
 Movement, camera and spell taps have independent pointer ownership. Tapping a
 spell releases an active camera grab so WoW can receive an absolute click.
-Moving the camera finger again resumes looking. A pinch or scroll never
+Moving the camera finger again resumes looking. When a camera drag ends, the
+pointer rests on a small blank frame in the top-left corner, so nothing walking
+through the middle of the screen shows a tooltip or takes a later click. A pinch or scroll never
 produces a leftover click when its fingers lift.
 
 The existing session side menu provides Exit.

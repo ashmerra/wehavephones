@@ -106,8 +106,10 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
     private float rippleX, rippleY, pulseX, pulseY;
     // The keyboard pan when the gesture began, and when a touch last placed the pointer.
     private int gesturePan;
-    private long pointerPlacedAt = -TAPPED_FIELD_MS;
-    private static final long TAPPED_FIELD_MS = 1500;
+    private long pointerPlacedAt = -TAPPED_FIELD_MS, cameraReleasedAt;
+    private static final long TAPPED_FIELD_MS = 1500, POINTER_REST_MS = 120;
+    /** Guest pixel inside the touch addon's pointer rest frame in the top-left corner. */
+    private static final int POINTER_REST = 2;
     private boolean guide, swallowing;
     private final MobileTouchMenu menu;
     private final PointF[] positions = new PointF[STICK + 1];
@@ -1512,10 +1514,29 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
     }
 
     @Override public void camera(boolean down) {
+        removeCallbacks(restPointer);
         if (down) {
             xServer.injectPointerMove(xServer.screenInfo.width / 2, xServer.screenInfo.height / 2);
             xServer.injectPointerButtonPress(Pointer.Button.BUTTON_RIGHT);
-        } else xServer.injectPointerButtonRelease(Pointer.Button.BUTTON_RIGHT);
+        } else {
+            xServer.injectPointerButtonRelease(Pointer.Button.BUTTON_RIGHT);
+            cameraReleasedAt = SystemClock.uptimeMillis();
+            postDelayed(restPointer, POINTER_REST_MS);
+        }
+    }
+
+    /**
+     * A camera drag leaves the pointer in the middle of the world, just above the character.
+     * Anything that walks under it there shows its tooltip, and a later click lands on it. The
+     * touch addon keeps a small blank frame in the top-left corner for the pointer to rest on.
+     * The wait lets WoW finish ending its mouselook first. A touch that placed the pointer since
+     * the drag ended keeps it.
+     */
+    private final Runnable restPointer = this::restPointer;
+
+    private void restPointer() {
+        if (pointerPlacedAt >= cameraReleasedAt || xServer.pointer.isButtonPressed(Pointer.Button.BUTTON_RIGHT)) return;
+        xServer.injectPointerMove(POINTER_REST, POINTER_REST);
     }
 
     @Override public void moveCamera(float dx, float dy) {
