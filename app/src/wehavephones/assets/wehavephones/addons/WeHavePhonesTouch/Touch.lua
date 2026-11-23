@@ -10,7 +10,7 @@ local buttons = {}
 local Layout, OpenEditor, RefreshEditor, LayoutWorkspace, QueueWorkspace, QueueHud
 -- The action wheel replaces the stock action grid on wide games when the app asks for it.
 local wheelOn = addon.wheel == true
-local WheelHub, WheelWanted
+local DefaultWheelHub, WheelWanted
 local ACTION_SCALE = 1.35
 -- Taller action grids below this aspect ratio. 16:10 is wide on both sides of the
 -- native and Lua boundary, whatever the rounding. Keep in step with MobileTouchLayout.
@@ -23,6 +23,7 @@ local WHITE = "Interface\\Buttons\\WHITE8X8"
 local WHEEL_FIRST, WHEEL_SLOTS, WHEEL_RINGS = 145, 9, 4
 local WHEEL_ANGLES = {180, 143, 107, 70, 180, 154, 129, 104, 78}
 local WHEEL_SLOT, WHEEL_HUB, WHEEL_INNER, WHEEL_OUTER = .10, .107, .21, .32
+local WHEEL_REACH = WHEEL_OUTER+WHEEL_SLOT*.7
 -- The hub key's offset from the wheel's center: .08 toward 120 degrees, .02 clear of every slot.
 local WHEEL_KEY_X, WHEEL_KEY_Y = -.04, .069
 local WHEEL_RIGHT, WHEEL_GAP, WHEEL_HUB_X, WHEEL_HUB_Y = .975, .17, .125, .075
@@ -933,7 +934,7 @@ end
 
 local stanceHooked
 local function PlaceStances(object)
-    local hubX, hubY, wheelUnit = WheelHub()
+    local hubX, hubY, wheelUnit = DefaultWheelHub()
     local left = hubX+WHEEL_HUB_X*wheelUnit+8
     local containers = object.shownButtonContainers or {}
     local count = math.max(1, #containers)
@@ -998,7 +999,7 @@ local function PositionClassBars()
     local room = LayoutWidth()-32-reserved
     if WheelWanted() then
         -- The footer ends before the wheel's leftmost slot.
-        local hubX, _, wheelUnit = WheelHub()
+        local hubX, _, wheelUnit = DefaultWheelHub()
         room = math.max(60, math.min(room, hubX-(WHEEL_OUTER+WHEEL_SLOT/2)*wheelUnit-12
             -(UIParent:GetWidth()-LayoutWidth())/2-16-reserved))
     end
@@ -1474,14 +1475,26 @@ end
 -- The wheel steps aside for them, and the stock grid returns until they end.
 local WHEEL_SPECIAL = (retail or (WOW_PROJECT_MISTS_CLASSIC and WOW_PROJECT_ID == WOW_PROJECT_MISTS_CLASSIC))
     and "[vehicleui][possessbar][overridebar]" or "[bonusbar:5]"
-local wheel
+local wheel, wheelLayout
 
-WheelHub = function()
+DefaultWheelHub = function()
     -- The hub, from the bottom left in UIParent units, and the wheel's unit: the game's height
     -- times the control size. Every wheel and stance distance is a fraction of it.
     local width, unit = UIParent:GetWidth(), UIParent:GetHeight()*controlScale
     local right = math.min((width+LayoutWidth())/2, width*WHEEL_RIGHT-unit*WHEEL_GAP)
     return right-WHEEL_HUB_X*unit, WHEEL_HUB_Y*unit, unit
+end
+
+local function WheelHub()
+    local x, y = wheelLayout.x, wheelLayout.y
+    if type(x) ~= "number" or type(y) ~= "number" or not (x >= 0 and x <= 1 and y >= 0 and y <= 1) then
+        return DefaultWheelHub()
+    end
+    -- The app stores the hub relative to the top left. Keep the whole swipe area on-screen.
+    local width, height = UIParent:GetWidth(), UIParent:GetHeight()
+    local unit = height*controlScale
+    return math.max(WHEEL_REACH*unit, math.min(width-WHEEL_HUB_X*unit, x*width)),
+        math.max(WHEEL_HUB_Y*unit, math.min(height-WHEEL_REACH*unit, (1-y)*height)), unit
 end
 
 WheelWanted = function()
@@ -1653,6 +1666,20 @@ local function PlaceWheel()
     wheel.hub:SetPoint("CENTER", UIParent, "BOTTOMLEFT", (hubX+WHEEL_KEY_X*wheelUnit)/hubScale, (hubY+WHEEL_KEY_Y*wheelUnit)/hubScale)
 end
 
+-- The app places the guest pointer at the requested hub and releases the move chord.
+local function SetWheelPosition(reset)
+    if reset then
+        wheelLayout.x, wheelLayout.y = nil, nil
+    else
+        local x, y = GetCursorPosition()
+        local scale = UIParent:GetEffectiveScale()
+        wheelLayout.x = math.max(0, math.min(1, x/(UIParent:GetWidth()*scale)))
+        wheelLayout.y = math.max(0, math.min(1, 1-y/(UIParent:GetHeight()*scale)))
+    end
+    if InCombatLockdown() then Notice("The action wheel moves after combat.") return end
+    if wheel and WheelWanted() then PlaceWheel() end
+end
+
 -- Retail's main bar draws dividers between its visible buttons and keeps them when a state
 -- driver hides the buttons. Fade them while the wheel is on. Calling the bar's own update
 -- from here would taint it.
@@ -1806,6 +1833,12 @@ local function Apply()
     if enabled then
         if not applied then
             applied = true
+            -- Keep edits through a UI reload or character switch. The app is authoritative on a new launch.
+            WeHavePhonesTouchWheelLayout = WeHavePhonesTouchWheelLayout or {}
+            wheelLayout = WeHavePhonesTouchWheelLayout
+            if wheelLayout.launch ~= addon.wheelLaunch then
+                wheelLayout.launch, wheelLayout.x, wheelLayout.y = addon.wheelLaunch, addon.wheelX, addon.wheelY
+            end
             if db.originalRootScale == nil then db.originalRootScale = UIParent:GetScale() end
             -- The app's size reaches every character once. Later in-game choices survive a reload.
             if addon.scale and db.modeScale ~= addon.scale then db.touchScale, db.modeScale = addon.scale, addon.scale end
@@ -1843,6 +1876,8 @@ local function Apply()
                 ["SHIFT-F4"] = function() SetTouchScale(1.25) end, ["SHIFT-F5"] = function() SetTouchScale(1.5) end,
                 ["SHIFT-F6"] = function() SetTouchScale(1.75) end, ["CTRL-F9"] = function() SetTouchScale(.75) end,
                 ["CTRL-F10"] = function() SetTouchScale(.9) end, ["SHIFT-F12"] = function() SetTouchScale(1.1) end,
+                ["CTRL-SHIFT-END"] = function() SetWheelPosition(false) end,
+                ["CTRL-SHIFT-DELETE"] = function() SetWheelPosition(true) end,
                 ["SHIFT-F8"] = function() SetActionTooltips(true) end,
                 ["SHIFT-F9"] = function() SetActionTooltips(false) end}) do
                 local name = "WeHavePhonesTouchMenu" .. key:gsub("%-", "")

@@ -269,6 +269,12 @@ a wheel at the lower right of wide games. It is on by default. Turn it off to
 use the standard action bars. The choice
 is kept for the next launch. Tablet shapes keep the stock grid.
 
+In the world, open **Menu → Touch controls → Move controls** and drag the
+outlined wheel by any slot or its center key. All four rings and their swipe
+area share the new position. **Reset positions** puts the wheel back in the
+lower right. The interface-size toggles still size the wheel. WoW applies
+wheel moves made in combat once combat ends.
+
 The wheel has nine slots in two arcs around a hub. Four rings of nine slots
 use WoW's Action Bars 6 to 8 (slots 145 to 180). Those slots belong to the
 character like any other, but a PC shows them only when those bars are turned

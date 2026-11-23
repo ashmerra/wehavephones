@@ -2,6 +2,7 @@ package com.wehavephones.mobile;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.graphics.PointF;
 import android.hardware.display.DisplayManager;
 import android.util.DisplayMetrics;
 import android.view.Display;
@@ -33,6 +34,7 @@ public final class WeHavePhonesConfig {
     public static final String KEY_MOBILE_TOUCH = "wehavephones_mobile_touch";
     private static final String KEY_MOBILE_TOUCH_SCALE = "wehavephones_mobile_touch_scale";
     private static final String KEY_MOBILE_TOUCH_WHEEL = "wehavephones_mobile_touch_wheel";
+    private static final String KEY_MOBILE_TOUCH_WHEEL_POSITION = "wehavephones_mobile_touch_position_wheel";
     private static final String KEY_MOBILE_TOUCH_GUIDE = "wehavephones_mobile_touch_guide_";
     public static final String KEY_KEEP_RUNNING_IN_BACKGROUND = "wehavephones_keep_running_in_background";
     public static final String KEY_PICTURE_IN_PICTURE = "wehavephones_picture_in_picture";
@@ -244,6 +246,22 @@ public final class WeHavePhonesConfig {
 
     public static void setMobileTouchWheel(Context context, boolean wheel) {
         prefs(context).edit().putBoolean(KEY_MOBILE_TOUCH_WHEEL, wheel).apply();
+    }
+
+    /** Wheel hub as fractions of the game's viewport, measured from the top left. */
+    public static PointF getMobileTouchWheelPosition(Context context) {
+        SharedPreferences prefs = prefs(context);
+        float x = prefs.getFloat(KEY_MOBILE_TOUCH_WHEEL_POSITION + "_x", Float.NaN);
+        float y = prefs.getFloat(KEY_MOBILE_TOUCH_WHEEL_POSITION + "_y", Float.NaN);
+        return x >= 0 && x <= 1 && y >= 0 && y <= 1 ? new PointF(x, y) : null;
+    }
+
+    public static void setMobileTouchWheelPosition(Context context, PointF position) {
+        SharedPreferences.Editor edit = prefs(context).edit();
+        String x = KEY_MOBILE_TOUCH_WHEEL_POSITION + "_x", y = KEY_MOBILE_TOUCH_WHEEL_POSITION + "_y";
+        if (position == null) edit.remove(x).remove(y);
+        else edit.putFloat(x, position.x).putFloat(y, position.y);
+        edit.apply();
     }
 
     /** Whether the touch guide for Play or Menus has been shown once. */

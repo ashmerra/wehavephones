@@ -39,12 +39,12 @@ public final class MobileTouchSetup {
 
     /** {@code scale} is the app-wide touch interface size, applied to every character at login. */
     public static void prepare(File product, boolean enabled, float scale, int interfaceVersion, byte[] script) throws IOException {
-        prepare(product, enabled, scale, false, interfaceVersion, script);
+        prepare(product, enabled, scale, false, Float.NaN, Float.NaN, 0, interfaceVersion, script);
     }
 
-    /** {@code wheel} shows the action wheel on wide games instead of the stock action grid. */
-    public static void prepare(File product, boolean enabled, float scale, boolean wheel, int interfaceVersion, byte[] script)
-            throws IOException {
+    /** The wheel position is app-wide. A new launch replaces positions saved by the addon for UI reloads. */
+    public static void prepare(File product, boolean enabled, float scale, boolean wheel, float wheelX, float wheelY,
+                               long launch, int interfaceVersion, byte[] script) throws IOException {
         File state = new File(product, STATE);
         File folder = new File(product, "Interface/AddOns/" + FOLDER);
         // Default-off installs never acquire a touch addon or have their addons changed.
@@ -86,12 +86,16 @@ public final class MobileTouchSetup {
         Files.createDirectories(folder.toPath());
         String toc = "## Interface: " + interfaceVersion + "\n## Title: WeHavePhones Touch\n"
                 + "## Notes: Large paged touch actions and temporary movement bindings.\n"
-                + "## Version: 1.6.5\n## SavedVariablesPerCharacter: WeHavePhonesTouchDB\n\nMode.lua\nTouch.lua\n";
+                + "## Version: 1.7.0\n## SavedVariables: WeHavePhonesTouchWheelLayout\n"
+                + "## SavedVariablesPerCharacter: WeHavePhonesTouchDB\n\nMode.lua\nTouch.lua\n";
         write(new File(folder, FOLDER + ".toc"), toc.getBytes(StandardCharsets.UTF_8));
         write(new File(folder, "Touch.lua"), script);
         String size = String.format(java.util.Locale.US, "%.2f", normalizeScale(scale));
+        String placement = wheelX >= 0 && wheelX <= 1 && wheelY >= 0 && wheelY <= 1
+                ? "addon.wheelX = " + wheelX + "\naddon.wheelY = " + wheelY + "\n" : "";
         write(new File(folder, "Mode.lua"), ("local _, addon = ...\naddon.enabled = " + enabled
-                + "\naddon.scale = " + size + "\naddon.wheel = " + wheel + "\n").getBytes(StandardCharsets.UTF_8));
+                + "\naddon.scale = " + size + "\naddon.wheel = " + wheel + "\naddon.wheelLaunch = " + launch + "\n"
+                + placement).getBytes(StandardCharsets.UTF_8));
     }
 
     /** Journals the player's controller CVars once, turns them off, and restores them on opt-out. */

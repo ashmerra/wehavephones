@@ -63,17 +63,26 @@ public final class MobileTouchInput {
      * next ring. One swipe changes one ring, however far it goes.
      */
     public static final float RING_STEP = 40;
-    private float wheelX, wheelY, wheelMin;
+    private float wheelX, wheelY, wheelMin, wheelAspect = 1;
     private final boolean[] keys = new boolean[Key.values().length];
 
     public MobileTouchInput(Sink sink, float slop) { this.sink = sink; this.slop = slop; }
 
     /** The wheel's hub, and the distance from it inside which a swipe has no steady angle. */
-    public void setWheel(float x, float y, float minimum) { wheelX = x; wheelY = y; wheelMin = minimum; }
+    public void setWheel(float x, float y, float minimum, float aspect) {
+        wheelX = x;
+        wheelY = y;
+        wheelMin = minimum;
+        wheelAspect = aspect;
+    }
+
+    private double wheelDistance(float x, float y) {
+        return Math.hypot((x - wheelX) / wheelAspect, y - wheelY);
+    }
 
     /** Counterclockwise degrees around the hub, as drawn on screen. */
     private float wheelAngle(float x, float y) {
-        return (float) Math.toDegrees(Math.atan2(wheelY - y, x - wheelX));
+        return (float) Math.toDegrees(Math.atan2(wheelY - y, (x - wheelX) / wheelAspect));
     }
 
     /**
@@ -240,12 +249,12 @@ public final class MobileTouchInput {
             // A swipe around the hub changes ring. It never clicks, drags or turns the camera.
             // A finger whose hold already fired stays on its slot.
             if (!finger.dragged || finger.stepped || (finger.consumed && !finger.swiping)) return;
-            if (Math.hypot(x - wheelX, y - wheelY) < wheelMin) return;
+            if (wheelDistance(x, y) < wheelMin) return;
             float angle = wheelAngle(x, y);
             if (!finger.swiping) {
                 finger.swiping = finger.consumed = true;
                 // A swipe that starts on the hub counts from where it leaves the hub.
-                if (Math.hypot(finger.startX - wheelX, finger.startY - wheelY) < wheelMin) finger.angle = angle;
+                if (wheelDistance(finger.startX, finger.startY) < wheelMin) finger.angle = angle;
             }
             float delta = finger.angle - angle;
             if (delta > 180) delta -= 360;

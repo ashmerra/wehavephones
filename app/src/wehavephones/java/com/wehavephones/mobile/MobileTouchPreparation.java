@@ -1,6 +1,7 @@
 package com.wehavephones.mobile;
 
 import android.content.Context;
+import android.graphics.PointF;
 import com.wehavephones.container.Container;
 import com.wehavephones.mobile.addons.install.AddonInstaller;
 import com.wehavephones.mobile.addons.required.MobileTouchSetup;
@@ -21,11 +22,16 @@ public final class MobileTouchPreparation {
             while ((length = stream.read(buffer)) != -1) output.write(buffer, 0, length);
             script = output.toByteArray();
         }
+        boolean enabled = WeHavePhonesConfig.isMobileTouchEnabled(context);
+        boolean wheel = WeHavePhonesConfig.isMobileTouchWheel(context);
+        float scale = WeHavePhonesConfig.getMobileTouchScale(context);
+        PointF wheelPosition = WeHavePhonesConfig.getMobileTouchWheelPosition(context);
+        long launch = enabled ? System.currentTimeMillis() : 0;
         synchronized (AddonInstaller.LOCK) {
             for (WowProduct product : WowInstallationScanner.scan(container)) {
                 int clientInterface = WowFlavor.interfaceFromVersion(product.getVersion());
-                MobileTouchSetup.prepare(product.directory, WeHavePhonesConfig.isMobileTouchEnabled(context),
-                        WeHavePhonesConfig.getMobileTouchScale(context), WeHavePhonesConfig.isMobileTouchWheel(context),
+                MobileTouchSetup.prepare(product.directory, enabled, scale, wheel,
+                        wheelPosition == null ? Float.NaN : wheelPosition.x, wheelPosition == null ? Float.NaN : wheelPosition.y, launch,
                         clientInterface > 0 ? clientInterface : product.getFlavor().fallbackInterface, script);
             }
         }

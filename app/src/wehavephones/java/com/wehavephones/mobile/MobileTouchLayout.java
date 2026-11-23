@@ -19,6 +19,7 @@ public final class MobileTouchLayout {
      */
     public static final float WHEEL_RIGHT = .975f, WHEEL_GAP = .17f, WHEEL_HUB_X = .125f, WHEEL_HUB_Y = .075f, WHEEL_SLOT = .10f,
             WHEEL_INNER = .21f, WHEEL_OUTER = .32f;
+    public static final float WHEEL_KEY = .107f, WHEEL_KEY_X = -.04f, WHEEL_KEY_Y = -.069f;
     /** Swipes around the hub count from this far out, where the angle around it is steady. */
     public static final float WHEEL_DEAD = .052f;
     /** Slot angles in degrees, counterclockwise from the right: four inner slots, then five outer slots. */
@@ -53,8 +54,6 @@ public final class MobileTouchLayout {
     public final boolean overflow;
     /** The area covered by the toolbar, for placing hints beside it. */
     public final Bounds toolbar;
-    /** The action wheel's hub and touch reach in view pixels. Reach is 0 where the wheel is not used. */
-    public final float wheelX, wheelY, wheelReach, wheelUnit;
     /** The control size from {@link #controlScale}. 1 at the default interface size. */
     public final float controls;
 
@@ -169,33 +168,44 @@ public final class MobileTouchLayout {
         stickX = insetLeft + Math.max(radius * 1.2f + margin, w * .12f);
         stickY = insetTop + h * (w / h < 1.6f ? .68f : .70f);
         textSize = Math.min(11 * density, s * .22f);
-        // Wide games only. Tablet shapes keep the stock action grid.
-        float[] wheel = wheel(viewport, controls);
-        wheelX = wheel[0];
-        wheelY = wheel[1];
-        wheelUnit = wheel[2];
-        wheelReach = column ? 0 : WHEEL_REACH * wheelUnit;
     }
 
     /**
-     * The wheel's hub position and its unit, in view pixels. The unit is the game's height times
-     * the control size: every wheel distance is a fraction of it.
+     * Hub and wheel units in view pixels. Fullscreen stretching can give the axes different units.
+     * Keep the anchor and its clamps in step with WheelHub in the touch addon.
      */
-    public static float[] wheel(Bounds viewport, float controls) {
-        float vpH = Math.max(1, viewport.height()), vpW = viewport.width(), unit = vpH * controls;
-        float layoutWidth = Math.min(vpW * .8f, vpH * 16 / 9);
-        float right = viewport.left + Math.min((vpW + layoutWidth) / 2, vpW * WHEEL_RIGHT - unit * WHEEL_GAP);
-        return new float[]{right - WHEEL_HUB_X * unit, viewport.bottom - WHEEL_HUB_Y * unit, unit};
-    }
+    public static final class Wheel {
+        public final float x, y, unitX, unitY;
 
-    /**
-     * Whether a touch belongs to the wheel: within its reach of the hub, no farther right than
-     * the rightmost slot and no lower than the hub's own bottom edge.
-     */
-    public boolean inWheel(float x, float y) {
-        if (wheelReach <= 0) return false;
-        float dx = x - wheelX, dy = y - wheelY;
-        return Math.hypot(dx, dy) <= wheelReach && dx <= WHEEL_HUB_X * wheelUnit && dy <= WHEEL_HUB_Y * wheelUnit;
+        public Wheel(Bounds viewport, float gameAspect, float controls, float xFraction, float yFraction) {
+            unitX = viewport.width() / gameAspect * controls;
+            unitY = viewport.height() * controls;
+            if (validPosition(xFraction, yFraction)) {
+                x = Math.max(viewport.left + WHEEL_REACH * unitX,
+                        Math.min(viewport.right - WHEEL_HUB_X * unitX, viewport.left + xFraction * viewport.width()));
+                y = Math.max(viewport.top + WHEEL_REACH * unitY,
+                        Math.min(viewport.bottom - WHEEL_HUB_Y * unitY, viewport.top + yFraction * viewport.height()));
+            } else {
+                float layoutWidth = Math.min(viewport.width() * .8f, viewport.width() / gameAspect * 16 / 9);
+                float right = viewport.left + Math.min((viewport.width() + layoutWidth) / 2,
+                        viewport.width() * WHEEL_RIGHT - unitX * WHEEL_GAP);
+                x = right - WHEEL_HUB_X * unitX;
+                y = viewport.bottom - WHEEL_HUB_Y * unitY;
+            }
+        }
+
+        public static boolean validPosition(float x, float y) { return x >= 0 && x <= 1 && y >= 0 && y <= 1; }
+
+        /** Swipes start within reach, left of the rightmost slot and above the hub's bottom edge. */
+        public boolean contains(float viewX, float viewY) {
+            float dx = (viewX - x) / unitX, dy = (viewY - y) / unitY;
+            return Math.hypot(dx, dy) <= WHEEL_REACH && dx <= WHEEL_HUB_X && dy <= WHEEL_HUB_Y;
+        }
+
+        public Bounds bounds() {
+            return new Bounds(x - WHEEL_REACH * unitX, y - WHEEL_REACH * unitY,
+                    x + WHEEL_HUB_X * unitX, y + WHEEL_HUB_Y * unitY);
+        }
     }
 
     /** Keys, their gaps, and the joined Play and Menus switch, in key widths. */

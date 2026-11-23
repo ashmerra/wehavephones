@@ -330,7 +330,7 @@ local function chatIcon()
     local line=objects.WeHavePhonesTouchChatSize.lines[1]
     return line.finish[3]>line.start[3] and "out" or "in"
 end
-local function boot(enabled, scale, wheel)
+local function boot(enabled, scale, wheel, launch, wheelX, wheelY)
     -- Reloading WoW discards the previous Lua runtime and its secure hooks.
     -- Keep the DB and frame geometry here, but never run old enabled callbacks
     -- while exercising a new disabled addon instance.
@@ -341,7 +341,7 @@ local function boot(enabled, scale, wheel)
     secureHooks={}
     local chunk=assert(load(ADDON,"Touch.lua"))
     local before=#all
-    chunk("WeHavePhonesTouch",{enabled=enabled,scale=scale,wheel=wheel})
+    chunk("WeHavePhonesTouch",{enabled=enabled,scale=scale,wheel=wheel,wheelLaunch=launch,wheelX=wheelX,wheelY=wheelY})
     active=all[before+1]
     active.scripts.OnEvent(active,"PLAYER_LOGIN")
 end
@@ -794,6 +794,35 @@ objects.WeHavePhonesTouchEditor:Hide()
 boot(true,nil,true)
 assert(objects.WeHavePhonesTouchWheelSlot1.action==145 and objects.WeHavePhonesTouchWheelHub.text=="1",
     "the ring in use is kept for the next login")
+local function checkWheelPosition(x, y)
+    local slot=objects.WeHavePhonesTouchWheelSlot5
+    local left,bottom,w,h=topRect(slot)
+    local unit=UIParent:GetHeight()*controls()
+    close(left+w/2, x*UIParent:GetWidth()-.32*unit,"the outer slot follows the horizontal hub position")
+    close(bottom+h/2, (1-y)*UIParent:GetHeight(),"the outer slot follows the vertical hub position")
+    close(w, .10*unit,"moving the wheel keeps the selected size")
+end
+boot(true,1.5,true,19,.48,.62)
+checkWheelPosition(.48,.62)
+function GetCursorPosition()
+    local scale=UIParent:GetEffectiveScale()
+    return .63*UIParent:GetWidth()*scale, .28*UIParent:GetHeight()*scale
+end
+combat=true
+menuChord("CTRL-SHIFT-END")
+checkWheelPosition(.48,.62)
+combat=false
+active.scripts.OnEvent(active,"PLAYER_REGEN_ENABLED")
+checkWheelPosition(.63,.72)
+boot(true,1.5,true,19,.48,.62)
+checkWheelPosition(.63,.72)
+menuChord("SHIFT-F6")
+checkWheelPosition(.63,.72)
+menuChord("CTRL-SHIFT-DELETE")
+assert(WeHavePhonesTouchWheelLayout.x==nil and WeHavePhonesTouchWheelLayout.y==nil,"reset removes the position override")
+menuChord("CTRL-SHIFT-END")
+boot(true,1.5,true,20,.52,.66)
+checkWheelPosition(.52,.66)
 boot(true)
 assert(ActionButton1.visible and MultiBar5.visible,"a launch without the wheel uses the stock grid")
 if geometry then geometry:close() end

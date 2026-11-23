@@ -52,7 +52,8 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
             SILVER_LIGHT = 0xFFEFF4F8, SILVER = 0xFFBAC7D6, BLUE_LIGHT = 0xFF2C91E5, WHITE = 0xFFFFFFFF,
             SHADE = 0x9906162D, PANEL = 0xF20B2344;
     private static final long BANNER_MS = 3400, RIPPLE_MS = 260, PULSE_MS = 380, HOLD_DELAY_MS = 120;
-    private static final int STICK = MobileTouchLayout.COUNT, EDIT_DONE = STICK + 1, EDIT_RESET = STICK + 2;
+    private static final int STICK = MobileTouchLayout.COUNT, WHEEL_CONTROL = STICK + 1,
+            EDIT_DONE = WHEEL_CONTROL + 1, EDIT_RESET = WHEEL_CONTROL + 2;
     private static final String POSITION_PREFIX = "wehavephones_mobile_touch_position_";
     private static final MobileTouchInput.Zone[] ZONES = {MobileTouchInput.Zone.ESCAPE, MobileTouchInput.Zone.MAP,
             MobileTouchInput.Zone.BAGS, MobileTouchInput.Zone.MORE, MobileTouchInput.Zone.TARGET, MobileTouchInput.Zone.INTERACT,
@@ -86,6 +87,8 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
     private MobileTouchLayout layout;
     private MobileTouchLayout.Bounds lastViewport;
     private MobileTouchLayout.Bounds safeArea;
+    private MobileTouchLayout.Wheel wheel;
+    private PointF wheelPosition;
     private float stickX, stickY, radius, knobX, knobY;
     private int stickPointer = -1;
     private XKeycode nextModifier, heldModifier;
@@ -122,6 +125,7 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
         touchSlop = ViewConfiguration.get(activity).getScaledTouchSlop();
         input = new MobileTouchInput(this, touchSlop);
         SharedPreferences prefs = WeHavePhonesConfig.prefs(activity);
+        wheelPosition = WeHavePhonesConfig.getMobileTouchWheelPosition(activity);
         for (int i = 0; i < positions.length; i++) {
             String key = positionKey(i);
             float x = prefs.getFloat(key + "_x", Float.NaN), y = prefs.getFloat(key + "_y", Float.NaN);
@@ -214,7 +218,6 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
         safeArea = new MobileTouchLayout.Bounds(left, top, Math.max(left + 1, getWidth() - right),
                 Math.max(top + 1, getHeight() - bottom));
         radius = layout.radius;
-        input.setWheel(layout.wheelX, layout.wheelY, MobileTouchLayout.WHEEL_DEAD * layout.wheelUnit);
         applyPositions();
         labels[MobileTouchLayout.JUMP] = getContext().getString(diving ? R.string.wehavephones_touch_dive : R.string.wehavephones_touch_jump);
         syncCursor();
@@ -223,6 +226,7 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
     }
 
     private void applyPositions() {
+        updateWheel(wheelPosition);
         stickX = knobX = layout.stickX;
         stickY = knobY = layout.stickY;
         for (int i = 0; i < buttons.length; i++) {
@@ -265,8 +269,8 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
             if (lastViewport != null) json.put("viewport", new JSONArray().put(origin[0] + lastViewport.left)
                     .put(origin[1] + lastViewport.top).put(origin[0] + lastViewport.right).put(origin[1] + lastViewport.bottom));
             // The action wheel's hub and unit, when it takes swipes.
-            if (WeHavePhonesConfig.isMobileTouchWheel(getContext()) && layout.wheelReach > 0) json.put("wheel",
-                    new JSONArray().put(origin[0] + layout.wheelX).put(origin[1] + layout.wheelY).put(layout.wheelUnit));
+            if (wheelEnabled()) json.put("wheel",
+                    new JSONArray().put(origin[0] + wheel.x).put(origin[1] + wheel.y).put(wheel.unitY));
             JSONObject keys = new JSONObject();
             for (int i = 0; i < buttons.length; i++) {
                 RectF rect = buttons[i];
@@ -298,6 +302,10 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
     }
 
     private RectF controlBounds(int control) {
+        if (control == WHEEL_CONTROL) {
+            MobileTouchLayout.Bounds bounds = wheel.bounds();
+            return new RectF(bounds.left, bounds.top, bounds.right, bounds.bottom);
+        }
         if (control == STICK) {
             float reach = radius * 1.2f;
             return new RectF(stickX - reach, stickY - reach, stickX + reach, stickY + reach);
@@ -311,6 +319,12 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
     }
 
     private void placeControl(int control, float x, float y) {
+        if (control == WHEEL_CONTROL) {
+            updateWheel(new PointF(
+                    Math.max(0, Math.min(1, (x - lastViewport.left) / lastViewport.width())),
+                    Math.max(0, Math.min(1, (y - lastViewport.top) / lastViewport.height()))));
+            return;
+        }
         RectF bounds = controlBounds(control);
         MobileTouchLayout.Bounds area = safeArea;
         if (control == STICK) {
@@ -331,6 +345,13 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
     }
 
     private void savePosition(int control) {
+        if (control == WHEEL_CONTROL) {
+            wheelPosition = new PointF((wheel.x - lastViewport.left) / lastViewport.width(),
+                    (wheel.y - lastViewport.top) / lastViewport.height());
+            WeHavePhonesConfig.setMobileTouchWheelPosition(getContext(), wheelPosition);
+            applyWheelPosition();
+            return;
+        }
         RectF bounds = controlBounds(control);
         PointF position = new PointF((bounds.centerX() - safeArea.left) / safeArea.width(),
                 (bounds.centerY() - safeArea.top) / safeArea.height());
@@ -348,7 +369,30 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
         }
         prefs.apply();
         Arrays.fill(positions, null);
+        if (wheelPosition != null) {
+            wheelPosition = null;
+            WeHavePhonesConfig.setMobileTouchWheelPosition(getContext(), null);
+            applyWheelPosition();
+        }
         applyPositions();
+    }
+
+    private void updateWheel(PointF position) {
+        float gameAspect = (float) xServer.screenInfo.width / xServer.screenInfo.height;
+        wheel = MobileTouchLayout.isCompact(gameAspect) ? null : new MobileTouchLayout.Wheel(lastViewport,
+                gameAspect, layout.controls, position == null ? Float.NaN : position.x, position == null ? Float.NaN : position.y);
+        if (wheel != null) input.setWheel(wheel.x, wheel.y, MobileTouchLayout.WHEEL_DEAD * wheel.unitY, wheel.unitX / wheel.unitY);
+    }
+
+    private boolean wheelEnabled() {
+        return wheel != null && WeHavePhonesConfig.isMobileTouchWheel(getContext());
+    }
+
+    private void applyWheelPosition() {
+        // The touch addon samples the guest pointer on the move chord. No mouse button is sent.
+        if (wheelPosition != null) xServer.injectPointerMove(Math.round(wheelPosition.x * xServer.screenInfo.width),
+                Math.round(wheelPosition.y * xServer.screenInfo.height));
+        chord(XKeycode.KEY_CTRL_L, XKeycode.KEY_SHIFT_L, wheelPosition == null ? XKeycode.KEY_DEL : XKeycode.KEY_END);
     }
 
     private void layoutEditActions() {
@@ -366,7 +410,8 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
                 return;
             }
         }
-        if (!input.isUiMode() && RectF.intersects(row, controlBounds(STICK))) moveEditActionsToTop();
+        if ((!input.isUiMode() && RectF.intersects(row, controlBounds(STICK)))
+                || (wheelEnabled() && RectF.intersects(row, controlBounds(WHEEL_CONTROL)))) moveEditActionsToTop();
     }
 
     private void moveEditActionsToTop() {
@@ -388,13 +433,17 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
                 editTarget = buttonAt(editDownX, editDownY);
                 if (editTarget == MobileTouchLayout.MENUS) editTarget = MobileTouchLayout.PLAY;
                 if (editTarget == -1 && !input.isUiMode() && hitsStick(editDownX, editDownY)) editTarget = STICK;
-                if (editTarget != -1) {
+                if (editTarget == -1 && wheelEnabled() && wheel.contains(editDownX, editDownY)) editTarget = WHEEL_CONTROL;
+                if (editTarget == WHEEL_CONTROL) {
+                    grabX = editDownX - wheel.x;
+                    grabY = editDownY - wheel.y;
+                } else if (editTarget != -1) {
                     RectF bounds = controlBounds(editTarget);
                     grabX = editDownX - bounds.centerX();
                     grabY = editDownY - bounds.centerY();
                 }
             }
-        } else if (action == MotionEvent.ACTION_MOVE && editTarget >= 0 && editTarget <= STICK) {
+        } else if (action == MotionEvent.ACTION_MOVE && editTarget >= 0 && editTarget <= WHEEL_CONTROL) {
             int pointer = event.findPointerIndex(editPointer);
             if (pointer != -1) dragControl(event.getX(pointer), event.getY(pointer));
         } else if ((action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_POINTER_UP)
@@ -404,7 +453,7 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
                 editing = false;
                 swallowing = action == MotionEvent.ACTION_POINTER_UP;
             } else if (editTarget == EDIT_RESET && editReset.contains(x, y)) resetPositions();
-            else if (editTarget >= 0 && editTarget <= STICK) {
+            else if (editTarget >= 0 && editTarget <= WHEEL_CONTROL) {
                 dragControl(x, y);
                 if (movedControl) savePosition(editTarget);
                 layoutEditActions();
@@ -439,7 +488,7 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
         if (key != -1) return ZONES[key];
         if (toolbarCollapsed || input.isUiMode()) return MobileTouchInput.Zone.UI;
         if (hitsStick(x, y)) return MobileTouchInput.Zone.STICK;
-        if (WeHavePhonesConfig.isMobileTouchWheel(getContext()) && layout.inWheel(x, y)) return MobileTouchInput.Zone.WHEEL;
+        if (wheelEnabled() && wheel.contains(x, y)) return MobileTouchInput.Zone.WHEEL;
         MobileTouchLayout.Bounds viewport = viewport();
         if (viewport.contains(x, y) && MobileTouchInput.isCameraArea(x - viewport.left, y - viewport.top,
                 viewport.width(), viewport.height())) return MobileTouchInput.Zone.CAMERA;
@@ -602,6 +651,7 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
         paint.setStyle(Paint.Style.FILL);
         paint.setColor(0x6606162D);
         canvas.drawRect(0, 0, getWidth(), getHeight(), paint);
+        if (wheelEnabled()) drawWheelEditor(canvas);
         drawControls(canvas);
         if (editTarget >= 0 && editTarget <= STICK) {
             drawControl(canvas, editTarget);
@@ -618,6 +668,29 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
         pill(canvas, getContext().getString(R.string.wehavephones_touch_move_hint),
                 safeArea.left + safeArea.width() / 2, atTop ? editDone.bottom + 4 * density : editDone.top - 4 * density,
                 0, atTop ? -1 : 1);
+    }
+
+    private void drawWheelEditor(Canvas canvas) {
+        paint.setStyle(Paint.Style.STROKE);
+        paint.setStrokeWidth(2 * density);
+        paint.setColor(ACTIVE_EDGE);
+        for (int i = 0; i < MobileTouchLayout.WHEEL_ANGLES.length; i++) {
+            double angle = Math.toRadians(MobileTouchLayout.WHEEL_ANGLES[i]);
+            float radius = i < 4 ? MobileTouchLayout.WHEEL_INNER : MobileTouchLayout.WHEEL_OUTER;
+            wheelRect(wheel.x + (float) Math.cos(angle) * radius * wheel.unitX,
+                    wheel.y - (float) Math.sin(angle) * radius * wheel.unitY, MobileTouchLayout.WHEEL_SLOT);
+            canvas.drawRoundRect(scratch, 8 * density, 8 * density, paint);
+        }
+        wheelRect(wheel.x + MobileTouchLayout.WHEEL_KEY_X * wheel.unitX, wheel.y + MobileTouchLayout.WHEEL_KEY_Y * wheel.unitY,
+                MobileTouchLayout.WHEEL_KEY);
+        drawFace(canvas, scratch, editTarget == WHEEL_CONTROL, false);
+        drawIcon(canvas, icons[MobileTouchLayout.MORE], face.centerX(), face.centerY(),
+                Math.min(face.width(), face.height()) * .5f, SILVER_LIGHT);
+    }
+
+    private void wheelRect(float x, float y, float size) {
+        float halfX = size * wheel.unitX / 2, halfY = size * wheel.unitY / 2;
+        scratch.set(x - halfX, y - halfY, x + halfX, y + halfY);
     }
 
     private void drawEditAction(Canvas canvas, RectF bounds, int labelId, boolean primary, boolean pressed) {

@@ -224,7 +224,12 @@ public final class TouchSelfTest {
             check(MobileTouchSetup.SCALES[0] == .75f && MobileTouchSetup.SCALES.length == 6, "the menu offers sizes from 75% to 175%");
             MobileTouchSetup.prepare(root.toFile(), true, 3f, 11509, script);
             check(Files.readString(mode).contains("addon.scale = 1.50"), "unknown sizes fall back to the default");
+            MobileTouchSetup.prepare(root.toFile(), true, 1.5f, true, .48f, .62f, 1234, 11509, script);
+            String positionedMode = Files.readString(mode);
+            check(positionedMode.contains("addon.wheelLaunch = 1234\n") && positionedMode.contains("addon.wheelX = 0.48\n")
+                    && positionedMode.contains("addon.wheelY = 0.62\n"), "a new launch sends the saved wheel position");
             MobileTouchSetup.prepare(root.toFile(), true, 11509, script);
+            check(!Files.readString(mode).contains("addon.wheelX"), "the default wheel position clears any previous override");
             check(Files.readString(config).equals(touchConfig), "repeated touch launches keep the first saved controller settings");
             MobileTouchSetup.prepare(root.toFile(), false, 11509, script);
             check(Files.isDirectory(addons.resolve("ConsolePort")) && Files.isDirectory(addons.resolve("ConsolePort_Bar")), "opt-out restores owned folders");
@@ -475,65 +480,75 @@ public final class TouchSelfTest {
         // The S23+ in Play: the wheel sits left of Target, Use and Jump.
         MobileTouchLayout.Bounds viewport = MobileTouchLayout.viewport(2340, 1080, 2340, 1080, false);
         MobileTouchLayout layout = new MobileTouchLayout(2340, 1080, 2.625f, 0, 0, 0, 0, viewport, false);
-        check(layout.wheelReach > 0 && layout.inWheel(layout.wheelX - 300, layout.wheelY - 200),
+        MobileTouchLayout.Wheel wheel = new MobileTouchLayout.Wheel(viewport, 2340f / 1080, 1, Float.NaN, Float.NaN);
+        check(wheel.contains(wheel.x - 300, wheel.y - 200),
                 "wide games have an action wheel");
-        check(!layout.inWheel(layout.wheelX + 200, layout.wheelY) && !layout.inWheel(layout.wheelX - 50, layout.wheelY + 120),
+        check(!wheel.contains(wheel.x + 200, wheel.y) && !wheel.contains(wheel.x - 50, wheel.y + 120),
                 "the wheel takes no touches right of its slots or below its hub");
         for (MobileTouchLayout.Bounds button : layout.buttons) {
             if (button == null) continue;
             for (float fx : new float[]{0, .5f, 1}) for (float fy : new float[]{0, .5f, 1}) {
-                check(!layout.inWheel(button.left + button.width() * fx, button.top + button.height() * fy),
+                check(!wheel.contains(button.left + button.width() * fx, button.top + button.height() * fy),
                         "native keys never fall inside the wheel");
             }
         }
-        MobileTouchLayout.Bounds tablet = MobileTouchLayout.viewport(2048, 1536, 2048, 1536, false);
-        check(new MobileTouchLayout(2048, 1536, 2, 0, 0, 0, 0, tablet, false).wheelReach == 0,
-                "tablet shapes keep the stock action grid");
-        float hx = layout.wheelX, hy = layout.wheelY, unit = layout.wheelUnit, r = MobileTouchLayout.WHEEL_OUTER * unit;
+        MobileTouchLayout.Wheel moved = new MobileTouchLayout.Wheel(viewport, 16f / 9, 1, .48f, .62f);
+        check(Math.abs(moved.x - .48f * viewport.width()) < .01f && Math.abs(moved.y - .62f * viewport.height()) < .01f,
+                "a moved wheel uses viewport-relative coordinates under fullscreen stretching");
+        check(moved.contains(moved.x - .32f * moved.unitX, moved.y)
+                        && !moved.contains(wheel.x - .32f * wheel.unitX, wheel.y),
+                "the swipe area travels with the wheel");
+        for (float size : MobileTouchSetup.SCALES) {
+            MobileTouchLayout.Wheel edge = new MobileTouchLayout.Wheel(viewport, 16f / 9, MobileTouchLayout.controlScale(size), 0, 0);
+            check(Math.abs(edge.bounds().left - viewport.left) < .01f && Math.abs(edge.bounds().top - viewport.top) < .01f,
+                    "moving the wheel to an edge keeps its reach on-screen at every scale");
+        }
+        float hx = moved.x, hy = moved.y, unit = moved.unitY, r = MobileTouchLayout.WHEEL_OUTER * unit;
+        float rx = MobileTouchLayout.WHEEL_OUTER * moved.unitX;
         Sink sink = new Sink();
         MobileTouchInput input = new MobileTouchInput(sink, 8);
-        input.setWheel(hx, hy, MobileTouchLayout.WHEEL_DEAD * unit);
+        input.setWheel(hx, hy, MobileTouchLayout.WHEEL_DEAD * unit, moved.unitX / unit);
         // A tap on a slot casts it, and a hold edits it.
-        input.down(1, Zone.WHEEL, hx - r, hy, 0);
+        input.down(1, Zone.WHEEL, hx - rx, hy, 0);
         input.up(1);
         check(sink.clicks == 1 && !sink.camera, "a tap on a wheel slot clicks it");
-        input.down(1, Zone.WHEEL, hx - r, hy, 100);
+        input.down(1, Zone.WHEEL, hx - rx, hy, 100);
         input.advanceTime(700);
         input.up(1);
         check(sink.contexts == 1 && sink.clicks == 1, "a hold on a wheel slot opens the editor without casting");
         // A swipe from the left end of the arc toward the top changes one ring, however far it goes.
-        input.down(2, Zone.WHEEL, hx - r, hy, 1000);
+        input.down(2, Zone.WHEEL, hx - rx, hy, 1000);
         for (int degrees = 180; degrees >= 90; degrees -= 3) {
             double a = Math.toRadians(degrees);
-            input.move(2, hx + r * (float) Math.cos(a), hy - r * (float) Math.sin(a), 0, 0, 1, 1000);
+            input.move(2, hx + rx * (float) Math.cos(a), hy - r * (float) Math.sin(a), 0, 0, 1, 1000);
         }
         input.up(2);
         check(count(sink, "RING_NEXT:true") == 1 && count(sink, "RING_PREV:true") == 0,
                 "a long swipe up the arc steps forward exactly one ring");
-        input.down(7, Zone.WHEEL, hx - r, hy, 1500);
+        input.down(7, Zone.WHEEL, hx - rx, hy, 1500);
         for (int degrees = 180; degrees >= 180 - MobileTouchInput.RING_STEP + 4; degrees -= 3) {
             double a = Math.toRadians(degrees);
-            input.move(7, hx + r * (float) Math.cos(a), hy - r * (float) Math.sin(a), 0, 0, 1, 1500);
+            input.move(7, hx + rx * (float) Math.cos(a), hy - r * (float) Math.sin(a), 0, 0, 1, 1500);
         }
         input.up(7);
         check(count(sink, "RING_NEXT:true") == 1 && sink.clicks == 1, "a short swipe changes nothing and does not click");
         check(sink.clicks == 1 && sink.contexts == 1 && !sink.camera && !sink.dragging,
                 "a wheel swipe never clicks, drags or turns the camera");
         input.down(3, Zone.WHEEL, hx, hy - r, 2000);
-        input.move(3, hx - r * .7f, hy - r * .7f, 0, 0, 1, 2000);
+        input.move(3, hx - rx * .7f, hy - r * .7f, 0, 0, 1, 2000);
         input.up(3);
         check(count(sink, "RING_PREV:true") == 1, "a swipe down the arc steps back");
         // A straight drag from the hub outward is no swipe around it.
         input.down(4, Zone.WHEEL, hx, hy, 3000);
-        input.move(4, hx - r, hy - r * .1f, 0, 0, 1, 3000);
+        input.move(4, hx - rx, hy - r * .1f, 0, 0, 1, 3000);
         input.up(4);
         check(count(sink, "RING_NEXT:true") == 1 && count(sink, "RING_PREV:true") == 1 && sink.clicks == 1,
                 "a drag out of the hub changes nothing and does not click");
         // The camera finger keeps turning while the other thumb swipes the wheel.
         input.down(5, Zone.CAMERA, 1200, 400, 4000);
         input.move(5, 1240, 400, 0, 0, 1, 4000);
-        input.down(6, Zone.WHEEL, hx - r, hy, 4000);
-        input.move(6, hx - r * .7f, hy - r * .7f, 0, 0, 1, 4000);
+        input.down(6, Zone.WHEEL, hx - rx, hy, 4000);
+        input.move(6, hx - rx * .7f, hy - r * .7f, 0, 0, 1, 4000);
         input.move(5, 1260, 400, 0, 0, 1, 4000);
         check(sink.camera && count(sink, "RING_NEXT:true") == 2, "wheel swipes and camera turns work together");
         input.up(6);
@@ -573,8 +588,10 @@ public final class TouchSelfTest {
                                     + rootWidth + "x" + rootHeight + ", density " + density + ", letterboxed " + letterboxed);
                     // Wheel slots must be wheel touches, so a swipe over them changes ring.
                     if (fields[6].equals("wheel")) {
+                        MobileTouchLayout.Wheel wheel = new MobileTouchLayout.Wheel(viewport, rootWidth / rootHeight,
+                                controls, Float.NaN, Float.NaN);
                         for (float fx : new float[]{.01f, .5f, .99f}) for (float fy : new float[]{.01f, .5f, .99f}) {
-                            check(nativeLayout.inWheel(left + (right-left)*fx, top + (bottom-top)*fy),
+                            check(wheel.contains(left + (right-left)*fx, top + (bottom-top)*fy),
                                     "actual Lua wheel geometry lies inside the native wheel at " + rootWidth + "x" + rootHeight
                                             + ", letterboxed " + letterboxed);
                         }
