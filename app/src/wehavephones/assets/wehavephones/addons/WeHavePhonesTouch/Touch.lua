@@ -593,16 +593,29 @@ local function PositionActionTooltip(button)
 end
 
 local tooltipHooked
--- Where world tooltips open: the blank space under the minimap, as distances from the
--- top-right corner. PositionAuras sets it. Chat is the fallback for unsupported layouts.
-local tooltipRight, tooltipTop
+-- World tooltips open below the target frame, its auras and target of target, in the upper
+-- left and clear of the thumb keys on the right. Chat is the fallback for unsupported layouts.
+local function BelowTarget()
+    if not SupportedLayout() or not TargetFrame or not TargetFrame:GetLeft() then return end
+    local height = UIParent:GetHeight()
+    local function Relative(object) return object:GetEffectiveScale()/UIParent:GetEffectiveScale() end
+    local top = unitBottom
+    if TargetFrame:IsShown() and TargetFrame.GetChildren then
+        for _, child in ipairs({TargetFrame:GetChildren()}) do
+            if child:IsShown() and child:GetBottom() then top = math.max(top, height-child:GetBottom()*Relative(child)) end
+        end
+    end
+    return TargetFrame:GetLeft()*Relative(TargetFrame), top+4
+end
+
 local function PositionDefaultTooltip(tooltip)
     if not enabled or tooltip ~= GameTooltip then return end
-    if tooltipTop then
+    local left, top = BelowTarget()
+    if left then
         local relative = tooltip:GetEffectiveScale()/UIParent:GetEffectiveScale()
         tooltip:SetAnchorType("ANCHOR_NONE")
         tooltip:ClearAllPoints()
-        tooltip:SetPoint("TOPRIGHT", UIParent, "TOPRIGHT", -tooltipRight/relative, -tooltipTop/relative)
+        tooltip:SetPoint("TOPLEFT", UIParent, "TOPLEFT", left/relative, -top/relative)
     elseif ChatFrame1 then
         tooltip:SetAnchorType("ANCHOR_NONE")
         tooltip:ClearAllPoints()
@@ -1214,13 +1227,6 @@ PositionAuras = function()
     local top = compact and minimapBottom+4 or TOOLBAR_BAND*controlScale*height+4
     local rows = BuffRows()
     auraLeft = width-right-11*AURA_ICON
-    -- Wide games keep the auras left of the minimap, so tooltips start right under it.
-    -- Narrower games stack them under the auras, which take that space.
-    if compact then
-        tooltipRight, tooltipTop = right, top+(rows+1)*AURA_ROW+4
-    else
-        tooltipRight, tooltipTop = width-minimapLeft, minimapBottom+4
-    end
     for _, aura in ipairs({{"BuffFrame", 0, 0}, {"DebuffFrame", 0, rows*AURA_ROW}}) do
         local object = _G[aura[1]]
         if object then

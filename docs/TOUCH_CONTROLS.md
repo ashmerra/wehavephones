@@ -165,8 +165,8 @@ work as usual. Stock
 chat retains its touch anchor during combat. Protected replacement chat frames
 defer their layout until combat ends. Hotbar tooltips appear only in Inspect,
 so casting leaves the screen clear. Inspect hotbar tooltips appear over chat.
-World and other default tooltips open in the blank space under the minimap, or
-under the buffs on narrower games, clear of chat and the stick.
+World and other default tooltips open below the target frame, its auras and
+target of target, clear of chat, the stick and the keys on the right.
 
 The stock quest tracker sits in the upper left, under the player frame and
 anything below it such as the pet frame, class bars or party frames, and above

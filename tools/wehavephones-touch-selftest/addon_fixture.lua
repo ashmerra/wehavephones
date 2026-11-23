@@ -50,6 +50,10 @@ function methods:GetBottom()
     local _,bottom=topRect(self)
     return bottom*UIParent:GetEffectiveScale()/self:GetEffectiveScale()
 end
+function methods:GetLeft()
+    if not self.point or self.point[2]~=UIParent then return nil end
+    return topRect(self)*UIParent:GetEffectiveScale()/self:GetEffectiveScale()
+end
 function methods:GetRight()
     if not self.point or self.point[2]~=UIParent then return nil end
     local left,_,w=topRect(self)
@@ -987,8 +991,14 @@ GameTooltip:Show()
 menuChord("SHIFT-F9")
 assert(GameTooltip.visible,"hotbar tooltip suppression leaves inventory and world tooltips available")
 GameTooltip_SetDefaultAnchor(GameTooltip)
-assert(GameTooltip.anchor=="ANCHOR_NONE" and GameTooltip.point[1]=="TOPRIGHT" and GameTooltip.point[2]==UIParent
-    and GameTooltip.point[5]<0,"default world and experience tooltips open in the blank space under the minimap")
+do
+    local targetLeft,targetBottom=topRect(TargetFrame)
+    local tooltipLeft,_,_,tooltipHeight=topRect(GameTooltip)
+    local tooltipTop=select(2,topRect(GameTooltip))+tooltipHeight
+    assert(GameTooltip.anchor=="ANCHOR_NONE" and GameTooltip.point[1]=="TOPLEFT" and GameTooltip.point[2]==UIParent
+        and math.abs(tooltipLeft-targetLeft)<.01 and tooltipTop<=targetBottom,
+        "default world and experience tooltips open below the target frame, clear of the right side")
+end
 assert(objects.WeHavePhonesTouchPointerRest.visible and objects.WeHavePhonesTouchPointerRest.mouse
     and objects.WeHavePhonesTouchPointerRest.point[1]=="TOPLEFT","a blank frame catches the pointer after camera drags")
 edit(ActionButton1)
