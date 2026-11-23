@@ -32,8 +32,10 @@ Play hides the mouse pointer, because fingers aim directly and the pointer
 would only mark the last tap. Menus, Inspect and the Controls tab show it.
 
 Use keeps the current mode, including when looting a corpse. Tap Menus when
-you need to drag or scroll an interaction window. Map, Bags, Keyboard and
-every window opened from the touch menu switch to Menus by themselves.
+you need to drag or scroll an interaction window. Bags, Keyboard and
+every window opened from the touch menu except Map switch to Menus by
+themselves. Map keeps the current mode, so you can keep moving with the map
+open. Tap Menus to drag or zoom the map.
 The first use of each mode in a session shows a short hint: over the world
 in Play, and at the bottom in Menus so it never covers a window.
 
