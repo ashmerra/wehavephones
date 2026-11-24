@@ -1270,11 +1270,8 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
         }
         if (down) xServer.injectKeyPress(code);
         else xServer.injectKeyRelease(code);
-        // Use also loots corpses. Keep the current mode so movement and camera
-        // controls stay available between interactions. The map keeps the
-        // current mode too, so the player can keep moving with it open.
-        if (!down && key == MobileTouchInput.Key.BAGS)
-            post(() -> setWindows(true));
+        // Use also loots corpses. Use, Map and Bags keep the current mode so
+        // movement and camera controls stay available with those windows open.
     }
 
     @Override public void click(float x, float y) {
@@ -1415,7 +1412,7 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
             case MACROS: chord(shift, XKeycode.KEY_F1); setWindows(true); break;
             case HELP: chord(shift, XKeycode.KEY_F2); setWindows(true); break;
             case MAP: tap(XKeycode.KEY_M); break;
-            case BAGS: tap(XKeycode.KEY_B); setWindows(true); break;
+            case BAGS: tap(XKeycode.KEY_B); break;
             case SELF: tap(XKeycode.KEY_F1); break;
             case PARTY1: tap(XKeycode.KEY_F2); break;
             case PARTY2: tap(XKeycode.KEY_F3); break;

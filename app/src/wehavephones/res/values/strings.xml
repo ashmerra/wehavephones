@@ -475,7 +475,7 @@ World of Warcraft, Warcraft, Battle.net and Blizzard Entertainment are trademark
     <string name="wehavephones_touch_guide_menus_switch">Play: back to moving, looking and fighting</string>
     <string name="wehavephones_touch_guide_keyboard">Keyboard: chat, names and search boxes</string>
     <string name="wehavephones_touch_guide_inspect">Inspect: read tooltips without clicking</string>
-    <string name="wehavephones_touch_guide_bags">Bags open Menus by itself. Map keeps Play</string>
+    <string name="wehavephones_touch_guide_bags">Map and Bags keep Play. Tap Menus to drag items</string>
     <string name="wehavephones_touch_menu_title">Touch menu</string>
     <string name="wehavephones_touch_menu_mode">Now in %1$s</string>
     <string name="wehavephones_touch_cat_windows">Windows</string>
