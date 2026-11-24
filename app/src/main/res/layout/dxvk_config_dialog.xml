@@ -16,8 +16,7 @@
         <Spinner
             style="@style/ComboBox"
             android:layout_width="match_parent"
-            android:id="@+id/SVersion"
-            android:entries="@array/dxvk_version_entries" />
+            android:id="@+id/SVersion" />
 
         <TextView
             android:layout_width="wrap_content"

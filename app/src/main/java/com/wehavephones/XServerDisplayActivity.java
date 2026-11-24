@@ -1855,36 +1855,14 @@ import java.util.concurrent.Executors;
 
     private String resolveDxvkVersion() {
         String configured = dxwrapperConfig != null ? dxwrapperConfig.get("version") : "";
-        java.util.LinkedHashSet<String> available = new java.util.LinkedHashSet<>();
-        try {
-            String[] entries = getAssets().list("dxwrapper");
-            if (entries != null) {
-                for (String entry : entries) {
-                    if (entry.startsWith("dxvk-") && entry.endsWith(".tzst")) {
-                        available.add(entry.substring("dxvk-".length(), entry.length() - ".tzst".length()));
-                    }
-                }
-            }
+        java.util.List<String> available = DXVKConfigDialog.getBundledVersions(this);
+        if (configured != null && !configured.isEmpty() && available.contains(configured)) return configured;
+        // The default comes first when bundled, otherwise the newest bundled build.
+        String fallback = available.isEmpty() ? DefaultVersion.DXVK : available.get(0);
+        if (configured != null && !configured.isEmpty()) {
+            Log.w("XServerDisplayActivity", "Configured DXVK '" + configured + "' is not bundled; using '" + fallback + "'");
         }
-        catch (java.io.IOException e) {
-            Log.w("XServerDisplayActivity", "Could not list dxwrapper assets: " + e);
-        }
-
-        for (String candidate : new String[]{configured, DefaultVersion.DXVK}) {
-            if (candidate != null && !candidate.isEmpty() && available.contains(candidate)) return candidate;
-        }
-
-        // Prefer the project's Adreno-oriented arm64ec GPLAsync default, then the newest bundled build.
-        if (available.contains("2.3.1-arm64ec-gplasync")) return "2.3.1-arm64ec-gplasync";
-        String newest = null;
-        for (String version : available) {
-            if (newest == null || version.compareTo(newest) > 0) newest = version;
-        }
-        if (newest != null) {
-            Log.w("XServerDisplayActivity", "Configured DXVK '" + configured + "' is not bundled; using '" + newest + "'");
-            return newest;
-        }
-        return configured != null && !configured.isEmpty() ? configured : DefaultVersion.DXVK;
+        return fallback;
     }
 
     /**

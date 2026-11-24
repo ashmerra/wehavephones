@@ -1,7 +1,9 @@
 package com.wehavephones.contentdialog;
 
 import android.content.Context;
+import android.util.Log;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Spinner;
 
 import com.wehavephones.R;
@@ -14,6 +16,10 @@ import com.wehavephones.core.StringUtils;
 import com.wehavephones.xenvironment.ImageFs;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class DXVKConfigDialog extends ContentDialog {
     public static final String DEFAULT_CONFIG = "version="+DefaultVersion.DXVK+",framerate=0,maxDeviceMemory=0";
@@ -27,6 +33,12 @@ public class DXVKConfigDialog extends ContentDialog {
         final Spinner sFramerate = findViewById(R.id.SFramerate);
         final Spinner sMaxDeviceMemory = findViewById(R.id.SMaxDeviceMemory);
 
+        List<String> versionItems = new ArrayList<>();
+        for (String version : getBundledVersions(anchor.getContext())) {
+            versionItems.add(version.equals(DefaultVersion.DXVK) ? version + " (Default)" : version);
+        }
+        sVersion.setAdapter(new ArrayAdapter<>(anchor.getContext(), android.R.layout.simple_spinner_dropdown_item, versionItems));
+
         KeyValueSet config = parseConfig(anchor.getTag());
         AppUtils.setSpinnerSelectionFromIdentifier(sVersion, config.get("version"));
         AppUtils.setSpinnerSelectionFromIdentifier(sFramerate, config.get("framerate"));
@@ -39,6 +51,30 @@ public class DXVKConfigDialog extends ContentDialog {
             config.put("maxDeviceMemory", StringUtils.parseNumber(sMaxDeviceMemory.getSelectedItem()));
             anchor.setTag(config.toString());
         });
+    }
+
+    /**
+     * DXVK versions bundled as assets/dxwrapper/dxvk-<version>.tzst, the
+     * default first, then newest first. Only these can be extracted at launch.
+     */
+    public static List<String> getBundledVersions(Context context) {
+        List<String> versions = new ArrayList<>();
+        try {
+            String[] entries = context.getAssets().list("dxwrapper");
+            if (entries != null) {
+                for (String entry : entries) {
+                    if (entry.startsWith("dxvk-") && entry.endsWith(".tzst")) {
+                        versions.add(entry.substring("dxvk-".length(), entry.length() - ".tzst".length()));
+                    }
+                }
+            }
+        }
+        catch (IOException e) {
+            Log.w("DXVKConfigDialog", "Could not list dxwrapper assets: " + e);
+        }
+        versions.sort(Collections.reverseOrder());
+        if (versions.remove(DefaultVersion.DXVK)) versions.add(0, DefaultVersion.DXVK);
+        return versions;
     }
 
     public static KeyValueSet parseConfig(Object config) {
