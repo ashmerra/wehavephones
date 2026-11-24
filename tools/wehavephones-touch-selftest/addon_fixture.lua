@@ -206,6 +206,9 @@ function SetOverrideBinding(_,_,key,action) held[key]=action end
 function SetOverrideBindingClick(_,_,key,name) held[key]=name end
 function ClearOverrideBindings() held={} end
 function InCombatLockdown() return combat end
+function MouselookStart() mouselook=true end
+function MouselookStop() mouselook=false end
+function IsMouselooking() return mouselook==true end
 function UnitExists() return targetExists end
 function UnitIsDead() return targetDead end
 function GetCursorInfo() if cursor then return cursor[1],cursor[2] end end
@@ -387,6 +390,14 @@ local function menuChord(key)
     trigger.scripts.OnClick(trigger,"LeftButton",true)
     trigger.scripts.OnClick(trigger,"LeftButton",false)
 end
+local look=objects[held.F12]
+assert(look and look.clicks[1]=="AnyUp" and look.clicks[2]=="AnyDown","the camera key reaches the mouselook trigger on both phases")
+combat=true
+look.scripts.OnClick(look,"LeftButton",true)
+assert(IsMouselooking(),"holding the camera key starts mouselook, also in combat")
+look.scripts.OnClick(look,"LeftButton",false)
+assert(not IsMouselooking(),"releasing the camera key stops mouselook without a right click")
+combat=false
 menuChord("SHIFT-F1")
 menuChord("SHIFT-F2")
 assert(macroFrames==1 and helpFrames==1,"Macros and Help open once per chord, not on both click phases")

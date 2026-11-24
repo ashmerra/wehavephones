@@ -1597,13 +1597,23 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
         heldModifier = null;
     }
 
+    /**
+     * A held right button would turn the camera too, but WoW treats a short right drag as a right
+     * click on whatever stands under the pointer in the middle of the screen. Walking past an NPC
+     * then opened its dialog. The touch addon binds this key to WoW's own mouselook instead, which
+     * turns the camera and the character together without a mouse button.
+     */
+    private static final XKeycode MOUSELOOK_KEY = XKeycode.KEY_F12;
+    private boolean mouselook;
+
     @Override public void camera(boolean down) {
         removeCallbacks(restPointer);
+        mouselook = down;
         if (down) {
             xServer.injectPointerMove(xServer.screenInfo.width / 2, xServer.screenInfo.height / 2);
-            xServer.injectPointerButtonPress(Pointer.Button.BUTTON_RIGHT);
+            xServer.injectKeyPress(MOUSELOOK_KEY);
         } else {
-            xServer.injectPointerButtonRelease(Pointer.Button.BUTTON_RIGHT);
+            xServer.injectKeyRelease(MOUSELOOK_KEY);
             cameraReleasedAt = SystemClock.uptimeMillis();
             postDelayed(restPointer, POINTER_REST_MS);
         }
@@ -1619,7 +1629,7 @@ public final class MobileTouchControlsView extends View implements MobileTouchIn
     private final Runnable restPointer = this::restPointer;
 
     private void restPointer() {
-        if (pointerPlacedAt >= cameraReleasedAt || xServer.pointer.isButtonPressed(Pointer.Button.BUTTON_RIGHT)) return;
+        if (pointerPlacedAt >= cameraReleasedAt || mouselook) return;
         xServer.injectPointerMove(POINTER_REST, POINTER_REST);
     }
 

@@ -353,8 +353,12 @@ preferences, loot under mouse, equipment comparison and enemy nameplates once.
 A value the player changes later, in the options or with `/console`, stays,
 also after opting out.
 
-Movement, camera and spell taps have independent pointer ownership. Tapping a
-spell releases an active camera grab so WoW can receive an absolute click.
+Movement, camera and spell taps have independent pointer ownership. A camera
+drag holds a key that the touch addon binds to WoW's mouselook. It turns the
+camera and the character like a held right mouse button, but it never presses
+one, so a short drag never right-clicks an NPC in the middle of the screen and
+opens its dialog. Tapping a spell releases an active camera grab so WoW can
+receive an absolute click.
 Moving the camera finger again resumes looking. When a camera drag ends, the
 pointer rests on a small blank frame in the top-left corner, so nothing walking
 through the middle of the screen shows a tooltip or takes a later click. A pinch or scroll never

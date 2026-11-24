@@ -1964,6 +1964,17 @@ local function Apply()
                 trigger:Show()
                 SetOverrideBindingClick(frame, true, key, name)
             end
+            -- A camera drag holds F12. WoW's mouselook turns the camera and the character like a
+            -- held right button, but its release never right-clicks the NPC in the middle of the screen.
+            local look = _G.WeHavePhonesTouchMouselook or CreateFrame("Button", "WeHavePhonesTouchMouselook", UIParent)
+            look:RegisterForClicks("AnyUp", "AnyDown")
+            look:SetSize(1, 1)
+            look:SetPoint("TOPLEFT")
+            look:SetScript("OnClick", function(_, _, down)
+                if down then MouselookStart() elseif IsMouselooking() then MouselookStop() end
+            end)
+            look:Show()
+            SetOverrideBindingClick(frame, true, "F12", "WeHavePhonesTouchMouselook")
             local corpse = CreateFrame("Button", "WeHavePhonesTouchCorpseTrigger", UIParent, "SecureActionButtonTemplate")
             corpse:RegisterForClicks("AnyUp", "AnyDown")
             corpse:SetSize(1, 1)
