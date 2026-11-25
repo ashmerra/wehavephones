@@ -299,6 +299,14 @@ because they would repeat it.
   the ring number. The ring in use is kept for the next login.
 - Tap a slot to use it. Hold a slot to change it with the same picker as the
   hotbar.
+- Hold the hub to choose what a ring follows: **In combat**, each stance or
+  form the character has, and **Stealth** for rogues and druids. The wheel
+  turns to that ring when the state starts and back to the ring it was on when
+  the state ends. Each state turns to one ring, and a ring can follow several
+  states. Stealth and stances come before combat, so a druid in Cat Form stays
+  on the Cat Form ring when a fight starts. Swipes still change ring during a
+  state. Rules belong to the character and are set out of combat. Learning a
+  new form or a higher rank, such as Dire Bear Form, keeps the rule.
 - Vehicles, possession and override bars bring the stock main bar back until
   they end.
 - Stances and forms move to the lower right corner, beside the hub and below

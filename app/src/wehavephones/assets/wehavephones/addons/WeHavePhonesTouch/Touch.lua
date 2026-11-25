@@ -1576,9 +1576,88 @@ end
 
 local function ShowRing(ring)
     ring = math.max(1, math.min(WHEEL_RINGS, tonumber(ring) or 1))
-    WeHavePhonesTouchDB.wheelRing = ring
-    if not wheel then return end
-    wheel.hub:SetText(tostring(ring))
+    if not wheel then WeHavePhonesTouchDB.wheelRing = ring return end
+    -- A followed ring lasts only as long as its state. The next login starts on the ring before it.
+    local followed = tonumber(wheel:GetAttribute("followed")) or 0
+    WeHavePhonesTouchDB.wheelRing = followed > 0 and (tonumber(wheel:GetAttribute("home")) or ring) or ring
+    if wheel.hub then wheel.hub:SetText(tostring(ring)) end
+end
+
+-- Rings can follow the character: stealth, a stance or form, or combat. The wheel turns to
+-- the ring when the state starts and back to the ring it was on when the state ends. A
+-- secure state driver does it, so it works in combat. Stealth and forms come before combat.
+-- Rules belong to the character, like the rings themselves.
+-- One table keeps the main chunk under Lua's 200 locals.
+local follow = {TOP = -116, ROW = 58, icons = {stealth = "Interface\\Icons\\Ability_Stealth", combat = "Interface\\Icons\\Ability_DualWield"}}
+
+function follow.SpellName(id)
+    if not id then return nil end
+    if C_Spell and C_Spell.GetSpellName then return C_Spell.GetSpellName(id) end
+    return GetSpellInfo and (GetSpellInfo(id)) or nil
+end
+
+-- The states this character can follow, in the order their rules win, each with its rule.
+function follow.States()
+    local db = WeHavePhonesTouchDB
+    db.wheelFollow = db.wheelFollow or {}
+    local rules = db.wheelFollow
+    local states = {}
+    local _, class = UnitClass("player")
+    local forms = GetNumShapeshiftForms and GetNumShapeshiftForms() or 0
+    -- Classic rogues have Stealth among their stances already.
+    if class == "DRUID" or (class == "ROGUE" and forms == 0) then
+        states[#states+1] = {key="stealth", name="Stealth", icon=follow.icons.stealth, condition="[stealth]"}
+    end
+    for i = 1, forms do
+        local icon, _, _, spell = GetShapeshiftFormInfo(i)
+        states[#states+1] = {key="form", spell=spell, icon=icon, name=follow.SpellName(spell) or ("Stance " .. i),
+            condition="[stance:" .. i .. "]"}
+    end
+    states[#states+1] = {key="combat", name="In combat", icon=follow.icons.combat, condition="[combat]"}
+    -- Stance numbers change as a character learns forms, so form rules keep the spell.
+    local present, used = {}, {}
+    for _, state in ipairs(states) do if state.spell then present[state.spell] = true end end
+    local function Match(test)
+        for _, state in ipairs(states) do
+            for _, rule in ipairs(rules) do
+                if not state.rule and not used[rule] and rule.key == state.key and test(state, rule) then
+                    state.rule, used[rule] = rule, true
+                end
+            end
+        end
+    end
+    Match(function(state, rule) return state.key ~= "form" or rule.spell == state.spell end)
+    -- A higher rank replaces a form with the same icon, such as Dire Bear Form after Bear Form.
+    Match(function(state, rule)
+        if state.key ~= "form" or present[rule.spell] or rule.icon ~= state.icon then return false end
+        rule.spell = state.spell
+        return true
+    end)
+    return states, rules
+end
+
+function follow.Condition()
+    local parts = {}
+    for _, state in ipairs((follow.States())) do
+        local ring = state.rule and tonumber(state.rule.ring)
+        if ring and ring >= 1 and ring <= WHEEL_RINGS then parts[#parts+1] = state.condition .. " " .. ring end
+    end
+    if #parts == 0 then return nil end
+    parts[#parts+1] = "0"
+    return table.concat(parts, "; ")
+end
+
+-- Out of combat only. Forms learned in combat take effect when it ends.
+function follow.Apply(wanted)
+    if not wheel or InCombatLockdown() then return end
+    local condition = wanted and follow.Condition() or nil
+    if condition == follow.condition then return end
+    follow.condition = condition
+    if condition then RegisterStateDriver(wheel, "follow", condition)
+    else
+        UnregisterStateDriver(wheel, "follow")
+        wheel:SetAttribute("state-follow", 0)
+    end
 end
 
 -- Secure ring changes, so a swipe works in combat. Shift-F10 and Shift-F11 click these.
@@ -1671,7 +1750,11 @@ local function CreateWheelHub()
     hub:SetText("1")
     Paint(false)
     hub:HookScript("OnMouseDown", function() Paint(true) end)
-    hub:HookScript("OnMouseUp", function() Paint(false) end)
+    -- A hold arrives as a right click. It sets which states this ring follows.
+    hub:HookScript("OnMouseUp", function(_, mouse)
+        Paint(false)
+        if mouse == "RightButton" then follow.Open() end
+    end)
     return hub
 end
 
@@ -1698,6 +1781,17 @@ local function CreateWheel()
         wheel.slots[i] = slot
     end
     wheel:SetAttribute("_onattributechanged", ([=[
+        if name == "state-follow" then
+            local ring = tonumber(value) or 0
+            local followed = self:GetAttribute("followed") or 0
+            if ring == followed then return end
+            -- Remember the ring in use when the first followed state starts, to return to it.
+            if followed == 0 then self:SetAttribute("home", self:GetAttribute("ring") or 1) end
+            self:SetAttribute("followed", ring)
+            if ring > 0 then self:SetAttribute("ring", ring)
+            else self:SetAttribute("ring", self:GetAttribute("home") or 1) end
+            return
+        end
         if name ~= "ring" then return end
         for i = 1, %d do
             self:GetFrameRef("slot" .. i):SetAttribute("action", %d + (value-1)*%d + i)
@@ -1800,6 +1894,87 @@ local function ApplyWheel()
         UnregisterStateDriver(wheel, "visibility")
         wheel:Hide()
     end
+    follow.Apply(wanted)
+end
+
+-- Which states each ring follows. Each state turns to one ring at most.
+function follow.Refresh()
+    local followPanel, followRing = follow.panel, follow.ring
+    local states = follow.States()
+    followPanel.title:SetText("Ring " .. followRing .. " follows")
+    for i, tab in ipairs(followPanel.tabs) do PaintKey(tab, i == followRing) end
+    for i = #followPanel.choices+1, #states do
+        local choice = Button(followPanel, "WeHavePhonesTouchFollow" .. i, "",
+            18 + ((i - 1) % 2) * 210, follow.TOP - math.floor((i - 1) / 2) * follow.ROW, 204, 52, function(self)
+                if InCombatLockdown() then Notice("Ring rules can be changed after combat.") return end
+                local state = self.state
+                if not state then return end
+                if not state.rule then
+                    state.rule = {key=state.key, spell=state.spell, icon=state.icon}
+                    tinsert(WeHavePhonesTouchDB.wheelFollow, state.rule)
+                end
+                state.rule.ring = state.rule.ring ~= follow.ring and follow.ring or nil
+                follow.Apply(WheelWanted())
+                follow.Refresh()
+            end)
+        choice.icon = choice:CreateTexture(nil, "ARTWORK")
+        choice.icon:SetSize(32, 32)
+        choice.icon:SetPoint("LEFT", 8, 1)
+        choice.label = choice:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        choice.label:SetPoint("LEFT", 48, 1)
+        choice.label:SetWidth(100)
+        choice.label:SetJustifyH("LEFT")
+        -- The ring a state already turns to, when it is another one.
+        choice.place = choice:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        choice.place:SetPoint("RIGHT", -8, 1)
+        choice.place:SetTextColor(.45, .9, .45)
+        followPanel.choices[i] = choice
+    end
+    for i, choice in ipairs(followPanel.choices) do
+        local state = states[i]
+        choice.state = state
+        choice:SetShown(state ~= nil)
+        if state then
+            local ring = state.rule and tonumber(state.rule.ring)
+            choice.icon:SetTexture(state.icon)
+            choice.label:SetText(state.name)
+            local elsewhere = ring and ring ~= followRing
+            choice.place:SetText(elsewhere and ("Ring " .. ring) or "")
+            choice.label:SetWidth(elsewhere and 100 or 146)
+            PaintKey(choice, ring == followRing)
+        end
+    end
+    local rows = math.ceil(#states / 2)
+    local bottom = -follow.TOP + rows * follow.ROW
+    followPanel.done:ClearAllPoints()
+    followPanel.done:SetPoint("TOP", 0, -bottom)
+    followPanel:SetHeight(bottom + 50)
+    FitPanel(followPanel)
+end
+
+function follow.Open()
+    if not enabled or not wheel then return end
+    if InCombatLockdown() then Notice("Ring rules can be changed after combat.") return end
+    follow.ring = math.max(1, math.min(WHEEL_RINGS, tonumber(wheel:GetAttribute("ring")) or 1))
+    local followPanel = follow.panel
+    if not followPanel then
+        followPanel = Panel("WeHavePhonesTouchFollow", "Ring follows", 450, 260)
+        followPanel.tabs, followPanel.choices = {}, {}
+        for i = 1, WHEEL_RINGS do
+            followPanel.tabs[i] = Button(followPanel, nil, "Ring " .. i, 18 + (i - 1) * 105, -48, 99, 32, function()
+                follow.ring = i
+                follow.Refresh()
+            end)
+        end
+        followPanel.hint = followPanel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        followPanel.hint:SetPoint("TOP", 0, -88)
+        followPanel.hint:SetWidth(414)
+        followPanel.hint:SetText("The wheel turns to this ring while you are in a chosen state and turns back after it.")
+        followPanel.done = Button(followPanel, nil, "Done", 0, 0, 126, 32, function() followPanel:Hide() end)
+        follow.panel = followPanel
+    end
+    follow.Refresh()
+    followPanel:Show()
 end
 
 local function SetWheel(on)
@@ -2060,6 +2235,7 @@ frame:SetScript("OnEvent", function(_, event)
         end
     elseif event == "PLAYER_REGEN_DISABLED" then
         if editor then editor:Hide() end
+        if follow.panel then follow.panel:Hide() end
         -- Combat returns chat to its few rows, out of the way of the fight.
         if chatLarge then SetChatLarge(false) end
         if inventoryStrip then inventoryStrip:Hide() end
@@ -2067,5 +2243,10 @@ frame:SetScript("OnEvent", function(_, event)
         C_Timer.After(0, function() if enabled and applied then UniformScale() Layout() ShowPointerRest(true) end end)
     elseif event == "QUEST_LOG_UPDATE" or event == "QUEST_WATCH_UPDATE" or event == "UPDATE_SHAPESHIFT_FORMS" or event == "UNIT_PET" or event == "GROUP_ROSTER_UPDATE" then
         if enabled and applied then QueueHud() end
+        -- A new form can change every stance number in the ring rules.
+        if event == "UPDATE_SHAPESHIFT_FORMS" and enabled and applied and not InCombatLockdown() then
+            follow.Apply(WheelWanted())
+            if follow.panel and follow.panel:IsShown() then follow.Refresh() end
+        end
     else Apply() end
 end)

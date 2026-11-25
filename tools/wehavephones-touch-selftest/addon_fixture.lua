@@ -98,16 +98,67 @@ local function drive(object)
     local condition=drivers[object]
     object.visible=(condition:find("show; hide$")~=nil)==special
 end
-function RegisterStateDriver(object,state,condition)
-    assert(not combat and state=="visibility")
-    drivers[object]=condition
-    drive(object)
+-- Other state drivers, such as the wheel's ring rules: "[stealth] 4; [stance:1] 2; [combat] 3; 0".
+-- WoW sets the state attribute securely, in combat as well, and only when the value changes.
+local stateDrivers, playerState = {}, {stance=0, stealth=false}
+local function conditionTrue(test)
+    if test=="combat" then return combat end
+    if test=="stealth" then return playerState.stealth end
+    local stance=test:match("^stance:(%d+)$")
+    if stance then return playerState.stance==tonumber(stance) end
+    error("Unknown macro condition "..test)
 end
-function UnregisterStateDriver(object) assert(not combat) drivers[object]=nil end
+local function driveState(object,state)
+    for clause in (stateDrivers[object][state]..";"):gmatch("%s*(.-);") do
+        local test,value=clause:match("^%[(.-)%]%s*(.*)$")
+        if not test then value=clause end
+        if not test or conditionTrue(test) then
+            if object["state-"..state]~=value then
+                local was=secure
+                secure=true
+                object:SetAttribute("state-"..state,value)
+                secure=was
+            end
+            return
+        end
+    end
+end
+function RegisterStateDriver(object,state,condition)
+    assert(not combat)
+    if state=="visibility" then
+        drivers[object]=condition
+        drive(object)
+        return
+    end
+    stateDrivers[object]=stateDrivers[object] or {}
+    stateDrivers[object][state]=condition
+    driveState(object,state)
+end
+function UnregisterStateDriver(object,state)
+    assert(not combat)
+    if state=="visibility" then drivers[object]=nil
+    elseif stateDrivers[object] then stateDrivers[object][state]=nil end
+end
+function stateDriver(object,state) return stateDrivers[object] and stateDrivers[object][state] end
+-- Change combat, the stance number or stealth, and let every state driver follow.
+function setPlayerState(inCombat,stance,stealth)
+    combat=inCombat
+    playerState.stance,playerState.stealth=stance or 0,stealth or false
+    for object,states in pairs(stateDrivers) do
+        for state in pairs(states) do driveState(object,state) end
+    end
+end
 function setSpecialBar(value)
     special=value
     for object in pairs(drivers) do drive(object) end
 end
+-- The character's class and its stances or forms, as the stance bar lists them.
+local playerClass, shapeshifts = "WARRIOR", {}
+local spellNames = {[5487]="Bear Form", [9634]="Dire Bear Form", [768]="Cat Form", [1066]="Aquatic Form"}
+function UnitClass() return playerClass:sub(1,1)..playerClass:sub(2):lower(), playerClass end
+function GetNumShapeshiftForms() return #shapeshifts end
+function GetShapeshiftFormInfo(i) return shapeshifts[i].icon, false, true, shapeshifts[i].spell end
+function GetSpellInfo(id) return spellNames[id] end
 function methods:RegisterForClicks(...) self.clicks={...} end
 function methods:SetScript(name,fn) self.scripts[name]=fn end
 function methods:HookScript(name,fn) self.scripts[name]=fn end
@@ -816,6 +867,78 @@ objects.WeHavePhonesTouchEditor:Hide()
 boot(true,nil,true)
 assert(objects.WeHavePhonesTouchWheelSlot1.action==145 and objects.WeHavePhonesTouchWheelHub.text=="1",
     "the ring in use is kept for the next login")
+-- Rings follow stealth, stances and forms, and combat.
+local hub=objects.WeHavePhonesTouchWheelHub
+local function wheelRing() return (objects.WeHavePhonesTouchWheelSlot1.action-145)/9+1 end
+assert(stateDriver(objects.WeHavePhonesTouchWheel,"follow")==nil,"a ring follows nothing until a rule is set")
+playerClass, shapeshifts = "DRUID", {{icon=132276,spell=5487},{icon=132115,spell=768}}
+active.scripts.OnEvent(active,"UPDATE_SHAPESHIFT_FORMS")
+edit(hub)
+local followPanel=objects.WeHavePhonesTouchFollow
+assert(followPanel.visible and followPanel.title.text=="Ring 1 follows","holding the hub sets what the ring in use follows")
+assert(wheelRing()==1,"holding the hub does not change ring")
+local function followChoice(i) return objects["WeHavePhonesTouchFollow"..i] end
+local function pickFollow(i) followChoice(i).scripts.OnClick(followChoice(i)) end
+assert(followChoice(1).label.text=="Stealth" and followChoice(2).label.text=="Bear Form"
+    and followChoice(3).label.text=="Cat Form" and followChoice(4).label.text=="In combat","a druid follows Prowl, forms and combat")
+clickText("Ring 2") pickFollow(2)
+assert(followPanel.title.text=="Ring 2 follows" and followChoice(2).active,"a chosen state turns to the ring shown")
+clickText("Ring 3") pickFollow(4)
+clickText("Ring 4") pickFollow(1)
+assert(followChoice(2).place.text=="Ring 2" and not followChoice(2).active,"states on another ring name that ring")
+followPanel:Hide()
+assert(stateDriver(objects.WeHavePhonesTouchWheel,"follow")=="[stealth] 4; [stance:1] 2; [combat] 3; 0","stealth and forms come before combat")
+setPlayerState(true,1)
+assert(wheelRing()==2 and hub.text=="2","a form turns the wheel to its ring, in combat too")
+assert(WeHavePhonesTouchDB.wheelRing==1,"a followed ring is not kept for the next login")
+setPlayerState(true,0)
+assert(wheelRing()==3,"leaving the form in combat turns to the combat ring")
+secureClick(objects.WeHavePhonesTouchWheelNext,"LeftButton",false)
+assert(wheelRing()==4,"a swipe still changes ring while a state is followed")
+setPlayerState(false,0)
+assert(wheelRing()==1 and WeHavePhonesTouchDB.wheelRing==1,"the wheel turns back to the ring it was on")
+secureClick(objects.WeHavePhonesTouchWheelNext,"LeftButton",false)
+setPlayerState(false,2,true)
+assert(wheelRing()==4,"stealth comes before a form")
+setPlayerState(false,0)
+assert(wheelRing()==2,"the wheel returns to a ring chosen by hand")
+secureClick(objects.WeHavePhonesTouchWheelPrevious,"LeftButton",false)
+-- Learning a form changes stance numbers. Rules stay with the spell.
+shapeshifts={{icon=132112,spell=1066},{icon=132276,spell=5487},{icon=132115,spell=768}}
+active.scripts.OnEvent(active,"UPDATE_SHAPESHIFT_FORMS")
+assert(stateDriver(objects.WeHavePhonesTouchWheel,"follow")=="[stealth] 4; [stance:2] 2; [combat] 3; 0","a form keeps its rule when its number changes")
+-- A higher rank replaces a form at the same icon.
+shapeshifts={{icon=132112,spell=1066},{icon=132276,spell=9634},{icon=132115,spell=768}}
+active.scripts.OnEvent(active,"UPDATE_SHAPESHIFT_FORMS")
+setPlayerState(false,2)
+assert(wheelRing()==2,"Dire Bear Form keeps Bear Form's ring")
+setPlayerState(false,0)
+assert(wheelRing()==1)
+-- Rules can be changed only out of combat and survive the next login.
+setPlayerState(true,0)
+local beforeFollowNotice=notices
+edit(hub)
+assert(notices==beforeFollowNotice+1 and not followPanel.visible,"ring rules wait for combat to end")
+setPlayerState(false,0)
+boot(true,nil,true)
+hub=objects.WeHavePhonesTouchWheelHub
+assert(stateDriver(objects.WeHavePhonesTouchWheel,"follow")=="[stealth] 4; [stance:2] 2; [combat] 3; 0","ring rules are kept")
+edit(hub)
+clickText("Ring 2") pickFollow(3)
+assert(followChoice(3).label.text=="Dire Bear Form" and not followChoice(3).active,"a second tap removes a rule")
+followPanel:Hide()
+menuChord("CTRL-F12")
+assert(stateDriver(objects.WeHavePhonesTouchWheel,"follow")==nil,"the stock grid follows nothing")
+menuChord("CTRL-F11")
+assert(stateDriver(objects.WeHavePhonesTouchWheel,"follow")=="[stealth] 4; [combat] 3; 0","rules return with the wheel")
+-- Warriors follow stances and combat only.
+playerClass, shapeshifts = "WARRIOR", {}
+WeHavePhonesTouchDB.wheelFollow=nil
+active.scripts.OnEvent(active,"UPDATE_SHAPESHIFT_FORMS")
+assert(stateDriver(objects.WeHavePhonesTouchWheel,"follow")==nil)
+edit(hub)
+assert(followChoice(1).label.text=="In combat" and not followChoice(2).visible,"a character without forms follows combat only")
+followPanel:Hide()
 local function checkWheelPosition(x, y)
     local slot=objects.WeHavePhonesTouchWheelSlot5
     local left,bottom,w,h=topRect(slot)
