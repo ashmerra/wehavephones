@@ -264,13 +264,18 @@ class Phone:
 
     def dismiss_idle_lock(self):
         """Samsung Game Booster dims and touch-locks an idle game; injected touches then do nothing."""
-        windows = self.sh('dumpsys window windows | grep -A30 "IgniteTouchProtectionPresenter}:" | grep isVisible=true')
-        if 'isVisible=true' in windows:
+        # Newer Game Booster builds name the window "GameBooster TouchProtection".
+        check = 'dumpsys window windows | grep -A30 -E "(IgniteTouchProtectionPresenter|GameBooster TouchProtection)}:" | grep isVisible=true'
+        if 'isVisible=true' in self.sh(check):
             say('dismissing Game Booster touch lock')
             self.tap(1100, 300)
             time.sleep(1)
             self.sh('input draganddrop 1170 570 300 900 1000')
             time.sleep(1)
+            # The newer lock ignores the quick drag and follows a slow swipe.
+            if 'isVisible=true' in self.sh(check):
+                self.sh('input swipe 1170 550 200 1000 1500')
+                time.sleep(1)
 
     def ui_nodes(self):
         for _ in range(4):
