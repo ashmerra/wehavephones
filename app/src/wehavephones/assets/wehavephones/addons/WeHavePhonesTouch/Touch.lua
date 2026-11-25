@@ -302,6 +302,17 @@ local function Collect()
             end
         end
     elseif category == "Items" then
+        -- Equipped trinkets with a use effect come first, so they can be activated from a bar.
+        local itemSpell = (C_Item and C_Item.GetItemSpell) or GetItemSpell
+        for index, invSlot in ipairs({INVSLOT_TRINKET1 or 13, INVSLOT_TRINKET2 or 14}) do
+            local itemID = GetInventoryItemID("player", invSlot)
+            if itemID and not IsInventoryItemLocked(invSlot) and (not itemSpell or itemSpell(itemID)) then
+                local equipped = invSlot
+                local name = (retail and C_Item.GetItemInfo or GetItemInfo)(GetInventoryItemLink("player", invSlot) or itemID) or "Trinket"
+                tinsert(entries, {name=name .. "\nTrinket " .. index, icon=GetInventoryItemTexture("player", invSlot),
+                    key="item:" .. tostring(itemID), pickup=function() PickupInventoryItem(equipped) end})
+            end
+        end
         for bag = 0, LastPlayerBag() do
             for slot = 1, C_Container.GetContainerNumSlots(bag) do
                 local info = C_Container.GetContainerItemInfo(bag, slot)

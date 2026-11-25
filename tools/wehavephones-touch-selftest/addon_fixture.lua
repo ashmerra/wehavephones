@@ -244,6 +244,13 @@ C_Container={
     PickupContainerItem=function() cursor={"item",500} end,
 }
 function GetItemInfo() return "Test item" end
+equipped={}
+function GetInventoryItemID(_,slot) return equipped[slot] end
+function GetInventoryItemLink() return nil end
+function GetInventoryItemTexture(_,slot) return equipped[slot] and 60+slot end
+function IsInventoryItemLocked() return false end
+function GetItemSpell(id) if id==700 then return "Use trinket",7000 end end
+function PickupInventoryItem(slot) cursor={"item",equipped[slot]} end
 function GetNumMacros() return 1,1 end
 function GetMacroInfo(i) return "Macro "..i,i end
 
@@ -1039,6 +1046,17 @@ edit(ActionButton1)
 clickText("Items")
 assert(objects.WeHavePhonesTouchChoice1.place.text=="Bar 6","items on a later page of the main bar are marked too")
 clickText("Cancel")
+equipped={[13]=700,[14]=701}
+edit(ActionButton1)
+clickText("Items")
+assert(objects.WeHavePhonesTouchChoice1.entry.name=="Test item\nTrinket 1","an equipped use trinket is listed first")
+assert(objects.WeHavePhonesTouchChoice2.entry.key=="item:500","a trinket without a use effect is left out")
+objects.WeHavePhonesTouchChoice1.scripts.OnClick(objects.WeHavePhonesTouchChoice1)
+assert(actions[61][1]=="item" and actions[61][2]==700,"an equipped trinket can be placed on a bar")
+edit(ActionButton1)
+clickText("Undo")
+assert(actions[61][2]==500,"undo restores the item the trinket replaced")
+equipped={}
 pageClick("WeHavePhonesTouchPage2")
 edit(ActionButton1)
 clickText("Clear slot")

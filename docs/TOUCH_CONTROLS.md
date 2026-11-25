@@ -250,7 +250,8 @@ prior preference on opt-out. Inspect never uses, equips, casts or drags.
 Hold a hotbar slot for about half a second. Releasing the hold does not cast
 its spell. A picker opens with **Spells**, **Items** and **Macros**. Tap a choice
 to place it in that slot. Passive and unlearned spells are excluded. Spells
-retain their rank. Items come from the player's bags. Macros include account
+retain their rank. Items lists equipped trinkets with a use effect first, then
+the player's bags. A trinket on a bar activates it. Macros include account
 and character macros.
 
 Retail uses its current spellbook API. The picker excludes future spells,
