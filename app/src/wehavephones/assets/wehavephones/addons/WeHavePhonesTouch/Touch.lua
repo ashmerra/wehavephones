@@ -824,6 +824,16 @@ local function RememberHud(name, hide)
     if hide then
         if db.hud[name].shown == nil then db.hud[name].shown = object:IsShown() end
         Conceal(object)
+        -- Blizzard shows the stock action bars again on a stance or form change, in combat
+        -- too. A hidden parent keeps a parked bar out of sight whatever shows it.
+        if hide == "park" and not InCombatLockdown() then
+            local park = _G.WeHavePhonesTouchPark or CreateFrame("Frame", "WeHavePhonesTouchPark", UIParent)
+            park:Hide()
+            if object:GetParent() ~= park then
+                db.hud[name].parent = db.hud[name].parent or HudName(object:GetParent())
+                object:SetParent(park)
+            end
+        end
     end
 end
 
@@ -1868,8 +1878,9 @@ local function ApplyWheel()
     local db = WeHavePhonesTouchDB
     for _, name in ipairs({"MultiBar5", "MultiBar6", "MultiBar7"}) do
         local object = _G[name]
-        if object and wanted then RememberHud(name, true)
+        if object and wanted then RememberHud(name, "park")
         elseif object and db.hud and db.hud[name] then
+            if db.hud[name].parent then object:SetParent(HudObject(db.hud[name].parent) or UIParent) end
             Reveal(object, db.hud[name].shown)
             db.hud[name] = nil
         end
@@ -1986,8 +1997,8 @@ end
 Layout = function()
     if not enabled or InCombatLockdown() then return end
     if not SupportedLayout() then return end
-    RememberHud("MultiBarBottomLeft", true)
-    RememberHud("MultiBarBottomRight", true)
+    RememberHud("MultiBarBottomLeft", "park")
+    RememberHud("MultiBarBottomRight", "park")
     if VIEWABLE_ACTION_BAR_PAGES then
         for i = 1, 6 do VIEWABLE_ACTION_BAR_PAGES[i] = 1 end
     end

@@ -438,6 +438,9 @@ assert(values.useUiScale=="1" and values.GamePadEnable=="1" and values.InputDevi
 assert(UIParent:GetScale()==1.5 and layout==12)
 for i=1,6 do assert(VIEWABLE_ACTION_BAR_PAGES[i],"all six pages accessible through the switcher") end
 assert(not MultiBarBottomLeft.visible and not MultiBarBottomRight.visible,"extra grids do not take camera space")
+assert(objects.WeHavePhonesTouchPark and not objects.WeHavePhonesTouchPark.visible
+    and MultiBarBottomLeft:GetParent()==objects.WeHavePhonesTouchPark and MultiBarBottomRight:GetParent()==objects.WeHavePhonesTouchPark,
+    "a hidden parent keeps the extra grids out of sight when a stance change shows them")
 assert(held.W=="MOVEFORWARD" and held.F9==nil,"the old in-game touch panel is gone")
 assert(held["CTRL-SHIFT-F1"]=="TOGGLECHARACTER0" and held["CTRL-SHIFT-F4"]=="TOGGLEQUESTLOG" and held["CTRL-SHIFT-F10"]=="TOGGLEGAMEMENU"
     and held["CTRL-SHIFT-F11"]=="FOLLOWTARGET" and held["CTRL-SHIFT-F12"]=="REPLY" and held["SHIFT-F7"]=="NAMEPLATES" and held["CTRL-ALT-F7"]==nil,
@@ -736,6 +739,8 @@ for i=1,9 do assert(slots[i].action==144+i and slots[i].type2=="" and slots[i].s
 assert(held["SHIFT-F10"]=="WeHavePhonesTouchWheelNext" and held["SHIFT-F11"]=="WeHavePhonesTouchWheelPrevious",
     "swipes reach the secure ring buttons through session bindings")
 assert(not MultiBar5.visible and not MultiBar6.visible and not MultiBar7.visible,"Action Bars 6 to 8 do not repeat the wheel")
+assert(MultiBar5:GetParent()==objects.WeHavePhonesTouchPark and MultiBar7:GetParent()==objects.WeHavePhonesTouchPark,
+    "Action Bars 6 to 8 stay out of sight when a stance change shows them")
 assert(wheel.visible and not ActionButton1.visible and not ActionButton12.visible and not objects.WeHavePhonesTouchPager.visible,
     "the wheel replaces the stock grid and its page switcher")
 local function wheelRect(object)
@@ -847,6 +852,7 @@ combat=false
 active.scripts.OnEvent(active,"PLAYER_REGEN_ENABLED")
 assert(not wheel.visible and ActionButton1.visible and objects.WeHavePhonesTouchPager.visible,"switching the wheel off returns the stock grid")
 assert(MultiBar5.visible and MultiBar7.visible,"switching the wheel off returns Action Bars 6 to 8")
+assert(MultiBar5:GetParent()==UIParent and MultiBar7:GetParent()==UIParent,"switching the wheel off returns Action Bars 6 to 8 to their parent")
 for i=1,6 do
     assert(stanceContainers[i].point[2]==StanceBar and stanceContainers[i].point[4]==(i-1)*33 and stanceContainers[i].point[5]==0,
         "switching the wheel off returns Blizzard's stance layout")
@@ -1288,6 +1294,7 @@ assert(Questie_BaseFrame:GetScale()==.85 and Questie_BaseFrame.point[3]=="TOPLEF
     and Questie_BaseFrame.point[4]==120 and Questie_BaseFrame.point[5]==-240,
     "opting out leaves addon tracker geometry untouched")
 assert(QuestWatchFrame:GetParent()==UIParent,"opting out restores MoP's stock tracker parent")
+assert(MultiBarBottomLeft:GetParent()==UIParent and MultiBarBottomRight:GetParent()==UIParent,"opting out returns the extra grids to their parent")
 assert(PartyFrame.MemberFrame1.point[2]==PartyFrame and PartyFrame.MemberFrame1.point[3]=="TOPLEFT"
     and PartyFrame.MemberFrame1:GetScale()==1 and PartyFrame.Background:GetAlpha()==.6,
     "pooled party frames and their original backdrop restore on opt-out")
